@@ -1,0 +1,8 @@
+cupy-cuda12x==11.5.0
+Cython==0.29.33
+fastrlock==0.8.1
+llvmlite==0.39.1
+numba==0.56.4
+numpy==1.23.5
+nvidia-pyindex==1.0.9
+scipy==1.10.0
