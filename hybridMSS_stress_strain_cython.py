@@ -114,43 +114,47 @@ def timestep(x0,v0,m,elements,connectivity,eq_separations,kappa,l_e,bc,boundarie
     elif bc[0] == 'strain':
         for surface in bc[1]:
             do_stuff()
-    # !!! need to functionalize the below calculation ofthe elastic forces and getting the vectors from the force magnitudes, especially so i can resuse that functionality to get the forces acting on the boundary vertices under fixed strain
-    i = 0
-    for posn in x0:
-        rij = posn - x0
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        separations[:,i] = rij_mag
-        i += 1
-    displacement = separations - eq_separations
-    force = -1*connectivity * displacement
     correction_force_el = np.empty((8,3),dtype=np.float64)
     vectors = np.empty((8,3),dtype=np.float64)
     avg_vectors = np.empty((3,3),dtype=np.float64)
-    correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
-   
-    # correction_force = get_volume_correction_force(elements, avg_vectors, kappa, l_e,N)
-    i = 0
-    for posn in x0:
-        #!!! hard coding in fixed positions/displacements
+    volume_correction_force = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = get_spring_force_magnitude(x0,connectivity,eq_separations)
+    update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc)
+    return x1, v1, a
+
+#how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
+def get_spring_force_magnitude(x0,connectivity,eq_separations):
+    """calculate the magnitude of the force acting on each node due to a spring force, where entry ij is the negative magnitude on i in the rij_hat direction"""
+    separations = np.empty((N,N))
+    for i, posn in enumerate(x0):
+        rij = posn - x0
+        rij_mag = np.sqrt(np.sum(rij**2,1))
+        separations[:,i] = rij_mag
+    displacement = separations - eq_separations
+    force = -1*connectivity * displacement
+    return force
+
+def get_spring_force_vector(posn,x0,spring_force):
+    """given the negative magnitude of the force on node i at position due to every node j, calculate the rij_hat vectors for the node i at posn, and return the vector sum of the forces acting on node i"""
+    rij = posn - x0
+    rij_mag = np.sqrt(np.sum(rij**2,1))
+    rij_mag[rij_mag == 0] = 1#this shouldn't cause issues, it is here to prevent a load of divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contirbute to the force
+    # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
+    force_vector = np.transpose(np.tile(spring_force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
+    return force_vector
+
+def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc):
+    """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
+    for i, posn in enumerate(x0):
         if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
-        # if not(displacement_bc and (np.any(i==boundaries['left']) or np.any(i==boundaries['right']))):
-            rij = posn - x0
-            rij_mag = np.sqrt(np.sum(rij**2,1))
-            rij_mag[rij_mag == 0] = 1#this shouldn't cause issues, it is here to prevent a load of divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contirbute to the force
-            # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
-            force_vector = np.transpose(np.tile(force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
-            force_vector = np.nan_to_num(force_vector,posinf=0)
-            a[i] = np.sum(force_vector,0)/m[i] - drag * v0[i] + correction_force_cy_nogil[i] + bc_forces[i]#things seem to be "breathing" which means something is going wrong with the directions of the forces... there was an issue with the elastic force being in the wrong direction which caused things to expand indefinitely, prior to the correction forces, but I did fix that issue. So, the question becomes what the correction forces should look like, and what they do look like ***CORRECTED THE ISSUE***
+            force_vector = get_spring_force_vector(posn,x0,spring_force)
+            a[i] = np.sum(force_vector,0)/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
         else:
             a[i] = 0
-        i +=1
-    #!!! force is just a magnitude (although positive or negative), but not a direction. the NxN matrix becomes an Nx1 vector of the sum of the magnitudes... but that isn't correct either. from the force NxN I need to multiply each entry by the unit vector pointing from j to i in rij ***CORRECTED THE ISSUE***
-    #a = np.sum(force,1)/m 
-    for i in range(N):
+    for i in range(x0.shape[0]):
         v1[i] = a[i] * dt + v0[i]
         x1[i] = a[i] * dt**2 + v0[i] * dt + x0[i]
-    return x1, v1, a
 
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
 def discretize_space(Lx,Ly,Lz,cube_side_length):
@@ -712,9 +716,9 @@ def main():
     E = 1
     nu = 0.49
     l_e = .1
-    Lx = 1.0
-    Ly = 1.0
-    Lz = 1.0
+    Lx = 0.2
+    Ly = 0.1
+    Lz = 0.1
     dt = 1e-3
     N_iter = 1000
 
@@ -723,11 +727,11 @@ def main():
 
 
     node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
-    creation_start = time.perf_counter()
-    (c,s) = create_connectivity(node_posns,elements,k,l_e)
-    creation_end = time.perf_counter()
-    delta_original = creation_end-creation_start
-    print("took {} seconds to create matrix by original method for {} by {} by {} system".format(delta_original,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
+    # creation_start = time.perf_counter()
+    # (c,s) = create_connectivity(node_posns,elements,k,l_e)
+    # creation_end = time.perf_counter()
+    # delta_original = creation_end-creation_start
+    # print("took {} seconds to create matrix by original method for {} by {} by {} system".format(delta_original,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
     # (sparse_connectivity,sparse_separation) = create_connectivity_sparse(node_posns,elements,k,l_e)
 
     # boundary_conditions = ('stress',('left','right'),10)
@@ -735,11 +739,11 @@ def main():
     strains = np.array([0.01])
     # strains = np.arange(-0.01,-0.21,-0.01)
     dimensions = [Lx,Ly,Lz]
-    new_start = time.perf_counter()
-    (c2,s2) = create_connectivity_v2(node_posns,elements,k,l_e,dimensions)
-    new_end = time.perf_counter()
-    delta_new = new_end-new_start
-    print("took {} seconds to create matrix by new method for {} by {} by {} system".format(delta_new,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
+    # new_start = time.perf_counter()
+    (c,s) = create_connectivity_v2(node_posns,elements,k,l_e,dimensions)
+    # new_end = time.perf_counter()
+    # delta_new = new_end-new_start
+    # print("took {} seconds to create matrix by new method for {} by {} by {} system".format(delta_new,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
     # plot_unit_cell(node_posns, c)
     #posns = simulate(node_posns,c,s,(),100,1e-3)
     effective_modulus = np.zeros(strains.shape)
