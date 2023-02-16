@@ -165,7 +165,7 @@ def main():
     E = 1
     nu = 0.49
     l_e = 0.1
-    Lx = 1.0
+    Lx = 2.0
     Ly = 1.0
     Lz = 1.0
     node_posns, elements, boudnaries = discretize_space(Lx,Ly,Lz,l_e)
