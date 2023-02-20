@@ -198,8 +198,8 @@ def create_connectivity_v3(node_posns,stiffness_constants,cube_side_length,dimen
     #since i have a unit cell, and since the connectivity matrix looks the same for each unit cell of a material type, can I construct the connectivity matrix for a single unit cell of each type, and combine them into the overall connectivity matrix? that way I can avoid calculating separations for all nodes when I know that there's only so many connections per node possible (26 total for edge, face diagonal, and center diagonal springs in a cubic cell)
     N = np.shape(node_posns)[0]
     epsilon = np.spacing(1)
-    connectivity = np.zeros((N,N),dtype=np.float32)
-    separations = np.empty((N,N),dtype=np.float32)
+    connectivity = np.zeros((N,N),dtype=np.float64)
+    separations = np.empty((N,N),dtype=np.float64)
     face_diagonal_length = np.sqrt(2)*cube_side_length
     center_diagonal_length = np.sqrt(3)*cube_side_length
     i = 0
@@ -221,7 +221,7 @@ def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
     epsilon = np.spacing(1)
     face_diagonal_length = np.sqrt(2)*cube_side_length
     center_diagonal_length = np.sqrt(3)*cube_side_length
-    springs = np.zeros((1,4),dtype=np.float32)#creating an array that will hold the springs, will have to concatenate as new springs are added, and delete the first row before passing back
+    springs = np.zeros((1,4),dtype=np.float64)#creating an array that will hold the springs, will have to concatenate as new springs are added, and delete the first row before passing back
     for i, posn in enumerate(node_posns):
         rij = posn - node_posns
         rij_mag = np.sqrt(np.sum(rij**2,1))
@@ -229,8 +229,8 @@ def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
         face_springs = get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constants[1]/2,face_diagonal_length,max_shared_elements=2)
         # now i get to figure out how to do diagonal springs, and also how to combine all these freaking things properly
         diagonal_springs = get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constants[2],center_diagonal_length,max_shared_elements=1)
-        springs = np.concatenate((springs,edge_springs,face_springs,diagonal_springs),dtype=np.float32)
-    return np.ascontiguousarray(springs[1:],dtype=np.float32)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups
+        springs = np.concatenate((springs,edge_springs,face_springs,diagonal_springs),dtype=np.float64)
+    return np.ascontiguousarray(springs[1:],dtype=np.float64)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups
 
 def create_connectivity_sparse(node_posns,elements,stiffness_constants,cube_side_length):
     """Returns a scipy.sparse CSR array of the connectivity and separation matrices."""
@@ -358,7 +358,7 @@ def get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constant,comparis
     epsilon = np.spacing(1)
     connected_vertices = np.asarray(np.abs(rij_mag - comparison_length) < epsilon).nonzero()[0]#per numpy documentation, this method is preferred over np.where if np.where is only passed a condition, instead of a condition and two arrays to select from
     valid_connections = connected_vertices[i < connected_vertices]
-    springs = np.empty((valid_connections.shape[0],4),dtype=np.float32)
+    springs = np.empty((valid_connections.shape[0],4),dtype=np.float64)
     #trying to preallocate space for springs array based on the number of connected vertices, but if i am trying to not double count springs i will sometimes need less space. how do i know how many are actually going to be used? i guess another condition check?
     if max_shared_elements == 1:#if we are dealing with the center diagonal springs we don't need to count shared elements
         for row, v in enumerate(valid_connections):
@@ -761,8 +761,6 @@ def main():
     (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
     springs = create_springs(node_posns,k,l_e,dimensions)
     boundary_conditions = ('strain',('left','right'),.05)
-    
-    testing_suite_spring_representation()
 
     # strains = np.array([0.01])
     strains = np.arange(0.001,-0.81,-0.05)
