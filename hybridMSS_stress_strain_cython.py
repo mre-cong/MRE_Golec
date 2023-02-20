@@ -628,37 +628,25 @@ def read_init_file(fn):
 def main():
     E = 1
     nu = 0.49
-    l_e = .1
-    Lx = 1.0
-    Ly = 1.0
-    Lz = 1.0
+    l_e = .1#cubic element side length
+    Lx = 0.5
+    Ly = 0.5
+    Lz = 0.5
     dt = 1e-3
     N_iter = 1000
-
+    dimensions = [Lx,Ly,Lz]
     k = get_spring_constants(E, nu, l_e)
     kappa = get_kappa(E, nu)
 
 
     node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
-    # creation_start = time.perf_counter()
-    # (c,s) = create_connectivity(node_posns,elements,k,l_e)
-    # creation_end = time.perf_counter()
-    # delta_original = creation_end-creation_start
-    # print("took {} seconds to create matrix by original method for {} by {} by {} system".format(delta_original,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
     # (sparse_connectivity,sparse_separation) = create_connectivity_sparse(node_posns,elements,k,l_e)
+    (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
 
-    # boundary_conditions = ('stress',('left','right'),10)
     boundary_conditions = ('strain',('left','right'),.05)
-    strains = np.array([0.01])
-    # strains = np.arange(-0.01,-0.21,-0.01)
-    dimensions = [Lx,Ly,Lz]
-    # new_start = time.perf_counter()
-    (c,s) = create_connectivity_v2(node_posns,k,l_e,dimensions)
-    # new_end = time.perf_counter()
-    # delta_new = new_end-new_start
-    # print("took {} seconds to create matrix by new method for {} by {} by {} system".format(delta_new,int(Lx/l_e),int(Ly/l_e),int(Lz/l_e)))
-    # plot_unit_cell(node_posns, c)
-    #posns = simulate(node_posns,c,s,(),100,1e-3)
+    # strains = np.array([0.01])
+    strains = np.arange(0.001,-0.81,-0.05)
+    
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
     count = 0
