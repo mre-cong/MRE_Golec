@@ -126,6 +126,7 @@ def timestep(x0,v0,m,elements,connectivity,eq_separations,kappa,l_e,bc,boundarie
 #how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
 def get_spring_force_magnitude(x0,connectivity,eq_separations):
     """calculate the magnitude of the force acting on each node due to a spring force, where entry ij is the negative magnitude on i in the rij_hat direction"""
+    N = x0.shape[0]
     separations = np.empty((N,N))
     for i, posn in enumerate(x0):
         rij = posn - x0
@@ -135,7 +136,7 @@ def get_spring_force_magnitude(x0,connectivity,eq_separations):
     force = -1*connectivity * displacement
     return force
 
-def get_spring_force_vector(posn,x0,spring_force):
+def get_spring_force_vector(i,posn,x0,spring_force):
     """given the negative magnitude of the force on node i at position due to every node j, calculate the rij_hat vectors for the node i at posn, and return the vector sum of the forces acting on node i"""
     rij = posn - x0
     rij_mag = np.sqrt(np.sum(rij**2,1))
@@ -148,7 +149,7 @@ def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,dra
     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
     for i, posn in enumerate(x0):
         if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
-            force_vector = get_spring_force_vector(posn,x0,spring_force)
+            force_vector = get_spring_force_vector(i,posn,x0,spring_force)
             a[i] = np.sum(force_vector,0)/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
         else:
             a[i] = 0
@@ -716,9 +717,9 @@ def main():
     E = 1
     nu = 0.49
     l_e = .1
-    Lx = 0.2
-    Ly = 0.1
-    Lz = 0.1
+    Lx = 1.0
+    Ly = 1.0
+    Lz = 1.0
     dt = 1e-3
     N_iter = 1000
 
@@ -755,7 +756,7 @@ def main():
             start = time.time()
             posns, v, a = simulate(node_posns,elements,boundaries,dimensions,c,s,kappa,l_e,boundary_conditions,N_iter,dt)
         except:
-            print(' ')
+            print('Exception')
         # post_plot(posns,c,k)
         end = time.time()
         delta = end - start
