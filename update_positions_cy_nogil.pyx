@@ -2,8 +2,17 @@ cimport cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc):
+cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces,boundaries,bc):
     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
+    cdef int i
+    cdef int j
+    with nogil:
+        for i in range(x0.shape[0]):
+            for j in range(3):
+                a[i,j] = (spring_force[i,j] + volume_correction_force[i,j] + bc_forces[i,j] - drag * v0[i,j])/m[i]
+                v1[i,j] = a[i,j] * dt + v0[i,j]
+                x1[i,j] = a[i,j] * dt * dt + v0[i,j] * dt + x0[i,j]
+            #how do i enforce boundary conditions within this function? I don't want overhead, if possible. does reducing the looping by unrolling the loop help?
     for i, posn in enumerate(x0):
         if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
             force_vector = get_spring_force_vector(i,posn,x0,spring_force)

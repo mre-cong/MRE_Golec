@@ -34,6 +34,7 @@ import os
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
 import get_volume_correction_force_cy_nogil
+import get_spring_force_cy
 
 #remember, purpose, signature, stub
 
@@ -41,7 +42,7 @@ import get_volume_correction_force_cy_nogil
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
 
 # !!! might want to wrap this method into the Simulation class, so that the actual interface is... cleaner. i can let the user (me) set the parameters, then run some initialization method (or have the constructor run the other methods for setting things up, like the connectivity, elements, and stiffnesses). then a method for running the simulation
-def simulate(node_posns,elements,boundaries,dimensions,connectivity,separations,kappa,l_e,boundary_conditions,time_steps,dt):
+def simulate(node_posns,elements,boundaries,dimensions,connectivity,separations,springs,kappa,l_e,boundary_conditions,time_steps,dt):
     """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. Connectivity is the N_vertices by N_vertices array whose elements connectivity[i,j] are zero if there is no spring/elastic coupling between vertex i and j, and the numeric stiffness constant value otherwise. Separations is the N_vertices by N_vertices numpy array whose elements are the magnitude of separation of each vertex pair at elastic equilibrium. kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. time_steps is the number of iterations to calculate, and dt is the time step for each iteration."""
     
     epsilon = np.spacing(1)
@@ -61,7 +62,7 @@ def simulate(node_posns,elements,boundaries,dimensions,connectivity,separations,
             x0[:,pinned_axis] *= (1+ boundary_conditions[2])
             # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     for s in range(time_steps):
-        x1, v1, a = timestep(x0,v0,m,elements,connectivity,separations,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
+        x1, v1, a = timestep(x0,v0,m,elements,connectivity,separations,springs,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
         # below, setting a convergence criteria check on the sum of norms of the forces on each vertex, and the max norm of force on any vertex
         if (np.max(np.linalg.norm(a,axis=1)) <=tol*1e3 or np.sum(np.linalg.norm(a,axis=1)) <= tol):
             break
@@ -77,10 +78,9 @@ def do_stuff():
 def do_other_stuff():
     return 0
 
-def timestep(x0,v0,m,elements,connectivity,eq_separations,kappa,l_e,bc,boundaries,dimensions,dt):
+def timestep(x0,v0,m,elements,connectivity,eq_separations,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     """computes the next position and velocity for the given masses, initial conditions, and timestep"""
     N = len(x0)
-    separations = np.empty((N,N))
     drag = 1
     x1 = np.empty(x0.shape,dtype=float)
     v1 = np.empty(v0.shape,dtype=float)
@@ -120,7 +120,9 @@ def timestep(x0,v0,m,elements,connectivity,eq_separations,kappa,l_e,bc,boundarie
     volume_correction_force = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
     spring_force = get_spring_force_magnitude(x0,connectivity,eq_separations)
-    update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc)
+    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
+    update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc,spring_force_cy)
     return x1, v1, a
 
 #how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
@@ -145,14 +147,21 @@ def get_spring_force_vector(i,posn,x0,spring_force):
     force_vector = np.transpose(np.tile(spring_force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
     return force_vector
 
-def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc):
+def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc,spring_force_cy):
     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
+    spring_forces = np.empty(spring_force_cy.shape)
     for i, posn in enumerate(x0):
+        force_vector = get_spring_force_vector(i,posn,x0,spring_force)
+        spring_forces[i] = np.sum(force_vector,0)
         if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
             force_vector = get_spring_force_vector(i,posn,x0,spring_force)
             a[i] = np.sum(force_vector,0)/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
         else:
             a[i] = 0
+    try:
+        assert(np.allclose(spring_forces,spring_force_cy))
+    except:
+        print(str(spring_forces-spring_force_cy))
     for i in range(x0.shape[0]):
         v1[i] = a[i] * dt + v0[i]
         x1[i] = a[i] * dt**2 + v0[i] * dt + x0[i]
@@ -772,7 +781,7 @@ def main():
         boundary_conditions = ('strain',('left','right'),strain)
         try:
             start = time.time()
-            posns, v, a = simulate(node_posns,elements,boundaries,dimensions,c,s,kappa,l_e,boundary_conditions,N_iter,dt)
+            posns, v, a = simulate(node_posns,elements,boundaries,dimensions,c,s,springs,kappa,l_e,boundary_conditions,N_iter,dt)
         except:
             print('Exception')
         # post_plot(posns,c,k)
