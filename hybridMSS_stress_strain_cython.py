@@ -78,7 +78,7 @@ def do_stuff():
 def do_other_stuff():
     return 0
 
-def timestep(x0,v0,m,elements,connectivity,eq_separations,springs,kappa,l_e,bc,boundaries,dimensions,dt):
+def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     """computes the next position and velocity for the given masses, initial conditions, and timestep"""
     N = len(x0)
     drag = 1
@@ -505,9 +505,9 @@ def main():
     E = 1
     nu = 0.49
     l_e = .1#cubic element side length
-    Lx = 0.2
-    Ly = 0.1
-    Lz = 0.1
+    Lx = 0.5
+    Ly = 0.5
+    Lz = 0.5
     dt = 1e-3
     N_iter = 1000
     dimensions = [Lx,Ly,Lz]
