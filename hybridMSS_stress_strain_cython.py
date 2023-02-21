@@ -35,6 +35,7 @@ import lib_programname
 import tables as tb#pytables, for HDF5 interface
 import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
+import update_positions_cy
 
 #remember, purpose, signature, stub
 
@@ -154,7 +155,6 @@ def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,dra
             a[i] = spring_force[i]/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
         else:
             a[i] = 0
-    for i in range(x0.shape[0]):
         v1[i] = a[i] * dt + v0[i]
         x1[i] = a[i] * dt**2 + v0[i] * dt + x0[i]
 
@@ -488,7 +488,7 @@ def write_log(simulation,output_dir):
         f_obj.writelines([simulation.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     
-def write_init_file(posns,connectivity,k,elements,output_dir):
+def write_init_file(posns,springs,k,elements,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'temp.h5','w')
     f.create_array('/','vertex_posns',posns)
@@ -501,6 +501,103 @@ def read_init_file(fn):
     f = tb.open_file(fn)
     return f
 
+def update_positions_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
+    """computes the next position and velocity for the given masses, initial conditions, and timestep"""
+    N = len(x0)
+    drag = 1
+    x1 = np.empty(x0.shape,dtype=float)
+    v1 = np.empty(v0.shape,dtype=float)
+    a = np.empty(x0.shape,dtype=float)
+    x1_cy = np.empty(x0.shape,dtype=float)
+    v1_cy = np.empty(v0.shape,dtype=float)
+    a_cy = np.empty(x0.shape,dtype=float)
+    bc_forces = np.zeros(x0.shape,dtype=float)
+    if bc[0] == 'stress':
+        for surface in bc[1]:
+            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
+            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
+            if surface == 'left' or surface == 'right':
+                surface_area = dimensions[0]*dimensions[2]
+            elif surface == 'top' or surface == 'bottom':
+                surface_area = dimensions[0]*dimensions[1]
+            else:
+                surface_area = dimensions[1]*dimensions[2]
+            # assuming tension force only, no compression
+            if surface == 'right':
+                force_direction = np.array([1,0,0])
+            elif surface == 'left':
+                force_direction = np.array([-1,0,0])
+            elif surface == 'top':
+                force_direction = np.array([0,0,1])
+            elif surface == 'bottom':
+                force_direction = np.array([0,0,-1])
+            elif surface == 'front':
+                force_direction = np.array([0,1,0])
+            elif surface == 'back':
+                force_direction = np.array([0,-1,0])
+            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
+            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
+    elif bc[0] == 'strain':
+        for surface in bc[1]:
+            do_stuff()
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    volume_correction_force = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc)
+    fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
+    update_positions_cy.update_positions(x0,v0,a_cy,x1_cy,v1_cy,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
+    try:
+        assert(np.allclose(x1_cy,x1))
+        print('positions match between methods for update_positions()')
+    except:
+        print('positions do not match between methods for update_positions()')
+    try:
+        assert(np.allclose(v1_cy,v1))
+        print('positions match between methods for update_positions()')
+    except:
+        print('positions do not match between methods for update_positions()')
+    try:
+        assert(np.allclose(a_cy,a))
+        print('positions match between methods for update_positions()')
+    except:
+        print('positions do not match between methods for update_positions()')
+
+def update_positions_testing_suite():
+    E = 1
+    nu = 0.49
+    l_e = .1#cubic element side length
+    Lx = np.arange(0.1,0.5,0.1)
+    Ly, Lz = Lx, Lx
+    dt = 1e-3
+    k = get_spring_constants(E, nu, l_e)
+    kappa = get_kappa(E, nu)
+    strain = 0.05
+    boundary_conditions = ('strain',('left','right'),strain)
+    for lx in Lx:
+        for ly in Ly:
+            for lz in Lz:
+                dimensions = [lx,ly,lz]
+                node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
+                springs = create_springs(node_posns,k,l_e,dimensions)
+                x0 = node_posns
+                v0 = np.zeros(x0.shape)
+                m = np.ones(x0.shape[0])*1e-2
+                if boundary_conditions[0] == 'strain':
+                    # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
+                    surface = boundary_conditions[1][0]
+                    if surface == 'right' or surface == 'left':
+                        pinned_axis = 0
+                    elif surface == 'top' or surface == 'bottom':
+                        pinned_axis = 2
+                    else:
+                        pinned_axis = 1
+                    x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+                update_positions_testing(x0,v0,m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
+
 def main():
     E = 1
     nu = 0.49
@@ -509,7 +606,7 @@ def main():
     Ly = 0.5
     Lz = 0.5
     dt = 1e-3
-    N_iter = 1000
+    N_iter = 2000
     dimensions = [Lx,Ly,Lz]
     k = get_spring_constants(E, nu, l_e)
     kappa = get_kappa(E, nu)
@@ -520,12 +617,11 @@ def main():
     boundary_conditions = ('strain',('left','right'),.05)
 
     # strains = np.array([0.01])
-    strains = np.arange(0.001,-0.81,-0.05)
+    strains = np.arange(-.001,-0.81,-0.2)
     
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
-    count = 0
-    for strain in strains:
+    for count, strain in enumerate(strains):
         boundary_conditions = ('strain',('left','right'),strain)
         try:
             start = time.time()
@@ -543,7 +639,6 @@ def main():
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces))/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        count +=1
         
     fig = plt.figure()
     ax = fig.gca()
@@ -571,7 +666,7 @@ def main():
 
     my_sim = Simulation()
     write_log(my_sim,output_dir)
-    write_init_file(node_posns,c,s,elements,output_dir)
+    write_init_file(node_posns,springs,k,elements,output_dir)
 # f = tb.open_file(output_dir+'temp.h5')
 # calculate approximate volumes of each element after simulation
 #deformed_avg_vecs = get_average_edge_vectors(posns, elements)
@@ -579,7 +674,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    update_positions_testing_suite()#main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
