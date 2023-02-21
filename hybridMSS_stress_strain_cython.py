@@ -809,8 +809,61 @@ def spring_force_testing():
                         print('mismatch between spring force calculations')
                         print('Lx = {}, Ly = {}, Lz = {}'.format(lx, ly,lz))
 
+def spring_force_performance_test():
+    N_perfruns = 1000
+    E = 1
+    nu = 0.49
+    l_e = 0.1
+    Lx = np.arange(0.1,0.5,0.1)
+    Ly, Lz = Lx, Lx
+    k = get_spring_constants(E, nu, l_e)
+    strains = np.arange(-0.001,-0.21,-0.05)
+    py_time_tot = 0
+    cy_time_tot = 0
+    for lx in Lx:
+        for ly in Ly:
+            for lz in Lz:
+                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
+                dimensions = [lx,ly,lz]
+                (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
+                springs = create_springs(node_posns,k,l_e,dimensions)
+                spring_representation_testing(springs,c,s)
+                for strain in strains:
+                    x0 = node_posns
+                    boundary_conditions = ('strain',('left','right'),strain)
+                    surface = boundary_conditions[1][0]
+                    if surface == 'right' or surface == 'left':
+                        pinned_axis = 0
+                    elif surface == 'top' or surface == 'bottom':
+                        pinned_axis = 2
+                    else:
+                        pinned_axis = 1
+                    x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+                    start = time.perf_counter()
+                    for run_counter in range(N_perfruns):
+                        spring_force = get_spring_force_magnitude(x0,c,s)
+                        spring_force_py = np.empty(x0.shape,dtype=np.float64)
+                        for i, posn in enumerate(x0):
+                            force_vector = get_spring_force_vector(i,posn,x0,spring_force)
+                            spring_force_py[i] = force_vector
+                    end = time.perf_counter
+                    py_time = end-start
+                    py_time_tot += py_time
+                    start = time.perf_counter()
+                    for run_counter in range(N_perfruns):
+                        spring_force_cy = np.empty(x0.shape,dtype=np.float64)
+                        get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
+                    end = time.perf_counter()
+                    cy_time = end-start
+                    print('Lx = {}, Ly = {}, Lz = {}'.format(lx, ly,lz))
+                    print('python time: {}, cython time: {}'.format(py_time,cy_time))
+                    print('Cython is {}x faster'.format(py_time/cy_time))
+                    cy_time_tot += cy_time
+    print('python time: {}, cython time: {}'.format(py_time_tot,cy_time_tot))
+    print('Cython is {}x faster'.format(py_time_tot/cy_time_tot))
+
 def main():
-    spring_force_testing()
+    spring_force_performance_test()
 
     E = 1
     nu = 0.49
