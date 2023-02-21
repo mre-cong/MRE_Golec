@@ -817,7 +817,7 @@ def spring_force_performance_test():
     Lx = np.arange(0.1,0.5,0.1)
     Ly, Lz = Lx, Lx
     k = get_spring_constants(E, nu, l_e)
-    strains = np.arange(-0.001,-0.21,-0.05)
+    strains = [-0.05]
     py_time_tot = 0
     cy_time_tot = 0
     for lx in Lx:
@@ -827,7 +827,6 @@ def spring_force_performance_test():
                 dimensions = [lx,ly,lz]
                 (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
                 springs = create_springs(node_posns,k,l_e,dimensions)
-                spring_representation_testing(springs,c,s)
                 for strain in strains:
                     x0 = node_posns
                     boundary_conditions = ('strain',('left','right'),strain)
@@ -846,7 +845,7 @@ def spring_force_performance_test():
                         for i, posn in enumerate(x0):
                             force_vector = get_spring_force_vector(i,posn,x0,spring_force)
                             spring_force_py[i] = force_vector
-                    end = time.perf_counter
+                    end = time.perf_counter()
                     py_time = end-start
                     py_time_tot += py_time
                     start = time.perf_counter()
@@ -863,8 +862,6 @@ def spring_force_performance_test():
     print('Cython is {}x faster'.format(py_time_tot/cy_time_tot))
 
 def main():
-    spring_force_performance_test()
-
     E = 1
     nu = 0.49
     l_e = .1#cubic element side length
@@ -950,7 +947,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    spring_force_performance_test()# main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
