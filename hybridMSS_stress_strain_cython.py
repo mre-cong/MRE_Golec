@@ -52,15 +52,15 @@ def simulate(node_posns,elements,boundaries,dimensions,connectivity,separations,
     x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
     if boundary_conditions[0] == 'strain':
         # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
-        for surface in boundary_conditions[1]:
-            if surface == 'right' or surface == 'left':
-                pinned_axis = 0
-            elif surface == 'top' or surface == 'bottom':
-                pinned_axis = 2
-            else:
-                pinned_axis = 1
-            x0[:,pinned_axis] *= (1+ boundary_conditions[2])
-            # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
+        surface = boundary_conditions[1][0]
+        if surface == 'right' or surface == 'left':
+            pinned_axis = 0
+        elif surface == 'top' or surface == 'bottom':
+            pinned_axis = 2
+        else:
+            pinned_axis = 1
+        x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+        # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     for s in range(time_steps):
         x1, v1, a = timestep(x0,v0,m,elements,connectivity,separations,springs,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
         # below, setting a convergence criteria check on the sum of norms of the forces on each vertex, and the max norm of force on any vertex
@@ -592,6 +592,41 @@ def get_boundary_conditions(boundary_condition_type,):
 def get_accelerations_post_simulation(x0,boundaries,connectivity,eq_separations,elements,kappa,l_e,bc):
     N = len(x0)
     m = np.ones(x0.shape[0])*1e-2
+    separations = np.empty((N,N))
+    a = np.empty(x0.shape,dtype=float)
+    avg_vectors = get_average_edge_vectors(x0,elements)
+    i = 0
+    for posn in x0:
+        rij = posn - x0
+        rij_mag = np.sqrt(np.sum(rij**2,1))
+        separations[:,i] = rij_mag
+        i += 1
+    displacement = separations - eq_separations
+    force = -1*connectivity * displacement
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
+
+    i = 0
+    for posn in x0:
+        if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
+            rij = posn - x0
+            rij_mag = np.sqrt(np.sum(rij**2,1))
+            rij_mag[rij_mag == 0] = 1#this is here to prevent divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contribute to the force
+            # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
+            force_vector = np.transpose(np.tile(force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
+            force_vector = np.nan_to_num(force_vector,posinf=0)
+            a[i] = np.sum(force_vector,0)/m[i] + correction_force_cy_nogil[i]
+        else:
+            a[i] = 0
+        i +=1
+    return a
+
+def get_accelerations_post_simulation_v2(x0,boundaries,connectivity,eq_separations,elements,kappa,l_e,bc):
+    N = len(x0)
+    m = np.ones(x0.shape[0])*1e-2
     a = np.empty(x0.shape,dtype=float)
     avg_vectors = get_average_edge_vectors(x0,elements)
     correction_force_el = np.empty((8,3),dtype=np.float64)
@@ -602,10 +637,6 @@ def get_accelerations_post_simulation(x0,boundaries,connectivity,eq_separations,
     spring_force = get_spring_force_magnitude(x0,connectivity,eq_separations)
     for i, posn in enumerate(x0):
         if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
-            rij = posn - x0
-            rij_mag = np.sqrt(np.sum(rij**2,1))
-            rij_mag[rij_mag == 0] = 1#this is here to prevent divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contribute to the force
-            # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
             force_vector = get_spring_force_vector(i,posn,x0,spring_force)
             a[i] = force_vector/m[i] + correction_force_cy_nogil[i]
         else:
@@ -735,7 +766,52 @@ def testing_suite_spring_representation():
                 springs = create_springs(node_posns,k,l_e,dimensions)
                 spring_representation_testing(springs,c,s)
 
+def spring_force_testing():
+    E = 1
+    nu = 0.49
+    l_e = 0.1
+    Lx = np.arange(0.1,0.5,0.1)
+    Ly, Lz = Lx, Lx
+    k = get_spring_constants(E, nu, l_e)
+    strains = np.arange(-0.001,-0.21,-0.05)
+    for lx in Lx:
+        for ly in Ly:
+            for lz in Lz:
+                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
+                dimensions = [lx,ly,lz]
+                (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
+                springs = create_springs(node_posns,k,l_e,dimensions)
+                spring_representation_testing(springs,c,s)
+                for strain in strains:
+                    x0 = node_posns
+                    boundary_conditions = ('strain',('left','right'),strain)
+                    surface = boundary_conditions[1][0]
+                    if surface == 'right' or surface == 'left':
+                        pinned_axis = 0
+                    elif surface == 'top' or surface == 'bottom':
+                        pinned_axis = 2
+                    else:
+                        pinned_axis = 1
+                    x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+                    spring_force = get_spring_force_magnitude(x0,c,s)
+                    spring_force_py = np.empty(x0.shape,dtype=np.float64)
+                    for i, posn in enumerate(x0):
+                        force_vector = get_spring_force_vector(i,posn,x0,spring_force)
+                        spring_force_py[i] = force_vector
+                    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
+                    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
+                    try:
+                        assert(np.allclose(spring_force_py,spring_force_cy))
+                        print('Testing passed')
+                        print('agreement between spring force calculation methods')
+                    except:
+                        print('Testing failed')
+                        print('mismatch between spring force calculations')
+                        print('Lx = {}, Ly = {}, Lz = {}'.format(lx, ly,lz))
+
 def main():
+    spring_force_testing()
+
     E = 1
     nu = 0.49
     l_e = .1#cubic element side length
@@ -767,7 +843,7 @@ def main():
             start = time.time()
             posns, v, a = simulate(node_posns,elements,boundaries,dimensions,c,s,springs,kappa,l_e,boundary_conditions,N_iter,dt)
         except:
-            print('Exception')
+            print('Exception raised during simulation')
         # post_plot(posns,c,k)
         end = time.time()
         delta = end - start
@@ -775,6 +851,11 @@ def main():
         print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
         a_var = get_accelerations_post_simulation(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
+        a_var_v2 = get_accelerations_post_simulation_v2(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
+        try:
+            assert(np.allclose(a_var,a_var_v2))
+        except:
+            print('post-sim acceleration calculations do not agree between methods')
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces))/(Ly*Lz)
