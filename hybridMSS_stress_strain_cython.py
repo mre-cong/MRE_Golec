@@ -145,6 +145,7 @@ def get_spring_force_vector(i,posn,x0,spring_force):
     rij_mag[rij_mag == 0] = 1#this shouldn't cause issues, it is here to prevent a load of divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contirbute to the force
     # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
     force_vector = np.transpose(np.tile(spring_force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
+    force_vector = np.sum(force_vector,0)
     return force_vector
 
 def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc,spring_force_cy):
@@ -152,10 +153,10 @@ def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,dra
     spring_forces = np.empty(spring_force_cy.shape)
     for i, posn in enumerate(x0):
         force_vector = get_spring_force_vector(i,posn,x0,spring_force)
-        spring_forces[i] = np.sum(force_vector,0)
+        spring_forces[i] = force_vector
         if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
             force_vector = get_spring_force_vector(i,posn,x0,spring_force)
-            a[i] = np.sum(force_vector,0)/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
+            a[i] = force_vector/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
         else:
             a[i] = 0
     try:
@@ -503,12 +504,7 @@ def set_stiffness_shared_elements_sparse_v2(i,rij_mag,elements,stiffness_constan
         effective_stiffness.append(tmp_stiffness_constant)
         shared_elements = 0
     result = (indices,effective_stiffness)
-    return result
-            
-#first goal is to calculate the distance between one node and the other nodes in the cell. then you can use a for loop to iterate over each node. when you know the distances for a single node, can do a conditional check on the magnitude of separation to determine which stiffness constant belongs to which entry in the 8x8 matrix representing connectivity within that unit cell. then can think about how to do that process simultaneously using numpy and scipy functionality
-#after that process works, the next step is figuring out how to combine connectivity matrix entries. the more i think about it the less convinced i am that i can combine unit cell connectivity matrices together in a reasonable matter, as the order of the nodes in the connectivity matrix for one unit cell doesn't have particular meaning related to their spacing, and the order of nodes in the overall connectivity matrix involving more than one unit cell will also not be related to the relative positions in space
-#i don't need to be clever for this bit, at least not right now. first write something that works, even if it is brute force. try to be clever when it works.
-
+    return result        
 
 #given the material properties (Young's modulus, shear modulus, and poisson's ratio) of an isotropic material, calculate the spring stiffness constants for edge springs, center diagonal springs, and face diagonal springs for a cubic unit cell
 def get_spring_constants(E,nu,l_e):
@@ -596,36 +592,24 @@ def get_boundary_conditions(boundary_condition_type,):
 def get_accelerations_post_simulation(x0,boundaries,connectivity,eq_separations,elements,kappa,l_e,bc):
     N = len(x0)
     m = np.ones(x0.shape[0])*1e-2
-    separations = np.empty((N,N))
     a = np.empty(x0.shape,dtype=float)
     avg_vectors = get_average_edge_vectors(x0,elements)
-    i = 0
-    for posn in x0:
-        rij = posn - x0
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        separations[:,i] = rij_mag
-        i += 1
-    displacement = separations - eq_separations
-    force = -1*connectivity * displacement
     correction_force_el = np.empty((8,3),dtype=np.float64)
     vectors = np.empty((8,3),dtype=np.float64)
     avg_vectors = np.empty((3,3),dtype=np.float64)
     correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
-
-    i = 0
-    for posn in x0:
+    spring_force = get_spring_force_magnitude(x0,connectivity,eq_separations)
+    for i, posn in enumerate(x0):
         if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
             rij = posn - x0
             rij_mag = np.sqrt(np.sum(rij**2,1))
             rij_mag[rij_mag == 0] = 1#this is here to prevent divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contribute to the force
             # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
-            force_vector = np.transpose(np.tile(force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
-            force_vector = np.nan_to_num(force_vector,posinf=0)
-            a[i] = np.sum(force_vector,0)/m[i] + correction_force_cy_nogil[i]
+            force_vector = get_spring_force_vector(i,posn,x0,spring_force)
+            a[i] = force_vector/m[i] + correction_force_cy_nogil[i]
         else:
             a[i] = 0
-        i +=1
     return a
 
 def remove_i(x,i):
