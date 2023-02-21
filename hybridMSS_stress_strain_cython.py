@@ -120,9 +120,10 @@ def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     avg_vectors = np.empty((3,3),dtype=np.float64)
     volume_correction_force = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
-    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
-    update_positions(x0,v0,a,x1,v1,dt,m,spring_force_cy,volume_correction_force,drag,bc_forces,boundaries,bc)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
+    update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
     return x1, v1, a
 
 #how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
@@ -709,7 +710,7 @@ def update_positions_perf_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundari
        update_positions_cy_nogil.update_positions(x0,v0,a_cy,x1_cy,v1_cy,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
     end = time.perf_counter()
     cy_time = end-start
-    print('Lx = {}, Ly = {}, Lz = {}'.format(dimensions))
+    print('Lx = {}, Ly = {}, Lz = {}'.format(dimensions[0],dimensions[1],dimensions[2]))
     print('pytime = {}, cytime = {}'.format(py_time,cy_time))
     print('Cython is {}x faster'.format(py_time/cy_time))
     try:
@@ -809,7 +810,7 @@ def main():
 
 
 if __name__ == "__main__":
-    update_positions_performance_testing_suite()#main()
+    main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
