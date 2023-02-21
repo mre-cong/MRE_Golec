@@ -854,6 +854,7 @@ def main():
         a_var_v2 = get_accelerations_post_simulation_v2(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
         try:
             assert(np.allclose(a_var,a_var_v2))
+            print('agreement between post-sim acceleration calculations')
         except:
             print('post-sim acceleration calculations do not agree between methods')
         m = 1e-2
