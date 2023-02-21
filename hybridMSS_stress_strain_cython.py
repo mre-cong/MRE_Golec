@@ -201,28 +201,6 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
     boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}
     return node_posns, np.int32(elements), boundaries
 
-    #given the node positions and stiffness constants for the different types of springs, calculate and return the connectivity matrix, and equilibrium separation matrix
-def create_connectivity_v3(node_posns,stiffness_constants,cube_side_length,dimensions):
-    #!!! need to include the elements array, and take into account the number of elements an edge or face diagonal spring is shared with (due to kirchoff's law)
-    #besides the node positions and stiffness constants (which is more complicated than just 3 numbers for the MRE case where there are two isotropic phases present with different material properties), we need to determine the connectivity matrix by summing up the stiffness contribution from each cell that share the vertices whose element is being calculated. A vertex in the inner part of the body will be shared by 8 cells, while one on a surface boundary may be shared by 4, or at a corner, only belonging to one unit cell. Similarly, if those unit cells represent different materials the stiffness for an edge spring made of one phase will be different than the second. While I can ignore this for the time being (as i am only going to consider a single unit cell to begin with), I will need some way to keep track of individual unit cells and their properties (keeping track of the individual unit cells will be necessary for iterating over unit cells when calculating volume preserving energy/force)
-    #since i have a unit cell, and since the connectivity matrix looks the same for each unit cell of a material type, can I construct the connectivity matrix for a single unit cell of each type, and combine them into the overall connectivity matrix? that way I can avoid calculating separations for all nodes when I know that there's only so many connections per node possible (26 total for edge, face diagonal, and center diagonal springs in a cubic cell)
-    N = np.shape(node_posns)[0]
-    epsilon = np.spacing(1)
-    connectivity = np.zeros((N,N),dtype=np.float64)
-    separations = np.empty((N,N),dtype=np.float64)
-    face_diagonal_length = np.sqrt(2)*cube_side_length
-    center_diagonal_length = np.sqrt(3)*cube_side_length
-    i = 0
-    for posn in node_posns:
-        rij = posn - node_posns
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        set_stiffness_shared_elements_v3(i,node_posns,rij_mag,dimensions,connectivity,stiffness_constants[0]/4,cube_side_length,max_shared_elements=4)
-        set_stiffness_shared_elements_v3(i,node_posns,rij_mag,dimensions,connectivity,stiffness_constants[1]/2,face_diagonal_length,max_shared_elements=2)
-        connectivity[np.abs(rij_mag - center_diagonal_length) < epsilon,i] = stiffness_constants[2]
-        separations[:,i] = rij_mag
-        i += 1
-    return (connectivity,separations)
-
     #given the node positions and stiffness constants for the different types of springs, calculate and return a list of springs, which is  N_springs x 4, where each row represents a spring, and the columns are [node_i_rowidx, node_j_rowidx, stiffness, equilibrium_length]
 def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
     #!!! need to include the elements array, and take into account the number of elements an edge or face diagonal spring is shared with (due to kirchoff's law)
@@ -241,126 +219,6 @@ def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
         diagonal_springs = get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constants[2],center_diagonal_length,max_shared_elements=1)
         springs = np.concatenate((springs,edge_springs,face_springs,diagonal_springs),dtype=np.float64)
     return np.ascontiguousarray(springs[1:],dtype=np.float64)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups
-
-def create_connectivity_sparse(node_posns,elements,stiffness_constants,cube_side_length):
-    """Returns a scipy.sparse CSR array of the connectivity and separation matrices."""
-    #!!! need to include the elements array, and take into account the number of elements an edge or face diagonal spring is shared with (due to kirchoff's law)
-    #besides the node positions and stiffness constants (which is more complicated than just 3 numbers for the MRE case where there are two isotropic phases present with different material properties), we need to determine the connectivity matrix by summing up the stiffness contribution from each cell that share the vertices whose element is being calculated. A vertex in the inner part of the body will be shared by 8 cells, while one on a surface boundary may be shared by 4, or at a corner, only belonging to one unit cell. Similarly, if those unit cells represent different materials the stiffness for an edge spring made of one phase will be different than the second. While I can ignore this for the time being (as i am only going to consider a single unit cell to begin with), I will need some way to keep track of individual unit cells and their properties (keeping track of the individual unit cells will be necessary for iterating over unit cells when calculating volume preserving energy/force)
-    #since i have a unit cell, and since the connectivity matrix looks the same for each unit cell of a material type, can I construct the connectivity matrix for a single unit cell of each type, and combine them into the overall connectivity matrix? that way I can avoid calculating separations for all nodes when I know that there's only so many connections per node possible (26 total for edge, face diagonal, and center diagonal springs in a cubic cell)
-    N = np.shape(node_posns)[0]
-    epsilon = np.spacing(1)
-    data = []
-    separation_data = []
-    row_ind = []
-    col_ind = []
-    face_diagonal_length = np.sqrt(2)*cube_side_length
-    center_diagonal_length = np.sqrt(3)*cube_side_length
-    i = 0
-    for posn in node_posns:
-        rij = posn - node_posns
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        result = set_stiffness_shared_elements_sparse(i,rij_mag,elements,stiffness_constants[0]/4,cube_side_length,max_shared_elements=4)
-        data.extend(result[1])
-        col_ind.extend(result[0])
-        for index in result[0]:
-            row_ind.append(i)
-            separation_data.append(cube_side_length)
-        result = set_stiffness_shared_elements_sparse(i,rij_mag,elements,stiffness_constants[1]/2,face_diagonal_length,max_shared_elements=2)
-        data.extend(result[1])
-        col_ind.extend(result[0])
-        for index in result[0]:
-            row_ind.append(i)
-            separation_data.append(face_diagonal_length)
-        center_diagonal_indices = np.where(np.abs(rij_mag - center_diagonal_length) < epsilon)[0]
-        result = (center_diagonal_indices, np.ones(center_diagonal_indices.size,)*stiffness_constants[2])
-        data.extend(result[1])
-        col_ind.extend(result[0])
-        for index in result[0]:
-            row_ind.append(i)
-            separation_data.append(center_diagonal_length)
-        i += 1
-    sparse_connectivity = scipy.sparse.csr_array((data, (row_ind, col_ind)), shape=(N, N))
-    sparse_separations = scipy.sparse.csr_array((separation_data, (row_ind, col_ind)), shape=(N, N))
-    return (sparse_connectivity,sparse_separations)
-
-#functionalizing the setting of stiffness constants based on number of shared elements for different spring types (edge and face diagonal). will need to be extended for the case of materials with two phases
-def set_stiffness_shared_elements_v3(i,node_posns,rij_mag,dimensions,connectivity,stiffness_constant,comparison_length,max_shared_elements):
-    """setting the stiffness of a particular element based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
-    epsilon = np.spacing(1)
-    connected_vertices = np.where(np.abs(rij_mag - comparison_length) < epsilon)[0]
-    node_type_i = identify_node_type(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
-    for v in connected_vertices:
-        if connectivity[i,v] == 0:
-            node_type_v = identify_node_type(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
-            if node_type_i == 'interior' and node_type_v == 'interior':
-                if max_shared_elements == 4:
-                    connectivity[i,v] = stiffness_constant*4
-                    connectivity[v,i] = connectivity[i,v]
-                else:
-                    connectivity[i,v] = stiffness_constant*2
-                    connectivity[v,i] = connectivity[i,v]
-            elif (node_type_i == 'interior' and node_type_v == 'surface') or (node_type_i == 'surface' and node_type_v == 'interior'):
-                if max_shared_elements == 4:
-                    connectivity[i,v] = stiffness_constant*4
-                    connectivity[v,i] = connectivity[i,v]
-                else:
-                    connectivity[i,v] = stiffness_constant*2
-                    connectivity[v,i] = connectivity[i,v]
-            elif (node_type_i == 'interior' and node_type_v == 'edge') or (node_type_i == 'edge' and node_type_v == 'interior'):
-                connectivity[i,v] = stiffness_constant*2
-                connectivity[v,i] = connectivity[i,v]
-            elif node_type_i == 'surface' and node_type_v == 'surface':
-                if max_shared_elements == 4:#two shared elements for a cube edge spring in this case if they are both on the same surface, so check for shared surfaces. otherwise the answer is 4.
-                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
-                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
-                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
-                        connectivity[i,v] = stiffness_constant*2
-                        connectivity[v,i] = connectivity[i,v]
-                    else:
-                        connectivity[i,v] = stiffness_constant*4
-                        connectivity[v,i] = connectivity[i,v]
-                else:#face spring, if the two nodes are on the same surface theres only one element, if they are on two different surfaces theyre are two shared elements
-                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
-                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
-                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
-                        connectivity[i,v] = stiffness_constant
-                        connectivity[v,i] = connectivity[i,v]
-                    else:#on different surfaces, two shared elements
-                        connectivity[i,v] = stiffness_constant*2
-                        connectivity[v,i] = connectivity[i,v]
-            elif (node_type_i == 'surface' and node_type_v == 'edge') or (node_type_i == 'edge' and node_type_v == 'surface'):
-                if max_shared_elements == 4:#if the max_shared_elements is 4, this is a cube edge spring, and an edge-surface connection has two shared elements
-                    connectivity[i,v] = stiffness_constant*2
-                    connectivity[v,i] = connectivity[i,v]
-                else:#this is a face spring with only a single element if the edge and surface node have a shared surface
-                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
-                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
-                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
-                        connectivity[i,v] = stiffness_constant
-                        connectivity[v,i] = connectivity[i,v]
-                    else:#they don't share a surface, and so they share two elements
-                        connectivity[i,v] = stiffness_constant*2
-                        connectivity[v,i] = connectivity[i,v]
-            elif node_type_i == 'edge' and node_type_v == 'edge':
-                #both nodes belong to two surfaces (if they are edge nodes). if the surfaces are the same, then it is a shared edge, if they are not, they are separate edges of the simulated volume. there aer 6 surfaces
-                node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
-                node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
-                if ((node_i_surf[0] == node_v_surf[0] and node_i_surf[1] == node_v_surf[1] and (node_i_surf[0] != 0 and node_i_surf[1] != 0)) or (node_i_surf[0] == node_v_surf[0] and node_i_surf[2] == node_v_surf[2] and (node_i_surf[0] != 0 and node_i_surf[2] != 0)) or(node_i_surf[1] == node_v_surf[1] and node_i_surf[2] == node_v_surf[2] and (node_i_surf[1] != 0 and node_i_surf[2] != 0))):#if both nodes belong to the same two surfaces, they are on the same edge
-                    connectivity[i,v] = stiffness_constant
-                    connectivity[v,i] = connectivity[i,v]
-                elif max_shared_elements == 4:#if they don't share two surfaces and it's a cube edge spring, they share two elements
-                    connectivity[i,v] = stiffness_constant*2
-                    connectivity[v,i] = connectivity[i,v]
-                else:#if it's a face spring
-                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):#if they do share a surface, then the face spring has as single element
-                        connectivity[i,v] = stiffness_constant
-                        connectivity[v,i] = connectivity[i,v]
-                    else:#they don't share a single surface, then they diagonally across one another and have two shared elements
-                        connectivity[i,v] = stiffness_constant*2
-                        connectivity[v,i] = connectivity[i,v]
-            elif node_type_i == 'corner' or node_type_v == 'corner':#any spring involving a corner node covered
-                connectivity[i,v] = stiffness_constant
-                connectivity[v,i] = connectivity[i,v]
 
 #functionalizing the construction of springs including setting of stiffness constants based on number of shared elements for different spring types (edge and face diagonal). will need to be extended for the case of materials with two phases
 def get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constant,comparison_length,max_shared_elements):
@@ -461,50 +319,7 @@ def get_node_surf(node_posn,Lx,Ly,Lz):
         surfaces[2] = 1
     elif node_posn[2] == 0:
         surfaces[2] = -1
-    return surfaces
-
-def set_stiffness_shared_elements_sparse(i,rij_mag,elements,stiffness_constant,comparison_length,max_shared_elements):
-    """Return list of tuples of index of connected node and stiffness constant, setting the stiffness of a particular connection based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
-    epsilon = np.spacing(1)
-    shared_elements = 0
-    result = []
-    indices = []
-    effective_stiffness =[]
-    connected_vertices = np.nonzero(np.abs(rij_mag - comparison_length) < epsilon)[0]
-    for v in connected_vertices:
-        for el in elements:
-            if np.any(el == i) & np.any(el == v):
-                shared_elements += 1
-                if shared_elements == max_shared_elements:
-                    break
-        tmp_stiffness_constant = stiffness_constant * shared_elements
-        indices.append(v)
-        effective_stiffness.append(tmp_stiffness_constant)
-        shared_elements = 0
-    result = (indices,effective_stiffness)
-    return result
-
-def set_stiffness_shared_elements_sparse_v2(i,rij_mag,elements,stiffness_constant,comparison_length,max_shared_elements):
-    """Return list of tuples of index of connected node and stiffness constant, setting the stiffness of a particular connection based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
-    epsilon = np.spacing(1)
-    shared_elements = 0
-    result = []
-    indices = []
-    effective_stiffness =[]
-    connected_vertices = np.nonzero(np.abs(rij_mag - comparison_length) < epsilon)[0]
-    for v in connected_vertices:
-        # if node_posns[i,0] == 0 || node_posns[i,0] == 0 || node_posns[i,0] == 0 || node_posns[i,0] == 0 || node_posns[i,0] == 0 || 
-        for el in elements:
-            if np.any(el == i) & np.any(el == v):
-                shared_elements += 1
-                if shared_elements == max_shared_elements:
-                    break
-        tmp_stiffness_constant = stiffness_constant * shared_elements
-        indices.append(v)
-        effective_stiffness.append(tmp_stiffness_constant)
-        shared_elements = 0
-    result = (indices,effective_stiffness)
-    return result        
+    return surfaces     
 
 #given the material properties (Young's modulus, shear modulus, and poisson's ratio) of an isotropic material, calculate the spring stiffness constants for edge springs, center diagonal springs, and face diagonal springs for a cubic unit cell
 def get_spring_constants(E,nu,l_e):
@@ -520,12 +335,6 @@ def get_kappa(E,nu):
     """Given the Young's modulus and Poissons's ratio, return the value of the additional bulk modulus, kappa, for the volume correction forces"""
     kappa = E * (4 * nu - 1) / (2 * (1 + nu) * (1 - 2 * nu))
     return kappa
-
-#given the nodal positions defining the ends of a spring, the equilibrium spring length, and the stiffness constant, calculated the energy of the spring and  the forces (force as a vector) acting on each node
-def spring_response(node1,node2,k,r_eq):
-    energy = 1/2 * k * (sci.distance.pdist(np.array([node1,node2]),'euclidean') - r_eq)**2
-    force = -k*(node2-node1)/sci.distance.pdist(np.array([node1,node2]),'euclidean') * (sci.distance.pdist(np.array([node1,node2]),'euclidean') - r_eq)#calculating force on node 2
-    return -force,force,energy #Newton's second law, force on node 1 is negative force on node 2
 
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
@@ -588,41 +397,6 @@ def get_boundary_conditions(boundary_condition_type,):
         return 0
     elif boundary_condition_type == 'mixed':
         return 0
-    
-def get_accelerations_post_simulation(x0,boundaries,connectivity,eq_separations,elements,kappa,l_e,bc):
-    N = len(x0)
-    m = np.ones(x0.shape[0])*1e-2
-    separations = np.empty((N,N))
-    a = np.empty(x0.shape,dtype=float)
-    avg_vectors = get_average_edge_vectors(x0,elements)
-    i = 0
-    for posn in x0:
-        rij = posn - x0
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        separations[:,i] = rij_mag
-        i += 1
-    displacement = separations - eq_separations
-    force = -1*connectivity * displacement
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
-
-    i = 0
-    for posn in x0:
-        if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
-            rij = posn - x0
-            rij_mag = np.sqrt(np.sum(rij**2,1))
-            rij_mag[rij_mag == 0] = 1#this is here to prevent divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contribute to the force
-            # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
-            force_vector = np.transpose(np.tile(force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
-            force_vector = np.nan_to_num(force_vector,posinf=0)
-            a[i] = np.sum(force_vector,0)/m[i] + correction_force_cy_nogil[i]
-        else:
-            a[i] = 0
-        i +=1
-    return a
 
 def get_accelerations_post_simulation_v2(x0,boundaries,connectivity,eq_separations,elements,kappa,l_e,bc):
     N = len(x0)
@@ -735,131 +509,6 @@ def write_init_file(posns,connectivity,k,elements,output_dir):
 def read_init_file(fn):
     f = tb.open_file(fn)
     return f
-    
-def spring_representation_testing(springs,c,s):
-    for spring in springs:
-        try:
-            assert(np.abs(c[int(spring[0]),int(spring[1])] - spring[2]) < np.spacing(1))
-        except:
-            print('mismatch between springs representation and connectivity matrix')
-            print(str(np.abs(c[int(spring[0]),int(spring[1])] - spring[2])))
-        try:
-            assert(np.abs(s[int(spring[0]),int(spring[1])] - spring[3]) < np.spacing(1))
-        except:
-            print('mismatch between springs representation and separation matrix')
-            print(str(np.abs(s[int(spring[0]),int(spring[1])] - spring[3])))
-    print('testing passed')
-
-def testing_suite_spring_representation():
-    E = 1
-    nu = 0.49
-    l_e = 0.1
-    Lx = np.arange(0.1,0.5,0.1)
-    Ly, Lz = Lx, Lx
-    k = get_spring_constants(E, nu, l_e)
-    for lx in Lx:
-        for ly in Ly:
-            for lz in Lz:
-                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
-                dimensions = [lx,ly,lz]
-                (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
-                springs = create_springs(node_posns,k,l_e,dimensions)
-                spring_representation_testing(springs,c,s)
-
-def spring_force_testing():
-    E = 1
-    nu = 0.49
-    l_e = 0.1
-    Lx = np.arange(0.1,0.5,0.1)
-    Ly, Lz = Lx, Lx
-    k = get_spring_constants(E, nu, l_e)
-    strains = np.arange(-0.001,-0.21,-0.05)
-    for lx in Lx:
-        for ly in Ly:
-            for lz in Lz:
-                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
-                dimensions = [lx,ly,lz]
-                (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
-                springs = create_springs(node_posns,k,l_e,dimensions)
-                spring_representation_testing(springs,c,s)
-                for strain in strains:
-                    x0 = node_posns
-                    boundary_conditions = ('strain',('left','right'),strain)
-                    surface = boundary_conditions[1][0]
-                    if surface == 'right' or surface == 'left':
-                        pinned_axis = 0
-                    elif surface == 'top' or surface == 'bottom':
-                        pinned_axis = 2
-                    else:
-                        pinned_axis = 1
-                    x0[:,pinned_axis] *= (1+ boundary_conditions[2])
-                    spring_force = get_spring_force_magnitude(x0,c,s)
-                    spring_force_py = np.empty(x0.shape,dtype=np.float64)
-                    for i, posn in enumerate(x0):
-                        force_vector = get_spring_force_vector(i,posn,x0,spring_force)
-                        spring_force_py[i] = force_vector
-                    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
-                    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
-                    try:
-                        assert(np.allclose(spring_force_py,spring_force_cy))
-                        print('Testing passed')
-                        print('agreement between spring force calculation methods')
-                    except:
-                        print('Testing failed')
-                        print('mismatch between spring force calculations')
-                        print('Lx = {}, Ly = {}, Lz = {}'.format(lx, ly,lz))
-
-def spring_force_performance_test():
-    N_perfruns = 1000
-    E = 1
-    nu = 0.49
-    l_e = 0.1
-    Lx = np.arange(0.1,0.5,0.1)
-    Ly, Lz = Lx, Lx
-    k = get_spring_constants(E, nu, l_e)
-    strains = [-0.05]
-    py_time_tot = 0
-    cy_time_tot = 0
-    for lx in Lx:
-        for ly in Ly:
-            for lz in Lz:
-                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
-                dimensions = [lx,ly,lz]
-                (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
-                springs = create_springs(node_posns,k,l_e,dimensions)
-                for strain in strains:
-                    x0 = node_posns
-                    boundary_conditions = ('strain',('left','right'),strain)
-                    surface = boundary_conditions[1][0]
-                    if surface == 'right' or surface == 'left':
-                        pinned_axis = 0
-                    elif surface == 'top' or surface == 'bottom':
-                        pinned_axis = 2
-                    else:
-                        pinned_axis = 1
-                    x0[:,pinned_axis] *= (1+ boundary_conditions[2])
-                    start = time.perf_counter()
-                    for run_counter in range(N_perfruns):
-                        spring_force = get_spring_force_magnitude(x0,c,s)
-                        spring_force_py = np.empty(x0.shape,dtype=np.float64)
-                        for i, posn in enumerate(x0):
-                            force_vector = get_spring_force_vector(i,posn,x0,spring_force)
-                            spring_force_py[i] = force_vector
-                    end = time.perf_counter()
-                    py_time = end-start
-                    py_time_tot += py_time
-                    start = time.perf_counter()
-                    for run_counter in range(N_perfruns):
-                        spring_force_cy = np.empty(x0.shape,dtype=np.float64)
-                        get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
-                    end = time.perf_counter()
-                    cy_time = end-start
-                    print('Lx = {}, Ly = {}, Lz = {}'.format(lx, ly,lz))
-                    print('python time: {}, cython time: {}'.format(py_time,cy_time))
-                    print('Cython is {}x faster'.format(py_time/cy_time))
-                    cy_time_tot += cy_time
-    print('python time: {}, cython time: {}'.format(py_time_tot,cy_time_tot))
-    print('Cython is {}x faster'.format(py_time_tot/cy_time_tot))
 
 def main():
     E = 1
@@ -876,7 +525,6 @@ def main():
 
 
     node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
-    # (sparse_connectivity,sparse_separation) = create_connectivity_sparse(node_posns,elements,k,l_e)
     (c,s) = create_connectivity_v3(node_posns,k,l_e,dimensions)
     springs = create_springs(node_posns,k,l_e,dimensions)
     boundary_conditions = ('strain',('left','right'),.05)
@@ -900,13 +548,7 @@ def main():
         max_accel = np.max(np.linalg.norm(a,axis=1))
         print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
-        a_var = get_accelerations_post_simulation(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
-        a_var_v2 = get_accelerations_post_simulation_v2(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
-        try:
-            assert(np.allclose(a_var,a_var_v2))
-            print('agreement between post-sim acceleration calculations')
-        except:
-            print('post-sim acceleration calculations do not agree between methods')
+        a_var = get_accelerations_post_simulation_v2(posns,boundaries,c,s,elements,kappa,l_e,boundary_conditions)
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces))/(Ly*Lz)
@@ -947,7 +589,7 @@ def main():
 
 
 if __name__ == "__main__":
-    spring_force_performance_test()# main()
+    main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
