@@ -2,7 +2,7 @@ cimport cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, double[:] fixed_nodes):
+cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, long[:] fixed_nodes):
     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
     cdef int i
     cdef int j

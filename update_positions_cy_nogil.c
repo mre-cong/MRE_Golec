@@ -1800,6 +1800,9 @@ static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_d_dc_d
 /* ObjectToMemviewSlice.proto */
 static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_double(PyObject *, int writable_flag);
 
+/* ObjectToMemviewSlice.proto */
+static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_long(PyObject *, int writable_flag);
+
 /* GCCDiagnostics.proto */
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define __Pyx_HAS_GCC_DIAGNOSTIC
@@ -1895,6 +1898,7 @@ static void __pyx_memoryview_slice_assign_scalar(__Pyx_memviewslice *, int, size
 static void __pyx_memoryview__slice_assign_scalar(char *, Py_ssize_t *, Py_ssize_t *, int, size_t, void *); /*proto*/
 static PyObject *__pyx_unpickle_Enum__set_state(struct __pyx_MemviewEnum_obj *, PyObject *); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_double = { "double", NULL, sizeof(double), { 0 }, 0, 'R', 0, 0 };
+static __Pyx_TypeInfo __Pyx_TypeInfo_long = { "long", NULL, sizeof(long), { 0 }, 0, IS_UNSIGNED(long) ? 'U' : 'I', IS_UNSIGNED(long), 0 };
 #define __Pyx_MODULE_NAME "update_positions_cy_nogil"
 extern int __pyx_module_is_main_update_positions_cy_nogil;
 int __pyx_module_is_main_update_positions_cy_nogil = 0;
@@ -2186,7 +2190,7 @@ static PyObject *__pyx_codeobj__26;
 /* "update_positions_cy_nogil.pyx":5
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, double[:] fixed_nodes):             # <<<<<<<<<<<<<<
+ * cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, long[:] fixed_nodes):             # <<<<<<<<<<<<<<
  *     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
  *     cdef int i
  */
@@ -2385,7 +2389,7 @@ static PyObject *__pyx_f_25update_positions_cy_nogil_update_positions(__Pyx_memv
   /* "update_positions_cy_nogil.pyx":5
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, double[:] fixed_nodes):             # <<<<<<<<<<<<<<
+ * cpdef update_positions(double[:,::1] x0,double[:,::1] v0,double[:,::1] a,double[:,::1] x1,double[:,::1] v1,double dt,double[:] m,double[:,::1] spring_force,double[:,::1] volume_correction_force, double drag,double[:,::1] bc_forces, long[:] fixed_nodes):             # <<<<<<<<<<<<<<
  *     """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
  *     cdef int i
  */
@@ -2560,7 +2564,7 @@ static PyObject *__pyx_pw_25update_positions_cy_nogil_1update_positions(PyObject
     __pyx_v_volume_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[8], PyBUF_WRITABLE); if (unlikely(!__pyx_v_volume_correction_force.memview)) __PYX_ERR(0, 5, __pyx_L3_error)
     __pyx_v_drag = __pyx_PyFloat_AsDouble(values[9]); if (unlikely((__pyx_v_drag == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 5, __pyx_L3_error)
     __pyx_v_bc_forces = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[10], PyBUF_WRITABLE); if (unlikely(!__pyx_v_bc_forces.memview)) __PYX_ERR(0, 5, __pyx_L3_error)
-    __pyx_v_fixed_nodes = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[11], PyBUF_WRITABLE); if (unlikely(!__pyx_v_fixed_nodes.memview)) __PYX_ERR(0, 5, __pyx_L3_error)
+    __pyx_v_fixed_nodes = __Pyx_PyObject_to_MemoryviewSlice_ds_long(values[11], PyBUF_WRITABLE); if (unlikely(!__pyx_v_fixed_nodes.memview)) __PYX_ERR(0, 5, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -20361,6 +20365,29 @@ __pyx_fail:
     retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
                                                  PyBUF_RECORDS_RO | writable_flag, 1,
                                                  &__Pyx_TypeInfo_double, stack,
+                                                 &result, obj);
+    if (unlikely(retcode == -1))
+        goto __pyx_fail;
+    return result;
+__pyx_fail:
+    result.memview = NULL;
+    result.data = NULL;
+    return result;
+}
+
+/* ObjectToMemviewSlice */
+  static CYTHON_INLINE __Pyx_memviewslice __Pyx_PyObject_to_MemoryviewSlice_ds_long(PyObject *obj, int writable_flag) {
+    __Pyx_memviewslice result = { 0, 0, { 0 }, { 0 }, { 0 } };
+    __Pyx_BufFmt_StackElem stack[1];
+    int axes_specs[] = { (__Pyx_MEMVIEW_DIRECT | __Pyx_MEMVIEW_STRIDED) };
+    int retcode;
+    if (obj == Py_None) {
+        result.memview = (struct __pyx_memoryview_obj *) Py_None;
+        return result;
+    }
+    retcode = __Pyx_ValidateAndInit_memviewslice(axes_specs, 0,
+                                                 PyBUF_RECORDS_RO | writable_flag, 1,
+                                                 &__Pyx_TypeInfo_long, stack,
                                                  &result, obj);
     if (unlikely(retcode == -1))
         goto __pyx_fail;

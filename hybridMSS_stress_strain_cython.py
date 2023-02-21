@@ -35,7 +35,7 @@ import lib_programname
 import tables as tb#pytables, for HDF5 interface
 import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
-import update_positions_cy
+import update_positions_cy_nogil
 
 #remember, purpose, signature, stub
 
@@ -549,28 +549,43 @@ def update_positions_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,di
     get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
     update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc)
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
-    update_positions_cy.update_positions(x0,v0,a_cy,x1_cy,v1_cy,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
+    update_positions_cy_nogil.update_positions(x0,v0,a_cy,x1_cy,v1_cy,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
     try:
         assert(np.allclose(x1_cy,x1))
         print('positions match between methods for update_positions()')
     except:
         print('positions do not match between methods for update_positions()')
+        print(str(x1-x1_cy))
+        print('the square root of the sum of the square of the differences in position is ' + str(np.sqrt(np.sum((x1-x1_cy)**2))))
+        x1_diff = x1-x1_cy
+        max_pct_error = 0
+        for i in range(x1.shape[0]):
+            for j in range(x1.shape[1]):
+                if x1_cy[i,j] == 0:
+                    pct_error = -1
+                else:
+                    pct_error = x1_diff[i,j]/x1_cy[i,j]
+                if pct_error > max_pct_error:
+                    max_pct_error = pct_error
+        print('max percent error is ' + str(max_pct_error*100) + '%')
+        if max_pct_error*100 > 0.01:
+            print('large error')
     try:
         assert(np.allclose(v1_cy,v1))
-        print('positions match between methods for update_positions()')
+        print('velocities match between methods for update_positions()')
     except:
-        print('positions do not match between methods for update_positions()')
+        print('velocities do not match between methods for update_positions()')
     try:
         assert(np.allclose(a_cy,a))
-        print('positions match between methods for update_positions()')
+        print('accelerations match between methods for update_positions()')
     except:
-        print('positions do not match between methods for update_positions()')
+        print('accelerations do not match between methods for update_positions()')
 
 def update_positions_testing_suite():
     E = 1
     nu = 0.49
-    l_e = .1#cubic element side length
-    Lx = np.arange(0.1,0.5,0.1)
+    l_e = 1e-8#cubic element side length
+    Lx = np.arange(1e-8,5e-8,1e-8)
     Ly, Lz = Lx, Lx
     dt = 1e-3
     k = get_spring_constants(E, nu, l_e)
@@ -581,7 +596,7 @@ def update_positions_testing_suite():
         for ly in Ly:
             for lz in Lz:
                 dimensions = [lx,ly,lz]
-                node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
+                node_posns,elements,boundaries = discretize_space(lx,ly,lz,l_e)
                 springs = create_springs(node_posns,k,l_e,dimensions)
                 x0 = node_posns
                 v0 = np.zeros(x0.shape)
