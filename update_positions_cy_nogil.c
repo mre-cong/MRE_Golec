@@ -2328,7 +2328,7 @@ static PyObject *__pyx_f_25update_positions_cy_nogil_update_positions(__Pyx_memv
  *                 x1[i,j] = a[i,j] * dt * dt + v0[i,j] * dt + x0[i,j]
  *         for i in range(fixed_nodes.shape[0]):#after the fact, can place nodes back into position if they are supposed to be held fixed             # <<<<<<<<<<<<<<
  *             for j in range(3):
- *                 x1[i,j] = x0[i,j]
+ *                 x1[fixed_nodes[i],j] = x0[fixed_nodes[i],j]
  */
         __pyx_t_1 = (__pyx_v_fixed_nodes.shape[0]);
         __pyx_t_2 = __pyx_t_1;
@@ -2339,8 +2339,8 @@ static PyObject *__pyx_f_25update_positions_cy_nogil_update_positions(__Pyx_memv
  *                 x1[i,j] = a[i,j] * dt * dt + v0[i,j] * dt + x0[i,j]
  *         for i in range(fixed_nodes.shape[0]):#after the fact, can place nodes back into position if they are supposed to be held fixed
  *             for j in range(3):             # <<<<<<<<<<<<<<
- *                 x1[i,j] = x0[i,j]
- *                 #because of the scaling difference with simulation size between the number of surface nodes that could be held fixed and the total number of nodes, the overhead from any kind of conditional check to prevent motion is probably greater than the cost of updating and then reverting the positions of nodes that are held fixed in place at a relatively small cutoff threshold (in terms of simulation volume by number of elements)
+ *                 x1[fixed_nodes[i],j] = x0[fixed_nodes[i],j]
+ *                 a[fixed_nodes[i],j] = 0
  */
           for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
             __pyx_v_j = __pyx_t_4;
@@ -2348,14 +2348,28 @@ static PyObject *__pyx_f_25update_positions_cy_nogil_update_positions(__Pyx_memv
             /* "update_positions_cy_nogil.pyx":17
  *         for i in range(fixed_nodes.shape[0]):#after the fact, can place nodes back into position if they are supposed to be held fixed
  *             for j in range(3):
- *                 x1[i,j] = x0[i,j]             # <<<<<<<<<<<<<<
+ *                 x1[fixed_nodes[i],j] = x0[fixed_nodes[i],j]             # <<<<<<<<<<<<<<
+ *                 a[fixed_nodes[i],j] = 0
  *                 #because of the scaling difference with simulation size between the number of surface nodes that could be held fixed and the total number of nodes, the overhead from any kind of conditional check to prevent motion is probably greater than the cost of updating and then reverting the positions of nodes that are held fixed in place at a relatively small cutoff threshold (in terms of simulation volume by number of elements)
  */
             __pyx_t_8 = __pyx_v_i;
+            __pyx_t_7 = (*((long *) ( /* dim=0 */ (__pyx_v_fixed_nodes.data + __pyx_t_8 * __pyx_v_fixed_nodes.strides[0]) )));
+            __pyx_t_11 = __pyx_v_j;
+            __pyx_t_12 = __pyx_v_i;
+            __pyx_t_10 = (*((long *) ( /* dim=0 */ (__pyx_v_fixed_nodes.data + __pyx_t_12 * __pyx_v_fixed_nodes.strides[0]) )));
+            __pyx_t_9 = __pyx_v_j;
+            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_x1.data + __pyx_t_10 * __pyx_v_x1.strides[0]) )) + __pyx_t_9)) )) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_x0.data + __pyx_t_7 * __pyx_v_x0.strides[0]) )) + __pyx_t_11)) )));
+
+            /* "update_positions_cy_nogil.pyx":18
+ *             for j in range(3):
+ *                 x1[fixed_nodes[i],j] = x0[fixed_nodes[i],j]
+ *                 a[fixed_nodes[i],j] = 0             # <<<<<<<<<<<<<<
+ *                 #because of the scaling difference with simulation size between the number of surface nodes that could be held fixed and the total number of nodes, the overhead from any kind of conditional check to prevent motion is probably greater than the cost of updating and then reverting the positions of nodes that are held fixed in place at a relatively small cutoff threshold (in terms of simulation volume by number of elements)
+ */
+            __pyx_t_8 = __pyx_v_i;
+            __pyx_t_11 = (*((long *) ( /* dim=0 */ (__pyx_v_fixed_nodes.data + __pyx_t_8 * __pyx_v_fixed_nodes.strides[0]) )));
             __pyx_t_7 = __pyx_v_j;
-            __pyx_t_11 = __pyx_v_i;
-            __pyx_t_12 = __pyx_v_j;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_x1.data + __pyx_t_11 * __pyx_v_x1.strides[0]) )) + __pyx_t_12)) )) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_x0.data + __pyx_t_8 * __pyx_v_x0.strides[0]) )) + __pyx_t_7)) )));
+            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_a.data + __pyx_t_11 * __pyx_v_a.strides[0]) )) + __pyx_t_7)) )) = 0.0;
           }
         }
       }

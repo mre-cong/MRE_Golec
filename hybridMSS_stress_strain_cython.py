@@ -65,10 +65,13 @@ def simulate(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundar
     for s in range(time_steps):
         x1, v1, a = timestep(x0,v0,m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
         # below, setting a convergence criteria check on the sum of norms of the forces on each vertex, and the max norm of force on any vertex
-        if (np.max(np.linalg.norm(a,axis=1)) <=tol*1e3 or np.sum(np.linalg.norm(a,axis=1)) <= tol):
-            break
-        else:
-            x0, v0 = x1, v1
+        try:
+            if (np.max(np.linalg.norm(a,axis=1)) <=tol*1e3 or np.sum(np.linalg.norm(a,axis=1)) <= tol):
+                break
+            else:
+                x0, v0 = x1, v1
+        except RuntimeWarning:
+            print('bar')
     print('sum of the norms of the accelerations was '+ str(np.sum(np.linalg.norm(a,axis=1))))
     return x1, v1, a#return positions, and velocities, and accelerations/forces, want to get an idea of how close to equilibrium i am. may want to set things up so the simulation runs until a keyboard interrupt (i think there's a way to include an object that listens for keyboard input), and checks if equilibrium has been reached (largest force being less than some threshold)
 
@@ -121,7 +124,10 @@ def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     volume_correction_force = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
     spring_force = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    try:
+        get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    except ZeroDivisionError:
+        print('foo')
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
     update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
     return x1, v1, a
@@ -404,7 +410,7 @@ def get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_
     get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
     for i, posn in enumerate(x0):
         if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
-            a[i] = spring_force_cy[i]/m[i] + correction_force_cy_nogil[i]
+            a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
         else:
             a[i] = 0
     return a
@@ -736,13 +742,13 @@ def update_positions_perf_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundari
     return py_time,cy_time
 def main():
     E = 1
-    nu = 0.49
+    nu = 0.0
     l_e = .1#cubic element side length
-    Lx = 0.5
-    Ly = 0.5
-    Lz = 0.5
+    Lx = .5
+    Ly = .5
+    Lz = .5
     dt = 1e-3
-    N_iter = 2000
+    N_iter = 10000
     dimensions = [Lx,Ly,Lz]
     k = get_spring_constants(E, nu, l_e)
     kappa = get_kappa(E, nu)
@@ -753,7 +759,7 @@ def main():
     boundary_conditions = ('strain',('left','right'),.05)
 
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.81,-0.2)
+    strains = np.arange(-.001,-0.91,-0.1)
     
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
@@ -773,7 +779,7 @@ def main():
         a_var = get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
-        boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces))/(Ly*Lz)
+        boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         
     fig = plt.figure()
@@ -781,7 +787,7 @@ def main():
     plt.plot(strains,boundary_stress_xx_magnitude)
     ax.set_xlabel('strain_xx')
     ax.set_ylabel('stress_xx')
-    plt.savefig('/home/leshy/MRE_Golec/stress-strain.png')
+    plt.savefig('/home/leshy/MRE_Golec/stress-strain_nu0.png')
     plt.close()
 
     fig = plt.figure()
@@ -789,7 +795,7 @@ def main():
     plt.plot(strains,effective_modulus)
     ax.set_xlabel('strain_xx')
     ax.set_ylabel('effective modulus')
-    plt.savefig('/home/leshy/MRE_Golec/strain-modulus.png')
+    plt.savefig('/home/leshy/MRE_Golec/strain-modulus_nu0.png')
     plt.close()
 
     # check if the directory for output exists, if not make the directory
