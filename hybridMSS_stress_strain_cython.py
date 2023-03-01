@@ -27,8 +27,7 @@ Created on Fri Aug 26 09:19:19 2022
 
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.spatial as sci
-import scipy.sparse
+import scipy.integrate as sci
 import time
 import os
 import lib_programname
@@ -74,6 +73,30 @@ def simulate(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundar
             print('bar')
     print('sum of the norms of the accelerations was '+ str(np.sum(np.linalg.norm(a,axis=1))))
     return x1, v1, a#return positions, and velocities, and accelerations/forces, want to get an idea of how close to equilibrium i am. may want to set things up so the simulation runs until a keyboard interrupt (i think there's a way to include an object that listens for keyboard input), and checks if equilibrium has been reached (largest force being less than some threshold)
+
+def simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f):
+    """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
+    
+    epsilon = np.spacing(1)
+    tol = epsilon*1e5
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection= '3d')
+    x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
+    if boundary_conditions[0] == 'strain':
+        # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
+        surface = boundary_conditions[1][0]
+        if surface == 'right' or surface == 'left':
+            pinned_axis = 0
+        elif surface == 'top' or surface == 'bottom':
+            pinned_axis = 2
+        else:
+            pinned_axis = 1
+        x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+        # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler 
+        # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
+    y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions))
+    return sol#returning a solution object, that can then have it's attributes inspected
 
 # placeholder functions for doing purpose, signature, stub when doing planning/design and wishlisting
 def do_stuff():
@@ -124,12 +147,18 @@ def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     volume_correction_force = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
     spring_force = np.empty(x0.shape,dtype=np.float64)
-    try:
-        get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
-    except ZeroDivisionError:
-        print('foo')
+    # try:
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    # except ZeroDivisionError:
+    #     print('foo')
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
     update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
+    # if np.any(np.isnan(volume_correction_force)):
+    #     print('volumecf')
+    # if np.any(np.isnan(spring_force)):
+    #     print('springforce')
+    # if np.any(np.isnan(x1)):
+    #     print('position')
     return x1, v1, a
 
 #how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
@@ -429,8 +458,6 @@ def post_plot(node_posns,connectivity,stiffness_constants):
     fig = plt.figure()
     ax = fig.add_subplot(projection= '3d')
     ax.scatter(x0[:,0],x0[:,1],x0[:,2],'o')
-    plt.cla()
-    ax.scatter(x0[:,0],x0[:,1],x0[:,2],'o')
     ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
     ax.set_ylim((0,1.2*node_posns[:,1].max()))
     ax.set_zlim((0,1.2*node_posns[:,2].max()))
@@ -444,7 +471,53 @@ def post_plot(node_posns,connectivity,stiffness_constants):
                           np.array((x0[i,1],x0[j,1])),
                           np.array((x0[i,2],x0[j,2])))
                 ax.plot(x,y,z)
-                
+
+def post_plot_v2(node_posns,springs,boundary_conditions,output_dir):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    ax.scatter(node_posns[:,0],node_posns[:,1],node_posns[:,2],'o')
+    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
+    ax.set_ylim((0,1.2*node_posns[:,1].max()))
+    ax.set_zlim((0,1.2*node_posns[:,2].max()))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    for spring in springs:
+        x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                          np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                          np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+        ax.plot(x,y,z)
+    savename = output_dir + 'post_plotv2' + str(boundary_conditions[2]) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def post_plot_v3(node_posns,springs,boundary_conditions,boundaries,output_dir):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    boundary_nodes = np.zeros((1,),dtype=int)
+    for key, val in boundaries.items():
+        boundary_nodes = np.concatenate((boundary_nodes,val))
+    ax.scatter(node_posns[boundary_nodes,0],node_posns[boundary_nodes,1],node_posns[boundary_nodes,2],'o')    
+    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
+    ax.set_ylim((0,1.2*node_posns[:,1].max()))
+    ax.set_zlim((0,1.2*node_posns[:,2].max()))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    boundary_nodes = set(np.unique(boundary_nodes))
+    for spring in springs:
+        subset = set(spring[:2])
+        if subset < boundary_nodes:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
+            x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                            np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                            np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+            ax.plot(x,y,z)
+    savename = output_dir + 'post_plotv3' + str(boundary_conditions[2]) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
 class Simulation(object):
     """A simulation has properties which define the simulation. These include the Modulus, Poisson's ratio, cubic element side length, simulation dimensions.
     
@@ -465,11 +538,11 @@ class Simulation(object):
         self.Lx = Lx
         self.Ly = Ly
         self.Lz = Lz
-        self.t = 0
+        self.t_f = 0
         self.N_iter = 0
         
     def set_time(self,time):
-        self.t = time
+        self.t_f = time
         
     def set_iterations(self,N_iter):
         self.N_iter = N_iter
@@ -495,10 +568,24 @@ def write_log(simulation,output_dir):
         f_obj.writelines([simulation.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     
-def write_init_file(posns,springs,k,elements,output_dir):
-    """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
-    f = tb.open_file(output_dir+'temp.h5','w')
+def write_init_file(posns,springs,boundaries,output_dir):
+    """Write out the vertex positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
+    f = tb.open_file(output_dir+'init.h5','w')
     f.create_array('/','vertex_posns',posns)
+    f.create_array('/','springs',springs)
+    # f.create_array('/','boundary_nodes',boundaries)
+    # posn_dt = np.dtype([('x',np.float64),('y',np.float64),('z',np.float64)])
+    # f.create_table('/','vertex_posns',posn_dt)
+    # f.root.vertex_posns.append(posns)
+    f.close()
+
+def write_output_file(count,posns,boundary_conditions,output_dir):
+    """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
+    f = tb.open_file(output_dir+'final_posns.h5','w')
+    f.create_array('/','node_posns'+str(count),posns)
+    # datatype = np.dtype((('bc_type',str),(('boundary',str),('boundary',str)),('value',float)))
+    # f.create_table('/','boundary_conditions',datatype)
+    # f.root.boundary_conditions.append(boundary_conditions)
     # posn_dt = np.dtype([('x',np.float64),('y',np.float64),('z',np.float64)])
     # f.create_table('/','vertex_posns',posn_dt)
     # f.root.vertex_posns.append(posns)
@@ -740,15 +827,151 @@ def update_positions_perf_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundari
         if max_pct_error*100 > 0.01:
             print('large error')
     return py_time,cy_time
+
+#function to pass to scipy.integrate.solve_ivp()
+#must be of the form fun(t,y)
+#can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
+def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
+    N = int(np.round(y.shape[0]/2))
+    x0 = np.reshape(y[:N],(int(np.round(N/3)),3))
+    v0 = np.reshape(y[N:],(int(np.round(N/3)),3))
+    N = x0.shape[0]
+    drag = 1
+    bc_forces = np.zeros(x0.shape,dtype=float)
+    if bc[0] == 'stress':
+        for surface in bc[1]:
+            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
+            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
+            if surface == 'left' or surface == 'right':
+                surface_area = dimensions[0]*dimensions[2]
+            elif surface == 'top' or surface == 'bottom':
+                surface_area = dimensions[0]*dimensions[1]
+            else:
+                surface_area = dimensions[1]*dimensions[2]
+            # assuming tension force only, no compression
+            if surface == 'right':
+                force_direction = np.array([1,0,0])
+            elif surface == 'left':
+                force_direction = np.array([-1,0,0])
+            elif surface == 'top':
+                force_direction = np.array([0,0,1])
+            elif surface == 'bottom':
+                force_direction = np.array([0,0,-1])
+            elif surface == 'front':
+                force_direction = np.array([0,1,0])
+            elif surface == 'back':
+                force_direction = np.array([0,-1,0])
+            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
+            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
+    elif bc[0] == 'strain':
+        for surface in bc[1]:
+            do_stuff()
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    volume_correction_force = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
+    # update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
+    accel = (spring_force + volume_correction_force - drag * v0 + 
+             bc_forces)/m[:,np.newaxis]
+    for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
+        for j in range(3):
+            accel[fixed_nodes[i],j] = 0
+            # v0[fixed_nodes[i],j] = 0#this shouldn't be necessary, since the initial conditions have the velocities set to zero, the accelerations being set to zero means they should never change (and there was overhead associated with this additional random access write)
+    accel = np.reshape(accel,(3*N,1))
+    result = np.concatenate((v0.reshape((3*N,1)),accel))
+    result = np.reshape(result,(result.shape[0],))
+    return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
+
+def scipy_style():
+    E = 1
+    nu = 0.499
+    l_e = .1#cubic element side length
+    Lx = 1.0
+    Ly = 1.0
+    Lz = 1.0
+    dimensions = [Lx,Ly,Lz]
+    k = get_spring_constants(E, nu, l_e)
+    kappa = get_kappa(E, nu)
+    t_f = 15
+
+    node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
+    springs = create_springs(node_posns,k,l_e,dimensions)
+    boundary_conditions = ('strain',('left','right'),.05)
+
+    script_name = lib_programname.get_path_executed_script()
+    # check if the directory for output exists, if not make the directory
+    current_dir = os.path.abspath('.')
+    output_dir = current_dir + '/results/' + script_name.stem + '/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+
+    my_sim = Simulation(E,nu,l_e,Lx,Ly,Lz)
+    my_sim.set_time(t_f)
+    write_log(my_sim,output_dir)
+    write_init_file(node_posns,springs,boundaries,output_dir)
+    # strains = np.array([0.01])
+    strains = np.arange(-.001,-0.91,-0.1)
+    
+    effective_modulus = np.zeros(strains.shape)
+    boundary_stress_xx_magnitude = np.zeros(strains.shape)
+    for count, strain in enumerate(strains):
+        boundary_conditions = ('strain',('left','right'),strain)
+        try:
+            start = time.time()
+            sol = simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f)
+        except Exception as inst:
+            print('Exception raised during simulation')
+            print(type(inst))
+            print(inst)
+        # post_plot(posns,c,k)
+        end = time.time()
+        delta = end - start
+        end_result = sol.y[:,-1]
+        posns = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
+        # max_accel = np.max(np.linalg.norm(a,axis=1))
+        # print('max acceleration was %.4f' % max_accel)
+        print('took %.2f seconds to simulate' % delta)
+        a_var = get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
+        m = 1e-2
+        end_boundary_forces = a_var[boundaries['right']]*m
+        boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
+        effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
+        write_output_file(count,posns,boundary_conditions,output_dir)
+        post_plot_v2(posns,springs,boundary_conditions,output_dir)
+        post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
+    
+    fig = plt.figure()
+    ax = fig.gca()
+    plt.plot(strains,boundary_stress_xx_magnitude)
+    ax.set_xlabel('strain_xx')
+    ax.set_ylabel('stress_xx')
+    savename = output_dir + 'stress-strain.png'
+    plt.savefig(savename)
+    plt.close()
+
+    fig = plt.figure()
+    ax = fig.gca()
+    plt.plot(strains,effective_modulus)
+    ax.set_xlabel('strain_xx')
+    ax.set_ylabel('effective modulus')
+    savename = output_dir + 'strain-modulus.png'
+    plt.savefig(savename)
+    plt.close()
+
 def main():
     E = 1
-    nu = 0.0
+    nu = 0.499
     l_e = .1#cubic element side length
     Lx = .5
     Ly = .5
     Lz = .5
     dt = 1e-3
-    N_iter = 10000
+    N_iter = 15000
     dimensions = [Lx,Ly,Lz]
     k = get_spring_constants(E, nu, l_e)
     kappa = get_kappa(E, nu)
@@ -757,9 +980,19 @@ def main():
     node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
     springs = create_springs(node_posns,k,l_e,dimensions)
     boundary_conditions = ('strain',('left','right'),.05)
+    script_name = lib_programname.get_path_executed_script()
+    # check if the directory for output exists, if not make the directory
+    current_dir = os.path.abspath('.')
+    output_dir = current_dir + '/results/' + script_name + '/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+
+    my_sim = Simulation(E,nu,l_e,Lx,Ly,Lz)
+    write_log(my_sim,output_dir)
+    write_init_file(posns,springs,boundaries,output_dir)
 
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.91,-0.1)
+    strains = np.arange(-.001,-0.81,-0.1)
     
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
@@ -781,13 +1014,16 @@ def main():
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        
+        post_plot_v2(posns,springs,boundary_conditions,output_dir)
+        post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
+    
     fig = plt.figure()
     ax = fig.gca()
     plt.plot(strains,boundary_stress_xx_magnitude)
     ax.set_xlabel('strain_xx')
     ax.set_ylabel('stress_xx')
-    plt.savefig('/home/leshy/MRE_Golec/stress-strain_nu0.png')
+    savename = output_dir + 'stress-strain.png'
+    plt.savefig(savename)
     plt.close()
 
     fig = plt.figure()
@@ -795,20 +1031,12 @@ def main():
     plt.plot(strains,effective_modulus)
     ax.set_xlabel('strain_xx')
     ax.set_ylabel('effective modulus')
-    plt.savefig('/home/leshy/MRE_Golec/strain-modulus_nu0.png')
-    plt.close()
+    savename = output_dir + 'strain-modulus.png'
+    plt.savefig(savename)
+    plt.close() 
 
-    # check if the directory for output exists, if not make the directory
-    current_dir = os.path.abspath('.')+'\\'
-    output_dir = current_dir+'golec_output\\'
-    if not (os.path.isdir(output_dir)):
-        os.mkdir(output_dir)
-
-    script_name = lib_programname.get_path_executed_script()
-
-    my_sim = Simulation()
-    write_log(my_sim,output_dir)
-    write_init_file(node_posns,springs,k,elements,output_dir)
+    
+    
 # f = tb.open_file(output_dir+'temp.h5')
 # calculate approximate volumes of each element after simulation
 #deformed_avg_vecs = get_average_edge_vectors(posns, elements)
@@ -816,7 +1044,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    scipy_style()
+    #main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
