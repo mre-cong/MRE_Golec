@@ -95,6 +95,7 @@ def simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boun
         # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler 
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
     sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions))
     return sol#returning a solution object, that can then have it's attributes inspected
 
@@ -205,6 +206,22 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
     node_posns = np.concatenate((np.reshape(x,np.size(x))[:,np.newaxis],
                                 np.reshape(y,np.size(y))[:,np.newaxis],
                                 np.reshape(z,np.size(z))[:,np.newaxis]),1)
+    elements = get_elements(node_posns,Lx,Ly,Lz,cube_side_length)
+    boundaries = get_boundaries(node_posns)
+    return node_posns, np.int32(elements), boundaries
+
+def get_boundaries(node_posns):
+    top_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].max())[0]
+    bot_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].min())[0]
+    left_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].min())[0]
+    right_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].max())[0]
+    front_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].min())[0]
+    back_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].max())[0]
+    boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}  
+    return boundaries
+ 
+def get_elements(node_posns,Lx,Ly,Lz,cube_side_length):
+    """given the node/vertex positions, dimensions of the simulated volume, and volume element edge length, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
     #need to keep track of which nodes belong to a unit cell (at some point)
     N_el_x = np.int32(round(Lx/cube_side_length))
     N_el_y = np.int32(round(Ly/cube_side_length))
@@ -219,14 +236,7 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
             for k in range(N_el_x):
                 elements[counter,:] = np.nonzero((node_posns[:,0] <= cube_side_length*(k+1)) & (node_posns[:,0] >= cube_side_length*k) & (node_posns[:,1] >= cube_side_length*j) & (node_posns[:,1] <= cube_side_length*(j+1)) & (node_posns[:,2] >= cube_side_length*i) & (node_posns[:,2] <= cube_side_length*(i+1)))[0]
                 counter += 1
-    top_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].max())[0]
-    bot_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].min())[0]
-    left_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].min())[0]
-    right_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].max())[0]
-    front_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].min())[0]
-    back_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].max())[0]
-    boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}
-    return node_posns, np.int32(elements), boundaries
+    return elements
 
     #given the node positions and stiffness constants for the different types of springs, calculate and return a list of springs, which is  N_springs x 4, where each row represents a spring, and the columns are [node_i_rowidx, node_j_rowidx, stiffness, equilibrium_length]
 def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
@@ -833,6 +843,7 @@ def update_positions_perf_testing(x0,v0,m,elements,springs,kappa,l_e,bc,boundari
 #can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
 def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
+    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
     x0 = np.reshape(y[:N],(int(np.round(N/3)),3))
     v0 = np.reshape(y[N:],(int(np.round(N/3)),3))
@@ -875,7 +886,6 @@ def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     spring_force = np.empty(x0.shape,dtype=np.float64)
     get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
-    # update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
     for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
@@ -885,6 +895,7 @@ def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     accel = np.reshape(accel,(3*N,1))
     result = np.concatenate((v0.reshape((3*N,1)),accel))
     result = np.reshape(result,(result.shape[0],))
+    #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
 def scipy_style():

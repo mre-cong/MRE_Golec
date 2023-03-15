@@ -335,9 +335,12 @@ def main():
     N_nodes = node_posns.shape[0]
     cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
     size_edges = edges.shape[0]
-    grid_size = (int (np.ceil(size_edges/1024)))
+    grid_size = (int (np.ceil((int (np.ceil(size_edges/128)))/14)*14))
     start = time.perf_counter()
-    spring_kernel((grid_size,),(1024,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+    spring_kernel((grid_size,),(128,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+    # grid_size = (int (np.ceil(size_edges/1024)))
+    # start = time.perf_counter()
+    # spring_kernel((grid_size,),(1024,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
     # cp.cuda.runtime.deviceSynchronize()
     print(cp.ndarray.get(cupy_forces).reshape((N_nodes,3)))
     end = time.perf_counter()
