@@ -41,40 +41,6 @@ import mre.initialize
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-
-# !!! might want to wrap this method into the Simulation class, so that the actual interface is... cleaner. i can let the user (me) set the parameters, then run some initialization method (or have the constructor run the other methods for setting things up, like the connectivity, elements, and stiffnesses). then a method for running the simulation
-def simulate(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,time_steps,dt):
-    """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. Connectivity is the N_vertices by N_vertices array whose elements connectivity[i,j] are zero if there is no spring/elastic coupling between vertex i and j, and the numeric stiffness constant value otherwise. Separations is the N_vertices by N_vertices numpy array whose elements are the magnitude of separation of each vertex pair at elastic equilibrium. kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. time_steps is the number of iterations to calculate, and dt is the time step for each iteration."""
-    
-    epsilon = np.spacing(1)
-    tol = epsilon*1e5
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection= '3d')
-    x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
-    if boundary_conditions[0] == 'strain':
-        # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
-        surface = boundary_conditions[1][0]
-        if surface == 'right' or surface == 'left':
-            pinned_axis = 0
-        elif surface == 'top' or surface == 'bottom':
-            pinned_axis = 2
-        else:
-            pinned_axis = 1
-        x0[:,pinned_axis] *= (1+ boundary_conditions[2])
-        # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
-    for s in range(time_steps):
-        x1, v1, a = timestep(x0,v0,m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions,dt)
-        # below, setting a convergence criteria check on the sum of norms of the forces on each vertex, and the max norm of force on any vertex
-        try:
-            if (np.max(np.linalg.norm(a,axis=1)) <=tol*1e3 or np.sum(np.linalg.norm(a,axis=1)) <= tol):
-                break
-            else:
-                x0, v0 = x1, v1
-        except RuntimeWarning:
-            print('bar')
-    print('sum of the norms of the accelerations was '+ str(np.sum(np.linalg.norm(a,axis=1))))
-    return x1, v1, a#return positions, and velocities, and accelerations/forces, want to get an idea of how close to equilibrium i am. may want to set things up so the simulation runs until a keyboard interrupt (i think there's a way to include an object that listens for keyboard input), and checks if equilibrium has been reached (largest force being less than some threshold)
-
 def simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f):
     """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     
@@ -106,62 +72,6 @@ def do_stuff():
 
 def do_other_stuff():
     return 0
-
-def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
-    """computes the next position and velocity for the given masses, initial conditions, and timestep"""
-    N = len(x0)
-    drag = 1
-    x1 = np.empty(x0.shape,dtype=float)
-    v1 = np.empty(v0.shape,dtype=float)
-    a = np.empty(x0.shape,dtype=float)
-    bc_forces = np.zeros(x0.shape,dtype=float)
-    if bc[0] == 'stress':
-        for surface in bc[1]:
-            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
-            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
-            if surface == 'left' or surface == 'right':
-                surface_area = dimensions[0]*dimensions[2]
-            elif surface == 'top' or surface == 'bottom':
-                surface_area = dimensions[0]*dimensions[1]
-            else:
-                surface_area = dimensions[1]*dimensions[2]
-            # assuming tension force only, no compression
-            if surface == 'right':
-                force_direction = np.array([1,0,0])
-            elif surface == 'left':
-                force_direction = np.array([-1,0,0])
-            elif surface == 'top':
-                force_direction = np.array([0,0,1])
-            elif surface == 'bottom':
-                force_direction = np.array([0,0,-1])
-            elif surface == 'front':
-                force_direction = np.array([0,1,0])
-            elif surface == 'back':
-                force_direction = np.array([0,-1,0])
-            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
-            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
-    elif bc[0] == 'strain':
-        for surface in bc[1]:
-            do_stuff()
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    volume_correction_force = np.zeros((N,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
-    spring_force = np.empty(x0.shape,dtype=np.float64)
-    # try:
-    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
-    # except ZeroDivisionError:
-    #     print('foo')
-    fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
-    update_positions_cy_nogil.update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,fixed_nodes)
-    # if np.any(np.isnan(volume_correction_force)):
-    #     print('volumecf')
-    # if np.any(np.isnan(spring_force)):
-    #     print('springforce')
-    # if np.any(np.isnan(x1)):
-    #     print('position')
-    return x1, v1, a
 
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
