@@ -254,7 +254,7 @@ def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
-def scipy_style():
+def main():
     E = 1
     nu = 0.499
     l_e = .1#cubic element side length
@@ -328,81 +328,7 @@ def scipy_style():
     ax.set_ylabel('effective modulus')
     savename = output_dir + 'strain-modulus.png'
     plt.savefig(savename)
-    plt.close()
-
-def main():
-    E = 1
-    nu = 0.499
-    l_e = .1#cubic element side length
-    Lx = .5
-    Ly = .5
-    Lz = .5
-    dt = 1e-3
-    N_iter = 15000
-    dimensions = [Lx,Ly,Lz]
-    k = mre.initialize.get_spring_constants(E, nu, l_e)
-    kappa = mre.initialize.get_kappa(E, nu)
-
-
-    node_posns,elements,boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-    springs = mre.initialize.create_springs(node_posns,k,l_e,dimensions)
-    boundary_conditions = ('strain',('left','right'),.05)
-    script_name = lib_programname.get_path_executed_script()
-    # check if the directory for output exists, if not make the directory
-    current_dir = os.path.abspath('.')
-    output_dir = current_dir + '/results/' + script_name + '/'
-    if not (os.path.isdir(output_dir)):
-        os.mkdir(output_dir)
-
-    my_sim = mre.initialize.Simulation(E,nu,l_e,Lx,Ly,Lz)
-    mre.initialize.write_log(my_sim,output_dir)
-    mre.initialize.write_init_file(posns,springs,boundaries,output_dir)
-
-    # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.81,-0.1)
-    
-    effective_modulus = np.zeros(strains.shape)
-    boundary_stress_xx_magnitude = np.zeros(strains.shape)
-    for count, strain in enumerate(strains):
-        boundary_conditions = ('strain',('left','right'),strain)
-        try:
-            start = time.time()
-            posns, v, a = simulate(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,N_iter,dt)
-        except:
-            print('Exception raised during simulation')
-        # post_plot(posns,c,k)
-        end = time.time()
-        delta = end - start
-        max_accel = np.max(np.linalg.norm(a,axis=1))
-        print('max acceleration was %.4f' % max_accel)
-        print('took %.2f seconds to simulate' % delta)
-        a_var = get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
-        m = 1e-2
-        end_boundary_forces = a_var[boundaries['right']]*m
-        boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
-        effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        post_plot_v2(posns,springs,boundary_conditions,output_dir)
-        post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
-    
-    fig = plt.figure()
-    ax = fig.gca()
-    plt.plot(strains,boundary_stress_xx_magnitude)
-    ax.set_xlabel('strain_xx')
-    ax.set_ylabel('stress_xx')
-    savename = output_dir + 'stress-strain.png'
-    plt.savefig(savename)
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    plt.plot(strains,effective_modulus)
-    ax.set_xlabel('strain_xx')
-    ax.set_ylabel('effective modulus')
-    savename = output_dir + 'strain-modulus.png'
-    plt.savefig(savename)
-    plt.close() 
-
-    
+    plt.close()    
     
 # f = tb.open_file(output_dir+'temp.h5')
 # calculate approximate volumes of each element after simulation
@@ -411,8 +337,7 @@ def main():
 
 
 if __name__ == "__main__":
-    scipy_style()
-    #main()
+    main()
 
 #I need to adjust the method to check for some convergence criteria based on the accelerations each particle is experiencing (or some other convergence criteria)
 #I need to somehow record the particle positions at equilibrium for the initial configuration and under user defined strain/stress. stress may be the most appropriate initial choice, since strain can be computed more directly than the stress. but both methods should eventually be used.
