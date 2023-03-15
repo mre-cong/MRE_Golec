@@ -34,8 +34,8 @@ import lib_programname
 import tables as tb#pytables, for HDF5 interface
 import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
-import update_positions_cy_nogil
 import mre.initialize
+import mre.analyze
 
 #remember, purpose, signature, stub
 
@@ -75,51 +75,6 @@ def do_other_stuff():
 
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
-#calculating the volume of the unit cell (deformed typically) by averaging edge vectors to approximate the volume. V_c^' = \vec{a} \cdot (\vec{b} \times \vec {c})
-def get_unit_cell_volume(avg_vectors):
-    #"""Return an approximation of the unit cell's deformed volume by passing the 8 vectors that define the vertices of the cell"""
-    N_el = avg_vectors.shape[2]
-    V = np.zeros((N_el,))
-    a_vec = np.transpose(avg_vectors[0,:,:])
-    b_vec = np.transpose(avg_vectors[1,:,:])
-    c_vec = np.transpose(avg_vectors[2,:,:])
-    for i in range(N_el):
-        #need to look into functions do handle the dot products properly... 
-        V[i] = np.dot(a_vec[i],np.cross(b_vec[i],c_vec[i]))
-    return V
-
-#helper function for getting the unit cell volume. I need the averaged edge vectors used in the volume calculation for other calculations later (the derivative of the deformed volume with respect to the position of each vertex is used to calculate the volume correction force). However, the deformed volume is also used in that expression. Really these are two helper functions for the volume correction force
-def get_average_edge_vectors(node_posns,elements):
-    avg_vectors = np.empty((3,3,elements.shape[0]))
-    counter = 0
-    for el in elements:
-        vectors = node_posns[el]
-        avg_vectors[0,:,counter] = vectors[2] - vectors[0] + vectors[3] - vectors[1] + vectors[6] - vectors[4] + vectors[7] - vectors[5]
-        avg_vectors[1,:,counter] = vectors[4] - vectors[0] + vectors[6] - vectors[2] + vectors[5] - vectors[1] + vectors[7] - vectors[3]
-        avg_vectors[2,:,counter] = vectors[1] - vectors[0] + vectors[3] - vectors[2] + vectors[5] - vectors[4] + vectors[7] - vectors[6]
-        counter += 1
-    avg_vectors *= 0.25
-    return avg_vectors
-
-def get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_e,bc):
-    N = len(x0)
-    m = np.ones(x0.shape[0])*1e-2
-    a = np.empty(x0.shape,dtype=float)
-    avg_vectors = get_average_edge_vectors(x0,elements)
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
-    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
-    for i, posn in enumerate(x0):
-        if (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]])):
-            a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
-        else:
-            a[i] = 0
-    return a
-
 def remove_i(x,i):
     """remove the ith entry from an array"""
     shape = (x.shape[0]-1,) + x.shape[1:]
@@ -127,72 +82,6 @@ def remove_i(x,i):
     y[:i] = x[:i]
     y[i:] = x[i+1:]
     return y
-
-def post_plot(node_posns,connectivity,stiffness_constants):
-    x0 = node_posns
-    epsilon = np.spacing(1)
-    fig = plt.figure()
-    ax = fig.add_subplot(projection= '3d')
-    ax.scatter(x0[:,0],x0[:,1],x0[:,2],'o')
-    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
-    ax.set_ylim((0,1.2*node_posns[:,1].max()))
-    ax.set_zlim((0,1.2*node_posns[:,2].max()))
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    for i in range(len(x0)-1):
-        for j in range(i+1,len(x0)):
-            if np.abs(connectivity[i,j] - stiffness_constants[0]) <= epsilon or np.abs(connectivity[i,j] - stiffness_constants[0]/2) <= epsilon or np.abs(connectivity[i,j] - stiffness_constants[0]/4) <= epsilon:#connectivity[i,j] != 0:
-                x,y,z = (np.array((x0[i,0],x0[j,0])),
-                          np.array((x0[i,1],x0[j,1])),
-                          np.array((x0[i,2],x0[j,2])))
-                ax.plot(x,y,z)
-
-def post_plot_v2(node_posns,springs,boundary_conditions,output_dir):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection= '3d')
-    ax.scatter(node_posns[:,0],node_posns[:,1],node_posns[:,2],'o')
-    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
-    ax.set_ylim((0,1.2*node_posns[:,1].max()))
-    ax.set_zlim((0,1.2*node_posns[:,2].max()))
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
-    for spring in springs:
-        x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
-                          np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
-                          np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
-        ax.plot(x,y,z)
-    savename = output_dir + 'post_plotv2' + str(boundary_conditions[2]) +'.png'
-    plt.savefig(savename)
-    plt.close()
-
-def post_plot_v3(node_posns,springs,boundary_conditions,boundaries,output_dir):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection= '3d')
-    boundary_nodes = np.zeros((1,),dtype=int)
-    for key, val in boundaries.items():
-        boundary_nodes = np.concatenate((boundary_nodes,val))
-    ax.scatter(node_posns[boundary_nodes,0],node_posns[boundary_nodes,1],node_posns[boundary_nodes,2],'o')    
-    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
-    ax.set_ylim((0,1.2*node_posns[:,1].max()))
-    ax.set_zlim((0,1.2*node_posns[:,2].max()))
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
-    boundary_nodes = set(np.unique(boundary_nodes))
-    for spring in springs:
-        subset = set(spring[:2])
-        if subset < boundary_nodes:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
-            x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
-                            np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
-                            np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
-            ax.plot(x,y,z)
-    savename = output_dir + 'post_plotv3' + str(boundary_conditions[2]) +'.png'
-    plt.savefig(savename)
-    plt.close()
 
 #function to pass to scipy.integrate.solve_ivp()
 #must be of the form fun(t,y)
@@ -303,14 +192,14 @@ def main():
         # max_accel = np.max(np.linalg.norm(a,axis=1))
         # print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
-        a_var = get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
+        a_var = mre.analyze.get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         mre.initialize.write_output_file(count,posns,boundary_conditions,output_dir)
-        post_plot_v2(posns,springs,boundary_conditions,output_dir)
-        post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
+        mre.analyze.post_plot_v2(posns,springs,boundary_conditions,output_dir)
+        mre.analyze.post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
     
     fig = plt.figure()
     ax = fig.gca()
