@@ -7,11 +7,8 @@ Created on Wed Mar 15 02:36:19 2023
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import os
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
-
-
 
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
 def discretize_space(Lx,Ly,Lz,cube_side_length):
@@ -38,6 +35,7 @@ def get_boundaries(node_posns):
     boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}  
     return boundaries
  
+ #TODO check performance of get_elements method for scaled up systems to see if performance improvements are necessary/if bottlenecking is occurring
 def get_elements(node_posns,Lx,Ly,Lz,cube_side_length):
     """given the node/vertex positions, dimensions of the simulated volume, and volume element edge length, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
     #need to keep track of which nodes belong to a unit cell (at some point)
@@ -57,6 +55,7 @@ def get_elements(node_posns,Lx,Ly,Lz,cube_side_length):
     return elements
 
     #given the node positions and stiffness constants for the different types of springs, calculate and return a list of springs, which is  N_springs x 4, where each row represents a spring, and the columns are [node_i_rowidx, node_j_rowidx, stiffness, equilibrium_length]
+    #TODO improve create_springs function performance by switching to a divide and conquer approach. see notes from March 15th 2023
 def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
     face_diagonal_length = np.sqrt(2)*cube_side_length
     center_diagonal_length = np.sqrt(3)*cube_side_length
@@ -203,6 +202,7 @@ def plot_unit_cell(node_posns,connectivity):
         #feels like this should be recursive. I have a listof points, I want to draw lines from each pair of points but without redrawing lines. I have one point, I remove it from the list, if there's nothing left in the list I have nothing to draw, if there's one thing left in the list, I draw the line connecting this point to that point, if I have more than one point left in the list, I 
 
 #!!! construct the boundary conditions data structure
+#TODO
 def get_boundary_conditions(boundary_condition_type,):
     #given a few experimental setups (plus fixed displacement type boundary conditions...)
     #experimental setups: shear, compression, tension, torsion, bending
@@ -233,6 +233,7 @@ class Simulation(object):
     Ly : length in y direction of the object [m]
     Lz : length in z direction of the object [m]
     """
+    #TODO flesh out this class based approach to the simulation interface
     def __init__(self,E=1,nu=0.49,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4):
         """Initializes simulation with default values if they are not passed"""
         self.E = E
@@ -270,7 +271,7 @@ def write_log(simulation,output_dir):
     with open(output_dir+'logfile.txt','a') as f_obj:
         f_obj.writelines([simulation.report2(),str(script_name)+'\n',timestamp+'\n'])
 
-    
+    #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
 def write_init_file(posns,springs,boundaries,output_dir):
     """Write out the vertex positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'init.h5','w')
@@ -281,7 +282,7 @@ def write_init_file(posns,springs,boundaries,output_dir):
     # f.create_table('/','vertex_posns',posn_dt)
     # f.root.vertex_posns.append(posns)
     f.close()
-
+#TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,boundary_conditions,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'final_posns.h5','w')
