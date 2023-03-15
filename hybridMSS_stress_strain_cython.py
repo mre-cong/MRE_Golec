@@ -163,39 +163,6 @@ def timestep(x0,v0,m,elements,springs,kappa,l_e,bc,boundaries,dimensions,dt):
     #     print('position')
     return x1, v1, a
 
-#how can i intelligently calculate the spring forces and update the accelerations? I mean that in the sense of reducing the number of loops over anything, or completely avoiding loops. i need to review the method i am using now and identify places where i can perform additional computations in a single loop, even if it increases code complexity. i have a version that is... still code complex but follows a human logic of looping over nodes to calculate the spring forces on each node one at a time, which later loops again and updates the positions one node at a time after getting the force vectors calculated
-def get_spring_force_magnitude(x0,connectivity,eq_separations):
-    """calculate the magnitude of the force acting on each node due to a spring force, where entry ij is the negative magnitude on i in the rij_hat direction"""
-    N = x0.shape[0]
-    separations = np.empty((N,N))
-    for i, posn in enumerate(x0):
-        rij = posn - x0
-        rij_mag = np.sqrt(np.sum(rij**2,1))
-        separations[:,i] = rij_mag
-    displacement = separations - eq_separations
-    force = -1*connectivity * displacement
-    return force
-
-def get_spring_force_vector(i,posn,x0,spring_force):
-    """given the negative magnitude of the force on node i at position due to every node j, calculate the rij_hat vectors for the node i at posn, and return the vector sum of the forces acting on node i"""
-    rij = posn - x0
-    rij_mag = np.sqrt(np.sum(rij**2,1))
-    rij_mag[rij_mag == 0] = 1#this shouldn't cause issues, it is here to prevent a load of divide by zero errors occuring. if rij is zero length, it is the vector pointing from the vertex to itself, and so rij/rij_mag will cause a divide by zero warning. by setting the magnitude to 1 in that case we avoid that error, and that value should only occur for the vector pointing to itself, which shouldn't contirbute to the force
-    # while i understand at the moment why i calculated the elastic forces that way i did, it is unintuitive. I am trying to use numpy's broadcasting and matrix manipulation to improve speeds, but the transformations aren't obviously useful. maybe there is a clearer way to do this that is still fast enough. or maybe this is the best i can do (though i will need to use cython to create compiled code literally everywhere i have for loops over anything, which means getting more comfortable with cython and cythonic code)
-    force_vector = np.transpose(np.tile(spring_force[i,:],(3,1)))*(rij/np.tile(rij_mag[:,np.newaxis],(1,3)))
-    force_vector = np.sum(force_vector,0)
-    return force_vector
-
-def update_positions(x0,v0,a,x1,v1,dt,m,spring_force,volume_correction_force,drag,bc_forces,boundaries,bc):
-    """taking into account boundary conditions, drag, velocity, volume correction and spring forces, calculate the particle accelerations and update the particle positions and velocities"""
-    for i, posn in enumerate(x0):
-        if not (bc[0] == 'strain' and (np.any(i==boundaries[bc[1][0]]) or np.any(i==boundaries[bc[1][1]]))):
-            a[i] = spring_force[i]/m[i] - drag * v0[i] + volume_correction_force[i] + bc_forces[i]
-        else:
-            a[i] = 0
-        v1[i] = a[i] * dt + v0[i]
-        x1[i] = a[i] * dt**2 + v0[i] * dt + x0[i]
-
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
 #calculating the volume of the unit cell (deformed typically) by averaging edge vectors to approximate the volume. V_c^' = \vec{a} \cdot (\vec{b} \times \vec {c})
