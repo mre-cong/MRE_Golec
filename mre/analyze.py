@@ -39,7 +39,7 @@ def post_plot_v2(node_posns,springs,boundary_conditions,output_dir):
                           np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
                           np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
         ax.plot(x,y,z)
-    savename = output_dir + 'post_plotv2' + str(boundary_conditions[2]) +'.png'
+    savename = output_dir + 'post_plotv2' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
     plt.savefig(savename)
     plt.close()
 
@@ -65,7 +65,7 @@ def post_plot_v3(node_posns,springs,boundary_conditions,boundaries,output_dir):
                             np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
                             np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
             ax.plot(x,y,z)
-    savename = output_dir + 'post_plotv3' + str(boundary_conditions[2]) +'.png'
+    savename = output_dir + 'post_plotv3' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
     plt.savefig(savename)
     plt.close()
 

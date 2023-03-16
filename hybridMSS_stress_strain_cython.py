@@ -42,30 +42,31 @@ import mre.sphere_rasterization
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f):
+def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f):
     """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     
     epsilon = np.spacing(1)
     tol = epsilon*1e5
     # fig = plt.figure()
     # ax = fig.add_subplot(projection= '3d')
-    x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
-    if boundary_conditions[0] == 'strain':
-        # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
-        surface = boundary_conditions[1][1]
-        if surface == 'right' or surface == 'left':
-            pinned_axis = 0
-        elif surface == 'top' or surface == 'bottom':
-            pinned_axis = 2
-        else:
-            pinned_axis = 1
-        x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])   
+    # x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
+    v0,m = np.zeros(x0.shape), np.ones(x0.shape[0])*1e-2
+    # if boundary_conditions[0] == 'strain':
+    #     # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
+    #     surface = boundary_conditions[1][1]
+    #     if surface == 'right' or surface == 'left':
+    #         pinned_axis = 0
+    #     elif surface == 'top' or surface == 'bottom':
+    #         pinned_axis = 2
+    #     else:
+    #         pinned_axis = 1
+    #     x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])   
         # x0[:,pinned_axis] *= (1+ boundary_conditions[2])
         # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler 
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,kappa,l_e,boundary_conditions,boundaries,dimensions))
+    sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions))
     return sol#returning a solution object, that can then have it's attributes inspected
 
 # placeholder functions for doing purpose, signature, stub when doing planning/design and wishlisting
@@ -88,7 +89,7 @@ def remove_i(x,i):
 #function to pass to scipy.integrate.solve_ivp()
 #must be of the form fun(t,y)
 #can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
-def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
+def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
@@ -136,6 +137,8 @@ def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
     accel = set_fixed_nodes(accel,fixed_nodes)
+    vecsum = np.sum(accel[particles],axis=0)
+    accel[particles] = vecsum/particles.shape[0]
     # for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
     #     for j in range(3):
     #         accel[fixed_nodes[i],j] = 0
@@ -173,7 +176,7 @@ def main():
     assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
     radius_voxels = np.round(radius/l_e).astype(np.int32)
     center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
-    # particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+l_e/2,dimensions)
+    particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+l_e/2,dimensions)
     boundary_conditions = ('strain',('left','right'),.05)
 
     script_name = lib_programname.get_path_executed_script()
@@ -192,11 +195,22 @@ def main():
     
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
+    x0 = node_posns.copy()
     for count, strain in enumerate(strains):
         boundary_conditions = ('strain',('left','right'),strain)
+        if boundary_conditions[0] == 'strain':
+        # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
+            surface = boundary_conditions[1][1]
+            if surface == 'right' or surface == 'left':
+                pinned_axis = 0
+            elif surface == 'top' or surface == 'bottom':
+                pinned_axis = 2
+            else:
+                pinned_axis = 1
+            x0[boundaries[surface],pinned_axis] = node_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f)
+            sol = simulate_v2(x0,elements,particle_nodes,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -206,18 +220,20 @@ def main():
         delta = end - start
         #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
         end_result = sol.y[:,-1]
-        posns = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
+        x0 = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
+        # posns = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
         # max_accel = np.max(np.linalg.norm(a,axis=1))
         # print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
-        a_var = mre.analyze.get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
+        a_var = mre.analyze.get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_e,boundary_conditions)
+        # a_var = mre.analyze.get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,posns,boundary_conditions,output_dir)
-        mre.analyze.post_plot_v2(posns,springs,boundary_conditions,output_dir)
-        mre.analyze.post_plot_v3(posns,springs,boundary_conditions,boundaries,output_dir)
+        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
+        mre.analyze.post_plot_v2(x0,springs,boundary_conditions,output_dir)
+        mre.analyze.post_plot_v3(x0,springs,boundary_conditions,boundaries,output_dir)
     
     fig = plt.figure()
     ax = fig.gca()

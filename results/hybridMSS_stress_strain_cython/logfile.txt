@@ -218,3 +218,13 @@ t_f = 15
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
 Thu Mar 16 15:08:27 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 15 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Thu Mar 16 15:34:53 2023
