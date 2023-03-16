@@ -69,12 +69,96 @@ def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
         springs = np.concatenate((springs,edge_springs,face_springs,diagonal_springs),dtype=np.float64)
     return np.ascontiguousarray(springs[1:],dtype=np.float64)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups
 
+def create_springs_v2(node_posns,elements,stiffness_constants,cube_side_length,dimensions):
+    face_diagonal_length = np.sqrt(2)*cube_side_length
+    center_diagonal_length = np.sqrt(3)*cube_side_length
+    springs_tmp = np.zeros((1,4),dtype=np.float64)#creating an array that will hold the springs, will have to concatenate as new springs are added, and delete the first row before passing back
+    for element in elements:
+        posns_tmp = node_posns[element]
+        for i in element:
+            posn = node_posns[i,:]
+            rij = posn - posns_tmp
+            rij_mag = np.sqrt(np.sum(rij**2,1))
+            edge_springs = get_node_springs_v2(i,node_posns,element,rij_mag,dimensions,stiffness_constants[0]/4,cube_side_length,max_shared_elements=4)
+            face_springs = get_node_springs_v2(i,node_posns,element,rij_mag,dimensions,stiffness_constants[1]/2,face_diagonal_length,max_shared_elements=2)
+            diagonal_springs = get_node_springs_v2(i,node_posns,element,rij_mag,dimensions,stiffness_constants[2],center_diagonal_length,max_shared_elements=1)
+            springs_tmp = np.concatenate((springs_tmp,edge_springs,face_springs,diagonal_springs),dtype=np.float64)
+    springs = np.unique(springs_tmp,axis=0)
+    return np.ascontiguousarray(springs[1:],dtype=np.float64)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups    
+
 #functionalizing the construction of springs including setting of stiffness constants based on number of shared elements for different spring types (edge and face diagonal). will need to be extended for the case of materials with two phases
 def get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constant,comparison_length,max_shared_elements):
     """Set the stiffness of a particular spring based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
     epsilon = np.spacing(1)
     connected_vertices = np.asarray(np.abs(rij_mag - comparison_length) < epsilon).nonzero()[0]#per numpy documentation, this method is preferred over np.where if np.where is only passed a condition, instead of a condition and two arrays to select from
     valid_connections = connected_vertices[i < connected_vertices]
+    springs = np.empty((valid_connections.shape[0],4),dtype=np.float64)
+    #trying to preallocate space for springs array based on the number of connected vertices, but if i am trying to not double count springs i will sometimes need less space. how do i know how many are actually going to be used? i guess another condition check?
+    if max_shared_elements == 1:#if we are dealing with the center diagonal springs we don't need to count shared elements
+        for row, v in enumerate(valid_connections):
+            springs[row] = [i,v,stiffness_constant,comparison_length]
+    else:
+        node_type_i = identify_node_type(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
+        for row, v in enumerate(valid_connections):
+            node_type_v = identify_node_type(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
+            if node_type_i == 'interior' and node_type_v == 'interior':
+                if max_shared_elements == 4:
+                    springs[row] = [i,v,stiffness_constant*4,comparison_length]
+                else:
+                    springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif (node_type_i == 'interior' and node_type_v == 'surface') or (node_type_i == 'surface' and node_type_v == 'interior'):
+                if max_shared_elements == 4:
+                    springs[row] = [i,v,stiffness_constant*4,comparison_length]
+                else:
+                    springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif (node_type_i == 'interior' and node_type_v == 'edge') or (node_type_i == 'edge' and node_type_v == 'interior'):
+                springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif node_type_i == 'surface' and node_type_v == 'surface':
+                if max_shared_elements == 4:#two shared elements for a cube edge spring in this case if they are both on the same surface, so check for shared surfaces. otherwise the answer is 4.
+                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
+                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
+                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
+                        springs[row] = [i,v,stiffness_constant*2,comparison_length]
+                    else:
+                        springs[row] = [i,v,stiffness_constant*4,comparison_length]
+                else:#face spring, if the two nodes are on the same surface theres only one element, if they are on two different surfaces theyre are two shared elements
+                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
+                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
+                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
+                        springs[row] = [i,v,stiffness_constant,comparison_length]
+                    else:#on different surfaces, two shared elements
+                        springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif (node_type_i == 'surface' and node_type_v == 'edge') or (node_type_i == 'edge' and node_type_v == 'surface'):
+                if max_shared_elements == 4:#if the max_shared_elements is 4, this is a cube edge spring, and an edge-surface connection has two shared elements
+                    springs[row] = [i,v,stiffness_constant*2,comparison_length]
+                else:#this is a face spring with only a single element if the edge and surface node have a shared surface
+                    node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
+                    node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
+                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):
+                        springs[row] = [i,v,stiffness_constant,comparison_length]
+                    else:#they don't share a surface, and so they share two elements
+                        springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif node_type_i == 'edge' and node_type_v == 'edge':
+                #both nodes belong to two surfaces (if they are edge nodes). if the surfaces are the same, then it is a shared edge, if they are not, they are separate edges of the simulated volume. there aer 6 surfaces
+                node_i_surf = get_node_surf(node_posns[i,:],dimensions[0],dimensions[1],dimensions[2])
+                node_v_surf = get_node_surf(node_posns[v,:],dimensions[0],dimensions[1],dimensions[2])
+                if ((node_i_surf[0] == node_v_surf[0] and node_i_surf[1] == node_v_surf[1] and (node_i_surf[0] != 0 and node_i_surf[1] != 0)) or (node_i_surf[0] == node_v_surf[0] and node_i_surf[2] == node_v_surf[2] and (node_i_surf[0] != 0 and node_i_surf[2] != 0)) or(node_i_surf[1] == node_v_surf[1] and node_i_surf[2] == node_v_surf[2] and (node_i_surf[1] != 0 and node_i_surf[2] != 0))):#if both nodes belong to the same two surfaces, they are on the same edge
+                    springs[row] = [i,v,stiffness_constant,comparison_length]
+                elif max_shared_elements == 4:#if they don't share two surfaces and it's a cube edge spring, they share two elements
+                    springs[row] = [i,v,stiffness_constant*2,comparison_length]
+                else:#if it's a face spring
+                    if ((node_i_surf[0] == node_v_surf[0]and node_i_surf[0] != 0 ) or (node_i_surf[1] == node_v_surf[1] and node_i_surf[1] != 0) or (node_i_surf[2] == node_v_surf[2] and node_i_surf[2] != 0)):#if they do share a surface, then the face spring has as single element
+                        springs[row] = [i,v,stiffness_constant,comparison_length]
+                    else:#they don't share a single surface, then they diagonally across one another and have two shared elements
+                        springs[row] = [i,v,stiffness_constant*2,comparison_length]
+            elif node_type_i == 'corner' or node_type_v == 'corner':#any spring involving a corner node covered
+                springs[row] = [i,v,stiffness_constant,comparison_length]
+    return springs
+def get_node_springs_v2(i,node_posns,element,rij_mag,dimensions,stiffness_constant,comparison_length,max_shared_elements):
+    """Set the stiffness of a particular spring based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
+    epsilon = np.spacing(1)
+    connected_vertices = np.asarray(np.abs(rij_mag - comparison_length) < epsilon).nonzero()[0]#per numpy documentation, this method is preferred over np.where if np.where is only passed a condition, instead of a condition and two arrays to select from
+    valid_connections = np.asarray([val for val in element[connected_vertices] if i < val])
     springs = np.empty((valid_connections.shape[0],4),dtype=np.float64)
     #trying to preallocate space for springs array based on the number of connected vertices, but if i am trying to not double count springs i will sometimes need less space. how do i know how many are actually going to be used? i guess another condition check?
     if max_shared_elements == 1:#if we are dealing with the center diagonal springs we don't need to count shared elements
@@ -300,6 +384,30 @@ def read_init_file(fn):
     return f
 
 def main():
+    import time
+    E = 1
+    nu = 0.4999
+    l_e = .1
+    Lx = 20.0
+    Ly = 1.0
+    Lz = 1.0
+    node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
+    k = get_spring_constants(E,nu,l_e)
+    dimensions = [Lx,Ly,Lz]
+    start = time.perf_counter()
+    edges_original = create_springs(node_posns,k,l_e,dimensions)
+    end = time.perf_counter()
+    original_time = end-start
+    start = time.perf_counter()
+    edges_new = create_springs_v2(node_posns,elements,k,l_e,dimensions)
+    end = time.perf_counter()
+    new_time = end-start
+    # print(np.sort(edges_original,axis=0))
+    correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
+    print("New and Old implementations agree?: " + str(correctness))
+    print("Original implementation took {}s".format(original_time))
+    print("New implementation took {}s".format(new_time))
+    print("New implementation {}x times faster".format(original_time/new_time))
     pass
 
 if __name__ == "__main__":

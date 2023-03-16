@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from numba.experimental import jitclass
 from numba import types, njit, prange
+import mre.initialize
 #this code was taken from https://stackoverflow.com/questions/41656006/how-to-rasterize-a-sphere
 #originally written by Mitchell Walls on july 16 2021, adapted from a method written by Matt Timmerman in the same thread
 #i will/have made changes to comment out how the code works and changes to adapt for my purposes in simulating MREs, since i need to rasterize spherical particles that will be treated as rigid objects
@@ -120,7 +121,7 @@ def get_sphere_on_grid(radius):
     grid_points = np.transpose(np.where(rs.grid))
     return np.array([*grid_points])
 
-def get_nodes_from_grid_voxels(grid_points,l_e):
+def get_nodes_from_grid_voxels(grid_points,l_e,translation):
     """given the grid coordinates of the voxels and the voxel size, get the nodes/vertices of the voxels"""
     basis_vec_len = l_e/2
     v1 = np.array([1,0,0])*basis_vec_len
@@ -128,7 +129,7 @@ def get_nodes_from_grid_voxels(grid_points,l_e):
     v3 = np.array([0,0,1])*basis_vec_len
     nodes = np.zeros((1,3))
     for point in grid_points:
-        center = np.array([point[0], point[1], point[2]])*l_e + basis_vec_len
+        center = (np.array([point[0], point[1], point[2]])*l_e + basis_vec_len) + translation
         # center = np.array([point[0]*l_e, point[1]*l_e, point[2]*l_e])
         node0 = center + v1 + v2 + v3
         node1 = center - v1 + v2 + v3
@@ -147,6 +148,70 @@ def get_nodes_from_grid_voxels(grid_points,l_e):
     plt.savefig('./sphere_voxel_to_nodes.png')
     return unique_nodes[1:,:]
 
+def get_row_indices_new(node_posns,l_e,dim):
+    Lx,Ly,Lz = dim
+    inv_l_e = 1/l_e
+    nodes_per_col = np.round(Lz/l_e + 1).astype(np.int32)
+    nodes_per_row = np.round(Lx/l_e + 1).astype(np.int32)
+    row_index = ((nodes_per_col * inv_l_e * node_posns[:,0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + inv_l_e *node_posns[:,2]).astype(np.int32)
+    return row_index
+
+def get_row_indices(node_posns,l_e,dim):
+    row_index = np.empty((node_posns.shape[0],),dtype=np.int32)
+    for i in range(node_posns.shape[0]):
+        row_index[i] = get_row_index_node(i,node_posns[i,:],l_e,dim)
+    return row_index
+
+def get_row_index_node(i,node_posn,l_e,dim):
+    Lx,Ly,Lz = dim
+    inv_l_e = 1/l_e
+    nodes_per_col = np.round(Lz/l_e + 1).astype(np.int32)
+    nodes_per_row = np.round(Lx/l_e + 1).astype(np.int32)
+    # row_index = (inv_l_e * ((nodes_per_col * node_posn[0]) + (nodes_per_col * nodes_per_row * node_posn[1]) + node_posn[2])).astype(np.int32)
+    row_index = ((nodes_per_col * inv_l_e * node_posn[0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posn[1]) + inv_l_e *node_posn[2]).astype(np.int32)
+    row_index_2 = ((1/l_e * (Lz/l_e + 1)) * node_posn[0] + (1/l_e * (Lz/l_e + 1) * (Lx/l_e + 1)) * node_posn[1] + (1/l_e) * node_posn[2]).astype(np.int32)
+    # try:
+    #     assert(row_index == row_index_2)
+    # except:
+    #     print('methods to calculate row index {} do not agree'.format(i))
+    #     print('method one {}'.format(row_index))
+    #     print('method two {}'.format(row_index_2))
+    #     print('node position {} x {} y {} z'.format(node_posn[0],node_posn[1],node_posn[2]))
+    return row_index
+
+def test_get_row_index_node():
+    l_e = 1
+    dim = [3,3,3]
+    Lx,Ly,Lz = dim
+    node_posns, elements, boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    for i in range(node_posns.shape[0]):
+        node_posn = node_posns[i,:]
+        row_index = get_row_index_node(-1,node_posn,l_e,dim)
+        assert np.allclose(node_posn,node_posns[row_index]), f"calculated row index does not point back to proper node position for {i}"
+    l_e = 0.1
+    dim = [0.3,0.3,0.3]
+    Lx,Ly,Lz = dim
+    node_posns, elements, boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    for i in range(node_posns.shape[0]):
+        node_posn = node_posns[i,:]
+        row_index = get_row_index_node(-1,node_posn,l_e,dim)
+        assert np.allclose(node_posn,node_posns[row_index]), f"calculated row index does not point back to proper node position for {i}"
+    l_e = 0.1
+    dim = [20.,10.,2.]
+    Lx,Ly,Lz = dim
+    node_posns, elements, boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    for i in range(node_posns.shape[0]):
+        node_posn = node_posns[i,:]
+        row_index = get_row_index_node(-1,node_posn,l_e,dim)
+        assert np.allclose(node_posn,node_posns[row_index]), f"calculated row index does not point back to proper node position for {i}"
+
+def test_get_row_indices_new():
+    l_e = 0.1
+    dim = [10.,5.,2.]
+    Lx,Ly,Lz = dim
+    node_posns, elements, boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    row_index = get_row_indices_new(node_posns,l_e,dim)
+    assert np.allclose(node_posns,node_posns[row_index]), f"calculated row indices do not map back to proper node positions"
 
 def old_main():
     # Make max large enough to hold the spheres.
@@ -163,11 +228,16 @@ def main():
     radius = 1.5
     l_e = 0.1
     grid_points = get_sphere_on_grid(radius)
-    get_nodes_from_grid_voxels(grid_points,l_e)
+    particle_center = np.array([3,3,3],dtype=np.float64)
+    node_posns = get_nodes_from_grid_voxels(grid_points,l_e,particle_center)
+    dim = [10,10,10]
+    Lx,Ly,Lz = dim
+    get_row_indices(node_posns,l_e,dim)
     fig = plt.figure
     ax = plt.axes(projection='3d')
     ax.scatter3D(*grid_points)
     plt.savefig('./spheres.png')
 
 if __name__ == '__main__':
-    main()
+    test_get_row_index_node()
+    # main()

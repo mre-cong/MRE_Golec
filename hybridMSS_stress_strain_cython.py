@@ -133,15 +133,23 @@ def fun(t,y,m,elements,springs,kappa,l_e,bc,boundaries,dimensions):
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
-    for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
-        for j in range(3):
-            accel[fixed_nodes[i],j] = 0
+    accel = set_fixed_nodes(accel,fixed_nodes)
+    # for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
+    #     for j in range(3):
+    #         accel[fixed_nodes[i],j] = 0
             # v0[fixed_nodes[i],j] = 0#this shouldn't be necessary, since the initial conditions have the velocities set to zero, the accelerations being set to zero means they should never change (and there was overhead associated with this additional random access write)
     accel = np.reshape(accel,(3*N,1))
     result = np.concatenate((v0.reshape((3*N,1)),accel))
+    # alternative to concatenate is to create an empty array and then assign the values, this should in theory be faster
     result = np.reshape(result,(result.shape[0],))
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
+
+def set_fixed_nodes(accel,fixed_nodes):
+    for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
+        for j in range(3):
+            accel[fixed_nodes[i],j] = 0
+    return accel
 
 def main():
     E = 1

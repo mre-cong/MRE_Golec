@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import get_spring_force_cy
+import get_volume_correction_force_cy_nogil
 
 def post_plot(node_posns,connectivity,stiffness_constants):
     x0 = node_posns
