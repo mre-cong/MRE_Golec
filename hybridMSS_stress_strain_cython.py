@@ -36,6 +36,7 @@ import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
 import mre.initialize
 import mre.analyze
+import mre.sphere_rasterization
 
 #remember, purpose, signature, stub
 
@@ -51,14 +52,15 @@ def simulate_v2(node_posns,elements,boundaries,dimensions,springs,kappa,l_e,boun
     x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
     if boundary_conditions[0] == 'strain':
         # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
-        surface = boundary_conditions[1][0]
+        surface = boundary_conditions[1][1]
         if surface == 'right' or surface == 'left':
             pinned_axis = 0
         elif surface == 'top' or surface == 'bottom':
             pinned_axis = 2
         else:
             pinned_axis = 1
-        x0[:,pinned_axis] *= (1+ boundary_conditions[2])
+        x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])   
+        # x0[:,pinned_axis] *= (1+ boundary_conditions[2])
         # x0[boundaries[surface],pinned_axis] *= (1 + boundary_conditions[2])#!!! i have altered how the strain is applied, but this needds to be handled differently for the different methods... i need to deal with the applied boundary conditions more effectively. the single material case is simpler 
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
@@ -163,8 +165,15 @@ def main():
     kappa = mre.initialize.get_kappa(E, nu)
     t_f = 15
 
-    node_posns,elements,boundaries = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    elements = mre.initialize.get_elements(node_posns,Lx,Ly,Lz,l_e)
+    boundaries = mre.initialize.get_boundaries(node_posns)
     springs = mre.initialize.create_springs(node_posns,k,l_e,dimensions)
+    radius = l_e*2.5
+    assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
+    radius_voxels = np.round(radius/l_e).astype(np.int32)
+    center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
+    # particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+l_e/2,dimensions)
     boundary_conditions = ('strain',('left','right'),.05)
 
     script_name = lib_programname.get_path_executed_script()
@@ -195,6 +204,7 @@ def main():
         # post_plot(posns,c,k)
         end = time.time()
         delta = end - start
+        #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
         end_result = sol.y[:,-1]
         posns = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
         # max_accel = np.max(np.linalg.norm(a,axis=1))

@@ -21,9 +21,7 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
     node_posns = np.concatenate((np.reshape(x,np.size(x))[:,np.newaxis],
                                 np.reshape(y,np.size(y))[:,np.newaxis],
                                 np.reshape(z,np.size(z))[:,np.newaxis]),1)
-    elements = get_elements(node_posns,Lx,Ly,Lz,cube_side_length)
-    boundaries = get_boundaries(node_posns)
-    return node_posns, np.int32(elements), boundaries
+    return node_posns
 
 def get_boundaries(node_posns):
     top_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].max())[0]
@@ -52,7 +50,7 @@ def get_elements(node_posns,Lx,Ly,Lz,cube_side_length):
             for k in range(N_el_x):
                 elements[counter,:] = np.nonzero((node_posns[:,0] <= cube_side_length*(k+1)) & (node_posns[:,0] >= cube_side_length*k) & (node_posns[:,1] >= cube_side_length*j) & (node_posns[:,1] <= cube_side_length*(j+1)) & (node_posns[:,2] >= cube_side_length*i) & (node_posns[:,2] <= cube_side_length*(i+1)))[0]
                 counter += 1
-    return elements
+    return elements.astype(np.int32)
 
     #given the node positions and stiffness constants for the different types of springs, calculate and return a list of springs, which is  N_springs x 4, where each row represents a spring, and the columns are [node_i_rowidx, node_j_rowidx, stiffness, equilibrium_length]
     #TODO improve create_springs function performance by switching to a divide and conquer approach. see notes from March 15th 2023
@@ -90,7 +88,9 @@ def create_springs_v2(node_posns,elements,stiffness_constants,cube_side_length,d
 def get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constant,comparison_length,max_shared_elements):
     """Set the stiffness of a particular spring based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
     epsilon = np.spacing(1)
-    connected_vertices = np.asarray(np.abs(rij_mag - comparison_length) < epsilon).nonzero()[0]#per numpy documentation, this method is preferred over np.where if np.where is only passed a condition, instead of a condition and two arrays to select from
+    connected_vertices = np.isclose(rij_mag,comparison_length).nonzero()[0]
+    # TODO !!! remove the below line that has been commented out, if the results are accurate between the method above and the method below (which they should be and look to be based on tests so far)
+    # connected_vertices = np.asarray(np.abs(rij_mag - comparison_length)/comparison_length < epsilon).nonzero()[0]#per numpy documentation, this method is preferred over np.where if np.where is only passed a condition, instead of a condition and two arrays to select from
     valid_connections = connected_vertices[i < connected_vertices]
     springs = np.empty((valid_connections.shape[0],4),dtype=np.float64)
     #trying to preallocate space for springs array based on the number of connected vertices, but if i am trying to not double count springs i will sometimes need less space. how do i know how many are actually going to be used? i guess another condition check?
