@@ -43,16 +43,16 @@ def post_plot_v2(node_posns,springs,boundary_conditions,output_dir):
     plt.savefig(savename)
     plt.close()
 
-def post_plot_v3(node_posns,springs,boundary_conditions,boundaries,output_dir):
+def post_plot_v3(eq_node_posns,node_posns,springs,boundary_conditions,boundaries,output_dir):
     fig = plt.figure()
     ax = fig.add_subplot(projection= '3d')
     boundary_nodes = np.zeros((1,),dtype=int)
     for key, val in boundaries.items():
         boundary_nodes = np.concatenate((boundary_nodes,val))
     ax.scatter(node_posns[boundary_nodes,0],node_posns[boundary_nodes,1],node_posns[boundary_nodes,2],'o')    
-    ax.set_xlim((-0.3,1.2*node_posns[:,0].max()))
-    ax.set_ylim((0,1.2*node_posns[:,1].max()))
-    ax.set_zlim((0,1.2*node_posns[:,2].max()))
+    ax.set_xlim((-0.3,1.2*eq_node_posns[:,0].max()))
+    ax.set_ylim((0,1.2*eq_node_posns[:,1].max()))
+    ax.set_zlim((0,1.2*eq_node_posns[:,2].max()))
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Y (m)')
     ax.set_zlabel('Z (m)')
@@ -66,6 +66,84 @@ def post_plot_v3(node_posns,springs,boundary_conditions,boundaries,output_dir):
                             np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
             ax.plot(x,y,z)
     savename = output_dir + 'post_plotv3' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+#!!! TODO clean up this function, D.R.Y. seriously. also read up on using variable position based arguments, default arguments, and keyword arguments and use that for allowing defauly and more custom plotting behavior involving particles, etc.
+def post_plot_cut(eq_node_posns,node_posns,springs,particles,dimensions,l_e,boundary_conditions,output_dir):
+    plot_cut('xy',eq_node_posns,node_posns,springs,particles,dimensions,l_e,boundary_conditions,output_dir)
+    plot_cut('xz',eq_node_posns,node_posns,springs,particles,dimensions,l_e,boundary_conditions,output_dir)
+    plot_cut('yz',eq_node_posns,node_posns,springs,particles,dimensions,l_e,boundary_conditions,output_dir)
+
+def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,boundary_conditions,output_dir):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut."""
+    cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx,Ly,Lz = dimensions
+    center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
+    ax.scatter(node_posns[cut_nodes,0],node_posns[cut_nodes,1],node_posns[cut_nodes,2],color ='b',marker='o')
+    plot_subset_springs(ax,node_posns,cut_nodes,springs,spring_color='b')
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    ax.scatter(node_posns[particle_cut_nodes,0],node_posns[particle_cut_nodes,1],node_posns[particle_cut_nodes,2],color='k',marker='o')
+    plot_subset_springs(ax,node_posns,particle_cut_nodes_set,springs,spring_color='r')
+    ax.set_xlim((-0.3,1.2*eq_node_posns[:,0].max()))
+    ax.set_ylim((0,1.2*eq_node_posns[:,1].max()))
+    ax.set_zlim((0,1.2*eq_node_posns[:,2].max()))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def plot_subset_springs(ax,node_posns,nodes,springs,spring_color):
+    """Plot a subset of the springs which are connected to the nodes passed to the function"""
+    if isinstance(nodes,set):
+        nodes_set = nodes
+    else:
+        nodes_set = set(np.unique(nodes))
+    for spring in springs:
+        subset = set(spring[:2])
+        if subset < nodes_set:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
+            x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                            np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                            np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+            ax.plot(x,y,z,color=spring_color)
+
+#TODO !!! properly incorporate the fact that there might be more than one particle
+def post_plot_particle(eq_node_posns,node_posns,particles,springs,boundary_conditions,output_dir):
+    particle_node_posns = node_posns[particles]
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    particle_node_posns = node_posns[particles]
+    ax.scatter(particle_node_posns[:,0],particle_node_posns[:,1],particle_node_posns[:,2],'o')
+    ax.set_xlim((-0.3,1.2*eq_node_posns[:,0].max()))
+    ax.set_ylim((0,1.2*eq_node_posns[:,1].max()))
+    ax.set_zlim((0,1.2*eq_node_posns[:,2].max()))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    particle_nodes_set = set(particles)
+    for spring in springs:
+        subset = set(spring[:2])
+        if subset < particle_nodes_set:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
+            x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                            np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                            np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+            ax.plot(x,y,z)
+    savename = output_dir + 'post_plot_particle' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
     plt.savefig(savename)
     plt.close()
 
@@ -94,12 +172,12 @@ def get_average_edge_vectors(node_posns,elements):
         counter += 1
     avg_vectors *= 0.25
     return avg_vectors
-
+#TODO !!! optimize this function. np.any is most likely not necessary. will want to include functionality to calculate accelerations at the end of a simulation, and run a second round (or however many, doing this iteratively) if the accelerations of the nonboundary nodes are high enough to suggest that the system is far from equilibrium
 def get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_e,bc):
     N = len(x0)
     m = np.ones(x0.shape[0])*1e-2
     a = np.empty(x0.shape,dtype=float)
-    avg_vectors = get_average_edge_vectors(x0,elements)
+    # avg_vectors = get_average_edge_vectors(x0,elements)
     correction_force_el = np.empty((8,3),dtype=np.float64)
     vectors = np.empty((8,3),dtype=np.float64)
     avg_vectors = np.empty((3,3),dtype=np.float64)

@@ -4,280 +4,10 @@ l_e = 0.1
 Lx = 1.0 
 Ly = 1.0 
 Lz = 1.0 
-t_f = 15 
+t_f = 30 
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 11:39:50 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 11:45:04 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 11:47:49 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:16:34 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:17:24 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:19:56 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:22:41 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:26:05 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:27:32 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:29:18 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:31:19 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:33:01 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar  1 12:53:15 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar 15 14:53:59 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Wed Mar 15 15:24:40 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 14:56:35 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 14:57:17 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 14:58:40 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:00:16 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:03:18 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:07:23 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:08:27 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:34:53 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:53:52 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 15:56:43 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 16:01:50 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 16:13:30 2023
-E = 1 
-nu = 0.499 
-l_e = 0.1 
-Lx = 1.0 
-Ly = 1.0 
-Lz = 1.0 
-t_f = 15 
-N_iter = 0 
-/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 16:19:18 2023
+Tue Mar 21 10:30:57 2023
 E = 1 
 nu = 0.499 
 l_e = 0.1 
@@ -287,7 +17,7 @@ Lz = 1.0
 t_f = 30 
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Thu Mar 16 16:25:28 2023
+Tue Mar 21 10:40:33 2023
 E = 1 
 nu = 0.499 
 l_e = 0.1 
@@ -297,7 +27,7 @@ Lz = 1.0
 t_f = 30 
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Fri Mar 17 10:47:16 2023
+Tue Mar 21 10:50:30 2023
 E = 1 
 nu = 0.499 
 l_e = 0.1 
@@ -307,7 +37,7 @@ Lz = 1.0
 t_f = 30 
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Fri Mar 17 10:49:17 2023
+Tue Mar 21 11:06:47 2023
 E = 1 
 nu = 0.499 
 l_e = 0.1 
@@ -317,4 +47,194 @@ Lz = 1.0
 t_f = 30 
 N_iter = 0 
 /home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
-Fri Mar 17 10:52:58 2023
+Tue Mar 21 11:09:30 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:12:53 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:27:35 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:29:42 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:30:14 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:37:28 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:42:25 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:43:31 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:45:45 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:47:40 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 11:56:25 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 12:00:14 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:22:25 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:22:57 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:26:33 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:34:35 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:41:29 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:49:32 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:56:50 2023
+E = 1 
+nu = 0.499 
+l_e = 0.1 
+Lx = 1.0 
+Ly = 1.0 
+Lz = 1.0 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Tue Mar 21 14:57:16 2023

@@ -356,32 +356,48 @@ def write_log(simulation,output_dir):
         f_obj.writelines([simulation.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
-def write_init_file(posns,springs,boundaries,output_dir):
-    """Write out the vertex positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
+def write_init_file(posns,springs,elements,particles,boundaries,output_dir):
+    """Write out the node positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'init.h5','w')
-    f.create_array('/','vertex_posns',posns)
+    f.create_array('/','node_posns',posns)
     f.create_array('/','springs',springs)
-    # f.create_array('/','boundary_nodes',boundaries)
-    # posn_dt = np.dtype([('x',np.float64),('y',np.float64),('z',np.float64)])
-    # f.create_table('/','vertex_posns',posn_dt)
-    # f.root.vertex_posns.append(posns)
+    f.create_array('/','elements',elements)
+    f.create_group('/','boundaries',"Boundary Nodes")
+    for key in boundaries.keys():
+        f.create_array('/boundaries',key,boundaries[key])
+    f.create_array('/','particles',particles)
     f.close()
+
+def read_init_file(fn):
+    f = tb.open_file(fn,'r')
+    node_object = f.get_node('/','node_posns')
+    node_posns = node_object.read()
+    spring_object = f.get_node('/','springs')
+    springs = spring_object.read()
+    element_object = f.get_node('/','elements')
+    elements = element_object.read()
+    particle_object = f.get_node('/','particles')
+    particles = particle_object.read()
+    boundaries = {}
+    for leaf in f.root.boundaries._f_walknodes('Leaf'):
+        boundaries[leaf.name] = leaf.read()
+    f.close()
+    return node_posns, springs, elements, particles, boundaries
+
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,boundary_conditions,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
-    f = tb.open_file(output_dir+'final_posns.h5','w')
-    f.create_array('/','node_posns'+str(count),posns)
-    # datatype = np.dtype((('bc_type',str),(('boundary',str),('boundary',str)),('value',float)))
-    # f.create_table('/','boundary_conditions',datatype)
-    # f.root.boundary_conditions.append(boundary_conditions)
-    # posn_dt = np.dtype([('x',np.float64),('y',np.float64),('z',np.float64)])
-    # f.create_table('/','vertex_posns',posn_dt)
-    # f.root.vertex_posns.append(posns)
+    f = tb.open_file(output_dir+'output.h5','a')
+    f.create_group('/','node_posns','Final Configurations')
+    f.create_array('/node_posns',str(count),posns)
+    # f.create_group('/','boundary_conditions','Applied Boundary Conditions')
+    # f.create_group('/','applied_field')
+    surf_tuple_dt = np.dtype([('surf1',str),('surf2',str)])
+    datatype = np.dtype([('bc_type',str),('surfaces',surf_tuple_dt),('value',float)])
+    f.create_table('/','boundary_conditions',datatype)
+    bc = np.array([boundary_conditions])
+    f.root.boundary_conditions.append(bc)
     f.close()
-    
-def read_init_file(fn):
-    f = tb.open_file(fn)
-    return f
 
 def main():
     import time
@@ -391,7 +407,8 @@ def main():
     Lx = 20.0
     Ly = 1.0
     Lz = 1.0
-    node_posns,elements,boundaries = discretize_space(Lx,Ly,Lz,l_e)
+    node_posns = discretize_space(Lx,Ly,Lz,l_e)
+    elements = get_elements(node_posns,Lx,Ly,Lz,l_e)
     k = get_spring_constants(E,nu,l_e)
     dimensions = [Lx,Ly,Lz]
     start = time.perf_counter()

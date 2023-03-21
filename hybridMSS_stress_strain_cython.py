@@ -137,8 +137,10 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions):
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
     accel = set_fixed_nodes(accel,fixed_nodes)
-    vecsum = np.sum(accel[particles],axis=0)
-    accel[particles] = vecsum/particles.shape[0]
+    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+    for particle in particles:
+        vecsum = np.sum(accel[particle],axis=0)
+        accel[particle] = vecsum/particle.shape[0]
     # for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
     #     for j in range(3):
     #         accel[fixed_nodes[i],j] = 0
@@ -166,32 +168,37 @@ def main():
     dimensions = [Lx,Ly,Lz]
     k = mre.initialize.get_spring_constants(E, nu, l_e)
     kappa = mre.initialize.get_kappa(E, nu)
-    t_f = 15
+    t_f = 30
 
     node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
     elements = mre.initialize.get_elements(node_posns,Lx,Ly,Lz,l_e)
     boundaries = mre.initialize.get_boundaries(node_posns)
     springs = mre.initialize.create_springs(node_posns,k,l_e,dimensions)
-    radius = l_e*2.5
+    radius = l_e*0.5
     assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
-    radius_voxels = np.round(radius/l_e).astype(np.int32)
+    radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
     center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
-    particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+l_e/2,dimensions)
+    particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center-l_e/2,dimensions)
+    particle_nodes2 = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+3*l_e/2,dimensions)
+    #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
+    particles = np.vstack((particle_nodes,particle_nodes2))
     boundary_conditions = ('strain',('left','right'),.05)
 
     script_name = lib_programname.get_path_executed_script()
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
-    output_dir = current_dir + '/results/' + script_name.stem + '/'
+    output_dir = current_dir + '/results/' + script_name.stem + '/tests/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
     my_sim = mre.initialize.Simulation(E,nu,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
     mre.initialize.write_log(my_sim,output_dir)
-    mre.initialize.write_init_file(node_posns,springs,boundaries,output_dir)
+    mre.initialize.write_init_file(node_posns,springs,elements,particles,boundaries,output_dir)
+    r_nodes, r_springs, r_elements, r_particles, r_boundaries = mre.initialize.read_init_file(output_dir+'init.h5')
+
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.21,-0.1)
+    strains = np.arange(-.001,-0.01,-0.05)
     
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
@@ -210,7 +217,7 @@ def main():
             x0[boundaries[surface],pinned_axis] = node_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_v2(x0,elements,particle_nodes,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f)
+            sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -232,8 +239,10 @@ def main():
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
-        mre.analyze.post_plot_v2(x0,springs,boundary_conditions,output_dir)
-        mre.analyze.post_plot_v3(x0,springs,boundary_conditions,boundaries,output_dir)
+        # mre.analyze.post_plot_v2(x0,springs,boundary_conditions,output_dir)
+        # mre.analyze.post_plot_v3(node_posns,x0,springs,boundary_conditions,boundaries,output_dir)
+        mre.analyze.post_plot_cut(node_posns,x0,springs,particles,dimensions,l_e,boundary_conditions,output_dir)
+        # mre.analyze.post_plot_particle(node_posns,x0,particle_nodes,springs,boundary_conditions,output_dir)
     
     fig = plt.figure()
     ax = fig.gca()
