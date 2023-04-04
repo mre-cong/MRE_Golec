@@ -113,7 +113,8 @@ def parallel_spheres(grid):
         rs = RasterizeSphere(svoxel, radius, grid)
         points = np.where(rs.grid)
         return np.array([*points])
-
+#______________________________
+#below this line is all my code, above it is mostly code from the authors credited above
 def get_sphere_on_grid(radius):
     """given a sphere radius in voxels (half integer), return a 3D array defining which grid points are voxels belonging to the sphere"""
     max = np.int64(np.ceil(radius**2))

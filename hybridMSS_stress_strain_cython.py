@@ -166,22 +166,32 @@ def main():
     Ly = 1.0
     Lz = 1.0
     dimensions = [Lx,Ly,Lz]
-    k = mre.initialize.get_spring_constants(E, nu, l_e)
-    kappa = mre.initialize.get_kappa(E, nu)
     t_f = 30
-
-    node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-    elements = mre.initialize.get_elements(node_posns,Lx,Ly,Lz,l_e)
-    boundaries = mre.initialize.get_boundaries(node_posns)
-    springs = mre.initialize.create_springs(node_posns,k,l_e,dimensions)
-    radius = l_e*0.5
-    assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
-    radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
-    center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
-    particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center-l_e/2,dimensions)
-    particle_nodes2 = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+3*l_e/2,dimensions)
-    #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
-    particles = np.vstack((particle_nodes,particle_nodes2))
+    #TODO
+    #need functionality to check some central directory containing initialization files
+    system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
+    current_dir = os.path.abspath('.')
+    input_dir = current_dir + f'/init_files/{system_string}/'
+    if not (os.path.isdir(input_dir)):
+        os.mkdir(input_dir)
+        node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+        elements = mre.initialize.get_elements(node_posns,Lx,Ly,Lz,l_e)
+        boundaries = mre.initialize.get_boundaries(node_posns)
+        k = mre.initialize.get_spring_constants(E, nu, l_e)
+        springs = mre.initialize.create_springs(node_posns,k,l_e,dimensions)
+        mre.initialize.write_init_file(node_posns,springs,elements,particles,boundaries,input_dir)
+    else:
+        node_posns, springs, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
+        
+        radius = l_e*0.5
+        assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
+        radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
+        center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
+        particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center-l_e/2,dimensions)
+        particle_nodes2 = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+3*l_e/2,dimensions)
+        #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
+        particles = np.vstack((particle_nodes,particle_nodes2))
+    kappa = mre.initialize.get_kappa(E, nu)
     boundary_conditions = ('strain',('left','right'),.05)
 
     script_name = lib_programname.get_path_executed_script()
@@ -194,8 +204,7 @@ def main():
     my_sim = mre.initialize.Simulation(E,nu,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
     mre.initialize.write_log(my_sim,output_dir)
-    mre.initialize.write_init_file(node_posns,springs,elements,particles,boundaries,output_dir)
-    r_nodes, r_springs, r_elements, r_particles, r_boundaries = mre.initialize.read_init_file(output_dir+'init.h5')
+    
 
     # strains = np.array([0.01])
     strains = np.arange(-.001,-0.01,-0.05)
@@ -233,7 +242,6 @@ def main():
         # print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
         a_var = mre.analyze.get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_e,boundary_conditions)
-        # a_var = mre.analyze.get_accelerations_post_simulation_v2(posns,boundaries,springs,elements,kappa,l_e,boundary_conditions)
         m = 1e-2
         end_boundary_forces = a_var[boundaries['right']]*m
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
@@ -262,10 +270,6 @@ def main():
     plt.savefig(savename)
     plt.close()    
     
-# f = tb.open_file(output_dir+'temp.h5')
-# calculate approximate volumes of each element after simulation
-#deformed_avg_vecs = get_average_edge_vectors(posns, elements)
-#deformed_vol = get_unit_cell_volume(deformed_avg_vecs)
 
 
 if __name__ == "__main__":

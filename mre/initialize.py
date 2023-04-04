@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import time
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
+import create_springs
+import springs
 
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
 def discretize_space(Lx,Ly,Lz,cube_side_length):
@@ -54,7 +56,7 @@ def get_elements(node_posns,Lx,Ly,Lz,cube_side_length):
 
     #given the node positions and stiffness constants for the different types of springs, calculate and return a list of springs, which is  N_springs x 4, where each row represents a spring, and the columns are [node_i_rowidx, node_j_rowidx, stiffness, equilibrium_length]
     #TODO improve create_springs function performance by switching to a divide and conquer approach. see notes from March 15th 2023
-def create_springs(node_posns,stiffness_constants,cube_side_length,dimensions):
+def create_springs_old(node_posns,stiffness_constants,cube_side_length,dimensions):
     face_diagonal_length = np.sqrt(2)*cube_side_length
     center_diagonal_length = np.sqrt(3)*cube_side_length
     springs = np.zeros((1,4),dtype=np.float64)#creating an array that will hold the springs, will have to concatenate as new springs are added, and delete the first row before passing back
@@ -84,7 +86,7 @@ def create_springs_v2(node_posns,elements,stiffness_constants,cube_side_length,d
     springs = np.unique(springs_tmp,axis=0)
     return np.ascontiguousarray(springs[1:],dtype=np.float64)#want a C-contiguous memory representation for using cythonized compiled functionality, where information on memory structure can provide performance speedups    
 
-#functionalizing the construction of springs including setting of stiffness constants based on number of shared elements for different spring types (edge and face diagonal). will need to be extended for the case of materials with two phases
+# functionalizing the construction of springs including setting of stiffness constants based on number of shared elements for different spring types (edge and face diagonal). will need to be extended for the case of materials with two phases
 def get_node_springs(i,node_posns,rij_mag,dimensions,stiffness_constant,comparison_length,max_shared_elements):
     """Set the stiffness of a particular spring based on the number of shared elements (and spring type: edge or face diagaonal). assumes a single material phase"""
     epsilon = np.spacing(1)
@@ -255,6 +257,15 @@ def get_node_surf(node_posn,Lx,Ly,Lz):
         surfaces[2] = -1
     return surfaces     
 
+def get_row_indices(node_posns,l_e,dim):
+    """Return the row indices corresponding to the node positions of interest given the simulation dimension parameters"""
+    Lx,Ly,Lz = dim
+    inv_l_e = 1/l_e
+    nodes_per_col = np.round(Lz/l_e + 1).astype(np.int32)
+    nodes_per_row = np.round(Lx/l_e + 1).astype(np.int32)
+    row_index = ((nodes_per_col * inv_l_e * node_posns[:,0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + inv_l_e *node_posns[:,2]).astype(np.int32)
+    return row_index
+
 #given the material properties (Young's modulus, shear modulus, and poisson's ratio) of an isotropic material, calculate the spring stiffness constants for edge springs, center diagonal springs, and face diagonal springs for a cubic unit cell
 def get_spring_constants(E,nu,l_e):
     """Return the edge, central diagonal, and face diagonal stiffness constants of the system from the Young's modulus, poisson's ratio, and the length of the edge springs."""
@@ -376,55 +387,168 @@ def read_init_file(fn):
     springs = spring_object.read()
     element_object = f.get_node('/','elements')
     elements = element_object.read()
-    particle_object = f.get_node('/','particles')
-    particles = particle_object.read()
+    # particle_object = f.get_node('/','particles')
+    # particles = particle_object.read()
     boundaries = {}
     for leaf in f.root.boundaries._f_walknodes('Leaf'):
         boundaries[leaf.name] = leaf.read()
     f.close()
-    return node_posns, springs, elements, particles, boundaries
+    return node_posns, springs, elements, boundaries
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,boundary_conditions,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
-    f = tb.open_file(output_dir+'output.h5','a')
-    f.create_group('/','node_posns','Final Configurations')
-    f.create_array('/node_posns',str(count),posns)
+    f = tb.open_file(f'{output_dir}output_{count}.h5','w')
+    f.create_array('/','node_posns',posns)
+    # f.create_group('/','node_posns','Final Configurations')
+    # f.create_array('/node_posns',str(count),posns)
     # f.create_group('/','boundary_conditions','Applied Boundary Conditions')
     # f.create_group('/','applied_field')
-    surf_tuple_dt = np.dtype([('surf1',str),('surf2',str)])
-    datatype = np.dtype([('bc_type',str),('surfaces',surf_tuple_dt),('value',float)])
-    f.create_table('/','boundary_conditions',datatype)
-    bc = np.array([boundary_conditions])
+    dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    f.create_table('/','boundary_conditions',dt)
+    bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
     f.close()
+
+def read_output_file(fn):
+    f = tb.open_file(fn,'r')
+    node_object = f.get_node('/','node_posns')
+    node_posns = node_object.read()
+    bc_object = f.get_node('/','boundary_conditions')
+    bc = bc_object.read()
+    boundary_condition = (bc[0],(bc[1][0],bc[1][1]),bc[2])
+    f.close()
+    return node_posns, boundary_condition
+
 
 def main():
     import time
     E = 1
     nu = 0.4999
     l_e = .1
-    Lx = 20.0
-    Ly = 1.0
-    Lz = 1.0
+    Lx = 0.2
+    Ly = 0.1
+    Lz = 0.1
     node_posns = discretize_space(Lx,Ly,Lz,l_e)
     elements = get_elements(node_posns,Lx,Ly,Lz,l_e)
+    boundaries = get_boundaries(node_posns)
+    dimensions = np.array([Lx,Ly,Lz])
+    node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
     k = get_spring_constants(E,nu,l_e)
-    dimensions = [Lx,Ly,Lz]
+    k = np.array(k,dtype=np.float64)
     start = time.perf_counter()
-    edges_original = create_springs(node_posns,k,l_e,dimensions)
+    #estimate upper bound on number of springs
+    max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
+    edges_cy = np.empty((max_springs,4),dtype=np.float64)
+    rij_mag = np.empty((node_posns.shape[0],),dtype=np.float64)
+    num_springs = create_springs.create_springs(node_posns,k,l_e,Lx,Ly,Lz,edges_cy,rij_mag)
+    edges_cy = edges_cy[:num_springs,:]
+    end = time.perf_counter()
+    cy_time = end-start
+    start = time.perf_counter()
+    edges_original = create_springs_old(node_posns,k,l_e,dimensions)
     end = time.perf_counter()
     original_time = end-start
-    start = time.perf_counter()
-    edges_new = create_springs_v2(node_posns,elements,k,l_e,dimensions)
-    end = time.perf_counter()
-    new_time = end-start
+    # start = time.perf_counter()
+    # edges_new = create_springs_v2(node_posns,elements,k,l_e,dimensions)
+    # end = time.perf_counter()
+    # new_time = end-start
     # print(np.sort(edges_original,axis=0))
-    correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
-    print("New and Old implementations agree?: " + str(correctness))
+    correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
+    print("New Cython and Old implementations agree?: " + str(correctness_cy))
+    # correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
+    # print("New and Old implementations agree?: " + str(correctness))
     print("Original implementation took {}s".format(original_time))
-    print("New implementation took {}s".format(new_time))
-    print("New implementation {}x times faster".format(original_time/new_time))
+    # print("New implementation took {}s".format(new_time))
+    # print("New implementation {}x times faster".format(original_time/new_time))
+    print("Cython implementation took {}s".format(cy_time))
+    print("Cython implementation {}x times faster".format(original_time/cy_time))
+    start = time.perf_counter()
+    #estimate upper bound on number of springs
+    max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    
+    other_springs = springs.get_springs(node_types, max_springs, k, dimensions, l_e)
+    other_springs = other_springs[:num_springs,:]
+    end = time.perf_counter()
+    newest_time = end-start
+    argsort_indices = np.argsort(edges_original[:,0],axis=0)
+    sorted_original = edges_original[argsort_indices,:]
+    j = 0
+    for i in range(sorted_original.shape[0]):
+        if i == sorted_original.shape[0] - 1:
+            break
+        if sorted_original[i,0] == sorted_original[i+1,0]:
+            pass
+        else:
+            subarray = sorted_original[j:i+1,:]
+            argsort_indices = np.argsort(subarray[:,1])
+            sorted_original[j:i+1,:] = subarray[argsort_indices,:]
+            j = i+1
+    argsort_indices = np.argsort(other_springs[:,0],axis=0)
+    sorted_other = other_springs[argsort_indices,:]
+    j = 0
+    for i in range(sorted_original.shape[0]):
+        if i == sorted_other.shape[0] - 1:
+            break
+        if sorted_other[i,0] == sorted_other[i+1,0]:
+            pass
+        else:
+            subarray = sorted_other[j:i+1,:]
+            argsort_indices = np.argsort(subarray[:,1])
+            sorted_other[j:i+1,:] = subarray[argsort_indices,:]
+            j = i+1
+    correctness = np.allclose(sorted_original,sorted_other)
+    if not correctness:
+        print(f'{np.isclose(sorted_original[:,0],sorted_other[:,0])}')
+        print(f'{np.isclose(sorted_original[:,1],sorted_other[:,1])}')
+        print(f'{np.isclose(sorted_original[:,2],sorted_other[:,2])}')
+        print(f'{np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0]}')
+        print(f'{np.isclose(sorted_original[:,3],sorted_other[:,3])}')
+        print(f'{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
+        print(f'{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
+        print(f'original\n{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
+        print(f'new\n{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
+    print("New Cython and Old implementations agree?: " + str(correctness))
+    # correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
+    # print("New and Old implementations agree?: " + str(correctness))
+    print("Original implementation took {}s".format(original_time))
+    # print("New implementation took {}s".format(new_time))
+    # print("New implementation {}x times faster".format(original_time/new_time))
+    print("Cython implementation took {}s".format(newest_time))
+    print("Cython implementation {}x times faster".format(original_time/newest_time))
+    # start = time.perf_counter()
+    # #estimate upper bound on number of springs
+    # max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    # # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
+    # edges_cy = np.empty((max_springs,4),dtype=np.float64)
+    # try:
+    #     num_springs = create_springs.create_springs_v2(node_posns,elements,k,l_e,Lx,Ly,Lz,edges_cy)
+    # except Exception as inst:
+    #     print('Exception raised during simulation')
+    #     print(type(inst))
+    #     print(inst)
+    # edges_cy = edges_cy[:num_springs,:]
+    # end = time.perf_counter()
+    # cy2_time = end - start
+    # correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
+    # print("Element Cython and Cython implementations agree?: " + str(correctness_cy))
+    # print("Element Cython implementation took {}s".format(cy2_time))
+    # print("Element Cython implementation {}x times faster".format(cy_time/cy2_time))
+    # start = time.perf_counter()
+    # #estimate upper bound on number of springs
+    # max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    # # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
+    # edges_cy = np.empty((max_springs,4),dtype=np.float64)
+    # rij_mag = np.empty((node_posns.shape[0],),dtype=np.float64)
+    # num_springs = create_springs.create_springs_v3(node_posns,k,l_e,Lx,Ly,Lz,edges_cy)
+    # edges_cy = edges_cy[:num_springs,:]
+    # end = time.perf_counter()
+    # cy_time = end-start
+    # correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
+    # print("New Cython and Old implementations agree?: " + str(correctness_cy))
+    # print("v3Cython implementation took {}s".format(cy_time))
+    # print("v3Cython implementation {}x times faster".format(original_time/cy_time))
     pass
 
 if __name__ == "__main__":
