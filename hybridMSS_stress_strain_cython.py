@@ -22,6 +22,15 @@ Created on Fri Aug 26 09:19:19 2022
     #when the method of choice is chosen, we need functions describing the energy, gradient, and the optimization method, and we need to save out the state at each time step if numerically integrating (if we are interested in the dynamics), or the final state of minimization
     
 #!!! wishlist
+#TODO
+# post simulation check on forces to determine if convergence has occurred, and to restart the simulationwith the intermediate configuration, looping until convergence criteria are met
+# tracking of particle centers
+# magnetic force interaction calculations
+# profiling a two particle system with magnetic interactions
+# performance comparison of gpu calculations of spring forces
+# alternative gpu calculation of spring forces to avoid the use of atomic functions (see notes on laptop from april 7th, 2023)
+# gpu implementation of the volume correction force, which will require the use of atomic functions, unless i can be clever with the use of multiple kernel calls to different subsets of the elements to avoid calculations for elements with shared nodes. doable, but i have to review how the elements are constructed and think through the implementation details more carefully. also requires syncrhonization commands to ensure that the kernel calls happen sequentially anyway, which might be slower than the use of atomic functions anyway
+
 
 # simulate(node_posns,connectivity,separations,boundary_conditions) -> at each time step, output the nodal positions, velocities, and accelerations, or after each succesful energy minimization output the nodal positions
 

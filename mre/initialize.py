@@ -420,135 +420,103 @@ def read_output_file(fn):
     f.close()
     return node_posns, boundary_condition
 
-
-def main():
+def test_spring_connection_setting():
     import time
     E = 1
     nu = 0.4999
     l_e = .1
-    Lx = 0.2
-    Ly = 0.1
-    Lz = 0.1
-    node_posns = discretize_space(Lx,Ly,Lz,l_e)
-    elements = get_elements(node_posns,Lx,Ly,Lz,l_e)
-    boundaries = get_boundaries(node_posns)
-    dimensions = np.array([Lx,Ly,Lz])
-    node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
-    k = get_spring_constants(E,nu,l_e)
-    k = np.array(k,dtype=np.float64)
-    start = time.perf_counter()
-    #estimate upper bound on number of springs
-    max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
-    edges_cy = np.empty((max_springs,4),dtype=np.float64)
-    rij_mag = np.empty((node_posns.shape[0],),dtype=np.float64)
-    num_springs = create_springs.create_springs(node_posns,k,l_e,Lx,Ly,Lz,edges_cy,rij_mag)
-    edges_cy = edges_cy[:num_springs,:]
-    end = time.perf_counter()
-    cy_time = end-start
-    start = time.perf_counter()
-    edges_original = create_springs_old(node_posns,k,l_e,dimensions)
-    end = time.perf_counter()
-    original_time = end-start
-    # start = time.perf_counter()
-    # edges_new = create_springs_v2(node_posns,elements,k,l_e,dimensions)
-    # end = time.perf_counter()
-    # new_time = end-start
-    # print(np.sort(edges_original,axis=0))
-    correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
-    print("New Cython and Old implementations agree?: " + str(correctness_cy))
-    # correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
-    # print("New and Old implementations agree?: " + str(correctness))
-    print("Original implementation took {}s".format(original_time))
-    # print("New implementation took {}s".format(new_time))
-    # print("New implementation {}x times faster".format(original_time/new_time))
-    print("Cython implementation took {}s".format(cy_time))
-    print("Cython implementation {}x times faster".format(original_time/cy_time))
-    start = time.perf_counter()
-    #estimate upper bound on number of springs
-    max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    
-    other_springs = springs.get_springs(node_types, max_springs, k, dimensions, l_e)
-    other_springs = other_springs[:num_springs,:]
-    end = time.perf_counter()
-    newest_time = end-start
-    argsort_indices = np.argsort(edges_original[:,0],axis=0)
-    sorted_original = edges_original[argsort_indices,:]
-    j = 0
-    for i in range(sorted_original.shape[0]):
-        if i == sorted_original.shape[0] - 1:
-            break
-        if sorted_original[i,0] == sorted_original[i+1,0]:
-            pass
-        else:
-            subarray = sorted_original[j:i+1,:]
-            argsort_indices = np.argsort(subarray[:,1])
-            sorted_original[j:i+1,:] = subarray[argsort_indices,:]
-            j = i+1
-    argsort_indices = np.argsort(other_springs[:,0],axis=0)
-    sorted_other = other_springs[argsort_indices,:]
-    j = 0
-    for i in range(sorted_original.shape[0]):
-        if i == sorted_other.shape[0] - 1:
-            break
-        if sorted_other[i,0] == sorted_other[i+1,0]:
-            pass
-        else:
-            subarray = sorted_other[j:i+1,:]
-            argsort_indices = np.argsort(subarray[:,1])
-            sorted_other[j:i+1,:] = subarray[argsort_indices,:]
-            j = i+1
-    correctness = np.allclose(sorted_original,sorted_other)
-    if not correctness:
-        print(f'{np.isclose(sorted_original[:,0],sorted_other[:,0])}')
-        print(f'{np.isclose(sorted_original[:,1],sorted_other[:,1])}')
-        print(f'{np.isclose(sorted_original[:,2],sorted_other[:,2])}')
-        print(f'{np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0]}')
-        print(f'{np.isclose(sorted_original[:,3],sorted_other[:,3])}')
-        print(f'{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
-        print(f'{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
-        print(f'original\n{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
-        print(f'new\n{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
-    print("New Cython and Old implementations agree?: " + str(correctness))
-    # correctness = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_new,axis=0))
-    # print("New and Old implementations agree?: " + str(correctness))
-    print("Original implementation took {}s".format(original_time))
-    # print("New implementation took {}s".format(new_time))
-    # print("New implementation {}x times faster".format(original_time/new_time))
-    print("Cython implementation took {}s".format(newest_time))
-    print("Cython implementation {}x times faster".format(original_time/newest_time))
-    # start = time.perf_counter()
-    # #estimate upper bound on number of springs
-    # max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    # # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
-    # edges_cy = np.empty((max_springs,4),dtype=np.float64)
-    # try:
-    #     num_springs = create_springs.create_springs_v2(node_posns,elements,k,l_e,Lx,Ly,Lz,edges_cy)
-    # except Exception as inst:
-    #     print('Exception raised during simulation')
-    #     print(type(inst))
-    #     print(inst)
-    # edges_cy = edges_cy[:num_springs,:]
-    # end = time.perf_counter()
-    # cy2_time = end - start
-    # correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
-    # print("Element Cython and Cython implementations agree?: " + str(correctness_cy))
-    # print("Element Cython implementation took {}s".format(cy2_time))
-    # print("Element Cython implementation {}x times faster".format(cy_time/cy2_time))
-    # start = time.perf_counter()
-    # #estimate upper bound on number of springs
-    # max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    # # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
-    # edges_cy = np.empty((max_springs,4),dtype=np.float64)
-    # rij_mag = np.empty((node_posns.shape[0],),dtype=np.float64)
-    # num_springs = create_springs.create_springs_v3(node_posns,k,l_e,Lx,Ly,Lz,edges_cy)
-    # edges_cy = edges_cy[:num_springs,:]
-    # end = time.perf_counter()
-    # cy_time = end-start
-    # correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
-    # print("New Cython and Old implementations agree?: " + str(correctness_cy))
-    # print("v3Cython implementation took {}s".format(cy_time))
-    # print("v3Cython implementation {}x times faster".format(original_time/cy_time))
+    lx = range(1,11)
+    ly = range(1,11)
+    lz = range(1,6)
+    for countlx in range(len(lx)):
+        for countly in range(len(ly)):
+            for countlz in range(len(lz)):
+                Lx = lx[countlx]*l_e
+                Ly = ly[countly]*l_e
+                Lz = lz[countlz]*l_e
+                node_posns = discretize_space(Lx,Ly,Lz,l_e)
+                elements = get_elements(node_posns,Lx,Ly,Lz,l_e)
+                boundaries = get_boundaries(node_posns)
+                dimensions = np.array([Lx,Ly,Lz])
+                node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
+                k = get_spring_constants(E,nu,l_e)
+                k = np.array(k,dtype=np.float64)
+                # start = time.perf_counter()
+                # #estimate upper bound on number of springs
+                # max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+                # # lesser_upper_bound = max_springs - 2*((np.round(Lx/l_e - 1).astype(np.int32)*np.round(Ly/l_e - 1)) + (np.round(Lx/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)) + (np.round(Ly/l_e - 1).astype(np.int32)*np.round(Lz/l_e - 1)))*13/2 - (np.round(Lx/l_e - 1).astype(np.int32) + np.round(Ly/l_e - 1).astype(np.int32) +  np.round(Lz/l_e - 1).astype(np.int32))*26*3/2 - 7*26/2
+                # edges_cy = np.empty((max_springs,4),dtype=np.float64)
+                # rij_mag = np.empty((node_posns.shape[0],),dtype=np.float64)
+                # num_springs = create_springs.create_springs(node_posns,k,l_e,Lx,Ly,Lz,edges_cy,rij_mag)
+                # edges_cy = edges_cy[:num_springs,:]
+                # end = time.perf_counter()
+                # cy_time = end-start
+                start = time.perf_counter()
+                edges_original = create_springs_old(node_posns,k,l_e,dimensions)
+                end = time.perf_counter()
+                original_time = end-start
+                # correctness_cy = np.allclose(np.sort(edges_original,axis=0),np.sort(edges_cy,axis=0))
+                # print("New Cython and Old implementations agree?: " + str(correctness_cy))
+                # print("Original implementation took {}s".format(original_time))
+                # print("Cython implementation took {}s".format(cy_time))
+                # print("Cython implementation {}x times faster".format(original_time/cy_time))
+                start = time.perf_counter()
+                #estimate upper bound on number of springs
+                max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+                other_springs = np.empty((max_springs,4),dtype=np.float64)
+                num_springs = springs.get_springs(node_types, other_springs, max_springs, k, dimensions, l_e)
+                other_springs = other_springs[:num_springs,:]
+                end = time.perf_counter()
+                newest_time = end-start
+                argsort_indices = np.argsort(edges_original[:,0],axis=0)
+                sorted_original = edges_original[argsort_indices,:]
+                j = 0
+                for i in range(sorted_original.shape[0]):
+                    if i == sorted_original.shape[0] - 1:
+                        break
+                    if sorted_original[i,0] == sorted_original[i+1,0]:
+                        pass
+                    else:
+                        subarray = sorted_original[j:i+1,:]
+                        argsort_indices = np.argsort(subarray[:,1])
+                        sorted_original[j:i+1,:] = subarray[argsort_indices,:]
+                        j = i+1
+                argsort_indices = np.argsort(other_springs[:,0],axis=0)
+                sorted_other = other_springs[argsort_indices,:]
+                j = 0
+                for i in range(sorted_original.shape[0]):
+                    if i == sorted_other.shape[0] - 1:
+                        break
+                    if sorted_other[i,0] == sorted_other[i+1,0]:
+                        pass
+                    else:
+                        subarray = sorted_other[j:i+1,:]
+                        argsort_indices = np.argsort(subarray[:,1])
+                        sorted_other[j:i+1,:] = subarray[argsort_indices,:]
+                        j = i+1
+                correctness = np.allclose(sorted_original,sorted_other)
+                if not correctness:
+                    print(f'{np.isclose(sorted_original[:,0],sorted_other[:,0])}')
+                    print(f'{np.isclose(sorted_original[:,1],sorted_other[:,1])}')
+                    print(f'{np.isclose(sorted_original[:,2],sorted_other[:,2])}')
+                    print(f'{np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0]}')
+                    print(f'{np.isclose(sorted_original[:,3],sorted_other[:,3])}')
+                    print(f'{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
+                    print(f'{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],2]}')
+                    print(f'original\n{sorted_original[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
+                    print(f'new\n{sorted_other[np.logical_not(np.isclose(sorted_original[:,2],sorted_other[:,2])).nonzero()[0],:]}')
+                print("New Cython and Old implementations agree?: " + str(correctness))
+                print("Original implementation took {}s".format(original_time))
+                print("Cython implementation took {}s".format(newest_time))
+                print("Cython implementation {}x times faster".format(original_time/newest_time))
+
+def main():
+    try:
+        test_spring_connection_setting()
+    except Exception as inst:
+        print('Exception raised during testing of spring connection setting')
+        print(type(inst))
+        print(inst)
     pass
 
 if __name__ == "__main__":

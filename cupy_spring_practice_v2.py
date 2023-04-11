@@ -5,6 +5,7 @@ from cupyx.profiler import benchmark
 import cupyx
 import time
 import get_spring_force_cy
+import springs
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
 def discretize_space(Lx,Ly,Lz,cube_side_length):
     """Given the side lengths of a rectilinear space and the side length of the cubic unit cell to discretize the space, return arrays of (respectively) the node positions as an N_vertices x 3 array, N_cells x 8 array, and N_vertices x 8 array"""#??? should it be N_vertices by 8? i can't mix types in the python numpy arrays. if it is N by 8 I can store index values for the unit cells that each node belongs to, and maybe negative values or NaN for the extra entries if the vertex/node doesn't belong to 8 unit cells
@@ -38,7 +39,17 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
     # back_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].max())[0]
     # boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}
     return np.float32(node_posns)#, np.int32(elements), boundaries
-           
+
+def get_boundaries(node_posns):
+    top_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].max())[0]
+    bot_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].min())[0]
+    left_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].min())[0]
+    right_bdry = np.nonzero(node_posns[:,0] == node_posns[:,0].max())[0]
+    front_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].min())[0]
+    back_bdry = np.nonzero(node_posns[:,1] == node_posns[:,1].max())[0]
+    boundaries = {'top': top_bdry, 'bot': bot_bdry, 'left': left_bdry, 'right': right_bdry, 'front': front_bdry, 'back': back_bdry}  
+    return boundaries
+
 #given the material properties (Young's modulus, shear modulus, and poisson's ratio) of an isotropic material, calculate the spring stiffness constants for edge springs, center diagonal springs, and face diagonal springs for a cubic unit cell
 def get_spring_constants(E,nu,l_e):
     """given the Young's modulus, poisson's ratio, and the length of the edge springs, calculate the edge, central diagonal, and face diagonal stiffness constants of the system"""
@@ -178,13 +189,20 @@ def main():
     E = 1
     nu = 0.49
     l_e = 0.1
-    Lx = 20.0
-    Ly = 10.0
-    Lz = 1.0
+    Lx = 25.6
+    Ly = 12.8
+    Lz = 12.8
     node_posns = discretize_space(Lx,Ly,Lz,l_e)
+    boundaries = get_boundaries(node_posns)
     k = get_spring_constants(E,nu,l_e)
-    dimensions = [Lx,Ly,Lz]
-    edges = create_springs(node_posns,k,l_e,dimensions)
+    k = np.array(k,dtype=np.float64)
+    dimensions = np.array([Lx,Ly,Lz])
+    # edges = create_springs(node_posns,k,l_e,dimensions)
+    node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
+    max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    edges = np.empty((max_springs,4),dtype=np.float64)
+    num_springs = springs.get_springs(node_types, edges, max_springs, k, dimensions, l_e)
+    edges = edges[:num_springs,:]
     
     #raw kernels are important for dealing with more complicated user defined kernels.
     #proper calculation of the index each thread should use requires some thought based on the grid size(number of blocks) and block size (number of threads per block)
@@ -234,24 +252,41 @@ def main():
         ''', 'spring_force')
 
     node_posns[:,0] *= 1.05
-    cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
-    cupy_edges = cp.array(edges).reshape((edges.shape[0]*edges.shape[1],1),order='C')
+    # cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+    cupy_edges = cp.array(edges.astype(np.float32)).reshape((edges.shape[0]*edges.shape[1],1),order='C')
     N_nodes = node_posns.shape[0]
-    cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+    # cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)#TODO implement the function to include the instantiation of the GPU memory for the forces, edges, and positions (since that overhead will exist every time prior to executing the kernel)
     size_edges = edges.shape[0]
-    block_size = 1024
+    block_size = 128
     grid_size = (int (np.ceil((int (np.ceil(size_edges/block_size)))/14)*14))
-    N_iterations = 1
-    start = time.perf_counter()
-    for i in range(N_iterations):
+    N_iterations = 100
+    def spring_func_w_less_transfers(cupy_edges,node_posns,N_nodes,size_edges):
+        cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+        cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
         spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
-    end = time.perf_counter()
+        host_cupy_forces = cp.asnumpy(cupy_forces)
+    def spring_func_w_transfers(edges,node_posns,N_nodes,size_edges):
+        cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+        cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+        cupy_edges = cp.array(edges.astype(np.float32)).reshape((edges.shape[0]*edges.shape[1],1),order='C')
+        spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+        host_cupy_forces = cp.asnumpy(cupy_forces)
+    def spring_func(cupy_edges,cupy_node_posns,cupy_forces,size_edges):
+        spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+    execution_gpu = cupyx.profiler.benchmark(spring_func_w_less_transfers,(cupy_edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
+    # execution_gpu = cupyx.profiler.benchmark(spring_func_w_transfers,(edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
+    # execution_gpu = cupyx.profiler.benchmark(spring_func_w_transfers,(cupy_edges,cupy_node_posns,cupy_forces,size_edges),n_repeat=N_iterations)
+    delta_gpu_naive = np.sum(execution_gpu.gpu_times)
+    # start = time.perf_counter()
+    # for i in range(N_iterations):
+    #     spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+    # end = time.perf_counter()
     # grid_size = (int (np.ceil(size_edges/1024)))
     # start = time.perf_counter()
     # spring_kernel((grid_size,),(1024,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
     # cp.cuda.runtime.deviceSynchronize()
     # print(cp.ndarray.get(cupy_forces).reshape((N_nodes,3)))
-    delta_gpu_naive = end-start
+    # delta_gpu_naive = end-start
     # below this point i am using the code snippet from timestep() to calculate elastic forces using pure python/numpy expressions
     # this code is ripe for improvement even just using pure python and numpy. for example, the enforcement of constant strain
     # could be handled by setting the accelerations of those nodes to zero, which would require doing the normal calculations but which would
@@ -265,8 +300,16 @@ def main():
         get_spring_force_cy.get_spring_forces(x0, edges, spring_force)
     end = time.perf_counter()
     delta_np = end-start
-    correctness = cp.allclose(cupy_forces,cp.array(spring_force).reshape((spring_force.shape[0]*spring_force.shape[1],1),order='C'))
-    print("GPU and CPU based calculations of forces agree?: " + str(correctness))
+    spring_force = spring_force.astype(np.float32)
+    cupy_cython_spring_force = cp.asarray(spring_force).reshape((spring_force.shape[0]*spring_force.shape[1],1),order='C')
+    # host_cupy_forces = cp.asnumpy(cupy_forces)
+    # try:
+    #     correctness = np.allclose(host_cupy_forces,cupy_cython_spring_force)
+    # except Exception as inst:
+    #         print('Exception raised during calculation')
+    #         print(type(inst))
+    #         print(inst)
+    # print("GPU and CPU based calculations of forces agree?: " + str(correctness))
     print("CPU time is {} seconds".format(delta_np))
     print("GPU time is {} seconds".format(delta_gpu_naive))
     print("GPU is {}x faster than CPU".format(delta_np/delta_gpu_naive))

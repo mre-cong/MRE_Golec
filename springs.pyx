@@ -24,7 +24,8 @@ cdef np.ndarray[np.int32_t, ndim=1] get_row_indices(double[:,:] node_posns, doub
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] node_type,  int max_springs, double[:] k, double[:] dim, double l_e):
+# cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] node_type,  int max_springs, double[:] k, double[:] dim, double l_e):
+cpdef int get_springs(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] springs, int max_springs, double[:] k, double[:] dim, double l_e):
 #used in get springs to define which adjacent nodes would be above/below/etc the current node of interest, for deciding which connections are possible based on the node type (a node on the top surface can't be connected to a node above it, there are no nodes above it)
     cdef int i
     cdef np.ndarray[np.npy_bool, ndim=1] ABOVE = np.array([True,False,False,False,True,False,False,True,False,False,True,False,True],dtype=np.bool_)
@@ -86,7 +87,7 @@ cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] n
     cdef int nodes_per_plane = Nx*Nz
     cdef double face_spring_length = sqrt(2)*l_e
     cdef double center_diagonal_length = sqrt(3)*l_e
-    cdef np.ndarray[np.float64_t,ndim=2] springs = np.empty((max_springs,4),dtype=np.float64)
+    # cdef np.ndarray[np.float64_t,ndim=2] springs = np.empty((max_springs,4),dtype=np.float64)
     cdef int spring_counter = 0
     cdef int[13] adjacent_node_indices = np.empty((13,),dtype=np.int32)
     for i in range(node_type.shape[0]):#there are 26 adjacent nodes that could be connected, but because i only want unique connections (i < other_node_index) and i'm iterating over i, i can ignore the 13 that would have lower node indices
@@ -182,7 +183,7 @@ cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] n
             spring_counter = set_connection_type_conditional(i, node_type, springs, LTOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
         elif node_type[i] == 26:
             spring_counter = set_connection_type_conditional(i, node_type, springs, RTOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
-    return springs
+    return spring_counter#springs
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -371,6 +372,8 @@ cdef double get_face_stiffness(int node_type_i,int node_type_j, double k):
         else:
             return k/2
     if node_type_i > 6 and node_type_i < 19: #edge
+        if node_type_j == 0:
+            return k
         if node_type_j > 0 and node_type_j < 7:
             if node_type_j == 1 and (node_type_i == 7 or node_type_i == 8 or node_type_i == 9 or node_type_i == 10):
                 return k/2
