@@ -5,7 +5,85 @@ cimport libc.math
 cimport numpy as np
 import numpy as np
 
+#alternative implementation. start with node 0, counting up elements until you hit N_el_x. with node 0 get the other node indices by a similar mechanism used for the spring variable setting, how many nodes per line, or per plane, to get the other 7 entries. keeping track of the counter index compared to the number of elements in each direction to avoid continuing when you've just finished a boundary element. should be significantly faster than generating the positions and then going backwards to the index, and i need the additional speed up. that being said, the current implementation is, for 100x100x10 elements, ~26 times faster than the pure python. but i can do better than that.
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.int32_t, ndim=2] get_elements_v2(double[:] dimensions, double cube_side_length):
+    cdef int N_el_x = np.int32(round(dimensions[0]/cube_side_length))
+    cdef int N_el_y = np.int32(round(dimensions[1]/cube_side_length))
+    cdef int N_el_z = np.int32(round(dimensions[2]/cube_side_length))
+    cdef int N_el = N_el_x * N_el_y * N_el_z
+    cdef np.ndarray[np.int32_t, ndim=2] elements = np.empty((N_el,8),dtype=np.int32)
+    cdef int i
+    cdef int j
+    cdef int k
+    cdef int nodes_per_line = N_el_z + 1
+    cdef int nodes_per_plane = (N_el_x + 1)*(N_el_z + 1)
+    cdef int counter = 0
+    for i in range(N_el_z):
+        for j in range(N_el_y):
+            for k in range(N_el_x):
+                elements[counter,0] = k*nodes_per_line + j*nodes_per_plane + i 
+                elements[counter,1] = k*nodes_per_line + j*nodes_per_plane + i + 1
+                elements[counter,2] = (k+1)*nodes_per_line + j*nodes_per_plane + i 
+                elements[counter,3] = (k+1)*nodes_per_line + j*nodes_per_plane + i + 1
+                elements[counter,4] = k*nodes_per_line + (j+1)*nodes_per_plane + i 
+                elements[counter,5] = k*nodes_per_line + (j+1)*nodes_per_plane + i + 1 
+                elements[counter,6] = (k+1)*nodes_per_line + (j+1)*nodes_per_plane + i 
+                elements[counter,7] = (k+1)*nodes_per_line + (j+1)*nodes_per_plane + i + 1
+                counter += 1
+    return elements
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.int32_t, ndim=2] get_elements(double[:,::1] node_posns, double[:] dimensions, double cube_side_length):
+    """given the node/vertex positions, dimensions of the simulated volume, and volume element edge length, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
+    #need to keep track of which nodes belong to a unit cell (at some point)
+    #TODO move this part outside of the cdef function... and call a cdef function that returns void but sets the elements variable
+    cdef int N_el_x = np.int32(round(dimensions[0]/cube_side_length))
+    cdef int N_el_y = np.int32(round(dimensions[1]/cube_side_length))
+    cdef int N_el_z = np.int32(round(dimensions[2]/cube_side_length))
+    cdef int N_el = N_el_x * N_el_y * N_el_z
+    #finding the indices for the nodes/vertices belonging to each element
+    #!!! need to check if there is any ordering to the vertices right now that I can use. I need to have each vertex for each element assigned an identity relative to the element for calculating average edge vectors to estimate the volume after deformation
+    cdef np.ndarray[np.int32_t, ndim=2] elements = np.empty((N_el,8),dtype=np.int32)
+    cdef int i
+    cdef int j
+    cdef int k
+    cdef double[8][3] posns = np.empty((8,3),dtype=np.float64)
+    cdef np.ndarray[np.int32_t, ndim=1] element = np.empty((8,),dtype=np.int32)
+    cdef int counter = 0
+    for i in range(N_el_z):
+        for j in range(N_el_y):
+            for k in range(N_el_x):
+                posns[0][0] = k*cube_side_length
+                posns[0][1] = j*cube_side_length
+                posns[0][2] = i*cube_side_length
+                posns[1][0] = k*cube_side_length
+                posns[1][1] = j*cube_side_length
+                posns[1][2] = (i+1)*cube_side_length
+                posns[2][0] = (k+1)*cube_side_length
+                posns[2][1] = j*cube_side_length
+                posns[2][2] = i*cube_side_length
+                posns[3][0] = (k+1)*cube_side_length
+                posns[3][1] = j*cube_side_length
+                posns[3][2] = (i+1)*cube_side_length
+                posns[4][0] = k*cube_side_length
+                posns[4][1] = (j+1)*cube_side_length
+                posns[4][2] = i*cube_side_length
+                posns[5][0] = k*cube_side_length
+                posns[5][1] = (j+1)*cube_side_length
+                posns[5][2] = (i+1)*cube_side_length
+                posns[6][0] = (k+1)*cube_side_length
+                posns[6][1] = (j+1)*cube_side_length
+                posns[6][2] = i*cube_side_length
+                posns[7][0] = (k+1)*cube_side_length
+                posns[7][1] = (j+1)*cube_side_length
+                posns[7][2] = (i+1)*cube_side_length
+                element = get_row_indices(posns,cube_side_length,dimensions)
+                elements[counter,:] = element
+                counter +=1
+    return elements
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

@@ -419,6 +419,51 @@ def read_output_file(fn):
     boundary_condition = (bc[0],(bc[1][0],bc[1][1]),bc[2])
     f.close()
     return node_posns, boundary_condition
+def test_element_setting():
+    import time
+    E = 1
+    nu = 0.4999
+    l_e = .1
+    lx = range(100,101)
+    ly = range(100,101)
+    lz = range(10,11)
+    for countlx in range(len(lx)):
+        for countly in range(len(ly)):
+            for countlz in range(len(lz)):
+                Lx = lx[countlx]*l_e
+                Ly = ly[countly]*l_e
+                Lz = lz[countlz]*l_e
+                node_posns = discretize_space(Lx,Ly,Lz,l_e)
+                start = time.perf_counter()
+                elements = get_elements(node_posns,Lx,Ly,Lz,l_e)
+                end = time.perf_counter()
+                py_time = end-start
+                # boundaries = get_boundaries(node_posns)
+                dimensions = np.array([Lx,Ly,Lz])
+                start = time.perf_counter()
+                new_elements = springs.get_elements(node_posns, dimensions, l_e)
+                end = time.perf_counter()
+                cy_time = end-start
+                start = time.perf_counter()
+                newer_elements = springs.get_elements_v2(dimensions, l_e)
+                end = time.perf_counter()
+                cy_time2 = end-start
+                correctness = np.allclose(elements,new_elements)
+                if not correctness:
+                    print(f'consider sorting mechanism for both axes to perform meaningul correctness comparison (use argsort)')
+                else:
+                    print("New Cython and Old implementations agree?: " + str(correctness))
+                    print(f"Original implementation took {py_time}s")
+                    print(f"Cython implementation took {cy_time}s")
+                    print(f"Cython implementation {py_time/cy_time}x times faster")
+                correctness = np.allclose(elements,newer_elements)
+                if not correctness:
+                    print(f'consider sorting mechanism for both axes to perform meaningul correctness comparison (use argsort)')
+                else:
+                    print("Newer Cython and Old implementations agree?: " + str(correctness))
+                    print(f"Original implementation took {py_time}s")
+                    print(f"Newer Cython implementation took {cy_time2}s")
+                    print(f"Newer Cython implementation {py_time/cy_time2}x times faster")
 
 def test_spring_connection_setting():
     import time
@@ -512,12 +557,19 @@ def test_spring_connection_setting():
 
 def main():
     try:
-        test_spring_connection_setting()
+        test_element_setting()
     except Exception as inst:
-        print('Exception raised during testing of spring connection setting')
+        print('Exception raised during testing of element setting')
         print(type(inst))
         print(inst)
     pass
+    # try:
+    #     test_spring_connection_setting()
+    # except Exception as inst:
+    #     print('Exception raised during testing of spring connection setting')
+    #     print(type(inst))
+    #     print(inst)
+    # pass
 
 if __name__ == "__main__":
     main()

@@ -93,6 +93,8 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
     particle_nodes_set = set(particles.ravel())
     particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
     particle_cut_nodes = [x for x in particle_cut_nodes_set]
     ax.scatter(node_posns[particle_cut_nodes,0],node_posns[particle_cut_nodes,1],node_posns[particle_cut_nodes,2],color='k',marker='o')
     plot_subset_springs(ax,node_posns,particle_cut_nodes_set,springs,spring_color='r')
