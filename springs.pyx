@@ -5,6 +5,22 @@ cimport libc.math
 cimport numpy as np
 import numpy as np
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef void accumulate_spring_forces(float[:,::1] gpu_spring_force, double[:,::1] springs, float[:,::1] spring_force):
+    cdef int i
+    cdef int node_idx_i
+    cdef int node_idx_j
+    for i in range(gpu_spring_force.shape[0]):
+        node_idx_i = int(springs[i,0])
+        node_idx_j = int(springs[i,1])
+        spring_force[node_idx_i,0] += gpu_spring_force[i,0]
+        spring_force[node_idx_i,1] += gpu_spring_force[i,1]
+        spring_force[node_idx_i,2] += gpu_spring_force[i,2]
+        spring_force[node_idx_j,0] -= gpu_spring_force[i,0]
+        spring_force[node_idx_j,1] -= gpu_spring_force[i,1]
+        spring_force[node_idx_j,2] -= gpu_spring_force[i,2]
+
 #alternative implementation. start with node 0, counting up elements until you hit N_el_x. with node 0 get the other node indices by a similar mechanism used for the spring variable setting, how many nodes per line, or per plane, to get the other 7 entries. keeping track of the counter index compared to the number of elements in each direction to avoid continuing when you've just finished a boundary element. should be significantly faster than generating the positions and then going backwards to the index, and i need the additional speed up. that being said, the current implementation is, for 100x100x10 elements, ~26 times faster than the pure python. but i can do better than that.
 @cython.boundscheck(False)
 @cython.wraparound(False)

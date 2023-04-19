@@ -86,6 +86,10 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     fig = plt.figure()
     ax = fig.add_subplot(projection= '3d')
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if not cut_nodes:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes1 = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+l_e/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes2 =np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]-l_e/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes = np.concatenate((cut_nodes1,cut_nodes2))
     ax.scatter(node_posns[cut_nodes,0],node_posns[cut_nodes,1],node_posns[cut_nodes,2],color ='b',marker='o')
     plot_subset_springs(ax,node_posns,cut_nodes,springs,spring_color='b')
     #now identify which of those nodes belong to the particle and the cut. set intersection?

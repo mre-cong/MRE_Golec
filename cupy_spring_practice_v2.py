@@ -6,6 +6,7 @@ import cupyx
 import time
 import get_spring_force_cy
 import springs
+import timeit
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
 def discretize_space(Lx,Ly,Lz,cube_side_length):
     """Given the side lengths of a rectilinear space and the side length of the cubic unit cell to discretize the space, return arrays of (respectively) the node positions as an N_vertices x 3 array, N_cells x 8 array, and N_vertices x 8 array"""#??? should it be N_vertices by 8? i can't mix types in the python numpy arrays. if it is N by 8 I can store index values for the unit cells that each node belongs to, and maybe negative values or NaN for the extra entries if the vertex/node doesn't belong to 8 unit cells
@@ -250,7 +251,40 @@ def main():
         }
         }
         ''', 'spring_force')
-
+    #TODO alternate implementation, calculate forces and save them out in a variable with the same number of rows as the edges/springs variable, then use a cythonized function to iterate over and accumulate the forces to the per node force variable
+    spring_kernel_v2 = cp.RawKernel(r'''
+    extern "C" __global__
+    void spring_force(const float* edges, const float* node_posns, float* forces, const int size_edges) {
+        int tid = blockDim.x * blockIdx.x + threadIdx.x;
+        if (tid < size_edges)
+        {
+            int iid = edges[4*tid];
+            int jid = edges[4*tid+1];
+            //printf("iid = %i, jid = %i\n",iid,jid);
+            float rij[3];
+            rij[0] = node_posns[3*iid]-node_posns[3*jid];
+            rij[1] = node_posns[3*iid+1]-node_posns[3*jid+1];
+            rij[2] = node_posns[3*iid+2]-node_posns[3*jid+2];
+            //printf("tid = %i, node_posns[3*%i] = %f, node_posns[3*%i+1] = %f, node_posns[3*%i+2] = %f\n",tid,iid,node_posns[3*iid],iid,node_posns[3*iid+1],iid,node_posns[3*iid+2]);
+            //printf("tid = %i, node_posns[3*%i] = %f, node_posns[3*%i+1] = %f, node_posns[3*%i+2] = %f\n",tid,jid,node_posns[3*jid],jid,node_posns[3*jid+1],jid,node_posns[3*jid+2]);
+            //printf("tid = %i, rij[0] = %f, rij[1] = %f, rij[2] = %f\n",tid,rij[0],rij[1],rij[2]);
+            float inv_mag = rsqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+            float rij_hat[3];
+            rij_hat[0] = rij[0]*inv_mag;
+            rij_hat[1] = rij[1]*inv_mag; 
+            rij_hat[2] = rij[2]*inv_mag;
+            float mag = sqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+            float force_mag = -1*edges[4*tid+2]*(mag-edges[4*tid+3]);
+            float force[3];
+            force[0] = rij_hat[0]*force_mag;
+            force[1] = rij_hat[1]*force_mag;
+            force[2] = rij_hat[2]*force_mag;
+            forces[3*tid] = force[0];
+            forces[3*tid+1] = force[1];
+            forces[3*tid+2] = force[2];
+        }
+        }
+        ''', 'spring_force')
     node_posns[:,0] *= 1.05
     # cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
     cupy_edges = cp.array(edges.astype(np.float32)).reshape((edges.shape[0]*edges.shape[1],1),order='C')
@@ -261,7 +295,7 @@ def main():
     grid_size = (int (np.ceil((int (np.ceil(size_edges/block_size)))/14)*14))
     N_iterations = 100
     def spring_func_w_less_transfers(cupy_edges,node_posns,N_nodes,size_edges):
-        cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+        cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32) 
         cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
         spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
         host_cupy_forces = cp.asnumpy(cupy_forces)
@@ -277,6 +311,19 @@ def main():
     # execution_gpu = cupyx.profiler.benchmark(spring_func_w_transfers,(edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
     # execution_gpu = cupyx.profiler.benchmark(spring_func_w_transfers,(cupy_edges,cupy_node_posns,cupy_forces,size_edges),n_repeat=N_iterations)
     delta_gpu_naive = np.sum(execution_gpu.gpu_times)
+
+    #second gpu method, using an accumulation after the gpu calculation and transfer of data
+    def spring_func_less_transfers_v2(edges,cupy_edges,node_posns,N_nodes,size_edges):
+        #testing has shown that this is not faster than using atomic functions with the original spring_kernel implementation. it is only ~1.2 to 1.3x faster than the cpu bound version. not sure where the slowdown is, probably the instantiation of such a large gpu bound cupy_forces variable, compared to the original implementation, and the act of accumulating the forces to the appropriate rows for the cpu bound spring_force variable
+        cupy_forces = cp.zeros((edges.shape[0],3),dtype=cp.float32) 
+        cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+        spring_kernel_v2((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
+        host_cupy_forces = cp.asnumpy(cupy_forces)
+        spring_force = np.zeros((node_posns.shape[0],3),np.float32)
+        springs.accumulate_spring_forces(host_cupy_forces, edges,spring_force)
+    
+    execution_gpu_v2 = cupyx.profiler.benchmark(spring_func_less_transfers_v2,(edges,cupy_edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
+    delta_gpu_2 = np.sum(execution_gpu_v2.gpu_times)
     # start = time.perf_counter()
     # for i in range(N_iterations):
     #     spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
@@ -295,6 +342,38 @@ def main():
     x0 = np.array(node_posns,dtype=np.float64)
     spring_force = np.empty(x0.shape,dtype=np.float64)
     edges = np.array(edges,dtype=np.float64)
+    #using timeit functionality to get clearer understanding of the performance
+    setup = '''
+import numpy as np
+import get_spring_force_cy
+import springs
+from __main__ import discretize_space
+from __main__ import get_boundaries
+from __main__ import get_spring_constants
+
+E = 1
+nu = 0.49
+l_e = 0.1
+Lx = 25.6
+Ly = 12.8
+Lz = 12.8
+node_posns = discretize_space(Lx,Ly,Lz,l_e)
+boundaries = get_boundaries(node_posns)
+k = get_spring_constants(E,nu,l_e)
+k = np.array(k,dtype=np.float64)
+dimensions = np.array([Lx,Ly,Lz])
+# edges = create_springs(node_posns,k,l_e,dimensions)
+node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
+max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+edges = np.empty((max_springs,4),dtype=np.float64)
+num_springs = springs.get_springs(node_types, edges, max_springs, k, dimensions, l_e)
+edges = edges[:num_springs,:]
+node_posns[:,0] *= 1.05
+x0 = np.array(node_posns,dtype=np.float64)
+spring_force = np.empty(x0.shape,dtype=np.float64)
+edges = np.array(edges,dtype=np.float64)
+    '''
+    # print(timeit.timeit('get_spring_force_cy.get_spring_forces(x0, edges, spring_force)',setup,number=N_iterations))
     start = time.perf_counter()
     for i in range(N_iterations):
         get_spring_force_cy.get_spring_forces(x0, edges, spring_force)
@@ -313,6 +392,8 @@ def main():
     print("CPU time is {} seconds".format(delta_np))
     print("GPU time is {} seconds".format(delta_gpu_naive))
     print("GPU is {}x faster than CPU".format(delta_np/delta_gpu_naive))
+    print("v2 GPU time is {} seconds".format(delta_gpu_2))
+    print("v2 GPU is {}x faster than CPU".format(delta_np/delta_gpu_2))
     return
 
 if __name__ == "__main__":

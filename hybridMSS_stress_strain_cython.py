@@ -50,12 +50,13 @@ import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
 import springs
+import magnetism
 
 #remember, purpose, signature, stub
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f):
+def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms):
     """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     
     epsilon = np.spacing(1)
@@ -79,7 +80,7 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions))
+    sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms))
     return sol#returning a solution object, that can then have it's attributes inspected
 
 # placeholder functions for doing purpose, signature, stub when doing planning/design and wishlisting
@@ -102,7 +103,7 @@ def remove_i(x,i):
 #function to pass to scipy.integrate.solve_ivp()
 #must be of the form fun(t,y)
 #can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
-def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions):
+def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions,Hext,particle_size,chi,Ms):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
@@ -146,20 +147,25 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions):
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
     spring_force = np.empty(x0.shape,dtype=np.float64)
     get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
     fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
     accel = set_fixed_nodes(accel,fixed_nodes)
     #for each particle, find the position of the center
     particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-    for particle, i in enumerate(particles):
+    for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
-    #now calculate the magnetic interaction force
-    for i in range(particles.shape[0]):
-        for j in range(i+1,particles.shape[0]):
-            magnetic_force = get_magnetic_force(particle_centers[i,:],particle_centers[j,:])
-            accel[particles[i,:],:] += magnetic_force/m[particles[i,:],np.newaxis]
-            accel[particles[j,:],:] -= magnetic_force/m[particles[j,:],np.newaxis]
+    M = magnetism.get_magnetization_iterative(Hext,particle_centers,particle_size,chi,Ms)
+    mag_forces = magnetism.get_dip_dip_forces(M,particle_centers,particle_size)
+    for i, particle in enumerate(particles):
+        accel[particle] += mag_forces[i]/particle.shape[0]/m[particle,np.newaxis]
+    #TODO now calculate the magnetic interaction force
+    # for i in range(particles.shape[0]):
+    #     for j in range(i+1,particles.shape[0]):
+    #         magnetic_force = get_magnetic_force(particle_centers[i,:],particle_centers[j,:])
+    #         accel[particles[i,:],:] += magnetic_force/m[particles[i,:],np.newaxis]
+    #         accel[particles[j,:],:] -= magnetic_force/m[particles[j,:],np.newaxis]
     #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
     for particle in particles:
         vecsum = np.sum(accel[particle],axis=0)
@@ -168,6 +174,7 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions):
     #     for j in range(3):
     #         accel[fixed_nodes[i],j] = 0
             # v0[fixed_nodes[i],j] = 0#this shouldn't be necessary, since the initial conditions have the velocities set to zero, the accelerations being set to zero means they should never change (and there was overhead associated with this additional random access write)
+    #TODO instead of reshaping as a 3N by 1, do (3*N,), and try concatenating. ideally should work and remove an additional and unnecessary reshape call
     accel = np.reshape(accel,(3*N,1))
     result = np.concatenate((v0.reshape((3*N,1)),accel))
     # alternative to concatenate is to create an empty array and then assign the values, this should in theory be faster
@@ -203,10 +210,11 @@ def main():
     E = 1
     nu = 0.499
     l_e = .1#cubic element side length
-    Lx = 10.0
-    Ly = 10.0
-    Lz = 1.0
+    Lx = 1.1
+    Ly = 1.1
+    Lz = 1.1
     t_f = 30
+    dimensions = np.array([Lx,Ly,Lz])
     #TODO
     #need functionality to check some central directory containing initialization files
     system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
@@ -215,7 +223,6 @@ def main():
     if not (os.path.isdir(input_dir)):#TODO add and statement that checks if the init file also exists?
         os.mkdir(input_dir)
         node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-        dimensions = np.array([Lx,Ly,Lz])
         elements = springs.get_elements(node_posns, dimensions, l_e)
         boundaries = mre.initialize.get_boundaries(node_posns)
         k = mre.initialize.get_spring_constants(E, nu, l_e)
@@ -226,18 +233,26 @@ def main():
         springs_var = np.empty((max_springs,4),dtype=np.float64)
         num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, l_e)
         springs_var = springs_var[:num_springs,:]
-        mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
-    else:
-        node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
-        #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
-        #radius = l_e*0.5
-        separation = 21
-        radius = l_e*(4.5)
+        separation = 5
+        radius = 0.5*l_e# radius = l_e*(4.5)
         assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
         radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
         center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
         particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center-separation*l_e/2,dimensions)
         particle_nodes2 = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+separation*l_e/2,dimensions)
+        particles = np.vstack((particle_nodes,particle_nodes2))
+        mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
+    else:
+        node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
+        #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
+        #radius = l_e*0.5
+        separation = 5
+        radius = l_e*0.5# radius = l_e*(4.5)
+        assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
+        radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
+        center = (np.round(np.array([Lx/l_e,Ly/l_e,Lz/l_e]))/2) * l_e
+        particle_nodes = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center-np.array([separation*l_e/2,0,0]),dimensions)
+        particle_nodes2 = mre.sphere_rasterization.place_sphere(radius_voxels,l_e,center+np.array([separation*l_e/2,0,0]),dimensions)
         #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
         particles = np.vstack((particle_nodes,particle_nodes2))
     kappa = mre.initialize.get_kappa(E, nu)
@@ -256,8 +271,11 @@ def main():
     
 
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.01,-0.05)
-    
+    strains = np.arange(-.001,-0.01,-0.02)
+    Hext = np.array([100,0,0],dtype=np.float64)
+    particle_size = l_e
+    chi = 131
+    Ms = 1.9e6
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
     x0 = node_posns.copy()
@@ -275,7 +293,7 @@ def main():
             x0[boundaries[surface],pinned_axis] = node_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,boundary_conditions,t_f)
+            sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))

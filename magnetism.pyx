@@ -19,7 +19,7 @@ cdef double dot_prod(double[:] vec1, double[:] vec2) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force(double[:] m_i, double[:] m_j, double[:] r_i, double[:] r_j):
+cdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force(double[:] m_i, double[:] m_j, double[:] r_i, double[:] r_j):
     """Get the force on dipole i due to dipole j"""
     cdef double[3] rij
     cdef int i
@@ -43,6 +43,8 @@ cpdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force(double[:] m_i, double[:
 #carbonyl iron parameters Ms = 1990 kA/m, chi_initial = 131
 cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):
     cdef double H_mag = sqrt(dot_prod(H,H))
+    if H_mag == 0:
+        return np.zeros((3,),dtype=np.float64)
     cdef double M_mag = Ms*chi*H_mag/(Ms + chi*H_mag)
     cdef np.ndarray[np.float64_t, ndim=1] M = np.empty((3,),dtype=np.float64)
     cdef int i
@@ -55,7 +57,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi,
 #magnetic permeability of free space mu0 = 3*pi*1e-7 H/m
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] r_j,  double[:] m):
+cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] r_j,  double[:] m):
     """Get the B-Field at a point i due to a dipole at point j"""
     cdef double[3] rij
     cdef int i
@@ -71,3 +73,93 @@ cdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] 
     for i in range(3):
         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
     return B
+
+#TODO function for getting the magnetization correct via iteration. can start with a hard coded number of iterations, but a smarter implementation would include a convergence criteria. magnetization finding should happen simultaneously. first the magnetization due to the external field is found, then all the fields at the points representing the other particles are evaluated, then the total field at each point is used to update the magnetizations, and the process repeats (find fields, find magnetization). When the magnetization magnitude or direction change is small enough (as a whole, and where the largest change for any given particle is small enough) the system is considered to have converged and the loop can be exited. definining good exit criteria may be tricky. magnitude changes are easy enough to get, by keeping variables tracking new and old magnetization. directional changes would come from doing dot products of old and new magnetization to get cosine of the angle between them. the angle itself isn't that important... the cosine of the angle is a good enough value to compare against. if the direction isn't changing the value is 1, if it is changing it is less than one, -1 would be a complete inversion of the direction of the magnetization.
+#because of the iterative nature of the method, it is best to calculate the necessary and unchanging vectors and vector magnitudes at the start of the computation, so that there is no unnecessary recomputation of these constant values
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):
+    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef int max_iters = 5
+    cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef double[3] init_M = np.empty((3,),dtype=np.float64)
+    #for each particle, get the initial magnetization due to the external field
+    init_M = get_magnetization(Hext,chi,Ms)
+    for i in range(particle_posns.shape[0]):
+        current_M[i,0] = init_M[0]
+        current_M[i,1] = init_M[1]
+        current_M[i,2] = init_M[2]
+    #for each particle, get the magnetization due to each other particle, keeping track of current and next values of magnetization
+    #starts with getting the dipolar field due to each particle at each other particle's position
+    cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] m_j = np.empty((3,),dtype=np.float64)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+    cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
+    for count in range(max_iters):
+        for i in range(particle_posns.shape[0]):
+            #get particle i position and particle j position, don't calculate field for itself
+            for j in range(particle_posns.shape[0]):
+                if i == j:
+                    pass
+                else:
+                    r_i[0] = particle_posns[i,0]
+                    r_i[1] = particle_posns[i,1]
+                    r_i[2] = particle_posns[i,2]
+                    r_j[0] = particle_posns[j,0]
+                    r_j[1] = particle_posns[j,1]
+                    r_j[2] = particle_posns[j,2]
+                    m_j[:] = particle_V*current_M[j,:]
+                    B_dip = get_dipole_field(r_i,r_j,m_j)
+                    H_dip[i,0] += B_dip[0]/mu0
+                    H_dip[i,1] += B_dip[1]/mu0
+                    H_dip[i,2] += B_dip[2]/mu0
+            H_tot[:] = Hext[:] + H_dip[i,:]
+            next_M[i,:] = get_magnetization(H_tot,chi,Ms)
+        H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+        current_M = next_M
+    return next_M
+
+#TODO function for returning the vector rij. additional for getting rij_hat, rij_magnitude? to store vectors for reuse in the function to get magnetizations for all the particles in the simulation
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
+    """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
+    cdef int N_particles = particle_posns.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
+    cdef int i
+    cdef int j
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+    cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] force = np.empty((3,),dtype=np.float64)
+    for i in range(N_particles):
+        moments[i,0] = M[i,0]*particle_V
+        moments[i,1] = M[i,1]*particle_V
+        moments[i,2] = M[i,2]*particle_V
+    for i in range(N_particles):
+        for j in range(i+1,N_particles):
+            r_i[0] = particle_posns[i,0]
+            r_i[1] = particle_posns[i,1]
+            r_i[2] = particle_posns[i,2]
+            r_j[0] = particle_posns[j,0]
+            r_j[1] = particle_posns[j,1]
+            r_j[2] = particle_posns[j,2]
+            force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
+            forces[i,0] += force[0]
+            forces[i,1] += force[1]
+            forces[i,2] += force[2]
+            forces[j,0] -= force[0]
+            forces[j,1] -= force[1]
+            forces[j,2] -= force[2]
+    return forces
