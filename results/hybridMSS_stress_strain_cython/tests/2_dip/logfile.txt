@@ -1,0 +1,20 @@
+E = 1 
+nu = 0.499 
+l_e = 0.05 
+Lx = 1.1 
+Ly = 1.1 
+Lz = 1.1 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Thu Apr 27 10:22:47 2023
+E = 1 
+nu = 0.499 
+l_e = 0.05 
+Lx = 1.1 
+Ly = 1.1 
+Lz = 1.1 
+t_f = 30 
+N_iter = 0 
+/home/leshy/MRE_Golec/hybridMSS_stress_strain_cython.py
+Thu Apr 27 10:29:38 2023

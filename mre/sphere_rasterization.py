@@ -117,6 +117,8 @@ def parallel_spheres(grid):
 #below this line is all my code, above it is mostly code from the authors credited above
 def get_sphere_on_grid(radius):
     """given a sphere radius in voxels (half integer), return a 3D array defining which grid points are voxels belonging to the sphere"""
+    #TODO better use of assert statement to ensure appropriate sphere size
+    assert radius > 0,f'particle radius in voxels must be a positive half integer value, you used {radius}'
     max = np.int64(np.ceil(radius**2))
     center = np.int64(np.ceil(radius)) - 1 #zero based indexing... need the offset
     svoxel = np.array([center,center,center])
@@ -157,8 +159,10 @@ def get_row_indices(node_posns,l_e,dim):
     inv_l_e = 1/l_e
     nodes_per_col = np.round(Lz/l_e + 1).astype(np.int32)
     nodes_per_row = np.round(Lx/l_e + 1).astype(np.int32)
-    row_index = ((nodes_per_col * inv_l_e * node_posns[:,0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + inv_l_e *node_posns[:,2]).astype(np.int32)
-    return row_index
+    row_index = (np.round(nodes_per_col * inv_l_e * node_posns[:,0]) + np.round(nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + np.round(inv_l_e *node_posns[:,2])).astype(np.int32)
+    row_index_noround = ((nodes_per_col * inv_l_e * node_posns[:,0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + inv_l_e *node_posns[:,2]).astype(np.int32)
+    assert np.all(row_index == row_index_noround), f'difference with and without rounding before conversion to integer, with rounding {row_index}, without{row_index_noround}'
+    return np.unique(row_index)
 
 def get_row_indices_old(node_posns,l_e,dim):
     row_index = np.empty((node_posns.shape[0],),dtype=np.int32)
@@ -172,7 +176,8 @@ def get_row_index_node(i,node_posn,l_e,dim):
     nodes_per_col = np.round(Lz/l_e + 1).astype(np.int32)
     nodes_per_row = np.round(Lx/l_e + 1).astype(np.int32)
     # row_index = (inv_l_e * ((nodes_per_col * node_posn[0]) + (nodes_per_col * nodes_per_row * node_posn[1]) + node_posn[2])).astype(np.int32)
-    row_index = ((nodes_per_col * inv_l_e * node_posn[0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posn[1]) + inv_l_e *node_posn[2]).astype(np.int32)
+    row_index = (np.round(nodes_per_col * inv_l_e * node_posn[0]) + np.round(nodes_per_col * nodes_per_row * inv_l_e *node_posn[1]) + np.round(inv_l_e *node_posn[2])).astype(np.int32)
+    row_index_noround = ((nodes_per_col * inv_l_e * node_posn[0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posn[1]) + (inv_l_e *node_posn[2])).astype(np.int32)
     row_index_2 = ((1/l_e * (Lz/l_e + 1)) * node_posn[0] + (1/l_e * (Lz/l_e + 1) * (Lx/l_e + 1)) * node_posn[1] + (1/l_e) * node_posn[2]).astype(np.int32)
     # try:
     #     assert(row_index == row_index_2)
@@ -250,6 +255,19 @@ def place_sphere(radius,l_e,center,dim):
     grid_points = get_sphere_on_grid(radius)
     node_posns = get_nodes_from_grid_voxels(grid_points,l_e,center)
     row_indices = get_row_indices(node_posns,l_e,dim)
+    return row_indices
+
+def place_spheres(radius,l_e,centers,dim):
+    """returns a 2D array of row indices defining the vertices making up a rasterized spherical particle. Assumes all particles have the same size"""
+    grid_points = get_sphere_on_grid(radius)
+    row_indices = np.array([],dtype=np.int32)
+    for center in centers:
+        node_posns = get_nodes_from_grid_voxels(grid_points,l_e,center)
+        current_row_indices = get_row_indices(node_posns,l_e,dim)
+        if not row_indices:
+            row_indices = current_row_indices
+        else:
+            row_indices = np.concatenate((row_indices,current_row_indices))
     return row_indices
 
 def main():

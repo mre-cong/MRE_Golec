@@ -86,7 +86,7 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     fig = plt.figure()
     ax = fig.add_subplot(projection= '3d')
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if not cut_nodes:#list is empty, central point is not aligned with nodes, try a shift
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
         cut_nodes1 = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+l_e/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
         cut_nodes2 =np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]-l_e/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
         cut_nodes = np.concatenate((cut_nodes1,cut_nodes2))
@@ -108,6 +108,12 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     ax.set_xlabel('X (m)')
     ax.set_ylabel('Y (m)')
     ax.set_zlabel('Z (m)')
+    if cut_type_index == 0:
+        ax.view_init(elev=0,azim=0,roll=0)
+    elif cut_type_index == 1:
+        ax.view_init(elev=0,azim=-90,roll=0)
+    else:
+        ax.view_init(elev=90,azim=-90,roll=0)
     ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
     savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
     plt.savefig(savename)
@@ -196,6 +202,24 @@ def get_accelerations_post_simulation_v2(x0,boundaries,springs,elements,kappa,l_
             a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
         else:
             a[i] = 0
+    return a
+
+def get_accelerations_post_simulation_v3(x0,boundaries,springs,elements,kappa,l_e,bc):
+    N = len(x0)
+    m = np.ones(x0.shape[0])*1e-2
+    a = np.zeros(x0.shape,dtype=float)
+    # avg_vectors = get_average_edge_vectors(x0,elements)
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    correction_force_cy_nogil = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, correction_force_cy_nogil)
+    spring_force_cy = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces(x0, springs, spring_force_cy)
+    for i in boundaries['left']:
+        a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
+    for i in boundaries['right']:
+        a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
     return a
 
 def main():
