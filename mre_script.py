@@ -153,7 +153,7 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions,Hext
     volume_correction_force = np.zeros((N,3),dtype=np.float64)
     get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
     spring_force = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces(x0, springs, spring_force)
+    get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
     
     accel = (spring_force + volume_correction_force - drag * v0 + 
              bc_forces)/m[:,np.newaxis]
@@ -166,12 +166,6 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions,Hext
     mag_forces = magnetism.get_dip_dip_forces(M,particle_centers,particle_size)
     for i, particle in enumerate(particles):
         accel[particle] += mag_forces[i]/particle.shape[0]/m[particle,np.newaxis]
-    #TODO now calculate the magnetic interaction force
-    # for i in range(particles.shape[0]):
-    #     for j in range(i+1,particles.shape[0]):
-    #         magnetic_force = get_magnetic_force(particle_centers[i,:],particle_centers[j,:])
-    #         accel[particles[i,:],:] += magnetic_force/m[particles[i,:],np.newaxis]
-    #         accel[particles[j,:],:] -= magnetic_force/m[particles[j,:],np.newaxis]
     #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
     for particle in particles:
         vecsum = np.sum(accel[particle],axis=0)
@@ -295,6 +289,7 @@ def main():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/' + script_name.stem + '/tests/2_dip/'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/2_dip_WCA/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
