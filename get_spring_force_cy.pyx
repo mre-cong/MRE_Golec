@@ -84,7 +84,7 @@ cdef void get_spring_force_WCA(const int row, const int node_i, const int node_j
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double get_wca_force(double r, double sigma) nogil:
-    cdef double eps_constant = 100
+    cdef double eps_constant = 0#100
     cdef double sigma_over_separation = sigma/r
     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)

@@ -3118,7 +3118,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = 100
+ *     cdef double eps_constant = 0#100
  *     cdef double sigma_over_separation = sigma/r
  */
 
@@ -3136,15 +3136,15 @@ static double __pyx_f_19get_spring_force_cy_get_wca_force(double __pyx_v_r, doub
   /* "get_spring_force_cy.pyx":87
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:
- *     cdef double eps_constant = 100             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 0#100             # <<<<<<<<<<<<<<
  *     cdef double sigma_over_separation = sigma/r
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  */
-  __pyx_v_eps_constant = 100.0;
+  __pyx_v_eps_constant = 0.0;
 
   /* "get_spring_force_cy.pyx":88
  * cdef double get_wca_force(double r, double sigma) nogil:
- *     cdef double eps_constant = 100
+ *     cdef double eps_constant = 0#100
  *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
@@ -3206,7 +3206,7 @@ static double __pyx_f_19get_spring_force_cy_get_wca_force(double __pyx_v_r, doub
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = 100
+ *     cdef double eps_constant = 0#100
  *     cdef double sigma_over_separation = sigma/r
  */
 

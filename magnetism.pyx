@@ -164,7 +164,8 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
             forces[j,2] -= force[2]
     return forces
 
-cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force():
+#should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
+cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
     cdef double wca_mag
     cdef double sigma = 0.25*eq_length
     cdef double cutoff_length = pow(2,(1/6))*sigma
@@ -175,7 +176,7 @@ cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force():
     
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef double get_wca_force(double r, double sigma) nogil:
+cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
     cdef double eps_constant = 100
     cdef double sigma_over_separation = sigma/r
     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))

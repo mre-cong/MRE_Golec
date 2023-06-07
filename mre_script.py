@@ -23,13 +23,13 @@ Created on Fri Aug 26 09:19:19 2022
     
 #!!! wishlist
 #TODO
-# adjust script to use the new spring variable initialization, springs.get_springs()
+# adjust script to use the new spring variable initialization, springs.get_springs():DONE
 # post simulation check on forces to determine if convergence has occurred, and to restart the simulationwith the intermediate configuration, looping until convergence criteria are met
-# tracking of particle centers
-# magnetic force interaction calculations
+# tracking of particle centers:DONE
+# magnetic force interaction calculations:DONE
 # profiling a two particle system with magnetic interactions
-# performance comparison of gpu calculations of spring forces
-# alternative gpu calculation of spring forces to avoid the use of atomic functions (see notes on laptop from april 7th, 2023)
+# performance comparison of gpu calculations of spring forces:DONE
+# alternative gpu calculation of spring forces to avoid the use of atomic functions (see notes on laptop from april 7th, 2023):DONE, slower than use of atomic functions
 # gpu implementation of the volume correction force, which will require the use of atomic functions, unless i can be clever with the use of multiple kernel calls to different subsets of the elements to avoid calculations for elements with shared nodes. doable, but i have to review how the elements are constructed and think through the implementation details more carefully. also requires syncrhonization commands to ensure that the kernel calls happen sequentially anyway, which might be slower than the use of atomic functions anyway
 # use density values for PDMS blends and carbonyl iron to set the mass values for each node properly.
 # use realistic values for the young's modulus
@@ -56,15 +56,19 @@ import magnetism
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms):
+def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms,m):
     """Run a simulation of a hybrid mass spring system using the Verlet algorithm. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
-    
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
     epsilon = np.spacing(1)
-    tol = epsilon*1e5
+    tolerance = 1e-4
+    max_iters = 10
     # fig = plt.figure()
     # ax = fig.add_subplot(projection= '3d')
     # x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
-    v0,m = np.zeros(x0.shape), np.ones(x0.shape[0])*1e-2
+    v0 = np.zeros(x0.shape)
     # if boundary_conditions[0] == 'strain':
     #     # !!! there has to be a better way to enforce the strain conditions, but for now this will do. the issue is that the two surfaces involved, if the surface does not sit on a constant value of 0 for the relevant axis the overall strain will be greater than that assigned, if the corner of the cubic volume always sits at the origin then this shouldn't be an issue, as only the relevant surface will be strained
     #     surface = boundary_conditions[1][1]
@@ -81,11 +85,42 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
     r = sci.ode(fun).set_integrator('dopri5',nsteps=10000,verbosity=1)
-    r.set_initial_value(y_0).set_f_params(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
-    sol = r.integrate(t_f)
+    r.set_solout(solout)
+    for i in range(max_iters):
+        r.set_initial_value(y_0).set_f_params(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+        sol = r.integrate(t_f)
+        plot_criteria_v_iteration(solutions,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+        a_var = get_accel_post_sim(sol,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        if a_norm_avg < tolerance:
+            break
+        else:
+            y_0 = sol
+    
     # sol = sci.solve_ivp(fun,[0,t_f],y_0,args=(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms))
     return sol#returning a solution object, that can then have it's attributes inspected
 
+#function for checking out convergence criteria vs iteration, currently showing the mean acceleration vector norm for the system
+def plot_criteria_v_iteration(solutions,*args):
+    iterations = np.array(solutions).shape[0]
+    a_norm_avg = np.zeros((iterations,))
+    for count, row in enumerate(solutions):
+        a_var = get_accel_post_sim(np.array(row[1:]),*args)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
+    fig = plt.figure()
+    plt.plot(np.arange(iterations),a_norm_avg)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('average acceleration norm')
+    fig2 = plt.figure()
+    plt.plot(np.arange(iterations-1),a_norm_avg[1:]-a_norm_avg[:-1])
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('change in average acceleraton norm')
+    plt.show()
+    
 # placeholder functions for doing purpose, signature, stub when doing planning/design and wishlisting
 def do_stuff():
     return 0
@@ -181,6 +216,72 @@ def fun(t,y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions,Hext
     result = np.reshape(result,(result.shape[0],))
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
+
+def get_accel_post_sim(y,m,elements,springs,particles,kappa,l_e,bc,boundaries,dimensions,Hext,particle_size,chi,Ms):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
+    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    N = int(np.round(y.shape[0]/2))
+    x0 = np.reshape(y[:N],(int(np.round(N/3)),3))
+    v0 = np.reshape(y[N:],(int(np.round(N/3)),3))
+    N = x0.shape[0]
+    drag = 1
+    bc_forces = np.zeros(x0.shape,dtype=float)
+    if bc[0] == 'stress':
+        for surface in bc[1]:
+            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
+            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
+            if surface == 'left' or surface == 'right':
+                surface_area = dimensions[0]*dimensions[2]
+            elif surface == 'top' or surface == 'bottom':
+                surface_area = dimensions[0]*dimensions[1]
+            else:
+                surface_area = dimensions[1]*dimensions[2]
+            # assuming tension force only, no compression
+            if surface == 'right':
+                force_direction = np.array([1,0,0])
+            elif surface == 'left':
+                force_direction = np.array([-1,0,0])
+            elif surface == 'top':
+                force_direction = np.array([0,0,1])
+            elif surface == 'bottom':
+                force_direction = np.array([0,0,-1])
+            elif surface == 'front':
+                force_direction = np.array([0,1,0])
+            elif surface == 'back':
+                force_direction = np.array([0,-1,0])
+            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
+            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
+    elif bc[0] == 'strain':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
+        for surface in bc[1]:
+            do_stuff()
+    else:
+        fixed_nodes = np.ndarray([0])
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    volume_correction_force = np.zeros((N,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force(x0,elements,kappa,l_e,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
+    
+    accel = (spring_force + volume_correction_force - drag * v0 + 
+             bc_forces)/m[:,np.newaxis]
+    accel = set_fixed_nodes(accel,fixed_nodes)
+    #for each particle, find the position of the center
+    particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+    for i, particle in enumerate(particles):
+        particle_centers[i,:] = get_particle_center(particle,x0)
+    M = magnetism.get_magnetization_iterative(Hext,particle_centers,particle_size,chi,Ms)
+    mag_forces = magnetism.get_dip_dip_forces(M,particle_centers,particle_size)
+    for i, particle in enumerate(particles):
+        accel[particle] += mag_forces[i]/particle.shape[0]/m[particle,np.newaxis]
+    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+    for particle in particles:
+        vecsum = np.sum(accel[particle],axis=0)
+        accel[particle] = vecsum/particle.shape[0]
+    return accel
 
 def get_particle_center(particle_nodes,node_posns):
     particle_node_posns = node_posns[particle_nodes,:]
@@ -307,6 +408,18 @@ def main():
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
     x0 = node_posns.copy()
+    #TODO implement mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
+    #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements
+    system_volume = Lx*Ly*Lz
+    matrix_density = 0.965 #kg/m^3 or g/cm^3
+    matrix_node_mass = matrix_density*system_volume/x0.shape[0]
+    m = np.ones(x0.shape[0])*matrix_node_mass
+    particle_mass_density = 7.86 #kg/m^3 or g/cm^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_node_mass = particle_mass_density*((4/3)*np.pi*(radius**3))/particles[0,:].shape[0]
+    for particle in particles:
+        m[particle] = particle_node_mass
+    #TODO properly motivated average acceleration l2 norm tolerance to consider system converged to a solution
+    tolerance = 1e-4
     for count, strain in enumerate(strains):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('strain',('left','right'),strain)
@@ -323,7 +436,14 @@ def main():
             x0[boundaries[surface],pinned_axis] = node_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms)
+            sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms,m)
+            #below, a very incorrect attempt at implementing convergence criteria, where i have multiple issues, including not using the solution returned as the next starting point. i'll be implementing the convergence criteria inside the simulate_v2 function (which needs renaming)
+            # a_norm_avg = 10
+            # while(a_norm_avg > tolerance):
+            #     sol = simulate_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,boundary_conditions,t_f,Hext,particle_size,chi,Ms,m)
+            #     a_var = get_accel_post_sim(sol,m,elements,springs_var,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+            #     a_norms = np.linalg.norm(a_var,axis=1)
+            #     a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -341,8 +461,7 @@ def main():
         # print('max acceleration was %.4f' % max_accel)
         print('took %.2f seconds to simulate' % delta)
         a_var = mre.analyze.get_accelerations_post_simulation_v3(x0,boundaries,springs_var,elements,kappa,l_e,boundary_conditions)
-        m = 1e-2
-        end_boundary_forces = a_var[boundaries['right']]*m
+        end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
