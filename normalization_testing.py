@@ -84,12 +84,12 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    r = sci.ode(fun).set_integrator('dopri5',nsteps=10000,verbosity=1)
+    r = sci.ode(fun).set_integrator('dopri5',nsteps=100,verbosity=1)
     r.set_solout(solout)
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         sol = r.integrate(t_f)
-        plot_criteria_v_iteration(solutions,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+        # plot_criteria_v_iteration(solutions,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         a_var = get_accel_post_sim(sol,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
@@ -331,60 +331,126 @@ def place_two_particles(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
+def place_two_particles_normalized(radius,l_e,dimensions,separation):
+    """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
+    Nel_x, Nel_y, Nel_z = dimensions
+    # radius = 0.5*l_e# radius = l_e*(4.5)
+    assert(radius < np.min(dimensions)/2), f"Particle size greater than the smallest dimension of the simulation"
+    radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
+    #find the center of the simulated system
+    center = (np.array([Nel_x,Nel_y,Nel_z])/2)
+    #if there are an even number of elements in a direction, need to increment the central position by half an edge length so the particle centers match up with the centers of cubic elements
+    if np.mod(Nel_x,2) == 0:
+        center[0] += 1/2
+    if np.mod(Nel_y,2) == 0:
+        center[1] += 1/2
+    if np.mod(Nel_z,2) == 0:
+        center[2] += 1/2
+    #check particle separation to see if it is acceptable or not for the shift in particle placement from the simulation "center" to align with the cubic element centers
+    if np.mod(separation,2) == 1:
+        shift_l = (separation-1)*1/2
+        shift_r = (separation+1)*1/2
+    else:
+        shift_l = separation*1/2
+        shift_r = shift_l
+    particle_nodes = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center-np.array([shift_l,0,0]),dimensions)
+    particle_nodes2 = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center+np.array([shift_r,0,0]),dimensions)
+    particles = np.vstack((particle_nodes,particle_nodes2))
+    return particles
+
 def main():
     E = 1e3
     nu = 0.499
-    l_e = 1e-6#cubic element side length
-    Lx = 1.5e-5
-    Ly = 1.1e-5
-    Lz = 1.1e-5
+    l_e = 0.1e-10#cubic element side length
+    Lx = 1.5e-10
+    Ly = 1.1e-10
+    Lz = 1.1e-10
     t_f = 30
     dimensions = np.array([Lx,Ly,Lz])
-    #TODO
-    #need functionality to check some central directory containing initialization files
-    system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
-    current_dir = os.path.abspath('.')
-    input_dir = current_dir + f'/init_files/{system_string}/'
-    if not (os.path.isdir(input_dir)):#TODO add and statement that checks if the init file also exists?
-        os.mkdir(input_dir)
-        node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-        elements = springs.get_elements(node_posns, dimensions, l_e)
-        boundaries = mre.initialize.get_boundaries(node_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
-        node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
-        k = np.array(k,dtype=np.float64)
-        max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-        springs_var = np.empty((max_springs,4),dtype=np.float64)
-        num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, l_e)
-        springs_var = springs_var[:num_springs,:]
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        # particles = place_two_particles(radius,l_e,dimensions,separation)
-        mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
-    elif os.path.isfile(input_dir+'init.h5'):
-        node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
-        #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
-        #radius = l_e*0.5
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        # particles = place_two_particles(radius,l_e,dimensions,separation)
-        # #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
-    else:
-        node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-        elements = springs.get_elements(node_posns, dimensions, l_e)
-        boundaries = mre.initialize.get_boundaries(node_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
-        node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
-        k = np.array(k,dtype=np.float64)
-        max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-        springs_var = np.empty((max_springs,4),dtype=np.float64)
-        num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, l_e)
-        springs_var = springs_var[:num_springs,:]
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        # particles = place_two_particles(radius,l_e,dimensions,separation)
-    particles = np.array([])
+    N_nodes_x = np.round(Lx/l_e + 1)
+    N_nodes_y = np.round(Ly/l_e + 1)
+    N_nodes_z = np.round(Lz/l_e + 1)
+    N_el_x = N_nodes_x - 1
+    N_el_y = N_nodes_y - 1
+    N_el_z = N_nodes_z - 1
+    normalized_dimensions = np.array([N_el_x,N_el_y,N_el_z],dtype=np.int32)
+    node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    normalized_posns = mre.initialize.discretize_space_normalized(N_nodes_x,N_nodes_y,N_nodes_z)
+    # normalized_posns = node_posns/l_e
+    elements = springs.get_elements_v2_normalized(N_nodes_x, N_nodes_y, N_nodes_z)
+    boundaries = mre.initialize.get_boundaries(normalized_posns)
+    k = mre.initialize.get_spring_constants(E, l_e)
+    dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
+    node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
+    k = np.array(k,dtype=np.float64)
+    max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
+    springs_var = np.empty((max_springs,4),dtype=np.float64)
+    # springs_var2 = np.empty((max_springs,4),dtype=np.float64)
+    # num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, l_e)
+    num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
+    # for i in range(num_springs):
+    #     correctness = np.allclose(springs_var[i,:3],springs_var2[i,:3])
+    #     if not correctness:
+    #         print(f'incompatible spring variable values at row {i}')
+    springs_var = springs_var[:num_springs,:]
+    separation = 5
+    radius = 0.5*l_e# radius = l_e*(4.5)
+    #2023-07-05 implementing two particle placement with the normalized length scheme in place. test the function outputs by comparing against the original implementations to ensure correctness
+    # particles = place_two_particles(radius,l_e,dimensions,separation)
+    particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
+    # particles_sorted = np.sort(particles)
+    # particles2_sorted = np.sort(particles2)
+    # correctness = np.allclose(particles_sorted,particles2_sorted)
     kappa = mre.initialize.get_kappa(E, nu)
+    #TODO: update and improve implementation of saving out/checking/reading in initialization files
+    #need functionality to check some central directory containing initialization files
+    # system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
+    # current_dir = os.path.abspath('.')
+    # input_dir = current_dir + f'/init_files/{system_string}/'
+    # if not (os.path.isdir(input_dir)):#TODO add and statement that checks if the init file also exists?
+    #     os.mkdir(input_dir)
+    #     node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    #     normalized_posns = mre.initialize.discretize_space(Lx/l_e,Ly/l_e,Lz/l_e,1)
+    #     # normalized_posns = node_posns/l_e
+    #     elements = springs.get_elements(normalized_posns, dimensions, 1)
+    #     boundaries = mre.initialize.get_boundaries(normalized_posns)
+    #     k = mre.initialize.get_spring_constants(E, nu, l_e)
+    #     node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
+    #     k = np.array(k,dtype=np.float64)
+    #     max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    #     springs_var = np.empty((max_springs,4),dtype=np.float64)
+    #     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
+    #     springs_var = springs_var[:num_springs,:]
+    #     separation = 5
+    #     radius = 0.5*l_e# radius = l_e*(4.5)
+    #     particles = place_two_particles(radius,l_e,dimensions,separation)
+    #     mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
+    # elif os.path.isfile(input_dir+'init.h5'):
+    #     node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
+    #     #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
+    #     #radius = l_e*0.5
+    #     separation = 5
+    #     radius = 0.5*l_e# radius = l_e*(4.5)
+    #     particles = place_two_particles(radius,l_e,dimensions,separation)
+    #     # #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
+    # else:
+    #     node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
+    #     normalized_posns = mre.initialize.discretize_space(Lx,Ly,Lz,1)
+    #     # normalized_posns = node_posns/l_e
+    #     elements = springs.get_elements(normalized_posns, dimensions, 1)
+    #     boundaries = mre.initialize.get_boundaries(normalized_posns)
+    #     k = mre.initialize.get_spring_constants(E, nu, l_e)
+    #     node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
+    #     k = np.array(k,dtype=np.float64)
+    #     max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
+    #     springs_var = np.empty((max_springs,4),dtype=np.float64)
+    #     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
+    #     springs_var = springs_var[:num_springs,:]
+    #     separation = 5
+    #     radius = 0.5*l_e# radius = l_e*(4.5)
+    #     particles = place_two_particles(radius,l_e,dimensions,separation)
+    # particles = np.array([])
+    # kappa = mre.initialize.get_kappa(E, nu)
     boundary_conditions = ('strain',('left','right'),.05)
 
     script_name = lib_programname.get_path_executed_script()

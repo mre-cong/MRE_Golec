@@ -52,6 +52,37 @@ cpdef np.ndarray[np.int32_t, ndim=2] get_elements_v2(double[:] dimensions, doubl
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef np.ndarray[np.int32_t, ndim=2] get_elements_v2_normalized(double N_nodes_x, double N_nodes_y, double N_nodes_z):
+    """given the number of nodes in each direction, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
+    #need to keep track of which nodes belong to a unit cell (at some point)""""
+    #TODO move this part outside of the cdef function... and call a cdef function that returns void but sets the elements variable
+    cdef int N_el_x = np.int32(N_nodes_x-1)
+    cdef int N_el_y = np.int32(N_nodes_y-1)
+    cdef int N_el_z = np.int32(N_nodes_z-1)
+    cdef int N_el = N_el_x * N_el_y * N_el_z
+    cdef np.ndarray[np.int32_t, ndim=2] elements = np.empty((N_el,8),dtype=np.int32)
+    cdef int i
+    cdef int j
+    cdef int k
+    cdef int nodes_per_line = N_el_z + 1
+    cdef int nodes_per_plane = (N_el_x + 1)*(N_el_z + 1)
+    cdef int counter = 0
+    for i in range(N_el_z):
+        for j in range(N_el_y):
+            for k in range(N_el_x):
+                elements[counter,0] = k*nodes_per_line + j*nodes_per_plane + i 
+                elements[counter,1] = k*nodes_per_line + j*nodes_per_plane + i + 1
+                elements[counter,2] = (k+1)*nodes_per_line + j*nodes_per_plane + i 
+                elements[counter,3] = (k+1)*nodes_per_line + j*nodes_per_plane + i + 1
+                elements[counter,4] = k*nodes_per_line + (j+1)*nodes_per_plane + i 
+                elements[counter,5] = k*nodes_per_line + (j+1)*nodes_per_plane + i + 1 
+                elements[counter,6] = (k+1)*nodes_per_line + (j+1)*nodes_per_plane + i 
+                elements[counter,7] = (k+1)*nodes_per_line + (j+1)*nodes_per_plane + i + 1
+                counter += 1
+    return elements
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef np.ndarray[np.int32_t, ndim=2] get_elements(double[:,::1] node_posns, double[:] dimensions, double cube_side_length):
     """given the node/vertex positions, dimensions of the simulated volume, and volume element edge length, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
     #need to keep track of which nodes belong to a unit cell (at some point)
@@ -100,6 +131,69 @@ cpdef np.ndarray[np.int32_t, ndim=2] get_elements(double[:,::1] node_posns, doub
                 elements[counter,:] = element
                 counter +=1
     return elements
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.int32_t, ndim=2] get_elements_normalized(double N_nodes_x, double N_nodes_y, double N_nodes_z):
+    """given the number of nodes in each direction, return an N_elements by 8 array where each row represents a single volume element and each column is the associated row index in node_posns of a vertex of the volume element"""
+    #need to keep track of which nodes belong to a unit cell (at some point)""""
+    #TODO move this part outside of the cdef function... and call a cdef function that returns void but sets the elements variable
+    cdef int N_el_x = np.int32(N_nodes_x-1)
+    cdef int N_el_y = np.int32(N_nodes_y-1)
+    cdef int N_el_z = np.int32(N_nodes_z-1)
+    cdef int N_el = N_el_x * N_el_y * N_el_z
+    cdef double cube_side_length = 1.0
+    #finding the indices for the nodes/vertices belonging to each element
+    #!!! need to check if there is any ordering to the vertices right now that I can use. I need to have each vertex for each element assigned an identity relative to the element for calculating average edge vectors to estimate the volume after deformation
+    cdef np.ndarray[np.int32_t, ndim=2] elements = np.empty((N_el,8),dtype=np.int32)
+    cdef int i
+    cdef int j
+    cdef int k
+    cdef double[8][3] posns = np.empty((8,3),dtype=np.float64)
+    cdef np.ndarray[np.int32_t, ndim=1] element = np.empty((8,),dtype=np.int32)
+    cdef int counter = 0
+    for i in range(N_el_z):
+        for j in range(N_el_y):
+            for k in range(N_el_x):
+                posns[0][0] = k*cube_side_length
+                posns[0][1] = j*cube_side_length
+                posns[0][2] = i*cube_side_length
+                posns[1][0] = k*cube_side_length
+                posns[1][1] = j*cube_side_length
+                posns[1][2] = (i+1)*cube_side_length
+                posns[2][0] = (k+1)*cube_side_length
+                posns[2][1] = j*cube_side_length
+                posns[2][2] = i*cube_side_length
+                posns[3][0] = (k+1)*cube_side_length
+                posns[3][1] = j*cube_side_length
+                posns[3][2] = (i+1)*cube_side_length
+                posns[4][0] = k*cube_side_length
+                posns[4][1] = (j+1)*cube_side_length
+                posns[4][2] = i*cube_side_length
+                posns[5][0] = k*cube_side_length
+                posns[5][1] = (j+1)*cube_side_length
+                posns[5][2] = (i+1)*cube_side_length
+                posns[6][0] = (k+1)*cube_side_length
+                posns[6][1] = (j+1)*cube_side_length
+                posns[6][2] = i*cube_side_length
+                posns[7][0] = (k+1)*cube_side_length
+                posns[7][1] = (j+1)*cube_side_length
+                posns[7][2] = (i+1)*cube_side_length
+                element = get_row_indices_normalized(posns,N_nodes_x,N_nodes_z)
+                elements[counter,:] = element
+                counter +=1
+    return elements
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef np.ndarray[np.int32_t, ndim=1] get_row_indices_normalized(double[:,:] node_posns, double N_nodes_x, double N_nodes_z):
+    """Return the row indices corresponding to the normalized node positions of interest given the simulation dimension parameters"""
+    cdef np.int32_t nodes_per_col = np.round(N_nodes_z).astype(np.int32)
+    cdef np.int32_t nodes_per_row = np.round(N_nodes_x).astype(np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] row_index = np.empty((node_posns.shape[0],),dtype=np.int32)
+    cdef int i
+    for i in range(node_posns.shape[0]):
+        row_index[i] =  int(((nodes_per_col * node_posns[i,0]) + (nodes_per_col * nodes_per_row *node_posns[i,1]) + node_posns[i,2]))
+    return row_index
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -278,6 +372,78 @@ cpdef int get_springs(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] spri
         elif node_type[i] == 26:
             spring_counter = set_connection_type_conditional(i, node_type, springs, RTOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
     return spring_counter#springs
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.int8_t, ndim=1] get_node_type_normalized(int n_nodes, dict boundaries, double[:] dim):
+    cdef np.ndarray[np.int8_t, ndim=1] node_type = np.zeros((n_nodes,),dtype=np.int8)
+    #zero represents interior nodes, first identify surface nodes, then edges, then corners (edge nodes are surface nodes, corner nodes are edge nodes)
+    #using sets for intersection method to determine edges
+    cdef set left = set(boundaries['left'])
+    cdef set right = set(boundaries['right'])
+    cdef set top = set(boundaries['top'])
+    cdef set bottom = set(boundaries['bot'])
+    cdef set front = set(boundaries['front'])
+    cdef set back = set(boundaries['back'])
+    node_type[boundaries['left']] = 1
+    node_type[boundaries['right']] = 2
+    node_type[boundaries['top']] = 3
+    node_type[boundaries['bot']] = 4
+    node_type[boundaries['front']] = 5
+    node_type[boundaries['back']] = 6
+    #now edges
+    #unpacking the set members, as sets can't be used for magic indexing
+    *tmp_var, = left.intersection(top)
+    node_type[tmp_var] = 7
+    *tmp_var, = left.intersection(bottom)
+    node_type[tmp_var] = 8
+    *tmp_var, = left.intersection(front)
+    node_type[tmp_var] = 9
+    *tmp_var, = left.intersection(back)
+    node_type[tmp_var] = 10
+    *tmp_var, = right.intersection(top)
+    node_type[tmp_var] = 11
+    *tmp_var, = right.intersection(bottom)
+    node_type[tmp_var] = 12
+    *tmp_var, = right.intersection(front)
+    node_type[tmp_var] = 13
+    *tmp_var, = right.intersection(back)
+    node_type[tmp_var] = 14
+    *tmp_var, = top.intersection(front)
+    node_type[tmp_var] = 15
+    *tmp_var, = top.intersection(back)
+    node_type[tmp_var] = 16
+    *tmp_var, = bottom.intersection(front)
+    node_type[tmp_var] = 17
+    *tmp_var, = bottom.intersection(back)
+    node_type[tmp_var] = 18
+    cdef np.ndarray[np.float64_t, ndim=2] corners = np.zeros((8,3),dtype=np.float64)
+    corners[1][0] = dim[0]
+    corners[2][1] = dim[1]
+    corners[3][2] = dim[2]
+    corners[4][0] = dim[0]
+    corners[4][1] = dim[1]
+    corners[5][0] = dim[0]
+    corners[5][2] = dim[2]
+    corners[6][1] = dim[1]
+    corners[6][2] = dim[2]
+    corners[7][0] = dim[0]
+    corners[7][1] = dim[1]
+    corners[7][2] = dim[2]
+    cdef np.ndarray[np.int32_t, ndim=1] corner_indices = np.empty((8,),dtype=np.int32)
+    cdef double N_nodes_x = dim[0] + 1.0
+    cdef double N_nodes_z = dim[2] + 1.0
+    corner_indices = get_row_indices_normalized(corners,N_nodes_x,N_nodes_z)
+    node_type[corner_indices[0]] = 19#leftbotfront
+    node_type[corner_indices[1]] = 20#rightbotfront
+    node_type[corner_indices[2]] = 21#leftbotback
+    node_type[corner_indices[3]] = 22#lefttopfront
+    node_type[corner_indices[4]] = 23#rightbotback
+    node_type[corner_indices[5]] = 24#righttopfront
+    node_type[corner_indices[6]] = 25#lefttopback
+    node_type[corner_indices[7]] = 26#righttopback
+    #i can adjust this function to return values from 0 to 26, reflecting interior, the 6 different surfaces, 12 edges, and 8 corner types, to get more detailed information about the node type for assigning spring stiffness and determining adjacent node connectivity
+    return node_type
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

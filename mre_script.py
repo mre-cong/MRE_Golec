@@ -84,7 +84,7 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    r = sci.ode(fun).set_integrator('dopri5',nsteps=10000,verbosity=1)
+    r = sci.ode(fun).set_integrator('dopri5',nsteps=100,verbosity=1)
     r.set_solout(solout)
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
@@ -337,7 +337,7 @@ def main():
     Lx = 1.5
     Ly = 1.1
     Lz = 1.1
-    t_f = 30
+    t_f = 1
     dimensions = np.array([Lx,Ly,Lz])
     #TODO
     #need functionality to check some central directory containing initialization files
@@ -349,7 +349,7 @@ def main():
         node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
         elements = springs.get_elements(node_posns, dimensions, l_e)
         boundaries = mre.initialize.get_boundaries(node_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
+        k = mre.initialize.get_spring_constants(E, l_e)
         node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
         k = np.array(k,dtype=np.float64)
         max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
@@ -372,7 +372,7 @@ def main():
         node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
         elements = springs.get_elements(node_posns, dimensions, l_e)
         boundaries = mre.initialize.get_boundaries(node_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
+        k = mre.initialize.get_spring_constants(E, l_e)
         node_types = springs.get_node_type(node_posns.shape[0],boundaries,dimensions,l_e)
         k = np.array(k,dtype=np.float64)
         max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
@@ -400,7 +400,7 @@ def main():
     
 
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.07,-0.02)
+    strains = np.arange(-.001,-0.11,-0.02)
     Hext = np.array([10000,0,0],dtype=np.float64)
     particle_size = radius
     chi = 131

@@ -25,6 +25,16 @@ def discretize_space(Lx,Ly,Lz,cube_side_length):
                                 np.reshape(z,np.size(z))[:,np.newaxis]),1)
     return node_posns
 
+def discretize_space_normalized(N_nodes_x,N_nodes_y,N_nodes_z):
+    """Given the number of nodes in each direction, set up the normalized grid of points"""
+    [x,y,z] = np.meshgrid(np.r_[0:N_nodes_x:1],
+                          np.r_[0:N_nodes_y:1],
+                          np.r_[0:N_nodes_z:1])
+    node_posns = np.concatenate((np.reshape(x,np.size(x))[:,np.newaxis],
+                                np.reshape(y,np.size(y))[:,np.newaxis],
+                                np.reshape(z,np.size(z))[:,np.newaxis]),1)
+    return node_posns
+
 def get_boundaries(node_posns):
     top_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].max())[0]
     bot_bdry = np.nonzero(node_posns[:,2] == node_posns[:,2].min())[0]
@@ -267,7 +277,7 @@ def get_row_indices(node_posns,l_e,dim):
     return row_index
 
 #given the material properties (Young's modulus, shear modulus, and poisson's ratio) of an isotropic material, calculate the spring stiffness constants for edge springs, center diagonal springs, and face diagonal springs for a cubic unit cell
-def get_spring_constants(E,nu,l_e):
+def get_spring_constants(E,l_e):
     """Return the edge, central diagonal, and face diagonal stiffness constants of the system from the Young's modulus, poisson's ratio, and the length of the edge springs."""
     A = 1 #ratio of the stiffness constants of the center diagonal to face diagonal springs
     k_e = 0.4 * (E * l_e) * (8 + 3 * A) / (4 + 3 * A)
@@ -280,6 +290,18 @@ def get_kappa(E,nu):
     """Return the value of the additional bulk modulus, kappa, for the volume correction force given the Young's modulus and Poissons's ratio."""
     kappa = E * (4 * nu - 1) / (2 * (1 + nu) * (1 - 2 * nu))
     return kappa
+
+def get_node_mass(N_nodes,dimensions,particles,particle_size):
+        """Return the mass values of the nodes based on the system size, matrix mass density, particle size and particle mass density."""
+        system_volume = dimensions[0]*dimensions[1]*dimensions[2]
+        matrix_density = 0.965 #kg/m^3 or g/cm^3
+        matrix_node_mass = matrix_density*system_volume/N_nodes
+        m = np.ones((N_nodes,))*matrix_node_mass
+        particle_mass_density = 7.86 #kg/m^3 or g/cm^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+        if particles.size != 0:
+            particle_node_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))/particles[0,:].shape[0]
+            for particle in particles:
+                m[particle] = particle_node_mass
 
 #function which plots with a 3D scatter and lines, the connectivity of the unit cell
 def plot_unit_cell(node_posns,connectivity):

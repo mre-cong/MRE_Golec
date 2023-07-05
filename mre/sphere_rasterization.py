@@ -148,10 +148,10 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
         points = np.vstack((node0[np.newaxis,:],node1[np.newaxis,:],node2[np.newaxis,:],node3[np.newaxis,:],node4[np.newaxis,:],node5[np.newaxis,:],node6[np.newaxis,:],node7[np.newaxis,:]))
         nodes = np.concatenate((nodes,points))
     unique_nodes = np.unique(nodes[1:,:],axis=0)
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.scatter3D(*np.transpose(unique_nodes))
-    plt.savefig('./sphere_voxel_to_nodes.png')
+    # fig = plt.figure()
+    # ax = plt.axes(projection='3d')
+    # ax.scatter3D(*np.transpose(unique_nodes))
+    # plt.savefig('./sphere_voxel_to_nodes.png')
     return unique_nodes
 
 def get_row_indices(node_posns,l_e,dim):
@@ -163,6 +163,18 @@ def get_row_indices(node_posns,l_e,dim):
     row_index_noround = ((nodes_per_col * inv_l_e * node_posns[:,0]) + (nodes_per_col * nodes_per_row * inv_l_e *node_posns[:,1]) + inv_l_e *node_posns[:,2]).astype(np.int32)
     assert np.all(row_index == row_index_noround), f'difference with and without rounding before conversion to integer, with rounding {row_index}, without{row_index_noround}'
     return np.unique(row_index)
+
+def get_row_indices_normalized(node_posns, dim):
+    """Return the row indices corresponding to the normalized node positions of interest given the simulation dimension parameters (number of cubic volume ellements along each direction)"""
+    N_nodes_x = dim[0] + 1
+    N_nodes_z = dim[2] + 1
+    nodes_per_col = np.round(N_nodes_z).astype(np.int32)
+    nodes_per_row = np.round(N_nodes_x).astype(np.int32)
+    row_index = np.empty((node_posns.shape[0],),dtype=np.int32)
+    row_index = ((nodes_per_col * node_posns[:,0]) + (nodes_per_col * nodes_per_row *node_posns[:,1]) + node_posns[:,2]).astype(np.int32)
+    # for i in range(node_posns.shape[0]):
+        # row_index[i] =  int(((nodes_per_col * node_posns[i,0]) + (nodes_per_col * nodes_per_row *node_posns[i,1]) + node_posns[i,2]))
+    return row_index
 
 def get_row_indices_old(node_posns,l_e,dim):
     row_index = np.empty((node_posns.shape[0],),dtype=np.int32)
@@ -256,6 +268,14 @@ def place_sphere(radius,l_e,center,dim):
     node_posns = get_nodes_from_grid_voxels(grid_points,l_e,center)
     row_indices = get_row_indices(node_posns,l_e,dim)
     return row_indices
+
+def place_sphere_normalized(radius,center,dim):
+    """Given the sphere radius in voxels, the position of the center of the spherical particle in scaled units, and the noramlized dimensions of the simulation (number of elements in each direction), return the indices of the nodes that make up the spherical particle."""
+    grid_points = get_sphere_on_grid(radius)
+    node_posns = get_nodes_from_grid_voxels(grid_points,1,center)
+    row_indices = get_row_indices_normalized(node_posns,dim)
+    return row_indices
+
 
 def place_spheres(radius,l_e,centers,dim):
     """returns a 2D array of row indices defining the vertices making up a rasterized spherical particle. Assumes all particles have the same size"""
