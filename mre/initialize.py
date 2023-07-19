@@ -292,16 +292,33 @@ def get_kappa(E,nu):
     return kappa
 
 def get_node_mass(N_nodes,dimensions,particles,particle_size):
-        """Return the mass values of the nodes based on the system size, matrix mass density, particle size and particle mass density."""
-        system_volume = dimensions[0]*dimensions[1]*dimensions[2]
-        matrix_density = 0.965 #kg/m^3 or g/cm^3
-        matrix_node_mass = matrix_density*system_volume/N_nodes
-        m = np.ones((N_nodes,))*matrix_node_mass
-        particle_mass_density = 7.86 #kg/m^3 or g/cm^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
-        if particles.size != 0:
-            particle_node_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))/particles[0,:].shape[0]
-            for particle in particles:
-                m[particle] = particle_node_mass
+    """Return the mass values of the nodes based on the system size, matrix mass density, particle size and particle mass density."""
+    system_volume = dimensions[0]*dimensions[1]*dimensions[2]
+    matrix_density = 0.965 #kg/m^3
+    matrix_node_mass = matrix_density*system_volume/N_nodes
+    m = np.ones((N_nodes,))*matrix_node_mass
+    particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    if particles.size != 0:
+        particle_node_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))/particles[0,:].shape[0]
+        for particle in particles:
+            m[particle] = particle_node_mass
+    return m
+
+def get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size):
+    """Return the mass values of the nodes, the volume element mass, and the particle mass based on the size of the cubic volume elements, matrix mass density, node type (corner, edge, surface, interior), particle size and particle mass density."""
+    matrix_density = 0.965 #kg/m^3
+    volume_element_mass = matrix_density*(l_e**3)
+    m = np.ones((N_nodes,))*volume_element_mass
+    m[node_types!=0] = volume_element_mass/2#all non-interior nodes set to half the interior node values
+    m[node_types>=7] = volume_element_mass/4#setting the edges and corners to half the surface node values
+    m[node_types>=19] = volume_element_mass/8#setting the corner nodes to 1/8 the interior node mass
+    particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    if particles.size != 0:
+        particle_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))
+        particle_node_mass = particle_mass/particles[0,:].shape[0]
+        for particle in particles:
+            m[particle] = particle_node_mass
+    return m, volume_element_mass, particle_mass
 
 #function which plots with a 3D scatter and lines, the connectivity of the unit cell
 def plot_unit_cell(node_posns,connectivity):
@@ -438,9 +455,10 @@ def read_output_file(fn):
     node_posns = node_object.read()
     bc_object = f.get_node('/','boundary_conditions')
     bc = bc_object.read()
-    boundary_condition = (bc[0],(bc[1][0],bc[1][1]),bc[2])
+    boundary_condition = bc[0]
     f.close()
     return node_posns, boundary_condition
+
 def test_element_setting():
     import time
     E = 1

@@ -2806,7 +2806,6 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
   double __pyx_v_rij[3];
   int __pyx_v_i;
   double __pyx_v_rij_mag;
-  double __pyx_v_rij_hat[3];
   PyArrayObject *__pyx_v_force = 0;
   double __pyx_v_mi_dot_r;
   double __pyx_v_mj_dot_r;
@@ -2854,7 +2853,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef double[3] rij_hat
+ *     # cdef double[3] rij_hat
  */
     __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = __pyx_v_i;
@@ -2865,8 +2864,8 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
- *     cdef double[3] rij_hat
- *     for i in range(3):
+ *     # cdef double[3] rij_hat
+ *     # for i in range(3):
  */
   __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
@@ -2898,33 +2897,9 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":30
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef double[3] rij_hat
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         rij_hat[i] = rij[i]/rij_mag
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "magnetism.pyx":31
- *     cdef double[3] rij_hat
- *     for i in range(3):
- *         rij_hat[i] = rij[i]/rij_mag             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- */
-    if (unlikely(__pyx_v_rij_mag == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 31, __pyx_L1_error)
-    }
-    (__pyx_v_rij_hat[__pyx_v_i]) = ((__pyx_v_rij[__pyx_v_i]) / __pyx_v_rij_mag);
-  }
-
   /* "magnetism.pyx":32
- *     for i in range(3):
- *         rij_hat[i] = rij[i]/rij_mag
+ *     # for i in range(3):
+ *     #     rij_hat[i] = rij[i]/rij_mag
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double mi_dot_r = dot_prod(m_i,rij)
  *     cdef double mj_dot_r = dot_prod(m_j,rij)
@@ -2962,7 +2937,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
   __pyx_t_10 = 0;
 
   /* "magnetism.pyx":33
- *         rij_hat[i] = rij[i]/rij_mag
+ *     #     rij_hat[i] = rij[i]/rij_mag
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef double mi_dot_r = dot_prod(m_i,rij)             # <<<<<<<<<<<<<<
  *     cdef double mj_dot_r = dot_prod(m_j,rij)
@@ -3764,7 +3739,7 @@ static PyObject *__pyx_pf_9magnetism_get_dipole_field(CYTHON_UNUSED PyObject *__
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter"""
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
  *     cdef int i
  */
 
@@ -4163,7 +4138,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -4191,7 +4166,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
@@ -4219,7 +4194,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   /* "magnetism.pyx":104
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  */
@@ -4234,7 +4209,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(pow((__pyx_v_particle_size / 2.0), 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -4246,7 +4221,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
 
   /* "magnetism.pyx":105
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):
@@ -4274,7 +4249,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
   /* "magnetism.pyx":106
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):             # <<<<<<<<<<<<<<
  *         for i in range(particle_posns.shape[0]):
@@ -4697,7 +4672,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter"""
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
  *     cdef int i
  */
 
@@ -4738,7 +4713,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
 
 /* Python wrapper */
 static PyObject *__pyx_pw_9magnetism_3get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9magnetism_2get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter";
+static char __pyx_doc_9magnetism_2get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius";
 static PyObject *__pyx_pw_9magnetism_3get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_Hext = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
@@ -4993,7 +4968,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   /* "magnetism.pyx":141
  *     cdef int i
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
@@ -5008,7 +4983,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow((__pyx_v_particle_size / 2.0), 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
@@ -5020,7 +4995,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
 
   /* "magnetism.pyx":142
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -5074,7 +5049,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_t_4 = 0;
 
   /* "magnetism.pyx":143
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -5439,6 +5414,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]             # <<<<<<<<<<<<<<
  *     return forces
+ * 
  */
       __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
@@ -5450,6 +5426,8 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]
  *     return forces             # <<<<<<<<<<<<<<
+ * 
+ * #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
   __Pyx_INCREF(((PyObject *)__pyx_v_forces));
@@ -21258,8 +21236,8 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
   /* "magnetism.pyx":32
- *     for i in range(3):
- *         rij_hat[i] = rij[i]/rij_mag
+ *     # for i in range(3):
+ *     #     rij_hat[i] = rij[i]/rij_mag
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double mi_dot_r = dot_prod(m_i,rij)
  *     cdef double mj_dot_r = dot_prod(m_j,rij)

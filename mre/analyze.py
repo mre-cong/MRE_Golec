@@ -119,6 +119,108 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     plt.savefig(savename)
     plt.close()
 
+def post_plot_cut_normalized(eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir):
+    plot_cut_normalized('xy',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
+    plot_cut_normalized('xz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
+    plot_cut_normalized('yz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
+
+def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut."""
+    cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    center = (np.round(np.array([Lx,Ly,Lz]))/2)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes1 = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes2 =np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]-1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes = np.concatenate((cut_nodes1,cut_nodes2))
+    ax.scatter(node_posns[cut_nodes,0],node_posns[cut_nodes,1],node_posns[cut_nodes,2],color ='b',marker='o')
+    plot_subset_springs(ax,node_posns,cut_nodes,springs,spring_color='b')
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    ax.scatter(node_posns[particle_cut_nodes,0],node_posns[particle_cut_nodes,1],node_posns[particle_cut_nodes,2],color='k',marker='o')
+    plot_subset_springs(ax,node_posns,particle_cut_nodes_set,springs,spring_color='r')
+    ax.set_xlim((-0.3,1.2*Lx))
+    ax.set_ylim((0,1.2*Ly))
+    ax.set_zlim((0,1.2*Lz))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    if cut_type_index == 0:
+        ax.view_init(elev=0,azim=0,roll=0)
+    elif cut_type_index == 1:
+        ax.view_init(elev=0,azim=-90,roll=0)
+    else:
+        ax.view_init(elev=90,azim=-90,roll=0)
+    # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def post_plot_cut_normalized_hyst(eq_node_posns,node_posns,springs,particles,Hext,output_dir):
+    plot_cut_normalized_hyst('xy',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
+    plot_cut_normalized_hyst('xz',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
+    plot_cut_normalized_hyst('yz',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
+
+def plot_cut_normalized_hyst(cut_type,eq_node_posns,node_posns,springs,particles,Hext,output_dir):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut."""
+    cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    center = (np.round(np.array([Lx,Ly,Lz]))/2)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes1 = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes2 =np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]-1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+        cut_nodes = np.concatenate((cut_nodes1,cut_nodes2))
+    ax.scatter(node_posns[cut_nodes,0],node_posns[cut_nodes,1],node_posns[cut_nodes,2],color ='b',marker='o')
+    plot_subset_springs(ax,node_posns,cut_nodes,springs,spring_color='b')
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    ax.scatter(node_posns[particle_cut_nodes,0],node_posns[particle_cut_nodes,1],node_posns[particle_cut_nodes,2],color='k',marker='o')
+    plot_subset_springs(ax,node_posns,particle_cut_nodes_set,springs,spring_color='r')
+    ax.set_xlim((-0.3,1.2*Lx))
+    ax.set_ylim((0,1.2*Ly))
+    ax.set_zlim((0,1.2*Lz))
+    ax.set_xlabel('X (m)')
+    ax.set_ylabel('Y (m)')
+    ax.set_zlabel('Z (m)')
+    if cut_type_index == 0:
+        ax.view_init(elev=0,azim=0,roll=0)
+    elif cut_type_index == 1:
+        ax.view_init(elev=0,azim=-90,roll=0)
+    else:
+        ax.view_init(elev=90,azim=-90,roll=0)
+    # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + 'Hext_' + str(np.round(Hext[2],decimals=2)) +'.png'
+    plt.savefig(savename)
+    plt.close()
+
 def plot_subset_springs(ax,node_posns,nodes,springs,spring_color):
     """Plot a subset of the springs which are connected to the nodes passed to the function"""
     if isinstance(nodes,set):

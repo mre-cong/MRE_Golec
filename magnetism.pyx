@@ -26,9 +26,9 @@ cdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force(double[:] m_i, double[:]
     for i in range(3):
         rij[i] = r_i[i] - r_j[i]
     cdef double rij_mag = sqrt(dot_prod(rij,rij))
-    cdef double[3] rij_hat
-    for i in range(3):
-        rij_hat[i] = rij[i]/rij_mag
+    # cdef double[3] rij_hat
+    # for i in range(3):
+    #     rij_hat[i] = rij[i]/rij_mag
     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
     cdef double mi_dot_r = dot_prod(m_i,rij)
     cdef double mj_dot_r = dot_prod(m_j,rij)
@@ -79,7 +79,7 @@ cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:]
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):
-    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter"""
+    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
     cdef int i
     cdef int j
     cdef int count
@@ -101,7 +101,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hex
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
     for count in range(max_iters):
         for i in range(particle_posns.shape[0]):
@@ -138,7 +138,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
     cdef int i
     cdef int j
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -165,20 +165,20 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
     return forces
 
 #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
-cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
-    cdef double wca_mag
-    cdef double sigma = 0.25*eq_length
-    cdef double cutoff_length = pow(2,(1/6))*sigma
-    if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
-        wca_mag = get_wca_force(rij_mag,sigma)
-        for i in range(3):
-            spring_force[i] += wca_mag * rij[i] / rij_mag
+# cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
+#     cdef double wca_mag
+#     cdef double sigma = 0.25*eq_length
+#     cdef double cutoff_length = pow(2,(1/6))*sigma
+#     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+#         wca_mag = get_wca_force(rij_mag,sigma)
+#         for i in range(3):
+#             spring_force[i] += wca_mag * rij[i] / rij_mag
     
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
-    cdef double eps_constant = 100
-    cdef double sigma_over_separation = sigma/r
-    # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
-    cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
-    return force_mag
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
+#     cdef double eps_constant = 100
+#     cdef double sigma_over_separation = sigma/r
+#     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+#     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+#     return force_mag

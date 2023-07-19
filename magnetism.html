@@ -361,7 +361,6 @@ body.cython { font-family: courier; font-size: 12; }
   double __pyx_v_rij[3];
   int __pyx_v_i;
   double __pyx_v_rij_mag;
-  double __pyx_v_rij_hat[3];
   PyArrayObject *__pyx_v_force = 0;
   double __pyx_v_mi_dot_r;
   double __pyx_v_mj_dot_r;
@@ -444,18 +443,10 @@ body.cython { font-family: courier; font-size: 12; }
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_8, 1);
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
-</pre><pre class="cython line score-0">&#xA0;<span class="">029</span>:     cdef double[3] rij_hat</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">030</span>:     for i in range(3):</pre>
-<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">031</span>:         rij_hat[i] = rij[i]/rij_mag</pre>
-<pre class='cython code score-5 '>    if (unlikely(__pyx_v_rij_mag == 0)) {
-      <span class='py_c_api'>PyErr_SetString</span>(PyExc_ZeroDivisionError, "float division");
-      <span class='error_goto'>__PYX_ERR(0, 31, __pyx_L1_error)</span>
-    }
-    (__pyx_v_rij_hat[__pyx_v_i]) = ((__pyx_v_rij[__pyx_v_i]) / __pyx_v_rij_mag);
-  }
-</pre><pre class="cython line score-37" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">032</span>:     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">029</span>:     # cdef double[3] rij_hat</pre>
+<pre class="cython line score-0">&#xA0;<span class="">030</span>:     # for i in range(3):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">031</span>:     #     rij_hat[i] = rij[i]/rij_mag</pre>
+<pre class="cython line score-37" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">032</span>:     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)</pre>
 <pre class='cython code score-37 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 32, __pyx_L1_error)</span>
@@ -1093,7 +1084,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
 
 /* Python wrapper */
 static PyObject *__pyx_pw_9magnetism_3get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9magnetism_2get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter";
+static char __pyx_doc_9magnetism_2get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius";
 static PyObject *__pyx_pw_9magnetism_3get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_Hext = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
@@ -1214,7 +1205,7 @@ static PyObject *__pyx_pf_9magnetism_2get_magnetization_iterative(CYTHON_UNUSED 
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">082</span>:     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the diameter"""</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">082</span>:     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""</pre>
 <pre class="cython line score-0">&#xA0;<span class="">083</span>:     cdef int i</pre>
 <pre class="cython line score-0">&#xA0;<span class="">084</span>:     cdef int j</pre>
 <pre class="cython line score-0">&#xA0;<span class="">085</span>:     cdef int count</pre>
@@ -1502,7 +1493,7 @@ static PyObject *__pyx_pf_9magnetism_2get_magnetization_iterative(CYTHON_UNUSED 
   if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 103, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
   memcpy(&amp;(__pyx_v_m_j[0]), __pyx_t_8, sizeof(__pyx_v_m_j[0]) * (3));
-</pre><pre class="cython line score-40" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">104</span>:     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)</pre>
+</pre><pre class="cython line score-40" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">104</span>:     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)</pre>
 <pre class='cython code score-40 '>  __pyx_t_2 = <span class='py_c_api'>PyFloat_FromDouble</span>((4.0 / 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
   <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 104, __pyx_L1_error)</span>
@@ -1514,7 +1505,7 @@ static PyObject *__pyx_pf_9magnetism_2get_magnetization_iterative(CYTHON_UNUSED 
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow((__pyx_v_particle_size / 2.0), 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)</span>
+  __pyx_t_3 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow(__pyx_v_particle_size, 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 104, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   __pyx_t_2 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_t_1, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
@@ -2053,7 +2044,7 @@ static PyObject *__pyx_pf_9magnetism_4get_dip_dip_forces(CYTHON_UNUSED PyObject 
   __pyx_t_5 = 0;
 </pre><pre class="cython line score-0">&#xA0;<span class="">139</span>:     cdef int i</pre>
 <pre class="cython line score-0">&#xA0;<span class="">140</span>:     cdef int j</pre>
-<pre class="cython line score-40" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">141</span>:     cdef double particle_V = (4/3)*np.pi*pow(particle_size/2,3)</pre>
+<pre class="cython line score-40" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">141</span>:     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)</pre>
 <pre class='cython code score-40 '>  __pyx_t_5 = <span class='py_c_api'>PyFloat_FromDouble</span>((4.0 / 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)</span>
@@ -2065,7 +2056,7 @@ static PyObject *__pyx_pf_9magnetism_4get_dip_dip_forces(CYTHON_UNUSED PyObject 
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow((__pyx_v_particle_size / 2.0), 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)</span>
+  __pyx_t_1 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow(__pyx_v_particle_size, 3.0));<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   __pyx_t_5 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_t_3, __pyx_t_1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
@@ -2347,4 +2338,23 @@ static PyObject *__pyx_pf_9magnetism_4get_dip_dip_forces(CYTHON_UNUSED PyObject 
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_forces));
   __pyx_r = ((PyArrayObject *)__pyx_v_forces);
   goto __pyx_L0;
-</pre></div></body></html>
+</pre><pre class="cython line score-0">&#xA0;<span class="">166</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">167</span>: #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?</pre>
+<pre class="cython line score-0">&#xA0;<span class="">168</span>: # cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:,::1] M, double[:,::1] particle_posns, double particle_size):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">169</span>: #     cdef double wca_mag</pre>
+<pre class="cython line score-0">&#xA0;<span class="">170</span>: #     cdef double sigma = 0.25*eq_length</pre>
+<pre class="cython line score-0">&#xA0;<span class="">171</span>: #     cdef double cutoff_length = pow(2,(1/6))*sigma</pre>
+<pre class="cython line score-0">&#xA0;<span class="">172</span>: #     if rij_mag &lt;= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements</pre>
+<pre class="cython line score-0">&#xA0;<span class="">173</span>: #         wca_mag = get_wca_force(rij_mag,sigma)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">174</span>: #         for i in range(3):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">175</span>: #             spring_force[i] += wca_mag * rij[i] / rij_mag</pre>
+<pre class="cython line score-0">&#xA0;<span class="">176</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">177</span>: # @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">178</span>: # @cython.wraparound(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">179</span>: # cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:</pre>
+<pre class="cython line score-0">&#xA0;<span class="">180</span>: #     cdef double eps_constant = 100</pre>
+<pre class="cython line score-0">&#xA0;<span class="">181</span>: #     cdef double sigma_over_separation = sigma/r</pre>
+<pre class="cython line score-0">&#xA0;<span class="">182</span>: #     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))</pre>
+<pre class="cython line score-0">&#xA0;<span class="">183</span>: #     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">184</span>: #     return force_mag</pre>
+</div></body></html>

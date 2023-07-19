@@ -64,7 +64,7 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
         solutions.append([t,*y])
     epsilon = np.spacing(1)
     tolerance = 1e-4
-    max_iters = 10
+    max_iters = 1
     # fig = plt.figure()
     # ax = fig.add_subplot(projection= '3d')
     # x0,v0,m = node_posns.copy(), np.zeros(node_posns.shape), np.ones(node_posns.shape[0])*1e-2
@@ -84,12 +84,12 @@ def simulate_v2(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,bo
         # than the mre case. for the single material case i can try stretching each eleemnts x, y, or z postion by the same amount fora  simple axial strain
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    r = sci.ode(fun).set_integrator('dopri5',nsteps=100,verbosity=1)
+    r = sci.ode(fun).set_integrator('dopri5',nsteps=2000,verbosity=1)
     r.set_solout(solout)
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         sol = r.integrate(t_f)
-        plot_criteria_v_iteration(solutions,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+        # plot_criteria_v_iteration(solutions,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         a_var = get_accel_post_sim(sol,m,elements,springs,particles,kappa,l_e,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
@@ -331,7 +331,7 @@ def place_two_particles(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 def main():
-    E = 1
+    E = 1e3
     nu = 0.499
     l_e = 0.1#cubic element side length
     Lx = 1.5
@@ -391,6 +391,7 @@ def main():
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/' + script_name.stem + '/tests/2_dip/'
     output_dir = '/mnt/c/Users/bagaw/Desktop/2_dip_WCA/'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/unscaled_system_results/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -400,8 +401,8 @@ def main():
     
 
     # strains = np.array([0.01])
-    strains = np.arange(-.001,-0.11,-0.02)
-    Hext = np.array([10000,0,0],dtype=np.float64)
+    strains = np.arange(-.001,-0.05,-0.02)
+    Hext = np.array([0,0,0],dtype=np.float64)
     particle_size = radius
     chi = 131
     Ms = 1.9e6
