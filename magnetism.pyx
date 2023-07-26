@@ -54,7 +54,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi,
         M[i] = M_mag*H_hat[i]
     return M
 
-#magnetic permeability of free space mu0 = 3*pi*1e-7 H/m
+#magnetic permeability of free space mu0 = 4*pi*1e-7 H/m
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] r_j,  double[:] m):
@@ -69,7 +69,26 @@ cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:]
         rij_hat[i] = rij[i]/rij_mag
     cdef double m_dot_r_hat = dot_prod(m,rij_hat)
     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
-    cdef double prefactor = mu0/(4*np.pi*rij_mag*rij_mag*rij_mag)
+    cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))
+    for i in range(3):
+        B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
+    return B
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field_normalized(double[:] r_i, double[:] r_j,  double[:] m, double l_e):
+    """Get the B-Field at a point i due to a dipole at point j"""
+    cdef double[3] rij
+    cdef int i
+    for i in range(3):
+        rij[i] = r_i[i] - r_j[i]
+    cdef double rij_mag = sqrt(dot_prod(rij,rij))
+    cdef double[3] rij_hat
+    for i in range(3):
+        rij_hat[i] = rij[i]/rij_mag
+    cdef double m_dot_r_hat = dot_prod(m,rij_hat)
+    cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
+    cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
     for i in range(3):
         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
     return B
@@ -118,6 +137,57 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hex
                     r_j[2] = particle_posns[j,2]
                     m_j[:] = particle_V*current_M[j,:]
                     B_dip = get_dipole_field(r_i,r_j,m_j)
+                    H_dip[i,0] += B_dip[0]/mu0
+                    H_dip[i,1] += B_dip[1]/mu0
+                    H_dip[i,2] += B_dip[2]/mu0
+            H_tot[:] = Hext[:] + H_dip[i,:]
+            next_M[i,:] = get_magnetization(H_tot,chi,Ms)
+        H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+        current_M = next_M
+    return next_M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):
+    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef int max_iters = 5
+    cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef double[3] init_M = np.empty((3,),dtype=np.float64)
+    #for each particle, get the initial magnetization due to the external field
+    init_M = get_magnetization(Hext,chi,Ms)
+    for i in range(particle_posns.shape[0]):
+        current_M[i,0] = init_M[0]
+        current_M[i,1] = init_M[1]
+        current_M[i,2] = init_M[2]
+    #for each particle, get the magnetization due to each other particle, keeping track of current and next values of magnetization
+    #starts with getting the dipolar field due to each particle at each other particle's position
+    cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] m_j = np.empty((3,),dtype=np.float64)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
+    for count in range(max_iters):
+        for i in range(particle_posns.shape[0]):
+            #get particle i position and particle j position, don't calculate field for itself
+            for j in range(particle_posns.shape[0]):
+                if i == j:
+                    pass
+                else:
+                    r_i[0] = particle_posns[i,0]
+                    r_i[1] = particle_posns[i,1]
+                    r_i[2] = particle_posns[i,2]
+                    r_j[0] = particle_posns[j,0]
+                    r_j[1] = particle_posns[j,1]
+                    r_j[2] = particle_posns[j,2]
+                    m_j[:] = particle_V*current_M[j,:]
+                    B_dip = get_dipole_field_normalized(r_i,r_j,m_j,l_e)
                     H_dip[i,0] += B_dip[0]/mu0
                     H_dip[i,1] += B_dip[1]/mu0
                     H_dip[i,2] += B_dip[2]/mu0
