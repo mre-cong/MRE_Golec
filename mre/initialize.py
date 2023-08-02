@@ -378,6 +378,12 @@ class Simulation(object):
         self.Lz = Lz
         self.t_f = 0
         self.N_iter = 0
+        N_nodes_x = np.round(Lx/l_e + 1)
+        N_nodes_y = np.round(Ly/l_e + 1)
+        N_nodes_z = np.round(Lz/l_e + 1)
+        N_el_x = N_nodes_x - 1
+        N_el_y = N_nodes_y - 1
+        N_el_z = N_nodes_z - 1
         
     def set_time(self,time):
         self.t_f = time
@@ -399,11 +405,12 @@ class Simulation(object):
             report_string += key + ' = ' + str(vars(self).get(key)) + ' \n'
         return report_string
                 
-def write_log(simulation,output_dir):
-    timestamp = time.ctime()
-    script_name = lib_programname.get_path_executed_script()
-    with open(output_dir+'logfile.txt','a') as f_obj:
-        f_obj.writelines([simulation.report2(),str(script_name)+'\n',timestamp+'\n'])
+    def write_log(self,output_dir):
+        timestamp = time.ctime()
+        script_name = lib_programname.get_path_executed_script()
+        explanation = input("Add a sentence or two describing this simulation and/or explaining it's purpose:\n")
+        with open(output_dir+'logfile.txt','a') as f_obj:
+            f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
 def write_init_file(posns,springs,elements,particles,boundaries,output_dir):

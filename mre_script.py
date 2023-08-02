@@ -397,7 +397,7 @@ def main():
 
     my_sim = mre.initialize.Simulation(E,nu,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
-    mre.initialize.write_log(my_sim,output_dir)
+    my_sim.write_log(output_dir)
     
 
     # strains = np.array([0.01])

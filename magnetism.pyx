@@ -213,6 +213,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
     cdef double[3] force = np.empty((3,),dtype=np.float64)
+    cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
     for i in range(N_particles):
         moments[i,0] = M[i,0]*particle_V
         moments[i,1] = M[i,1]*particle_V
@@ -226,6 +227,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
             r_j[1] = particle_posns[j,1]
             r_j[2] = particle_posns[j,2]
             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
+            wca_force = get_particle_wca_force(r_i,r_j,particle_size)
             forces[i,0] += force[0]
             forces[i,1] += force[1]
             forces[i,2] += force[2]
@@ -235,20 +237,29 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
     return forces
 
 #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
-# cpdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
-#     cdef double wca_mag
-#     cdef double sigma = 0.25*eq_length
-#     cdef double cutoff_length = pow(2,(1/6))*sigma
-#     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
-#         wca_mag = get_wca_force(rij_mag,sigma)
-#         for i in range(3):
-#             spring_force[i] += wca_mag * rij[i] / rij_mag
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
+    cdef double wca_mag
+    cdef double sigma = 2*particle_size*1e6
+    cdef double cutoff_length = pow(2,(1/6))*sigma
+    cdef double[3] rij
+    cdef int i
+    for i in range(3):
+        rij[i] = r_i[i] - r_j[i]
+    cdef double rij_mag =  sqrt(dot_prod(rij,rij))
+    cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+    if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+        wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
+        for i in range(3):
+            force[i] += wca_mag * rij[i] / rij_mag
+    return force
     
-# @cython.boundscheck(False)
-# @cython.wraparound(False)
-# cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
-#     cdef double eps_constant = 100
-#     cdef double sigma_over_separation = sigma/r
-#     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
-#     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
-#     return force_mag
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
+    cdef double sigma_over_separation = sigma/r
+    # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+    cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+    return force_mag
