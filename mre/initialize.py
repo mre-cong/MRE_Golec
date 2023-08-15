@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import time
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
-import create_springs
+# import create_springs
 import springs
 
 #Given the dimensions of a rectilinear space describing the system of interest, and the side length of the unit cell that will be used to discretize the space, return list of vectors that point to the nodal positions at stress free equilibrium
@@ -408,7 +408,7 @@ class Simulation(object):
     def write_log(self,output_dir):
         timestamp = time.ctime()
         script_name = lib_programname.get_path_executed_script()
-        explanation = input("Add a sentence or two describing this simulation and/or explaining it's purpose:\n")
+        explanation = "default explanation empty"#input("Add a sentence or two describing this simulation and/or explaining it's purpose:\n")
         with open(output_dir+'logfile.txt','a') as f_obj:
             f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
 

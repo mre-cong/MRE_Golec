@@ -2961,7 +2961,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   double __pyx_v_r_i[3];
   double __pyx_v_r_j[3];
   double __pyx_v_force[3];
-  CYTHON_UNUSED double __pyx_v_wca_force[3];
+  double __pyx_v_wca_force[3];
   __Pyx_LocalBuf_ND __pyx_pybuffernd_forces;
   __Pyx_Buffer __pyx_pybuffer_forces;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_moments;
@@ -3508,19 +3508,43 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">237</span>:             forces[i,0] += wca_force[0]</pre>
+<pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
+      __pyx_t_13 = 0;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[0]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">238</span>:             forces[i,1] += wca_force[1]</pre>
+<pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_i;
+      __pyx_t_14 = 1;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[1]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">239</span>:             forces[i,2] += wca_force[2]</pre>
+<pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
+      __pyx_t_13 = 2;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[2]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">240</span>:             forces[j,0] -= wca_force[0]</pre>
+<pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
+      __pyx_t_14 = 0;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[0]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">241</span>:             forces[j,1] -= wca_force[1]</pre>
+<pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_j;
+      __pyx_t_13 = 1;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[1]);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">242</span>:             forces[j,2] -= wca_force[2]</pre>
+<pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
+      __pyx_t_14 = 2;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[2]);
     }
   }
-</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">237</span>:     return forces</pre>
+</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">243</span>:     return forces</pre>
 <pre class='cython code score-2 '>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_r));
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_forces));
   __pyx_r = ((PyArrayObject *)__pyx_v_forces);
   goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">238</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">239</span>: #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?</pre>
-<pre class="cython line score-0">&#xA0;<span class="">240</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">241</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">242</span>: cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):</pre>
-<pre class='cython code score-17 '>static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, double __pyx_v_particle_size) {
+</pre><pre class="cython line score-0">&#xA0;<span class="">244</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">245</span>: #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?</pre>
+<pre class="cython line score-0">&#xA0;<span class="">246</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">247</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-17" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">248</span>: cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):</pre>
+<pre class='cython code score-17 '>static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, CYTHON_UNUSED double __pyx_v_particle_size) {
   double __pyx_v_wca_mag;
   double __pyx_v_sigma;
   double __pyx_v_cutoff_length;
@@ -3566,43 +3590,43 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">243</span>:     cdef double wca_mag</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">244</span>:     cdef double sigma = 2*particle_size*1e6</pre>
-<pre class='cython code score-0 '>  __pyx_v_sigma = ((2.0 * __pyx_v_particle_size) * 1e6);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">245</span>:     cdef double cutoff_length = pow(2,(1/6))*sigma</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">249</span>:     cdef double wca_mag</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">250</span>:     cdef double sigma = 1#2*particle_size/(3e-6)</pre>
+<pre class='cython code score-0 '>  __pyx_v_sigma = 1.0;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">251</span>:     cdef double cutoff_length = pow(2,(1/6))*sigma</pre>
 <pre class='cython code score-0 '>  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
-</pre><pre class="cython line score-0">&#xA0;<span class="">246</span>:     cdef double[3] rij</pre>
-<pre class="cython line score-0">&#xA0;<span class="">247</span>:     cdef int i</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">248</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">252</span>:     cdef double[3] rij</pre>
+<pre class="cython line score-0">&#xA0;<span class="">253</span>:     cdef int i</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">254</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">249</span>:         rij[i] = r_i[i] - r_j[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">255</span>:         rij[i] = r_i[i] - r_j[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
-</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">250</span>:     cdef double rij_mag =  sqrt(dot_prod(rij,rij))</pre>
-<pre class='cython code score-12 '>  __pyx_t_6 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_double);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">256</span>:     cdef double rij_mag =  sqrt(dot_prod(rij,rij))</pre>
+<pre class='cython code score-12 '>  __pyx_t_6 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_double);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 250, __pyx_L1_error)</span>
+  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_double</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+  __pyx_t_7 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_double</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_double);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+  __pyx_t_5 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_double);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
   __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 250, __pyx_L1_error)</span>
+  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_double</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 250, __pyx_L1_error)</span>
+  __pyx_t_8 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_double</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 256, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_7, 1);
@@ -3611,79 +3635,79 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_8, 1);
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
-</pre><pre class="cython line score-27" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">251</span>:     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)</pre>
-<pre class='cython code score-27 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+</pre><pre class="cython line score-27" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">257</span>:     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)</pre>
+<pre class='cython code score-27 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+  __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_9, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_9, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_9);
-  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_9, __pyx_n_s_float64);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_9, __pyx_n_s_float64);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_9); __pyx_t_9 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 251, __pyx_L1_error)</span>
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_6, __pyx_tuple__2, __pyx_t_5);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 251, __pyx_L1_error)</span>
+  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_6, __pyx_tuple__2, __pyx_t_5);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 257, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 251, __pyx_L1_error)</span>
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 257, __pyx_L1_error)</span>
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(<span class='pyx_c_api'>__Pyx_GetBufferAndValidate</span>(&amp;__pyx_pybuffernd_force.rcbuffer-&gt;pybuffer, (PyObject*)__pyx_t_11, &amp;__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None); __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.buf = NULL;
-      <span class='error_goto'>__PYX_ERR(0, 251, __pyx_L1_error)</span>
+      <span class='error_goto'>__PYX_ERR(0, 257, __pyx_L1_error)</span>
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.shape[0];
     }
   }
   __pyx_t_11 = 0;
   __pyx_v_force = ((PyArrayObject *)__pyx_t_10);
   __pyx_t_10 = 0;
-</pre><pre class="cython line score-21" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">252</span>:     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72</pre>
-<pre class='cython code score-21 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_10, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 252, __pyx_L1_error)</span>
+</pre><pre class="cython line score-21" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">258</span>:     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72</pre>
+<pre class='cython code score-21 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_10, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 258, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_10, __pyx_n_s_pi);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)</span>
+  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_10, __pyx_n_s_pi);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_12 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 252, __pyx_L1_error)</span>
+  __pyx_t_12 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 258, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='py_c_api'>PyFloat_FromDouble</span>((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * 27e-18) / 72.0));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)</span>
+  __pyx_t_5 = <span class='py_c_api'>PyFloat_FromDouble</span>((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   __pyx_v_eps_constant = __pyx_t_5;
   __pyx_t_5 = 0;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">253</span>:     if rij_mag &lt;= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">259</span>:     if rij_mag &lt;= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements</pre>
 <pre class='cython code score-0 '>  __pyx_t_13 = ((__pyx_v_rij_mag &lt;= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 /* … */
   }
-</pre><pre class="cython line score-10" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">254</span>:         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)</pre>
-<pre class='cython code score-10 '>    __pyx_t_12 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 254, __pyx_L1_error)</span>
+</pre><pre class="cython line score-10" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">260</span>:         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)</pre>
+<pre class='cython code score-10 '>    __pyx_t_12 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 260, __pyx_L1_error)</span>
     __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_t_12, __pyx_v_rij_mag, __pyx_v_sigma);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">255</span>:         for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">261</span>:         for i in range(3):</pre>
 <pre class='cython code score-0 '>    for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
       __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">256</span>:             force[i] += wca_mag * rij[i] / rij_mag</pre>
+</pre><pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">262</span>:             force[i] += wca_mag * rij[i] / rij_mag</pre>
 <pre class='cython code score-5 '>      __pyx_t_12 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         <span class='py_c_api'>PyErr_SetString</span>(PyExc_ZeroDivisionError, "float division");
-        <span class='error_goto'>__PYX_ERR(0, 256, __pyx_L1_error)</span>
+        <span class='error_goto'>__PYX_ERR(0, 262, __pyx_L1_error)</span>
       }
       __pyx_t_3 = __pyx_v_i;
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.buf, __pyx_t_3, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_12 / __pyx_v_rij_mag);
     }
-</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">257</span>:     return force</pre>
+</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">263</span>:     return force</pre>
 <pre class='cython code score-2 '>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_r));
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_force));
   __pyx_r = ((PyArrayObject *)__pyx_v_force);
   goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">258</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">259</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">260</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">261</span>: cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">264</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">265</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">266</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">267</span>: cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:</pre>
 <pre class='cython code score-2 '>static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, double __pyx_v_r, double __pyx_v_sigma) {
   double __pyx_v_sigma_over_separation;
   double __pyx_v_force_mag;
@@ -3696,7 +3720,7 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   __pyx_L0:;
   return __pyx_r;
 }
-</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">262</span>:     cdef double sigma_over_separation = sigma/r</pre>
+</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">268</span>:     cdef double sigma_over_separation = sigma/r</pre>
 <pre class='cython code score-9 '>  if (unlikely(__pyx_v_r == 0)) {
     #ifdef WITH_THREAD
     PyGILState_STATE __pyx_gilstate_save = <span class='pyx_c_api'>__Pyx_PyGILState_Ensure</span>();
@@ -3705,11 +3729,11 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 262, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 268, __pyx_L1_error)</span>
   }
   __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
-</pre><pre class="cython line score-0">&#xA0;<span class="">263</span>:     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))</pre>
-<pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">264</span>:     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">269</span>:     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))</pre>
+<pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">270</span>:     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)</pre>
 <pre class='cython code score-18 '>  __pyx_t_1 = (12.0 * pow(__pyx_v_sigma_over_separation, 13.0));
   if (unlikely(__pyx_v_sigma == 0)) {
     #ifdef WITH_THREAD
@@ -3719,7 +3743,7 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 264, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 270, __pyx_L1_error)</span>
   }
   __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -3730,10 +3754,10 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 264, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 270, __pyx_L1_error)</span>
   }
   __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">265</span>:     return force_mag</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">271</span>:     return force_mag</pre>
 <pre class='cython code score-0 '>  __pyx_r = __pyx_v_force_mag;
   goto __pyx_L0;
 </pre></div></body></html>

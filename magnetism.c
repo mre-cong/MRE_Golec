@@ -6386,7 +6386,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   double __pyx_v_r_i[3];
   double __pyx_v_r_j[3];
   double __pyx_v_force[3];
-  CYTHON_UNUSED double __pyx_v_wca_force[3];
+  double __pyx_v_wca_force[3];
   __Pyx_LocalBuf_ND __pyx_pybuffernd_forces;
   __Pyx_Buffer __pyx_pybuffer_forces;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_moments;
@@ -7002,7 +7002,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]             # <<<<<<<<<<<<<<
  *             forces[j,2] -= force[2]
- *     return forces
+ *             forces[i,0] += wca_force[0]
  */
       __pyx_t_14 = __pyx_v_j;
       __pyx_t_13 = 1;
@@ -7012,18 +7012,84 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]             # <<<<<<<<<<<<<<
+ *             forces[i,0] += wca_force[0]
+ *             forces[i,1] += wca_force[1]
+ */
+      __pyx_t_13 = __pyx_v_j;
+      __pyx_t_14 = 2;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
+
+      /* "magnetism.pyx":237
+ *             forces[j,1] -= force[1]
+ *             forces[j,2] -= force[2]
+ *             forces[i,0] += wca_force[0]             # <<<<<<<<<<<<<<
+ *             forces[i,1] += wca_force[1]
+ *             forces[i,2] += wca_force[2]
+ */
+      __pyx_t_14 = __pyx_v_i;
+      __pyx_t_13 = 0;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[0]);
+
+      /* "magnetism.pyx":238
+ *             forces[j,2] -= force[2]
+ *             forces[i,0] += wca_force[0]
+ *             forces[i,1] += wca_force[1]             # <<<<<<<<<<<<<<
+ *             forces[i,2] += wca_force[2]
+ *             forces[j,0] -= wca_force[0]
+ */
+      __pyx_t_13 = __pyx_v_i;
+      __pyx_t_14 = 1;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[1]);
+
+      /* "magnetism.pyx":239
+ *             forces[i,0] += wca_force[0]
+ *             forces[i,1] += wca_force[1]
+ *             forces[i,2] += wca_force[2]             # <<<<<<<<<<<<<<
+ *             forces[j,0] -= wca_force[0]
+ *             forces[j,1] -= wca_force[1]
+ */
+      __pyx_t_14 = __pyx_v_i;
+      __pyx_t_13 = 2;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[2]);
+
+      /* "magnetism.pyx":240
+ *             forces[i,1] += wca_force[1]
+ *             forces[i,2] += wca_force[2]
+ *             forces[j,0] -= wca_force[0]             # <<<<<<<<<<<<<<
+ *             forces[j,1] -= wca_force[1]
+ *             forces[j,2] -= wca_force[2]
+ */
+      __pyx_t_13 = __pyx_v_j;
+      __pyx_t_14 = 0;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[0]);
+
+      /* "magnetism.pyx":241
+ *             forces[i,2] += wca_force[2]
+ *             forces[j,0] -= wca_force[0]
+ *             forces[j,1] -= wca_force[1]             # <<<<<<<<<<<<<<
+ *             forces[j,2] -= wca_force[2]
+ *     return forces
+ */
+      __pyx_t_14 = __pyx_v_j;
+      __pyx_t_13 = 1;
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[1]);
+
+      /* "magnetism.pyx":242
+ *             forces[j,0] -= wca_force[0]
+ *             forces[j,1] -= wca_force[1]
+ *             forces[j,2] -= wca_force[2]             # <<<<<<<<<<<<<<
  *     return forces
  * 
  */
       __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
+      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[2]);
     }
   }
 
-  /* "magnetism.pyx":237
- *             forces[j,1] -= force[1]
- *             forces[j,2] -= force[2]
+  /* "magnetism.pyx":243
+ *             forces[j,1] -= wca_force[1]
+ *             forces[j,2] -= wca_force[2]
  *     return forces             # <<<<<<<<<<<<<<
  * 
  * #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
@@ -7180,15 +7246,15 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   return __pyx_r;
 }
 
-/* "magnetism.pyx":242
+/* "magnetism.pyx":248
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size*1e6
+ *     cdef double sigma = 1#2*particle_size/(3e-6)
  */
 
-static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, double __pyx_v_particle_size) {
+static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, CYTHON_UNUSED double __pyx_v_particle_size) {
   double __pyx_v_wca_mag;
   double __pyx_v_sigma;
   double __pyx_v_cutoff_length;
@@ -7223,25 +7289,25 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_pybuffernd_force.data = NULL;
   __pyx_pybuffernd_force.rcbuffer = &__pyx_pybuffer_force;
 
-  /* "magnetism.pyx":244
+  /* "magnetism.pyx":250
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size*1e6             # <<<<<<<<<<<<<<
+ *     cdef double sigma = 1#2*particle_size/(3e-6)             # <<<<<<<<<<<<<<
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     cdef double[3] rij
  */
-  __pyx_v_sigma = ((2.0 * __pyx_v_particle_size) * 1e6);
+  __pyx_v_sigma = 1.0;
 
-  /* "magnetism.pyx":245
+  /* "magnetism.pyx":251
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size*1e6
+ *     cdef double sigma = 1#2*particle_size/(3e-6)
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
  *     cdef double[3] rij
  *     cdef int i
  */
   __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
 
-  /* "magnetism.pyx":248
+  /* "magnetism.pyx":254
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -7251,7 +7317,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":249
+    /* "magnetism.pyx":255
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
@@ -7263,34 +7329,34 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":250
+  /* "magnetism.pyx":256
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 250, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
@@ -7300,38 +7366,38 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":251
+  /* "magnetism.pyx":257
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 251, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 251, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 251, __pyx_L1_error)
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 257, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force.rcbuffer->pybuffer, (PyObject*)__pyx_t_11, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 251, __pyx_L1_error)
+      __PYX_ERR(0, 257, __pyx_L1_error)
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -7339,28 +7405,28 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_v_force = ((PyArrayObject *)__pyx_t_10);
   __pyx_t_10 = 0;
 
-  /* "magnetism.pyx":252
+  /* "magnetism.pyx":258
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72             # <<<<<<<<<<<<<<
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72             # <<<<<<<<<<<<<<
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * 27e-18) / 72.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_v_eps_constant = __pyx_t_5;
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":253
+  /* "magnetism.pyx":259
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
@@ -7368,17 +7434,17 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_t_13 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 
-    /* "magnetism.pyx":254
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+    /* "magnetism.pyx":260
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)             # <<<<<<<<<<<<<<
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  */
-    __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 254, __pyx_L1_error)
+    __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 260, __pyx_L1_error)
     __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_t_12, __pyx_v_rij_mag, __pyx_v_sigma);
 
-    /* "magnetism.pyx":255
+    /* "magnetism.pyx":261
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):             # <<<<<<<<<<<<<<
@@ -7388,7 +7454,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
     for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
       __pyx_v_i = __pyx_t_1;
 
-      /* "magnetism.pyx":256
+      /* "magnetism.pyx":262
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
@@ -7398,22 +7464,22 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
       __pyx_t_12 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 256, __pyx_L1_error)
+        __PYX_ERR(0, 262, __pyx_L1_error)
       }
       __pyx_t_3 = __pyx_v_i;
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force.rcbuffer->pybuffer.buf, __pyx_t_3, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_12 / __pyx_v_rij_mag);
     }
 
-    /* "magnetism.pyx":253
+    /* "magnetism.pyx":259
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
- *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  */
   }
 
-  /* "magnetism.pyx":257
+  /* "magnetism.pyx":263
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  *     return force             # <<<<<<<<<<<<<<
@@ -7425,12 +7491,12 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_r = ((PyArrayObject *)__pyx_v_force);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":242
+  /* "magnetism.pyx":248
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size*1e6
+ *     cdef double sigma = 1#2*particle_size/(3e-6)
  */
 
   /* function exit code */
@@ -7461,7 +7527,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   return __pyx_r;
 }
 
-/* "magnetism.pyx":261
+/* "magnetism.pyx":267
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
@@ -7479,7 +7545,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "magnetism.pyx":262
+  /* "magnetism.pyx":268
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
  *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
@@ -7494,11 +7560,11 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 262, __pyx_L1_error)
+    __PYX_ERR(0, 268, __pyx_L1_error)
   }
   __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
 
-  /* "magnetism.pyx":264
+  /* "magnetism.pyx":270
  *     cdef double sigma_over_separation = sigma/r
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)             # <<<<<<<<<<<<<<
@@ -7513,7 +7579,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 264, __pyx_L1_error)
+    __PYX_ERR(0, 270, __pyx_L1_error)
   }
   __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -7524,11 +7590,11 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 264, __pyx_L1_error)
+    __PYX_ERR(0, 270, __pyx_L1_error)
   }
   __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
 
-  /* "magnetism.pyx":265
+  /* "magnetism.pyx":271
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
  *     return force_mag             # <<<<<<<<<<<<<<
@@ -7536,7 +7602,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   __pyx_r = __pyx_v_force_mag;
   goto __pyx_L0;
 
-  /* "magnetism.pyx":261
+  /* "magnetism.pyx":267
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<

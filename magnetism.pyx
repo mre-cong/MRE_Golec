@@ -234,6 +234,12 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
             forces[j,0] -= force[0]
             forces[j,1] -= force[1]
             forces[j,2] -= force[2]
+            forces[i,0] += wca_force[0]
+            forces[i,1] += wca_force[1]
+            forces[i,2] += wca_force[2]
+            forces[j,0] -= wca_force[0]
+            forces[j,1] -= wca_force[1]
+            forces[j,2] -= wca_force[2]
     return forces
 
 #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
@@ -241,7 +247,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
 @cython.wraparound(False)
 cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
     cdef double wca_mag
-    cdef double sigma = 2*particle_size*1e6
+    cdef double sigma = 1#2*particle_size/(3e-6)
     cdef double cutoff_length = pow(2,(1/6))*sigma
     cdef double[3] rij
     cdef int i
@@ -249,7 +255,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, doub
         rij[i] = r_i[i] - r_j[i]
     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
-    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*(27e-18)/72
+    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
         for i in range(3):
