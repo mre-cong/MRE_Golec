@@ -441,6 +441,22 @@ def read_init_file(fn):
     f.close()
     return node_posns, springs, elements, boundaries
 
+def write_criteria_file(criteria_obj,output_dir):
+    """write out a file containing the simulation criteria at each integration step. intended for reproducing figures/plots"""
+    f = tb.open_file(output_dir+'criteria.h5','w')
+    my_keys = list(vars(criteria_obj).keys())
+    my_vars_obj = vars(criteria_obj)
+    for key in my_keys:
+        f.create_array('/',f'{key}',my_vars_obj[f'{key}'])
+    f.close()
+
+def read_criteria_file(fn):
+    f = tb.open_file(fn,'r')
+    results = {}
+    for leaf in f.root._f_walknodes('Leaf'):
+        results[leaf.name] = leaf.read()
+    return results
+
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,boundary_conditions,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""

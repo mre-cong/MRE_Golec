@@ -35,6 +35,7 @@ Created on Fri Aug 26 09:19:19 2022
 
 import numpy as np
 import matplotlib.pyplot as plt
+plt.switch_backend('Agg')
 import scipy.integrate as sci
 import time
 import os
@@ -59,13 +60,16 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     def solout(t,y):
         solutions.append([t,*y])
     tolerance = 1e-4
-    max_iters = 8
+    max_iters = 15
     v0 = np.zeros(x0.shape)
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     N_nodes = int(x0.shape[0])
+    my_nsteps = 200
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=1000,verbosity=1)
+    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
     r.set_solout(solout)
+    max_displacement = np.zeros((max_iters,))
+    mean_displacement = np.zeros((max_iters,))
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         sol = r.integrate(t_f)
@@ -73,25 +77,69 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
-            criteria = SimCriteria(solutions,initialized_posns,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         else:
-            other_criteria = SimCriteria(solutions,initialized_posns,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
-            criteria.append_criteria(other_criteria)
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
-        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir)
-        solutions = []
-        r.set_solout(solout)
+        mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
         if a_norm_avg < tolerance:
             break
         else:
             y_0 = sol
+            if i == 0:
+                mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
+            else:
+                last_posns = np.reshape(last_sol[:N_nodes*3],(N_nodes,3))
+                mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            if i != 0 and np.max(other_criteria.a_norm_avg) > 1e3:
+                print(f'strong accelerations detected during integration run {i}')
+                my_nsteps = int(my_nsteps/2)
+                if my_nsteps < 10:
+                    print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
+                    sol = last_sol.copy()
+                    del last_sol
+                    del y_0
+                    del solutions
+                    break
+                print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
+                print(f'running with halved maximum number of steps: {my_nsteps}')
+                r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
+                y_0 = last_sol.copy()
+            elif i != 0:
+                criteria.append_criteria(other_criteria)
+            last_sol = sol
+        solutions = []
+        r.set_solout(solout)
     # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+    #TODO formalize the below and above sections relating to the displacement of nodes between integration iterations (outer integration loop). can the displacement be used as part of the convergence criteria? I also need to do checking on the acceleration norm and other criteria to determine if the system has collapsed in a manner it should not, and utilize the stored "last_sol" as a new starting point with a smaller number of allowed integration steps (inner integration loop) or just accept the last_sol as the solution
+    fig, axs = plt.subplots(2)
+    axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
+    axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
+    axs[0].set_title('displacement between integration iterations')
+    axs[0].set_ylabel('displacement mean (units of l_e)')
+    axs[1].set_ylabel('displacement max (units of l_e)')
+    axs[1].set_xlabel('iteration number')
+    # Hide x labels and tick labels for top plots and y ticks for right plots
+    for ax in axs.flat:
+        ax.label_outer()
+    # plt.show()
+    plt.savefig(output_dir+'displacement.png')
+    plt.close()
+    mre.initialize.write_criteria_file(criteria,output_dir)
+    criteria.plot_criteria_subplot(output_dir)
     criteria.plot_criteria(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
-    mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir)
+    mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     # criteria.plot_criteria_v_time(output_dir)
     return sol#returning a solution object, that can then have it's attributes inspected
+
+def get_displacement_norms(final_posns,start_posns):
+    displacement = final_posns-start_posns
+    displacement_norms = np.linalg.norm(displacement,axis=1)
+    max_displacement = np.max(displacement_norms)
+    mean_displacement = np.mean(displacement_norms)
+    return mean_displacement,max_displacement
 
 def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
@@ -115,9 +163,9 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
-            criteria = SimCriteria(solutions,initialized_posns,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         else:
-            other_criteria = SimCriteria(solutions,initialized_posns,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
             criteria.append_criteria(other_criteria)
         # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
         final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
@@ -135,11 +183,11 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
     return sol#returning a solution object, that can then have it's attributes inspected
 
 class SimCriteria:
-    def __init__(self,solutions,initialized_posns,*args):
-        self.get_criteria_per_iteration(solutions,initialized_posns,*args)
+    def __init__(self,solutions,*args):
+        self.get_criteria_per_iteration(solutions,*args)
         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
 
-    def get_criteria_per_iteration(self,solutions,initialized_posns,*args):
+    def get_criteria_per_iteration(self,solutions,*args):
         iterations = np.array(solutions).shape[0]
         self.iter_number = np.arange(iterations)
         N_nodes = int((np.array(solutions).shape[1] - 1)/2/3)
@@ -160,6 +208,13 @@ class SimCriteria:
         self.length_x = np.zeros((iterations,))
         self.length_y = np.zeros((iterations,))
         self.length_z = np.zeros((iterations,))
+        boundaries = args[8]
+        self.left = np.zeros((iterations,))
+        self.right = np.zeros((iterations,))
+        self.top = np.zeros((iterations,))
+        self.bottom = np.zeros((iterations,))
+        self.front = np.zeros((iterations,))
+        self.back = np.zeros((iterations,))
         for count, row in enumerate(solutions):
             a_var = get_accel_scaled(np.array(row[1:]),*args)
             a_norms = np.linalg.norm(a_var,axis=1)
@@ -179,9 +234,9 @@ class SimCriteria:
             x1 = get_particle_center(args[2][0],final_posns)
             x2 = get_particle_center(args[2][1],final_posns)
             self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
-            self.get_system_extent(final_posns,count)
+            self.get_system_extent(final_posns,boundaries,count)
     
-    def get_system_extent(self,posns,count):
+    def get_system_extent(self,posns,boundaries,count):
         """Assign values to the objects instance variables that give some sense of the physical extent/dimensions/size of the simulated system as the simulation progresses"""
         self.max_x[count] = np.max(posns[:,0])
         self.max_y[count] = np.max(posns[:,1])
@@ -192,6 +247,12 @@ class SimCriteria:
         self.length_x[count] = self.max_x[count] - self.min_x[count]
         self.length_y[count] = self.max_y[count] - self.min_y[count]
         self.length_z[count] = self.max_z[count] - self.min_z[count]
+        self.left[count] = np.mean(posns[boundaries['left'],0])
+        self.right[count] = np.mean(posns[boundaries['right'],0])
+        self.top[count] = np.mean(posns[boundaries['top'],2])
+        self.bottom[count] = np.mean(posns[boundaries['bot'],2])
+        self.front[count] = np.mean(posns[boundaries['front'],1])
+        self.back[count] = np.mean(posns[boundaries['back'],1])
 
     def plot_displacement_hist(self,final_posns,initialized_posns,output_dir):
         displacement = final_posns-initialized_posns
@@ -201,17 +262,19 @@ class SimCriteria:
         rms_displacement = np.sqrt(np.sum(np.power(displacement_norms,2))/np.shape(displacement_norms)[0])
         counts, bins = np.histogram(displacement_norms, bins=20)
         fig,ax = plt.subplots()
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
         ax.hist(bins[:-1], bins, weights=counts)
         sigma = np.std(displacement_norms)
         mu = mean_displacement
-        y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)))**2)
-        ax.plot(bins,y,'--')
+        # y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)))**2)
+        # ax.plot(bins,y,'--')
         ax.set_title(f'Displacement Histogram\nMaximum {max_displacement}\nMean {mean_displacement}\n$\sigma={sigma}$\nRMS {rms_displacement}')
         ax.set_xlabel('displacement (units of l_e)')
         ax.set_ylabel('counts')
         savename = output_dir +'node_displacement_hist.png'
         plt.savefig(savename)
-        plt.show()
+        # plt.show()
         plt.close()
 
     def old_append_criteria(self,other):
@@ -254,8 +317,111 @@ class SimCriteria:
                 ax.set_ylabel(f'{key}')
                 savename = output_dir + f'{key}_v_time.png'
                 plt.savefig(savename)
-        plt.show()
-        plt.close('all')
+                plt.close()
+        # plt.show()
+        # plt.close('all')
+    
+    def plot_criteria_subplot(self,output_dir):
+        """Generate subplots of simulation criteria using matplotlib"""
+        if not (os.path.isdir(output_dir)):
+            os.mkdir(output_dir)
+        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+        # first plotting the system extent (to get a sense of the change in the system size
+        fig, axs = plt.subplots(3,3)
+        default_width, default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.min_x)
+        axs[0,0].set_title('x')
+        axs[0,0].set_ylabel('minimum x position (l_e)')
+        axs[1,0].plot(self.time,self.max_x)
+        axs[1,0].set_ylabel('maximum x position (l_e)')
+        axs[2,0].plot(self.time,self.length_x)
+        axs[2,0].set_ylabel('length (max - min) in x direction (l_e)')
+        axs[2,0].set_xlabel('scaled time')
+
+        axs[0,1].plot(self.time,self.min_y)
+        axs[0,1].set_title('y')
+        axs[0,1].set_ylabel('minimum y position (l_e)')
+        axs[1,1].plot(self.time,self.max_y)
+        axs[1,1].set_ylabel('maximum y position (l_e)')
+        axs[2,1].plot(self.time,self.length_y)
+        axs[2,1].set_ylabel('length (max - min) in y direction (l_e)')
+        axs[2,1].set_xlabel('scaled time')
+
+        axs[0,2].plot(self.time,self.min_z)
+        axs[0,2].set_title('z')
+        axs[0,2].set_ylabel('minimum z position (l_e)')
+        axs[1,2].plot(self.time,self.max_z)
+        axs[1,2].set_ylabel('maximum z position (l_e)')
+        axs[2,2].plot(self.time,self.length_z)
+        axs[2,2].set_ylabel('length (max - min) in z direction (l_e)')
+        axs[2,2].set_xlabel('scaled time')
+
+        savename = output_dir + 'systemextent_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+        
+        # plot the acceleration and velocity norms
+        fig, axs = plt.subplots(2,2)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.a_norm_avg)
+        axs[0,0].set_title('node acceleration')
+        axs[0,0].set_ylabel('node acceleration norm mean (unitless)')
+        axs[1,0].plot(self.time,self.a_norm_max)
+        axs[1,0].set_ylabel('node acceleration norm max (unitless)')
+        axs[1,0].set_xlabel('scaled time')
+        axs[0,1].plot(self.time,self.v_norm_avg)
+        axs[0,1].set_title('node velocity')
+        axs[0,1].set_ylabel('node velocity norm mean (unitless)')    
+        axs[1,1].plot(self.time,self.v_norm_max)
+        axs[1,1].set_ylabel('node velocity norm max (unitless)')
+        axs[1,0].set_xlabel('scaled time')
+
+        savename = output_dir + 'node_behavior_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+
+        # plot the particle acceleration, velocity, and separation
+        fig, axs = plt.subplots(3)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0].plot(self.time,self.particle_separation)
+        axs[0].set_ylabel('particle separation (l_e)')
+        axs[0].set_title('particle position, velcoity, and acceleration')
+        axs[1].plot(self.time,self.particle_v_norm)
+        axs[1].set_ylabel('particle velocity norm (unitless)')
+        axs[2].plot(self.time,self.particle_a_norm)
+        axs[2].set_ylabel('particle acceleration norm (unitless)')
+        axs[2].set_xlabel('scaled time')
+
+        savename = output_dir + 'particle_behavior_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+
+        fig, axs = plt.subplots(3,2)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.left)
+        axs[0,0].set_ylabel('mean node position: left bdry (l_e)')
+        axs[0,0].set_title('Mean Boundary Node Positions')
+        axs[0,1].plot(self.time,self.right)
+        axs[0,1].set_ylabel('mean node position: right bdry (l_e)')
+        axs[1,0].plot(self.time,self.front)
+        axs[1,0].set_ylabel('mean node position: front bdry (l_e)')
+        axs[1,1].plot(self.time,self.back)
+        axs[1,1].set_ylabel('mean node position: back bdry (l_e)')
+        axs[2,0].plot(self.time,self.top)
+        axs[2,0].set_ylabel('mean node position: top bdry (l_e)')
+        axs[2,1].plot(self.time,self.bottom)
+        axs[2,1].set_ylabel('mean node position: bottom bdry (l_e)')
+        axs[2,0].set_xlabel('scaled time')
+        savename = output_dir + 'mean_boundaries_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+        # plt.show()
+        # plt.close('all')
 
     def plot_criteria_v_time(self,output_dir):
         if not (os.path.isdir(output_dir)):
@@ -482,7 +648,7 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
     M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces(M,particle_centers,particle_size)
+    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_size,l_e)
     mag_forces *= beta/(particle_mass*(l_e**4))
     for i, particle in enumerate(particles):
         accel[particle] += mag_forces[i]
@@ -568,7 +734,7 @@ def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
     for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
     M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces(M,particle_centers,particle_size)
+    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_size,l_e)
     mag_forces_alt = mag_forces * scaled_magnetic_force_coefficient
     mag_forces *= beta/(particle_mass*(l_e**4))
 
@@ -736,13 +902,17 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
         mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
         mre.analyze.post_plot_cut_normalized(eq_posns,x0,springs_var,particles,boundary_conditions,output_dir)
 
-def run_hysteresis_sim(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms):
+    eq_posns = x0.copy()
     for count, Hext in enumerate(Hext_series):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('free',('free','free'),0) 
+        current_output_dir = output_dir + f'/field_{count}_hext_{np.linalg.norm(Hext)}/'
+        if not (os.path.isdir(current_output_dir)):
+            os.mkdir(current_output_dir)
         try:
             start = time.time()
-            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,eq_posns,output_dir)
+            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,eq_posns,current_output_dir)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1009,11 +1179,11 @@ def main():
     
 def main2():
     E = 1e3
-    nu = 0.499
-    l_e = 3e-6#cubic element side length
-    Lx = 15*l_e
-    Ly = 11*l_e
-    Lz = 11*l_e
+    nu = 0.49
+    l_e = (3/5)*1e-6#3e-6#cubic element side length
+    Lx = 41*l_e#27*l_e#15*l_e
+    Ly = 23*l_e#17*l_e#11*l_e
+    Lz = 23*l_e#17*l_e#11*l_e
     t_f = 30
     dimensions = np.array([Lx,Ly,Lz])
     N_nodes_x = np.round(Lx/l_e + 1)
@@ -1034,57 +1204,11 @@ def main2():
     springs_var = np.empty((max_springs,4),dtype=np.float64)
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
-    separation = 4
-    radius = 0.5*l_e# radius = l_e*(4.5)
+    separation = 20#12#4
+    radius = 2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
     particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
     kappa = mre.initialize.get_kappa(E, nu)
-    #TODO: update and improve implementation of saving out/checking/reading in initialization files
-    #need functionality to check some central directory containing initialization files
-    # system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
-    # current_dir = os.path.abspath('.')
-    # input_dir = current_dir + f'/init_files/{system_string}/'
-    # if not (os.path.isdir(input_dir)):#TODO add and statement that checks if the init file also exists?
-    #     os.mkdir(input_dir)
-    #     node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-    #     normalized_posns = mre.initialize.discretize_space(Lx/l_e,Ly/l_e,Lz/l_e,1)
-    #     # normalized_posns = node_posns/l_e
-    #     elements = springs.get_elements(normalized_posns, dimensions, 1)
-    #     boundaries = mre.initialize.get_boundaries(normalized_posns)
-    #     k = mre.initialize.get_spring_constants(E, nu, l_e)
-    #     node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
-    #     k = np.array(k,dtype=np.float64)
-    #     max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    #     springs_var = np.empty((max_springs,4),dtype=np.float64)
-    #     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
-    #     springs_var = springs_var[:num_springs,:]
-    #     separation = 5
-    #     radius = 0.5*l_e# radius = l_e*(4.5)
-    #     particles = place_two_particles(radius,l_e,dimensions,separation)
-    #     mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
-    # elif os.path.isfile(input_dir+'init.h5'):
-    #     node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
-    #     #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
-    #     #radius = l_e*0.5
-    #     separation = 5
-    #     radius = 0.5*l_e# radius = l_e*(4.5)
-    #     particles = place_two_particles(radius,l_e,dimensions,separation)
-    #     # #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
-    # else:
-    #     node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-    #     normalized_posns = mre.initialize.discretize_space(Lx,Ly,Lz,1)
-    #     # normalized_posns = node_posns/l_e
-    #     elements = springs.get_elements(normalized_posns, dimensions, 1)
-    #     boundaries = mre.initialize.get_boundaries(normalized_posns)
-    #     k = mre.initialize.get_spring_constants(E, nu, l_e)
-    #     node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
-    #     k = np.array(k,dtype=np.float64)
-    #     max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-    #     springs_var = np.empty((max_springs,4),dtype=np.float64)
-    #     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
-    #     springs_var = springs_var[:num_springs,:]
-    #     separation = 5
-    #     radius = 0.5*l_e# radius = l_e*(4.5)
-    #     particles = place_two_particles(radius,l_e,dimensions,separation)
+    #TODO: for distributed computing, I can't depend on looking at existing initialization files to extract variables. I'll have to either instantiate them based on command line arguments or an input file containing similar information, or (and this method seems like it is not th ebest for distributed computing) have separate "jobs" that i run locally or distributed to generate the init files, and use those as transferred input files for the main program (actually running the numerical integration to find equilibrium node configurations)
     # particles = np.array([])
     # kappa = mre.initialize.get_kappa(E, nu)
     # boundary_conditions = ('strain',('left','right'),.05)
@@ -1093,6 +1217,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-08-28_results_smaller_l_e_hysteresis/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1103,16 +1228,20 @@ def main2():
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
     H_mag = 1/mu0
-    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,2000)
+    H_step = H_mag/10
+    Hext_angle = (2*np.pi/360)*30
+    Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
-    Hext_series[:,0] = Hext_series_magnitude
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
     # Hext = np.array([10000,0,0],dtype=np.float64)
     particle_size = radius
     chi = 131
     Ms = 1.9e6
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
-    # x0 = node_posns.copy()
     x0 = normalized_posns.copy()
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
@@ -1131,7 +1260,8 @@ def main2():
     scaled_kappa = (l_e**2)*beta_new
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
-    run_hysteresis_sim(output_dir,Hext_series,normalized_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms)
+    mre.initialize.write_init_file(normalized_posns,springs_var,elements,particles,boundaries,output_dir)
+    run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms)
 
 def main3():
     """Testing scaled coefficients for forces and use of mass ratio variable in lieu of previous implementations of scaling"""

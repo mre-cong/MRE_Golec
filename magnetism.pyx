@@ -242,6 +242,48 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
             forces[j,2] -= wca_force[2]
     return forces
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):
+    """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
+    cdef int N_particles = particle_posns.shape[0]
+    cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
+    cdef int i
+    cdef int j
+    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] force = np.empty((3,),dtype=np.float64)
+    cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
+    for i in range(N_particles):
+        moments[i,0] = M[i,0]*particle_V
+        moments[i,1] = M[i,1]*particle_V
+        moments[i,2] = M[i,2]*particle_V
+    for i in range(N_particles):
+        for j in range(i+1,N_particles):
+            r_i[0] = particle_posns[i,0]
+            r_i[1] = particle_posns[i,1]
+            r_i[2] = particle_posns[i,2]
+            r_j[0] = particle_posns[j,0]
+            r_j[1] = particle_posns[j,1]
+            r_j[2] = particle_posns[j,2]
+            force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
+            wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+            forces[i,0] += force[0]
+            forces[i,1] += force[1]
+            forces[i,2] += force[2]
+            forces[j,0] -= force[0]
+            forces[j,1] -= force[1]
+            forces[j,2] -= force[2]
+            forces[i,0] += wca_force[0]
+            forces[i,1] += wca_force[1]
+            forces[i,2] += wca_force[2]
+            forces[j,0] -= wca_force[0]
+            forces[j,1] -= wca_force[1]
+            forces[j,2] -= wca_force[2]
+    return forces
+
 #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -255,13 +297,32 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, doub
         rij[i] = r_i[i] - r_j[i]
     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
-    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72
+    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
         for i in range(3):
             force[i] += wca_mag * rij[i] / rij_mag
     return force
     
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):
+    cdef double wca_mag
+    cdef double sigma = 2*particle_size/l_e
+    cdef double cutoff_length = pow(2,(1/6))*sigma
+    cdef double[3] rij
+    cdef int i
+    for i in range(3):
+        rij[i] = r_i[i] - r_j[i]
+    cdef double rij_mag =  sqrt(dot_prod(rij,rij))
+    cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+    cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+    if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
+        wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
+        for i in range(3):
+            force[i] += wca_mag * rij[i] / rij_mag
+    return force
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:

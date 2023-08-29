@@ -119,15 +119,17 @@ def plot_cut(cut_type,eq_node_posns,node_posns,springs,particles,dimensions,l_e,
     plt.savefig(savename)
     plt.close()
 
-def post_plot_cut_normalized(eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir):
-    plot_cut_normalized('xy',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
-    plot_cut_normalized('xz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
-    plot_cut_normalized('yz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir)
+def post_plot_cut_normalized(eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
+    plot_cut_normalized('xy',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
+    plot_cut_normalized('xz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
+    plot_cut_normalized('yz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
 
-def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir):
+def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
-    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut."""
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
     cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
     cut_type_index = cut_type_dict[cut_type]
     Lx = eq_node_posns[:,0].max()
@@ -135,6 +137,8 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     Lz = eq_node_posns[:,2].max()
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     fig = plt.figure()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
     ax = fig.add_subplot(projection= '3d')
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
@@ -166,7 +170,10 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     else:
         ax.view_init(elev=90,azim=-90,roll=0)
     # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
-    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) +'.png'
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) + tag +'.png'
     plt.savefig(savename)
     plt.close()
 
