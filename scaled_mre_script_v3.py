@@ -74,24 +74,33 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
-        #checking if the last solution vector in the solutions variable matches the solution returned by the integration method
-        if not np.allclose(sol,solutions[-1][1:]):
-            print('solution returned by integrator and last solution stored by solout do not match')
+        #checking if the last solution vector in the solutions variable matches the solution returned by the integration method while debugging an issue with mismatch between accelerations from criteria object and from get_accel() function. issue has been resolved
+        # if not np.allclose(sol,solutions[-1][1:]):
+        #     print('solution returned by integrator and last solution stored by solout do not match')
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
-            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         else:
-            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
-        final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
+        # final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
+        # final_v = np.reshape(solutions[-1][N_nodes*3+1:],(N_nodes,3))
+        final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
+        final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
+        v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
         mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
-        if a_norm_avg < tolerance:
+        if a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
             if i != 0:
                 criteria.append_criteria(other_criteria)
-            print(f'Last recorded acceleration norm average from criteria object is:{np.round(criteria.a_norm_avg[-1],decimals=6)}')
+            #below was used while debugging, found an error where i was not passing the drag coefficient to the criteria object, resulting in the default value being used, leading to incorrect values
+            # print(f'Last recorded acceleration norm average from criteria object is:{np.round(criteria.a_norm_avg[-1],decimals=6)}')
+            # v_norm = np.linalg.norm(np.reshape(sol[int(sol.shape[0]/2):],(int(sol.shape[0]/2/3),3)),axis=1)
+            # v_norm_avg = np.sum(v_norm)/np.shape(v_norm)[0]
+            # print(f'solution returned by integration has velocity norm average of:{np.round(v_norm_avg,decimals=6)}\nLast recorded velocity norm average from criteria object is:{np.round(criteria.v_norm_avg[-1],decimals=6)}')
             break
         else:
             y_0 = sol
@@ -229,8 +238,8 @@ class SimCriteria:
             a_var = get_accel_scaled(np.array(row[1:]),*args)
             a_norms = np.linalg.norm(a_var,axis=1)
             self.a_norm_max[count] = np.max(a_norms)
-            if self.a_norm_max[count] > 10000:
-                a_var = get_accel_scaled(np.array(row[1:]),*args)
+            # if self.a_norm_max[count] > 10000:
+            #     a_var = get_accel_scaled(np.array(row[1:]),*args)
             self.a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
             a_particles = a_var[args[2][0],:]
             self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
@@ -593,11 +602,17 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
     accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
     #TODO instead of reshaping as a 3N by 1, do (3*N,), and try concatenating. ideally should work and remove an additional and unnecessary reshape call
     N_nodes = int(np.round(N/3))
-    accel = np.reshape(accel,(3*N_nodes,1))
-    v0 = np.reshape(y[N:],(N_nodes,3))
-    result = np.concatenate((v0.reshape((3*N_nodes,1)),accel))
+    accel = np.reshape(accel,(3*N_nodes,))
+    v0 = y[N:]
+    result = np.concatenate((v0,accel))
+    # accel = np.reshape(accel,(3*N_nodes,1))
+    # v0 = np.reshape(y[N:],(N_nodes,3))
+    # result = np.concatenate((v0.reshape((3*N_nodes,1)),accel))
     # alternative to concatenate is to create an empty array and then assign the values, this should in theory be faster
-    result = np.reshape(result,(result.shape[0],))
+    # result = np.reshape(result,(result.shape[0],))
+    # same_result = np.allclose(result,my_result)
+    # if not same_result:
+    #     print('alternative implementation with less reshapes does not match existing result variable')
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
@@ -1246,7 +1261,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-08-31_results_drag100_debugging/'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-08-31_results_drag100_added_velocity_criteria/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1260,7 +1275,7 @@ def main2():
     n_field_steps = 1
     H_step = H_mag/n_field_steps
     Hext_angle = (2*np.pi/360)*30
-    Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
+    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
