@@ -130,7 +130,7 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
     
     tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
-    cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     cut_type_index = cut_type_dict[cut_type]
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
@@ -138,7 +138,8 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
     ax = fig.add_subplot(projection= '3d')
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
@@ -169,6 +170,7 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
         ax.view_init(elev=0,azim=-90,roll=0)
     else:
         ax.view_init(elev=90,azim=-90,roll=0)
+    ax.axis('equal')
     # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
     if tag != "":
         ax.set_title(tag)

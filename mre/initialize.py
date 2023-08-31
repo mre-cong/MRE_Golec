@@ -368,10 +368,11 @@ class Simulation(object):
     Lz : length in z direction of the object [m]
     """
     #TODO flesh out this class based approach to the simulation interface
-    def __init__(self,E=1,nu=0.49,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4):
+    def __init__(self,E=1,nu=0.49,drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4):
         """Initializes simulation with default values if they are not passed"""
         self.E = E
         self.nu = nu
+        self.drag = drag
         self.l_e = l_e
         self.Lx = Lx
         self.Ly = Ly
