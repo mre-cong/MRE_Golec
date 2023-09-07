@@ -37,6 +37,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import scipy.integrate as sci
+import scipy.optimize as opt
 import time
 import os
 import lib_programname
@@ -160,6 +161,21 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     # criteria.plot_criteria_v_time(output_dir)
     return sol#returning a solution object, that can then have it's attributes inspected
+
+def simulate_scaled_optimize(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,boundary_conditions,Hext,particle_size,chi,Ms,initialized_posns,output_dir):
+    """Use energy minimization to find equilibrium configurations of MRE systems under the influence of user defined magnetic fields and boundary conditions."""
+    #potential methods, 'CG', for nonlinear cojugate gradient by Polak and Ribiere, 'Newton-CG', for truncated Newton method (using a CG method to compute the search direction)
+    x0 = x0.reshape((x0.shape[0]*x0.shape[1],))
+    args = (elements,springs,particles,kappa,l_e,beta,boundary_conditions,boundaries,dimensions,Hext,particle_size,chi,Ms)
+    result = opt.minimize(get_energy_force_scaled,x0,args,method='CG',jac=True,options={'disp':True})
+    solution = result.x
+    print(f'success flag:{result.success}')
+    print(f'{result.message}')
+    N_nodes = int(solution.shape[0]/3)
+    final_posns = np.reshape(solution,((N_nodes,3)))
+    print(f'starting and ending point close together?:{np.allclose(x0,solution)}')
+    mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
+    return solution
 
 def get_displacement_norms(final_posns,start_posns):
     displacement = final_posns-start_posns
@@ -849,6 +865,85 @@ def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
         inspect_particle = accel[particles[0],:]
     return accel
 
+def get_energy_force_scaled(y,elements,springs,particles,kappa,l_e,beta,bc,boundaries,dimensions,Hext,particle_size,chi,Ms,debug_flag=False):
+    """computes energy and energy gradient for the given system of nodes, initial conditions, and can take into account boundary conditions. returns the energy and gradient"""
+    #scipy.optimize.minimize() requires y (the initial solution guess), and also the output of jac, to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    # N = int(np.round(y.shape[0]/2))
+    particle_volume = (4/3)*np.pi*(particle_size**3)
+    energy_scaling = (1/2)*mu0*(Ms**2)*particle_volume
+    N_nodes = int(np.round(y.shape[0]/3))
+    x0 = np.reshape(y,(N_nodes,3))
+    bc_forces = np.zeros(x0.shape,dtype=float)
+    if bc[0] == 'stress':
+        for surface in bc[1]:
+            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
+            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
+            if surface == 'left' or surface == 'right':
+                surface_area = dimensions[0]*dimensions[2]
+            elif surface == 'top' or surface == 'bottom':
+                surface_area = dimensions[0]*dimensions[1]
+            else:
+                surface_area = dimensions[1]*dimensions[2]
+            # assuming tension force only, no compression
+            if surface == 'right':
+                force_direction = np.array([1,0,0])
+            elif surface == 'left':
+                force_direction = np.array([-1,0,0])
+            elif surface == 'top':
+                force_direction = np.array([0,0,1])
+            elif surface == 'bottom':
+                force_direction = np.array([0,0,-1])
+            elif surface == 'front':
+                force_direction = np.array([0,1,0])
+            elif surface == 'back':
+                force_direction = np.array([0,-1,0])
+            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
+            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
+    elif bc[0] == 'strain':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
+        for surface in bc[1]:
+            do_stuff()
+    else:
+        fixed_nodes = np.array([0])
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
+    vcf_energy = get_volume_correction_force_cy_nogil.get_volume_correction_force_energy_normalized(x0,elements,kappa,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    spring_energy = get_spring_force_cy.get_spring_forces_energy_WCA(x0, springs, spring_force)
+    # volume_correction_force *= (l_e**2)*beta
+    # spring_force *= l_e*beta
+    volume_correction_force *= (l_e**2)/energy_scaling
+    spring_force *= l_e/energy_scaling
+    #TODO work out by hand the scaling of the energy (since the gradient is a partial derivative wrt length, i think the scaling for the energy terms is equivalent to the force scaling, with an additional multiplicative term of l_e)
+    # vcf_energy *= beta*(l_e**3)
+    # spring_energy *= beta*(l_e**2)
+    vcf_energy *= (l_e**3)/energy_scaling
+    spring_energy *= (l_e**2)/energy_scaling
+    gradient = -1*spring_force + -1*volume_correction_force + -1*bc_forces
+    gradient = set_fixed_nodes(gradient,fixed_nodes)
+    #for each particle, find the position of the center
+    particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+    for i, particle in enumerate(particles):
+        particle_centers[i,:] = get_particle_center(particle,x0)
+    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
+    mag_forces = magnetism.get_dip_dip_forces_energy_normalized(M,particle_centers,particle_size,l_e)
+    # mag_forces *= beta/(l_e**4)
+    mag_forces *= 1/((l_e**4)*energy_scaling)
+    #last entry of mag_forces is really the dipole-dipole energy of the system of particles
+    mag_energy = mag_forces[-1,0]*(l_e)
+    for i, particle in enumerate(particles):
+        gradient[particle] += -1*mag_forces[i]
+    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+    for particle in particles:
+        vecsum = np.sum(gradient[particle],axis=0)
+        gradient[particle] = vecsum/particle.shape[0]
+    energy = vcf_energy + spring_energy + mag_energy
+    gradient = np.reshape(gradient,(gradient.shape[0]*gradient.shape[1],))
+    return (energy, gradient)
+
 def get_particle_center(particle_nodes,node_posns):
     particle_node_posns = node_posns[particle_nodes,:]
     x_max = np.max(particle_node_posns[:,0])
@@ -1000,6 +1095,36 @@ def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,el
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
+
+def run_hysteresis_sim_optimize(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,particle_size,chi,Ms):
+    eq_posns = x0.copy()
+    for count, Hext in enumerate(Hext_series):
+        #TODO better implementation of boundary conditions
+        boundary_conditions = ('free',('free','free'),0) 
+        current_output_dir = output_dir + f'/field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
+        if not (os.path.isdir(current_output_dir)):
+            os.mkdir(current_output_dir)
+        try:
+            start = time.time()
+            sol = simulate_scaled_optimize(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,boundary_conditions,Hext,particle_size,chi,Ms,eq_posns,current_output_dir)
+        except Exception as inst:
+            print('Exception raised during simulation')
+            print(type(inst))
+            print(inst)
+        # post_plot(posns,c,k)
+        end = time.time()
+        delta = end - start
+        #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
+        # end_result = sol.y[:,-1]
+        #below getting the solution at the final time, is the solution provided from scipy.integrate.ode. no more issue with memory overhead since this way, instead of using solve_ivp(), doesn't record the itnermediate states, just spits out the state at the desired time
+        end_result = sol
+        x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
+        print('took %.2f seconds to simulate' % delta)
+        # a_var = mre.analyze.get_accelerations_post_simulation_v3(x0,boundaries,springs_var,elements,kappa,l_e,boundary_conditions)
+        # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
+        # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
+        # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
+        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
 
 def initialize(*args):
     """Given the parameters defining the system to be simulated, check if the variables have previously been initialized and saved out. If they have been, read them in, if they have not, initialize the variables and save them out an an init file."""
@@ -1399,5 +1524,109 @@ def main3():
     scaled_springs_var = scaled_springs_var[:num_springs,:]
     run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,normalized_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
 
+def main_optimize():
+    E = 9e3
+    nu = 0.499
+    #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
+    particle_diameter = 3e-6
+    #discretization order
+    n_discretization = 0
+    l_e = (particle_diameter/2) / (n_discretization + 1/2)
+    #particle separation
+    separation_meters = 9e-6
+    separation_volume_elements = int(separation_meters / l_e)
+    separation = separation_volume_elements#20#12#4
+    radius = (n_discretization + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
+    #l_e = (3/5)*1e-6#3e-6#cubic element side length
+    # Lx = 41*l_e#27*l_e#15*l_e
+    # Ly = 23*l_e#17*l_e#11*l_e
+    # Lz = 23*l_e#17*l_e#11*l_e
+    Lx = separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
+    Ly = particle_diameter * 7
+    Lz = Ly
+    t_f = 30
+    drag = 10
+    N_nodes_x = np.round(Lx/l_e + 1)
+    N_nodes_y = np.round(Ly/l_e + 1)
+    N_nodes_z = np.round(Lz/l_e + 1)
+    N_el_x = N_nodes_x - 1
+    N_el_y = N_nodes_y - 1
+    N_el_z = N_nodes_z - 1
+    normalized_dimensions = np.array([N_el_x,N_el_y,N_el_z],dtype=np.int32)
+    normalized_posns = mre.initialize.discretize_space_normalized(N_nodes_x,N_nodes_y,N_nodes_z)
+    Lx = N_el_x*l_e
+    Ly = N_el_y*l_e
+    Lz = N_el_z*l_e
+    dimensions = np.array([Lx,Ly,Lz])
+    elements = springs.get_elements_v2_normalized(N_nodes_x, N_nodes_y, N_nodes_z)
+    boundaries = mre.initialize.get_boundaries(normalized_posns)
+    k = mre.initialize.get_spring_constants(E, l_e)
+    dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
+    node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
+    k = np.array(k,dtype=np.float64)
+    max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
+    springs_var = np.empty((max_springs,4),dtype=np.float64)
+    num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
+    springs_var = springs_var[:num_springs,:]
+
+    particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
+    kappa = mre.initialize.get_kappa(E, nu)
+    #TODO: for distributed computing, I can't depend on looking at existing initialization files to extract variables. I'll have to either instantiate them based on command line arguments or an input file containing similar information, or (and this method seems like it is not th ebest for distributed computing) have separate "jobs" that i run locally or distributed to generate the init files, and use those as transferred input files for the main program (actually running the numerical integration to find equilibrium node configurations)
+    # particles = np.array([])
+    # kappa = mre.initialize.get_kappa(E, nu)
+    # boundary_conditions = ('strain',('left','right'),.05)
+
+    # script_name = lib_programname.get_path_executed_script()
+    # check if the directory for output exists, if not make the directory
+    current_dir = os.path.abspath('.')
+    output_dir = current_dir + '/results/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-07_results_order_{n_discretization}_optimization/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+
+    my_sim = mre.initialize.Simulation(E,nu,drag,l_e,Lx,Ly,Lz)
+    my_sim.set_time(t_f)
+    my_sim.write_log(output_dir)
+    # strains = np.array([0.01])
+    strains = np.arange(-.001,-0.01,-0.02)
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.1/mu0
+    n_field_steps = 1
+    H_step = H_mag/n_field_steps
+    Hext_angle = (2*np.pi/360)*90#30
+    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+    # Hext = np.array([10000,0,0],dtype=np.float64)
+    particle_size = radius
+    chi = 131
+    Ms = 1.9e6
+    effective_modulus = np.zeros(strains.shape)
+    boundary_stress_xx_magnitude = np.zeros(strains.shape)
+    x0 = normalized_posns.copy()
+    #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
+    #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
+    N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
+    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size)
+    #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
+    k_e = k[0]
+    characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
+    #we will call the scaling coefficient beta
+    beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+    #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
+    beta_i = beta/m
+    #new beta coefficient without characteristic mass
+    beta_new = 4*(np.pi**2)/(k_e*l_e)
+    m_ratio = characteristic_mass/m
+    scaled_kappa = (l_e**2)*beta_new
+    example_scaled_k = k[0]*beta_new*l_e
+    scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
+    mre.initialize.write_init_file(normalized_posns,springs_var,elements,particles,boundaries,output_dir)
+    run_hysteresis_sim_optimize(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,particle_size,chi,Ms)
+
 if __name__ == "__main__":
-    main2()
+    # main2()
+    main_optimize()

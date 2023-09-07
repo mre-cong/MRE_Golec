@@ -1082,6 +1082,20 @@ struct __pyx_array_obj;
 struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
+struct __pyx_ctuple_double__and_double;
+typedef struct __pyx_ctuple_double__and_double __pyx_ctuple_double__and_double;
+
+/* "get_spring_force_cy.pyx":202
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef (double, double) get_wca_force_energy(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ */
+struct __pyx_ctuple_double__and_double {
+  double f0;
+  double f1;
+};
 
 /* "View.MemoryView":106
  * 
@@ -1875,6 +1889,12 @@ static void __pyx_f_19get_spring_force_cy_get_spring_forces_WCA(__Pyx_memviewsli
 static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const , int const , int const , __Pyx_memviewslice, __Pyx_memviewslice, double *); /*proto*/
 static double __pyx_f_19get_spring_force_cy_get_wca_force(double, double); /*proto*/
 static double __pyx_f_19get_spring_force_cy_dot_prod(double *, double *); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_total_spring_energy_WCA(__Pyx_memviewslice, __Pyx_memviewslice, int __pyx_skip_dispatch); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_spring_energy_WCA(int const , int const , int const , __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_wca_energy(double, double); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_spring_forces_energy_WCA(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int __pyx_skip_dispatch); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_spring_force_energy_WCA(int const , int const , int const , __Pyx_memviewslice, __Pyx_memviewslice, double *); /*proto*/
+static __pyx_ctuple_double__and_double __pyx_f_19get_spring_force_cy_get_wca_force_energy(double, double); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -2101,6 +2121,8 @@ static PyObject *__pyx_n_s_unpack;
 static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_pf_19get_spring_force_cy_get_spring_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, __Pyx_memviewslice __pyx_v_spring_force); /* proto */
 static PyObject *__pyx_pf_19get_spring_force_cy_2get_spring_forces_WCA(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, __Pyx_memviewslice __pyx_v_spring_force); /* proto */
+static PyObject *__pyx_pf_19get_spring_force_cy_4get_total_spring_energy_WCA(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs); /* proto */
+static PyObject *__pyx_pf_19get_spring_force_cy_6get_spring_forces_energy_WCA(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, __Pyx_memviewslice __pyx_v_spring_force); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -3256,6 +3278,7 @@ static double __pyx_f_19get_spring_force_cy_dot_prod(double *__pyx_v_vec1, doubl
  *     for i in range(3):
  *         result += vec1[i]*vec2[i]             # <<<<<<<<<<<<<<
  *     return result
+ * 
  */
     __pyx_v_result = (__pyx_v_result + ((__pyx_v_vec1[__pyx_v_i]) * (__pyx_v_vec2[__pyx_v_i])));
   }
@@ -3264,6 +3287,8 @@ static double __pyx_f_19get_spring_force_cy_dot_prod(double *__pyx_v_vec1, doubl
  *     for i in range(3):
  *         result += vec1[i]*vec2[i]
  *     return result             # <<<<<<<<<<<<<<
+ * 
+ * #calculate the spring energy for each spring, inlcuding WCA, and return the scalar energy
  */
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
@@ -3277,6 +3302,1215 @@ static double __pyx_f_19get_spring_force_cy_dot_prod(double *__pyx_v_vec1, doubl
  */
 
   /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":105
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cpdef double get_total_spring_energy_WCA(const double[:,::1] node_posns, double[:,::1] springs):             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef int j
+ */
+
+static PyObject *__pyx_pw_19get_spring_force_cy_5get_total_spring_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_total_spring_energy_WCA(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, CYTHON_UNUSED int __pyx_skip_dispatch) {
+  int __pyx_v_i;
+  int __pyx_v_node_i;
+  int __pyx_v_node_j;
+  double __pyx_v_single_spring_energy;
+  double __pyx_v_total_spring_energy;
+  double __pyx_r;
+  __Pyx_RefNannyDeclarations
+  Py_ssize_t __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  Py_ssize_t __pyx_t_5;
+  __Pyx_RefNannySetupContext("get_total_spring_energy_WCA", 0);
+
+  /* "get_spring_force_cy.pyx":111
+ *     cdef int node_j
+ *     cdef double single_spring_energy
+ *     cdef double total_spring_energy = 0             # <<<<<<<<<<<<<<
+ *     with nogil:
+ *         for i in range(springs.shape[0]):
+ */
+  __pyx_v_total_spring_energy = 0.0;
+
+  /* "get_spring_force_cy.pyx":112
+ *     cdef double single_spring_energy
+ *     cdef double total_spring_energy = 0
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])
+ */
+  {
+      #ifdef WITH_THREAD
+      PyThreadState *_save;
+      Py_UNBLOCK_THREADS
+      __Pyx_FastGIL_Remember();
+      #endif
+      /*try:*/ {
+
+        /* "get_spring_force_cy.pyx":113
+ *     cdef double total_spring_energy = 0
+ *     with nogil:
+ *         for i in range(springs.shape[0]):             # <<<<<<<<<<<<<<
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])
+ */
+        __pyx_t_1 = (__pyx_v_springs.shape[0]);
+        __pyx_t_2 = __pyx_t_1;
+        for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
+          __pyx_v_i = __pyx_t_3;
+
+          /* "get_spring_force_cy.pyx":114
+ *     with nogil:
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])             # <<<<<<<<<<<<<<
+ *             node_j = int(springs[i][1])
+ *             single_spring_energy = get_spring_energy_WCA(i,node_i,node_j,node_posns,springs)
+ */
+          __pyx_t_4 = __pyx_v_i;
+          __pyx_t_5 = 0;
+          __pyx_v_node_i = ((int)(*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_4 * __pyx_v_springs.strides[0]) )) + __pyx_t_5)) ))));
+
+          /* "get_spring_force_cy.pyx":115
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])             # <<<<<<<<<<<<<<
+ *             single_spring_energy = get_spring_energy_WCA(i,node_i,node_j,node_posns,springs)
+ *             total_spring_energy += single_spring_energy
+ */
+          __pyx_t_5 = __pyx_v_i;
+          __pyx_t_4 = 1;
+          __pyx_v_node_j = ((int)(*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_5 * __pyx_v_springs.strides[0]) )) + __pyx_t_4)) ))));
+
+          /* "get_spring_force_cy.pyx":116
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])
+ *             single_spring_energy = get_spring_energy_WCA(i,node_i,node_j,node_posns,springs)             # <<<<<<<<<<<<<<
+ *             total_spring_energy += single_spring_energy
+ *     return total_spring_energy
+ */
+          __pyx_v_single_spring_energy = __pyx_f_19get_spring_force_cy_get_spring_energy_WCA(__pyx_v_i, __pyx_v_node_i, __pyx_v_node_j, __pyx_v_node_posns, __pyx_v_springs);
+
+          /* "get_spring_force_cy.pyx":117
+ *             node_j = int(springs[i][1])
+ *             single_spring_energy = get_spring_energy_WCA(i,node_i,node_j,node_posns,springs)
+ *             total_spring_energy += single_spring_energy             # <<<<<<<<<<<<<<
+ *     return total_spring_energy
+ * 
+ */
+          __pyx_v_total_spring_energy = (__pyx_v_total_spring_energy + __pyx_v_single_spring_energy);
+        }
+      }
+
+      /* "get_spring_force_cy.pyx":112
+ *     cdef double single_spring_energy
+ *     cdef double total_spring_energy = 0
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])
+ */
+      /*finally:*/ {
+        /*normal exit:*/{
+          #ifdef WITH_THREAD
+          __Pyx_FastGIL_Forget();
+          Py_BLOCK_THREADS
+          #endif
+          goto __pyx_L5;
+        }
+        __pyx_L5:;
+      }
+  }
+
+  /* "get_spring_force_cy.pyx":118
+ *             single_spring_energy = get_spring_energy_WCA(i,node_i,node_j,node_posns,springs)
+ *             total_spring_energy += single_spring_energy
+ *     return total_spring_energy             # <<<<<<<<<<<<<<
+ * 
+ * @cython.boundscheck(False)
+ */
+  __pyx_r = __pyx_v_total_spring_energy;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":105
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cpdef double get_total_spring_energy_WCA(const double[:,::1] node_posns, double[:,::1] springs):             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef int j
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static PyObject *__pyx_pw_19get_spring_force_cy_5get_total_spring_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_19get_spring_force_cy_5get_total_spring_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  __Pyx_memviewslice __pyx_v_node_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
+  __Pyx_memviewslice __pyx_v_springs = { 0, 0, { 0 }, { 0 }, { 0 } };
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_total_spring_energy_WCA (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_node_posns,&__pyx_n_s_springs,0};
+    PyObject* values[2] = {0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_node_posns)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_springs)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("get_total_spring_energy_WCA", 1, 2, 2, 1); __PYX_ERR(0, 105, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_total_spring_energy_WCA") < 0)) __PYX_ERR(0, 105, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+    }
+    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double__const__(values[0], 0); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 105, __pyx_L3_error)
+    __pyx_v_springs = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_springs.memview)) __PYX_ERR(0, 105, __pyx_L3_error)
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("get_total_spring_energy_WCA", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 105, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("get_spring_force_cy.get_total_spring_energy_WCA", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_19get_spring_force_cy_4get_total_spring_energy_WCA(__pyx_self, __pyx_v_node_posns, __pyx_v_springs);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_19get_spring_force_cy_4get_total_spring_energy_WCA(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_total_spring_energy_WCA", 0);
+  __Pyx_XDECREF(__pyx_r);
+  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 105, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_springs.memview)) { __Pyx_RaiseUnboundLocalError("springs"); __PYX_ERR(0, 105, __pyx_L1_error) }
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_19get_spring_force_cy_get_total_spring_energy_WCA(__pyx_v_node_posns, __pyx_v_springs, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("get_spring_force_cy.get_total_spring_energy_WCA", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __PYX_XDEC_MEMVIEW(&__pyx_v_node_posns, 1);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_springs, 1);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":122
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_spring_energy_WCA(const int row, const int node_i, const int node_j, const double[:,::1] node_posns, double[:,::1] springs) nogil:             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef double[3] rij
+ */
+
+static double __pyx_f_19get_spring_force_cy_get_spring_energy_WCA(int const __pyx_v_row, int const __pyx_v_node_i, int const __pyx_v_node_j, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs) {
+  int __pyx_v_i;
+  double __pyx_v_rij[3];
+  double __pyx_v_k;
+  double __pyx_v_eq_length;
+  double __pyx_v_rij_mag;
+  double __pyx_v_spring_energy;
+  double __pyx_v_wca_energy;
+  double __pyx_v_total_energy;
+  double __pyx_v_sigma;
+  double __pyx_v_cutoff_length;
+  double __pyx_r;
+  Py_ssize_t __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  Py_ssize_t __pyx_t_5;
+  int __pyx_t_6;
+
+  /* "get_spring_force_cy.pyx":125
+ *     cdef int i
+ *     cdef double[3] rij
+ *     cdef double k = springs[row][2]             # <<<<<<<<<<<<<<
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):
+ */
+  __pyx_t_1 = __pyx_v_row;
+  __pyx_t_2 = 2;
+  __pyx_v_k = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_1 * __pyx_v_springs.strides[0]) )) + __pyx_t_2)) )));
+
+  /* "get_spring_force_cy.pyx":126
+ *     cdef double[3] rij
+ *     cdef double k = springs[row][2]
+ *     cdef double eq_length = springs[row][3]             # <<<<<<<<<<<<<<
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ */
+  __pyx_t_2 = __pyx_v_row;
+  __pyx_t_1 = 3;
+  __pyx_v_eq_length = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_2 * __pyx_v_springs.strides[0]) )) + __pyx_t_1)) )));
+
+  /* "get_spring_force_cy.pyx":127
+ *     cdef double k = springs[row][2]
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):             # <<<<<<<<<<<<<<
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ */
+  for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
+    __pyx_v_i = __pyx_t_3;
+
+    /* "get_spring_force_cy.pyx":128
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]             # <<<<<<<<<<<<<<
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double spring_energy = (1/2) * k * pow((rij_mag - eq_length),2)
+ */
+    __pyx_t_1 = __pyx_v_node_i;
+    __pyx_t_2 = __pyx_v_i;
+    __pyx_t_4 = __pyx_v_node_j;
+    __pyx_t_5 = __pyx_v_i;
+    (__pyx_v_rij[__pyx_v_i]) = ((*((double const  *) ( /* dim=1 */ ((char *) (((double const  *) ( /* dim=0 */ (__pyx_v_node_posns.data + __pyx_t_1 * __pyx_v_node_posns.strides[0]) )) + __pyx_t_2)) ))) - (*((double const  *) ( /* dim=1 */ ((char *) (((double const  *) ( /* dim=0 */ (__pyx_v_node_posns.data + __pyx_t_4 * __pyx_v_node_posns.strides[0]) )) + __pyx_t_5)) ))));
+  }
+
+  /* "get_spring_force_cy.pyx":129
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
+ *     cdef double spring_energy = (1/2) * k * pow((rij_mag - eq_length),2)
+ *     cdef double wca_energy = 0
+ */
+  __pyx_v_rij_mag = sqrt(__pyx_f_19get_spring_force_cy_dot_prod(__pyx_v_rij, __pyx_v_rij));
+
+  /* "get_spring_force_cy.pyx":130
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double spring_energy = (1/2) * k * pow((rij_mag - eq_length),2)             # <<<<<<<<<<<<<<
+ *     cdef double wca_energy = 0
+ *     cdef double total_energy
+ */
+  __pyx_v_spring_energy = (((1.0 / 2.0) * __pyx_v_k) * pow((__pyx_v_rij_mag - __pyx_v_eq_length), 2.0));
+
+  /* "get_spring_force_cy.pyx":131
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double spring_energy = (1/2) * k * pow((rij_mag - eq_length),2)
+ *     cdef double wca_energy = 0             # <<<<<<<<<<<<<<
+ *     cdef double total_energy
+ *     cdef double sigma = 0.25*eq_length
+ */
+  __pyx_v_wca_energy = 0.0;
+
+  /* "get_spring_force_cy.pyx":133
+ *     cdef double wca_energy = 0
+ *     cdef double total_energy
+ *     cdef double sigma = 0.25*eq_length             # <<<<<<<<<<<<<<
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ */
+  __pyx_v_sigma = (0.25 * __pyx_v_eq_length);
+
+  /* "get_spring_force_cy.pyx":134
+ *     cdef double total_energy
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_energy = get_wca_energy(rij_mag,sigma)
+ */
+  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
+
+  /* "get_spring_force_cy.pyx":135
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
+ *         wca_energy = get_wca_energy(rij_mag,sigma)
+ *     total_energy = spring_energy + wca_energy
+ */
+  __pyx_t_6 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
+  if (__pyx_t_6) {
+
+    /* "get_spring_force_cy.pyx":136
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_energy = get_wca_energy(rij_mag,sigma)             # <<<<<<<<<<<<<<
+ *     total_energy = spring_energy + wca_energy
+ *     return total_energy
+ */
+    __pyx_v_wca_energy = __pyx_f_19get_spring_force_cy_get_wca_energy(__pyx_v_rij_mag, __pyx_v_sigma);
+
+    /* "get_spring_force_cy.pyx":135
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
+ *         wca_energy = get_wca_energy(rij_mag,sigma)
+ *     total_energy = spring_energy + wca_energy
+ */
+  }
+
+  /* "get_spring_force_cy.pyx":137
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_energy = get_wca_energy(rij_mag,sigma)
+ *     total_energy = spring_energy + wca_energy             # <<<<<<<<<<<<<<
+ *     return total_energy
+ * 
+ */
+  __pyx_v_total_energy = (__pyx_v_spring_energy + __pyx_v_wca_energy);
+
+  /* "get_spring_force_cy.pyx":138
+ *         wca_energy = get_wca_energy(rij_mag,sigma)
+ *     total_energy = spring_energy + wca_energy
+ *     return total_energy             # <<<<<<<<<<<<<<
+ * 
+ * @cython.boundscheck(False)
+ */
+  __pyx_r = __pyx_v_total_energy;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":122
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_spring_energy_WCA(const int row, const int node_i, const int node_j, const double[:,::1] node_posns, double[:,::1] springs) nogil:             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef double[3] rij
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":142
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_wca_energy(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ */
+
+static double __pyx_f_19get_spring_force_cy_get_wca_energy(double __pyx_v_r, double __pyx_v_sigma) {
+  double __pyx_v_eps_constant;
+  double __pyx_v_sigma_over_separation;
+  double __pyx_v_potential;
+  double __pyx_r;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+
+  /* "get_spring_force_cy.pyx":143
+ * @cython.wraparound(False)
+ * cdef double get_wca_energy(double r, double sigma) nogil:
+ *     cdef double eps_constant = 10             # <<<<<<<<<<<<<<
+ *     cdef double sigma_over_separation = sigma/r
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+ */
+  __pyx_v_eps_constant = 10.0;
+
+  /* "get_spring_force_cy.pyx":144
+ * cdef double get_wca_energy(double r, double sigma) nogil:
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+ *     # cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ */
+  if (unlikely(__pyx_v_r == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    __Pyx_PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    __PYX_ERR(0, 144, __pyx_L1_error)
+  }
+  __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
+
+  /* "get_spring_force_cy.pyx":145
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))             # <<<<<<<<<<<<<<
+ *     # cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ *     return potential
+ */
+  __pyx_v_potential = ((4.0 * __pyx_v_eps_constant) * (pow(__pyx_v_sigma_over_separation, 12.0) - pow(__pyx_v_sigma_over_separation, 6.0)));
+
+  /* "get_spring_force_cy.pyx":147
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+ *     # cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ *     return potential             # <<<<<<<<<<<<<<
+ * 
+ * #calculate the energy and forces involved, returning the energy, and modifying the force variable in place
+ */
+  __pyx_r = __pyx_v_potential;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":142
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_wca_energy(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_WriteUnraisable("get_spring_force_cy.get_wca_energy", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
+  __pyx_r = 0;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":152
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cpdef double get_spring_forces_energy_WCA(const double[:,::1] node_posns, double[:,::1] springs, double[:,::1] spring_force):             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef int j
+ */
+
+static PyObject *__pyx_pw_19get_spring_force_cy_7get_spring_forces_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static double __pyx_f_19get_spring_force_cy_get_spring_forces_energy_WCA(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, __Pyx_memviewslice __pyx_v_spring_force, CYTHON_UNUSED int __pyx_skip_dispatch) {
+  int __pyx_v_i;
+  int __pyx_v_j;
+  int __pyx_v_node_i;
+  int __pyx_v_node_j;
+  double __pyx_v_single_spring_force[3];
+  double __pyx_v_total_energy;
+  double __pyx_r;
+  __Pyx_RefNannyDeclarations
+  Py_ssize_t __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  int __pyx_t_4;
+  Py_ssize_t __pyx_t_5;
+  Py_ssize_t __pyx_t_6;
+  __Pyx_RefNannySetupContext("get_spring_forces_energy_WCA", 0);
+
+  /* "get_spring_force_cy.pyx":158
+ *     cdef int node_j
+ *     cdef double[3] single_spring_force
+ *     cdef double total_energy = 0             # <<<<<<<<<<<<<<
+ *     with nogil:
+ *         for i in range(spring_force.shape[0]):
+ */
+  __pyx_v_total_energy = 0.0;
+
+  /* "get_spring_force_cy.pyx":159
+ *     cdef double[3] single_spring_force
+ *     cdef double total_energy = 0
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         for i in range(spring_force.shape[0]):
+ *             for j in range(3):
+ */
+  {
+      #ifdef WITH_THREAD
+      PyThreadState *_save;
+      Py_UNBLOCK_THREADS
+      __Pyx_FastGIL_Remember();
+      #endif
+      /*try:*/ {
+
+        /* "get_spring_force_cy.pyx":160
+ *     cdef double total_energy = 0
+ *     with nogil:
+ *         for i in range(spring_force.shape[0]):             # <<<<<<<<<<<<<<
+ *             for j in range(3):
+ *                 spring_force[i][j] = 0.0
+ */
+        __pyx_t_1 = (__pyx_v_spring_force.shape[0]);
+        __pyx_t_2 = __pyx_t_1;
+        for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
+          __pyx_v_i = __pyx_t_3;
+
+          /* "get_spring_force_cy.pyx":161
+ *     with nogil:
+ *         for i in range(spring_force.shape[0]):
+ *             for j in range(3):             # <<<<<<<<<<<<<<
+ *                 spring_force[i][j] = 0.0
+ *         for i in range(springs.shape[0]):
+ */
+          for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
+            __pyx_v_j = __pyx_t_4;
+
+            /* "get_spring_force_cy.pyx":162
+ *         for i in range(spring_force.shape[0]):
+ *             for j in range(3):
+ *                 spring_force[i][j] = 0.0             # <<<<<<<<<<<<<<
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])
+ */
+            __pyx_t_5 = __pyx_v_i;
+            __pyx_t_6 = __pyx_v_j;
+            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_spring_force.data + __pyx_t_5 * __pyx_v_spring_force.strides[0]) )) + __pyx_t_6)) )) = 0.0;
+          }
+        }
+
+        /* "get_spring_force_cy.pyx":163
+ *             for j in range(3):
+ *                 spring_force[i][j] = 0.0
+ *         for i in range(springs.shape[0]):             # <<<<<<<<<<<<<<
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])
+ */
+        __pyx_t_1 = (__pyx_v_springs.shape[0]);
+        __pyx_t_2 = __pyx_t_1;
+        for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
+          __pyx_v_i = __pyx_t_3;
+
+          /* "get_spring_force_cy.pyx":164
+ *                 spring_force[i][j] = 0.0
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])             # <<<<<<<<<<<<<<
+ *             node_j = int(springs[i][1])
+ *             total_energy += get_spring_force_energy_WCA(i,node_i,node_j,node_posns,springs,single_spring_force)
+ */
+          __pyx_t_6 = __pyx_v_i;
+          __pyx_t_5 = 0;
+          __pyx_v_node_i = ((int)(*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_6 * __pyx_v_springs.strides[0]) )) + __pyx_t_5)) ))));
+
+          /* "get_spring_force_cy.pyx":165
+ *         for i in range(springs.shape[0]):
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])             # <<<<<<<<<<<<<<
+ *             total_energy += get_spring_force_energy_WCA(i,node_i,node_j,node_posns,springs,single_spring_force)
+ *             for j in range(3):
+ */
+          __pyx_t_5 = __pyx_v_i;
+          __pyx_t_6 = 1;
+          __pyx_v_node_j = ((int)(*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_5 * __pyx_v_springs.strides[0]) )) + __pyx_t_6)) ))));
+
+          /* "get_spring_force_cy.pyx":166
+ *             node_i = int(springs[i][0])
+ *             node_j = int(springs[i][1])
+ *             total_energy += get_spring_force_energy_WCA(i,node_i,node_j,node_posns,springs,single_spring_force)             # <<<<<<<<<<<<<<
+ *             for j in range(3):
+ *                 spring_force[node_i][j] += single_spring_force[j]
+ */
+          __pyx_v_total_energy = (__pyx_v_total_energy + __pyx_f_19get_spring_force_cy_get_spring_force_energy_WCA(__pyx_v_i, __pyx_v_node_i, __pyx_v_node_j, __pyx_v_node_posns, __pyx_v_springs, __pyx_v_single_spring_force));
+
+          /* "get_spring_force_cy.pyx":167
+ *             node_j = int(springs[i][1])
+ *             total_energy += get_spring_force_energy_WCA(i,node_i,node_j,node_posns,springs,single_spring_force)
+ *             for j in range(3):             # <<<<<<<<<<<<<<
+ *                 spring_force[node_i][j] += single_spring_force[j]
+ *                 spring_force[node_j][j] += -1 * single_spring_force[j]
+ */
+          for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
+            __pyx_v_j = __pyx_t_4;
+
+            /* "get_spring_force_cy.pyx":168
+ *             total_energy += get_spring_force_energy_WCA(i,node_i,node_j,node_posns,springs,single_spring_force)
+ *             for j in range(3):
+ *                 spring_force[node_i][j] += single_spring_force[j]             # <<<<<<<<<<<<<<
+ *                 spring_force[node_j][j] += -1 * single_spring_force[j]
+ *     return total_energy
+ */
+            __pyx_t_6 = __pyx_v_node_i;
+            __pyx_t_5 = __pyx_v_j;
+            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_spring_force.data + __pyx_t_6 * __pyx_v_spring_force.strides[0]) )) + __pyx_t_5)) )) += (__pyx_v_single_spring_force[__pyx_v_j]);
+
+            /* "get_spring_force_cy.pyx":169
+ *             for j in range(3):
+ *                 spring_force[node_i][j] += single_spring_force[j]
+ *                 spring_force[node_j][j] += -1 * single_spring_force[j]             # <<<<<<<<<<<<<<
+ *     return total_energy
+ * 
+ */
+            __pyx_t_5 = __pyx_v_node_j;
+            __pyx_t_6 = __pyx_v_j;
+            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_spring_force.data + __pyx_t_5 * __pyx_v_spring_force.strides[0]) )) + __pyx_t_6)) )) += (-1.0 * (__pyx_v_single_spring_force[__pyx_v_j]));
+          }
+        }
+      }
+
+      /* "get_spring_force_cy.pyx":159
+ *     cdef double[3] single_spring_force
+ *     cdef double total_energy = 0
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         for i in range(spring_force.shape[0]):
+ *             for j in range(3):
+ */
+      /*finally:*/ {
+        /*normal exit:*/{
+          #ifdef WITH_THREAD
+          __Pyx_FastGIL_Forget();
+          Py_BLOCK_THREADS
+          #endif
+          goto __pyx_L5;
+        }
+        __pyx_L5:;
+      }
+  }
+
+  /* "get_spring_force_cy.pyx":170
+ *                 spring_force[node_i][j] += single_spring_force[j]
+ *                 spring_force[node_j][j] += -1 * single_spring_force[j]
+ *     return total_energy             # <<<<<<<<<<<<<<
+ * 
+ * #calculate the spring force for a spring. want to try two variations, one that memoryviews into the entire node_posns array, and another that copies the relevant node positions for the spring. that second version is necessary for dealing with a multiprocessing situation, since multiple processes could be trying to access the same data (node position) at the same time and ersult in an error. i guess it is less of an issue since it should be constant
+ */
+  __pyx_r = __pyx_v_total_energy;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":152
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cpdef double get_spring_forces_energy_WCA(const double[:,::1] node_posns, double[:,::1] springs, double[:,::1] spring_force):             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef int j
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* Python wrapper */
+static PyObject *__pyx_pw_19get_spring_force_cy_7get_spring_forces_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyObject *__pyx_pw_19get_spring_force_cy_7get_spring_forces_energy_WCA(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  __Pyx_memviewslice __pyx_v_node_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
+  __Pyx_memviewslice __pyx_v_springs = { 0, 0, { 0 }, { 0 }, { 0 } };
+  __Pyx_memviewslice __pyx_v_spring_force = { 0, 0, { 0 }, { 0 }, { 0 } };
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("get_spring_forces_energy_WCA (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_node_posns,&__pyx_n_s_springs,&__pyx_n_s_spring_force,0};
+    PyObject* values[3] = {0,0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_node_posns)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_springs)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("get_spring_forces_energy_WCA", 1, 3, 3, 1); __PYX_ERR(0, 152, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_spring_force)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("get_spring_forces_energy_WCA", 1, 3, 3, 2); __PYX_ERR(0, 152, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_spring_forces_energy_WCA") < 0)) __PYX_ERR(0, 152, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+    }
+    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double__const__(values[0], 0); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 152, __pyx_L3_error)
+    __pyx_v_springs = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_springs.memview)) __PYX_ERR(0, 152, __pyx_L3_error)
+    __pyx_v_spring_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_spring_force.memview)) __PYX_ERR(0, 152, __pyx_L3_error)
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("get_spring_forces_energy_WCA", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 152, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("get_spring_force_cy.get_spring_forces_energy_WCA", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_19get_spring_force_cy_6get_spring_forces_energy_WCA(__pyx_self, __pyx_v_node_posns, __pyx_v_springs, __pyx_v_spring_force);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_19get_spring_force_cy_6get_spring_forces_energy_WCA(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, __Pyx_memviewslice __pyx_v_spring_force) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("get_spring_forces_energy_WCA", 0);
+  __Pyx_XDECREF(__pyx_r);
+  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 152, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_springs.memview)) { __Pyx_RaiseUnboundLocalError("springs"); __PYX_ERR(0, 152, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_spring_force.memview)) { __Pyx_RaiseUnboundLocalError("spring_force"); __PYX_ERR(0, 152, __pyx_L1_error) }
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_19get_spring_force_cy_get_spring_forces_energy_WCA(__pyx_v_node_posns, __pyx_v_springs, __pyx_v_spring_force, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("get_spring_force_cy.get_spring_forces_energy_WCA", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __PYX_XDEC_MEMVIEW(&__pyx_v_node_posns, 1);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_springs, 1);
+  __PYX_XDEC_MEMVIEW(&__pyx_v_spring_force, 1);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":175
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_spring_force_energy_WCA(const int row, const int node_i, const int node_j, const double[:,::1] node_posns, double[:,::1] springs, double[3] spring_force) nogil:             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef double[3] rij
+ */
+
+static double __pyx_f_19get_spring_force_cy_get_spring_force_energy_WCA(int const __pyx_v_row, int const __pyx_v_node_i, int const __pyx_v_node_j, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_springs, double *__pyx_v_spring_force) {
+  int __pyx_v_i;
+  double __pyx_v_rij[3];
+  double __pyx_v_k;
+  double __pyx_v_eq_length;
+  double __pyx_v_rij_mag;
+  double __pyx_v_displacement;
+  double __pyx_v_spring_mag;
+  double __pyx_v_spring_energy;
+  double __pyx_v_total_energy;
+  double __pyx_v_wca_mag;
+  double __pyx_v_sigma;
+  double __pyx_v_cutoff_length;
+  double __pyx_v_wca_energy;
+  double __pyx_r;
+  Py_ssize_t __pyx_t_1;
+  Py_ssize_t __pyx_t_2;
+  int __pyx_t_3;
+  Py_ssize_t __pyx_t_4;
+  Py_ssize_t __pyx_t_5;
+  double __pyx_t_6;
+  int __pyx_t_7;
+  __pyx_ctuple_double__and_double __pyx_t_8;
+  double __pyx_t_9;
+  int __pyx_t_10;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+
+  /* "get_spring_force_cy.pyx":178
+ *     cdef int i
+ *     cdef double[3] rij
+ *     cdef double k = springs[row][2]             # <<<<<<<<<<<<<<
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):
+ */
+  __pyx_t_1 = __pyx_v_row;
+  __pyx_t_2 = 2;
+  __pyx_v_k = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_1 * __pyx_v_springs.strides[0]) )) + __pyx_t_2)) )));
+
+  /* "get_spring_force_cy.pyx":179
+ *     cdef double[3] rij
+ *     cdef double k = springs[row][2]
+ *     cdef double eq_length = springs[row][3]             # <<<<<<<<<<<<<<
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ */
+  __pyx_t_2 = __pyx_v_row;
+  __pyx_t_1 = 3;
+  __pyx_v_eq_length = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_springs.data + __pyx_t_2 * __pyx_v_springs.strides[0]) )) + __pyx_t_1)) )));
+
+  /* "get_spring_force_cy.pyx":180
+ *     cdef double k = springs[row][2]
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):             # <<<<<<<<<<<<<<
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ */
+  for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
+    __pyx_v_i = __pyx_t_3;
+
+    /* "get_spring_force_cy.pyx":181
+ *     cdef double eq_length = springs[row][3]
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]             # <<<<<<<<<<<<<<
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double displacement = rij_mag - eq_length
+ */
+    __pyx_t_1 = __pyx_v_node_i;
+    __pyx_t_2 = __pyx_v_i;
+    __pyx_t_4 = __pyx_v_node_j;
+    __pyx_t_5 = __pyx_v_i;
+    (__pyx_v_rij[__pyx_v_i]) = ((*((double const  *) ( /* dim=1 */ ((char *) (((double const  *) ( /* dim=0 */ (__pyx_v_node_posns.data + __pyx_t_1 * __pyx_v_node_posns.strides[0]) )) + __pyx_t_2)) ))) - (*((double const  *) ( /* dim=1 */ ((char *) (((double const  *) ( /* dim=0 */ (__pyx_v_node_posns.data + __pyx_t_4 * __pyx_v_node_posns.strides[0]) )) + __pyx_t_5)) ))));
+  }
+
+  /* "get_spring_force_cy.pyx":182
+ *     for i in range(3):
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
+ *     cdef double displacement = rij_mag - eq_length
+ *     cdef double spring_mag = -1 * k * displacement
+ */
+  __pyx_v_rij_mag = sqrt(__pyx_f_19get_spring_force_cy_dot_prod(__pyx_v_rij, __pyx_v_rij));
+
+  /* "get_spring_force_cy.pyx":183
+ *         rij[i] = node_posns[node_i,i] - node_posns[node_j,i]
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double displacement = rij_mag - eq_length             # <<<<<<<<<<<<<<
+ *     cdef double spring_mag = -1 * k * displacement
+ *     cdef double spring_energy = (1/2) * k * pow(displacement,2)
+ */
+  __pyx_v_displacement = (__pyx_v_rij_mag - __pyx_v_eq_length);
+
+  /* "get_spring_force_cy.pyx":184
+ *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
+ *     cdef double displacement = rij_mag - eq_length
+ *     cdef double spring_mag = -1 * k * displacement             # <<<<<<<<<<<<<<
+ *     cdef double spring_energy = (1/2) * k * pow(displacement,2)
+ *     cdef double total_energy = 0
+ */
+  __pyx_v_spring_mag = ((-1.0 * __pyx_v_k) * __pyx_v_displacement);
+
+  /* "get_spring_force_cy.pyx":185
+ *     cdef double displacement = rij_mag - eq_length
+ *     cdef double spring_mag = -1 * k * displacement
+ *     cdef double spring_energy = (1/2) * k * pow(displacement,2)             # <<<<<<<<<<<<<<
+ *     cdef double total_energy = 0
+ *     for i in range(3):
+ */
+  __pyx_v_spring_energy = (((1.0 / 2.0) * __pyx_v_k) * pow(__pyx_v_displacement, 2.0));
+
+  /* "get_spring_force_cy.pyx":186
+ *     cdef double spring_mag = -1 * k * displacement
+ *     cdef double spring_energy = (1/2) * k * pow(displacement,2)
+ *     cdef double total_energy = 0             # <<<<<<<<<<<<<<
+ *     for i in range(3):
+ *         spring_force[i] = spring_mag * rij[i] / rij_mag
+ */
+  __pyx_v_total_energy = 0.0;
+
+  /* "get_spring_force_cy.pyx":187
+ *     cdef double spring_energy = (1/2) * k * pow(displacement,2)
+ *     cdef double total_energy = 0
+ *     for i in range(3):             # <<<<<<<<<<<<<<
+ *         spring_force[i] = spring_mag * rij[i] / rij_mag
+ *     cdef double wca_mag
+ */
+  for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
+    __pyx_v_i = __pyx_t_3;
+
+    /* "get_spring_force_cy.pyx":188
+ *     cdef double total_energy = 0
+ *     for i in range(3):
+ *         spring_force[i] = spring_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
+ *     cdef double wca_mag
+ *     cdef double sigma = 0.25*eq_length
+ */
+    __pyx_t_6 = (__pyx_v_spring_mag * (__pyx_v_rij[__pyx_v_i]));
+    if (unlikely(__pyx_v_rij_mag == 0)) {
+      #ifdef WITH_THREAD
+      PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+      #endif
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      #ifdef WITH_THREAD
+      __Pyx_PyGILState_Release(__pyx_gilstate_save);
+      #endif
+      __PYX_ERR(0, 188, __pyx_L1_error)
+    }
+    (__pyx_v_spring_force[__pyx_v_i]) = (__pyx_t_6 / __pyx_v_rij_mag);
+  }
+
+  /* "get_spring_force_cy.pyx":190
+ *         spring_force[i] = spring_mag * rij[i] / rij_mag
+ *     cdef double wca_mag
+ *     cdef double sigma = 0.25*eq_length             # <<<<<<<<<<<<<<
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ */
+  __pyx_v_sigma = (0.25 * __pyx_v_eq_length);
+
+  /* "get_spring_force_cy.pyx":191
+ *     cdef double wca_mag
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)
+ */
+  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
+
+  /* "get_spring_force_cy.pyx":192
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)
+ *         for i in range(3):
+ */
+  __pyx_t_7 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
+  if (__pyx_t_7) {
+
+    /* "get_spring_force_cy.pyx":193
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)             # <<<<<<<<<<<<<<
+ *         for i in range(3):
+ *             spring_force[i] += wca_mag * rij[i] / rij_mag
+ */
+    __pyx_t_8 = __pyx_f_19get_spring_force_cy_get_wca_force_energy(__pyx_v_rij_mag, __pyx_v_sigma);
+    __pyx_t_6 = __pyx_t_8.f0;
+    __pyx_t_9 = __pyx_t_8.f1;
+    __pyx_v_wca_mag = __pyx_t_6;
+    __pyx_v_wca_energy = __pyx_t_9;
+
+    /* "get_spring_force_cy.pyx":194
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)
+ *         for i in range(3):             # <<<<<<<<<<<<<<
+ *             spring_force[i] += wca_mag * rij[i] / rij_mag
+ *         total_energy += wca_energy
+ */
+    for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
+      __pyx_v_i = __pyx_t_3;
+
+      /* "get_spring_force_cy.pyx":195
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)
+ *         for i in range(3):
+ *             spring_force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
+ *         total_energy += wca_energy
+ *     total_energy += spring_energy
+ */
+      __pyx_t_10 = __pyx_v_i;
+      __pyx_t_9 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
+      if (unlikely(__pyx_v_rij_mag == 0)) {
+        #ifdef WITH_THREAD
+        PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+        #endif
+        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+        #ifdef WITH_THREAD
+        __Pyx_PyGILState_Release(__pyx_gilstate_save);
+        #endif
+        __PYX_ERR(0, 195, __pyx_L1_error)
+      }
+      (__pyx_v_spring_force[__pyx_t_10]) = ((__pyx_v_spring_force[__pyx_t_10]) + (__pyx_t_9 / __pyx_v_rij_mag));
+    }
+
+    /* "get_spring_force_cy.pyx":196
+ *         for i in range(3):
+ *             spring_force[i] += wca_mag * rij[i] / rij_mag
+ *         total_energy += wca_energy             # <<<<<<<<<<<<<<
+ *     total_energy += spring_energy
+ *     return total_energy
+ */
+    __pyx_v_total_energy = (__pyx_v_total_energy + __pyx_v_wca_energy);
+
+    /* "get_spring_force_cy.pyx":192
+ *     cdef double sigma = 0.25*eq_length
+ *     cdef double cutoff_length = pow(2,(1/6))*sigma
+ *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
+ *         wca_mag, wca_energy = get_wca_force_energy(rij_mag,sigma)
+ *         for i in range(3):
+ */
+  }
+
+  /* "get_spring_force_cy.pyx":197
+ *             spring_force[i] += wca_mag * rij[i] / rij_mag
+ *         total_energy += wca_energy
+ *     total_energy += spring_energy             # <<<<<<<<<<<<<<
+ *     return total_energy
+ * 
+ */
+  __pyx_v_total_energy = (__pyx_v_total_energy + __pyx_v_spring_energy);
+
+  /* "get_spring_force_cy.pyx":198
+ *         total_energy += wca_energy
+ *     total_energy += spring_energy
+ *     return total_energy             # <<<<<<<<<<<<<<
+ * 
+ * @cython.boundscheck(False)
+ */
+  __pyx_r = __pyx_v_total_energy;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":175
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef double get_spring_force_energy_WCA(const int row, const int node_i, const int node_j, const double[:,::1] node_posns, double[:,::1] springs, double[3] spring_force) nogil:             # <<<<<<<<<<<<<<
+ *     cdef int i
+ *     cdef double[3] rij
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_WriteUnraisable("get_spring_force_cy.get_spring_force_energy_WCA", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
+  __pyx_r = 0;
+  __pyx_L0:;
+  return __pyx_r;
+}
+
+/* "get_spring_force_cy.pyx":202
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef (double, double) get_wca_force_energy(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ */
+
+static __pyx_ctuple_double__and_double __pyx_f_19get_spring_force_cy_get_wca_force_energy(double __pyx_v_r, double __pyx_v_sigma) {
+  double __pyx_v_eps_constant;
+  double __pyx_v_sigma_over_separation;
+  double __pyx_v_potential;
+  double __pyx_v_force_mag;
+  __pyx_ctuple_double__and_double __pyx_r;
+  double __pyx_t_1;
+  double __pyx_t_2;
+  __pyx_ctuple_double__and_double __pyx_t_3;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+
+  /* "get_spring_force_cy.pyx":203
+ * @cython.wraparound(False)
+ * cdef (double, double) get_wca_force_energy(double r, double sigma) nogil:
+ *     cdef double eps_constant = 10             # <<<<<<<<<<<<<<
+ *     cdef double sigma_over_separation = sigma/r
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
+ */
+  __pyx_v_eps_constant = 10.0;
+
+  /* "get_spring_force_cy.pyx":204
+ * cdef (double, double) get_wca_force_energy(double r, double sigma) nogil:
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
+ *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ */
+  if (unlikely(__pyx_v_r == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    __Pyx_PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    __PYX_ERR(0, 204, __pyx_L1_error)
+  }
+  __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
+
+  /* "get_spring_force_cy.pyx":205
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)             # <<<<<<<<<<<<<<
+ *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ *     return (force_mag, potential)
+ */
+  __pyx_v_potential = ((4.0 * __pyx_v_eps_constant) * ((pow(__pyx_v_sigma_over_separation, 12.0) - pow(__pyx_v_sigma_over_separation, 6.0)) + (1.0 / 4.0)));
+
+  /* "get_spring_force_cy.pyx":206
+ *     cdef double sigma_over_separation = sigma/r
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
+ *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)             # <<<<<<<<<<<<<<
+ *     return (force_mag, potential)
+ */
+  __pyx_t_1 = (12.0 * pow(__pyx_v_sigma_over_separation, 13.0));
+  if (unlikely(__pyx_v_sigma == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    __Pyx_PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    __PYX_ERR(0, 206, __pyx_L1_error)
+  }
+  __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
+  if (unlikely(__pyx_v_sigma == 0)) {
+    #ifdef WITH_THREAD
+    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
+    #endif
+    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+    #ifdef WITH_THREAD
+    __Pyx_PyGILState_Release(__pyx_gilstate_save);
+    #endif
+    __PYX_ERR(0, 206, __pyx_L1_error)
+  }
+  __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
+
+  /* "get_spring_force_cy.pyx":207
+ *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
+ *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+ *     return (force_mag, potential)             # <<<<<<<<<<<<<<
+ */
+  __pyx_t_3.f0 = __pyx_v_force_mag;
+  __pyx_t_3.f1 = __pyx_v_potential;
+  __pyx_r = __pyx_t_3;
+  goto __pyx_L0;
+
+  /* "get_spring_force_cy.pyx":202
+ * @cython.boundscheck(False)
+ * @cython.wraparound(False)
+ * cdef (double, double) get_wca_force_energy(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 10
+ *     cdef double sigma_over_separation = sigma/r
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_WriteUnraisable("get_spring_force_cy.get_wca_force_energy", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
+  __Pyx_pretend_to_initialize(&__pyx_r);
   __pyx_L0:;
   return __pyx_r;
 }
@@ -17052,6 +18286,8 @@ static PyTypeObject __pyx_type___pyx_memoryviewslice = {
 static PyMethodDef __pyx_methods[] = {
   {"get_spring_forces", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_19get_spring_force_cy_1get_spring_forces, METH_VARARGS|METH_KEYWORDS, 0},
   {"get_spring_forces_WCA", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_19get_spring_force_cy_3get_spring_forces_WCA, METH_VARARGS|METH_KEYWORDS, 0},
+  {"get_total_spring_energy_WCA", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_19get_spring_force_cy_5get_total_spring_energy_WCA, METH_VARARGS|METH_KEYWORDS, 0},
+  {"get_spring_forces_energy_WCA", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_19get_spring_force_cy_7get_spring_forces_energy_WCA, METH_VARARGS|METH_KEYWORDS, 0},
   {0, 0, 0, 0}
 };
 

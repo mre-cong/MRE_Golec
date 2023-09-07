@@ -9,6 +9,7 @@ cimport cython
 # from cython.parallel import prange
 # import numpy as np
 cimport numpy as np
+from libc.math cimport pow
 #cstruct for a 3D vector
 cdef struct Vec3:
     double x, y, z
@@ -226,3 +227,75 @@ cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements,
 #cdef double dot_prod(Vec3 vec1, Vec3 vec2):
     #cdef double result = vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z
     #return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef double get_volume_correction_force_energy_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):
+    """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""
+    cdef int i
+    cdef int j
+    for i in range(correction_force.shape[0]):
+        for j in range(3):
+            correction_force[i][j] = 0.0
+    cdef double total_energy = 0
+    with nogil:
+        for i in range(elements.shape[0]):
+            get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
+            total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)
+            for j in range(8):
+                correction_force[elements[i,j]][0] += correction_force_el[j][0]
+                correction_force[elements[i,j]][1] += correction_force_el[j][1]
+                correction_force[elements[i,j]][2] += correction_force_el[j][2]
+    return total_energy
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double get_volume_correction_force_energy_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:
+    cdef double[3] acrossb
+    cdef double[3] bcrossc
+    cdef double[3] ccrossa
+    cdef int i
+    cdef double[3] avg_a
+    cdef double[3] avg_b
+    cdef double[3] avg_c
+    for i in range(3):
+        avg_a[i] = 0.
+        avg_b[i] = 0.
+        avg_c[i] = 0.
+    for i in range(3):
+        avg_a[i] += avg_vec[0,i]
+        avg_b[i] += avg_vec[1,i]
+        avg_c[i] += avg_vec[2,i]
+    cross_prod(avg_a,avg_b,acrossb)
+    cross_prod(avg_b,avg_c,bcrossc)
+    cross_prod(avg_c,avg_a,ccrossa)
+    cdef double adotbcrossc = dot_prod(avg_a,bcrossc)
+    cdef double[3] gradV1
+    cdef double[3] gradV8
+    cdef double[3] gradV3
+    cdef double[3] gradV6
+    cdef double[3] gradV7
+    cdef double[3] gradV2
+    cdef double[3] gradV5
+    cdef double[3] gradV4
+    for i in range(3):
+        gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
+        gradV8[i] = -1*gradV1[i]
+        gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
+        gradV6[i] = -1*gradV3[i]
+        gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
+        gradV2[i] = -1*gradV7[i]
+        gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
+        gradV4[i] = -1*gradV5[i]
+    cdef double prefactor = -kappa * ((adotbcrossc - 1))
+    for i in range(3):
+        correction_force[0][i] = prefactor*gradV1[i]
+        correction_force[1][i] = prefactor*gradV2[i]
+        correction_force[2][i] = prefactor*gradV3[i]
+        correction_force[3][i] = prefactor*gradV4[i]
+        correction_force[4][i] = prefactor*gradV5[i]
+        correction_force[5][i] = prefactor*gradV6[i]
+        correction_force[6][i] = prefactor*gradV7[i]
+        correction_force[7][i] = prefactor*gradV8[i]
+    cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)
+    return energy
