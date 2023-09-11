@@ -310,20 +310,19 @@ body.cython { font-family: courier; font-size: 12; }
 <pre class="cython line score-0">&#xA0;<span class="">009</span>: # from cython.parallel import prange</pre>
 <pre class="cython line score-0">&#xA0;<span class="">010</span>: # import numpy as np</pre>
 <pre class="cython line score-0">&#xA0;<span class="">011</span>: cimport numpy as np</pre>
-<pre class="cython line score-0">&#xA0;<span class="">012</span>: from libc.math cimport pow</pre>
-<pre class="cython line score-0">&#xA0;<span class="">013</span>: #cstruct for a 3D vector</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">014</span>: cdef struct Vec3:</pre>
+<pre class="cython line score-0">&#xA0;<span class="">012</span>: #cstruct for a 3D vector</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">013</span>: cdef struct Vec3:</pre>
 <pre class='cython code score-0 '>struct __pyx_t_36get_volume_correction_force_cy_nogil_Vec3 {
   double x;
   double y;
   double z;
 };
-</pre><pre class="cython line score-0">&#xA0;<span class="">015</span>:     double x, y, z</pre>
-<pre class="cython line score-0">&#xA0;<span class="">016</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">017</span>: #volume correction force calculation. I need to calculate all the forces acting on each vertex (or gradient of the energy wrt the vertex position, which is the negative of the force vector acting on the vertex). I can write this to work for a single unit cell at first, but I need to think about how I will store the forces before I add them up, and assign them to the correct vertices.</pre>
-<pre class="cython line score-0">&#xA0;<span class="">018</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">019</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-109" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">020</span>: cpdef get_volume_correction_force(double[:,::1] node_posns,int[:,::1] elements, double kappa, double l_e,double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">014</span>:     double x, y, z</pre>
+<pre class="cython line score-0">&#xA0;<span class="">015</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">016</span>: #volume correction force calculation. I need to calculate all the forces acting on each vertex (or gradient of the energy wrt the vertex position, which is the negative of the force vector acting on the vertex). I can write this to work for a single unit cell at first, but I need to think about how I will store the forces before I add them up, and assign them to the correct vertices.</pre>
+<pre class="cython line score-0">&#xA0;<span class="">017</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">018</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-109" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">019</span>: cpdef get_volume_correction_force(double[:,::1] node_posns,int[:,::1] elements, double kappa, double l_e,double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):</pre>
 <pre class='cython code score-109 '>static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_correction_force(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, double __pyx_v_l_e, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_i;
@@ -389,47 +388,47 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_cor
         case  1:
         if (likely((values[1] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 1); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 1); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 2); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 2); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 3); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 3); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 4); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 4); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 5); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 5); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 6); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 6); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 7); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, 7); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
         }
       }
       if (unlikely(kw_args &gt; 0)) {
-        if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+        if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
       }
     } else if (<span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args) != 8) {
       goto __pyx_L5_argtuple_error;
@@ -443,18 +442,18 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_cor
       values[6] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 6);
       values[7] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 7);
     }
-    __pyx_v_node_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_elements = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_int</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_kappa = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_l_e = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_correction_force_el = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[4], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[5], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_avg_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[6], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
-    __pyx_v_correction_force = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[7], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 20, __pyx_L3_error)</span>
+    __pyx_v_node_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_elements = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_int</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_kappa = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_l_e = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_correction_force_el = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[4], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[5], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_avg_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[6], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
+    __pyx_v_correction_force = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[7], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 19, __pyx_L3_error)</span>
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L3_error)</span>
+  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force", 1, 8, 8, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L3_error)</span>
   __pyx_L3_error:;
   <span class='pyx_c_api'>__Pyx_AddTraceback</span>("get_volume_correction_force_cy_nogil.get_volume_correction_force", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -475,13 +474,13 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
   <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
   <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_volume_correction_force", 0);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("node_posns"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_elements.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("elements"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force_el"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("vectors"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("avg_vectors"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force"); <span class='error_goto'>__PYX_ERR(0, 20, __pyx_L1_error)</span> }
-  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)</span>
+  if (unlikely(!__pyx_v_node_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("node_posns"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_elements.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("elements"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_correction_force_el.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force_el"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("vectors"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_avg_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("avg_vectors"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_correction_force.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force"); <span class='error_goto'>__PYX_ERR(0, 19, __pyx_L1_error)</span> }
+  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 19, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -503,29 +502,29 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">021</span>:     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""</pre>
-<pre class="cython line score-0">&#xA0;<span class="">022</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">023</span>:     cdef int j</pre>
-<pre class="cython line score-0">&#xA0;<span class="">024</span>:     # cdef double[8][3] correction_force_el</pre>
-<pre class="cython line score-0">&#xA0;<span class="">025</span>:     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">026</span>:     for i in range(correction_force.shape[0]):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">020</span>:     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""</pre>
+<pre class="cython line score-0">&#xA0;<span class="">021</span>:     cdef int i</pre>
+<pre class="cython line score-0">&#xA0;<span class="">022</span>:     cdef int j</pre>
+<pre class="cython line score-0">&#xA0;<span class="">023</span>:     # cdef double[8][3] correction_force_el</pre>
+<pre class="cython line score-0">&#xA0;<span class="">024</span>:     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">025</span>:     for i in range(correction_force.shape[0]):</pre>
 <pre class='cython code score-0 '>  __pyx_t_1 = (__pyx_v_correction_force.shape[0]);
   __pyx_t_2 = __pyx_t_1;
   for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">027</span>:         for j in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">026</span>:         for j in range(3):</pre>
 <pre class='cython code score-0 '>    for (__pyx_t_4 = 0; __pyx_t_4 &lt; 3; __pyx_t_4+=1) {
       __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">028</span>:             correction_force[i][j] = 0.0</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">027</span>:             correction_force[i][j] = 0.0</pre>
 <pre class='cython code score-0 '>      __pyx_t_5 = __pyx_v_i;
       __pyx_t_6 = __pyx_v_j;
       *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_5 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_6)) )) = 0.0;
     }
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">029</span>:     # iterating over elements, get an 8x3 array, then add to each entry in the correction_force array by iterating over j, getting the index from elements[i,j] (the jth node of the ith element), where correction_force_el[j,0] is the x component of the jth node due to the volume correction force</pre>
-<pre class="cython line score-0">&#xA0;<span class="">030</span>:     # cdef double vectors[8][3]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">031</span>:     # cdef double avg_vectors[3][3]</pre>
-<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">032</span>:     with nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">028</span>:     # iterating over elements, get an 8x3 array, then add to each entry in the correction_force array by iterating over j, getting the index from elements[i,j] (the jth node of the ith element), where correction_force_el[j,0] is the x component of the jth node due to the volume correction force</pre>
+<pre class="cython line score-0">&#xA0;<span class="">029</span>:     # cdef double vectors[8][3]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">030</span>:     # cdef double avg_vectors[3][3]</pre>
+<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">031</span>:     with nogil:</pre>
 <pre class='cython code score-4 '>  {
       #ifdef WITH_THREAD
       PyThreadState *_save;
@@ -545,19 +544,19 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
         __pyx_L9:;
       }
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">033</span>:         for i in range(elements.shape[0]):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">032</span>:         for i in range(elements.shape[0]):</pre>
 <pre class='cython code score-0 '>        __pyx_t_1 = (__pyx_v_elements.shape[0]);
         __pyx_t_2 = __pyx_t_1;
         for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">034</span>:             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">033</span>:             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)</pre>
 <pre class='cython code score-0 '>          __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">035</span>:             get_volume_correction_force_el(avg_vectors, kappa, l_e,correction_force_el)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">034</span>:             get_volume_correction_force_el(avg_vectors, kappa, l_e,correction_force_el)</pre>
 <pre class='cython code score-0 '>          __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">036</span>:             for j in range(8):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">035</span>:             for j in range(8):</pre>
 <pre class='cython code score-0 '>          for (__pyx_t_4 = 0; __pyx_t_4 &lt; 8; __pyx_t_4+=1) {
             __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">037</span>:                 correction_force[elements[i,j]][0] += correction_force_el[j][0]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">036</span>:                 correction_force[elements[i,j]][0] += correction_force_el[j][0]</pre>
 <pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
             __pyx_t_5 = 0;
             __pyx_t_7 = __pyx_v_i;
@@ -565,7 +564,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
             __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
             __pyx_t_10 = 0;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">038</span>:                 correction_force[elements[i,j]][1] += correction_force_el[j][1]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">037</span>:                 correction_force[elements[i,j]][1] += correction_force_el[j][1]</pre>
 <pre class='cython code score-0 '>            __pyx_t_5 = __pyx_v_j;
             __pyx_t_6 = 1;
             __pyx_t_8 = __pyx_v_i;
@@ -573,7 +572,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
             __pyx_t_10 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_8 * __pyx_v_elements.strides[0]) )) + __pyx_t_7)) )));
             __pyx_t_9 = 1;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">039</span>:                 correction_force[elements[i,j]][2] += correction_force_el[j][2]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">038</span>:                 correction_force[elements[i,j]][2] += correction_force_el[j][2]</pre>
 <pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
             __pyx_t_5 = 2;
             __pyx_t_7 = __pyx_v_i;
@@ -584,11 +583,11 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
           }
         }
       }
-</pre><pre class="cython line score-0">&#xA0;<span class="">040</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">041</span>: #let's create a cdef function that returns the volume correction forces on the nodes of a single element, and call that from the cpdef function that we will call in the python script to get the volume correction force on each object. I should also write a cdef cross function, since that takes up a significant portion of the volume correction force calculation according to the profiler results. I should try writing some example cython functions first before trying to convert these things. I also need to make sure i set up a git repository, or ensure i am using the one i had already set up rather than continuing to do things without a record. try writing the cross product function and compare the results to the numpy function to ensure the result is correct.</pre>
-<pre class="cython line score-0">&#xA0;<span class="">042</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">043</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">044</span>: cdef void get_volume_correction_force_el(double[:,::1] avg_vec, double kappa, double l_e, double[:,::1] correction_force) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">039</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">040</span>: #let's create a cdef function that returns the volume correction forces on the nodes of a single element, and call that from the cpdef function that we will call in the python script to get the volume correction force on each object. I should also write a cdef cross function, since that takes up a significant portion of the volume correction force calculation according to the profiler results. I should try writing some example cython functions first before trying to convert these things. I also need to make sure i set up a git repository, or ensure i am using the one i had already set up rather than continuing to do things without a record. try writing the cross product function and compare the results to the numpy function to ensure the result is correct.</pre>
+<pre class="cython line score-0">&#xA0;<span class="">041</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">042</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">043</span>: cdef void get_volume_correction_force_el(double[:,::1] avg_vec, double kappa, double l_e, double[:,::1] correction_force) nogil:</pre>
 <pre class='cython code score-2 '>static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el(__Pyx_memviewslice __pyx_v_avg_vec, double __pyx_v_kappa, double __pyx_v_l_e, __Pyx_memviewslice __pyx_v_correction_force) {
   double __pyx_v_acrossb[3];
   double __pyx_v_bcrossc[3];
@@ -614,79 +613,79 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
   <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("get_volume_correction_force_cy_nogil.get_volume_correction_force_el", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
   __pyx_L0:;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">045</span>:     cdef double[3] acrossb</pre>
-<pre class="cython line score-0">&#xA0;<span class="">046</span>:     cdef double[3] bcrossc</pre>
-<pre class="cython line score-0">&#xA0;<span class="">047</span>:     cdef double[3] ccrossa</pre>
-<pre class="cython line score-0">&#xA0;<span class="">048</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">049</span>:     cdef double[3] avg_a</pre>
-<pre class="cython line score-0">&#xA0;<span class="">050</span>:     cdef double[3] avg_b</pre>
-<pre class="cython line score-0">&#xA0;<span class="">051</span>:     cdef double[3] avg_c</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">052</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">044</span>:     cdef double[3] acrossb</pre>
+<pre class="cython line score-0">&#xA0;<span class="">045</span>:     cdef double[3] bcrossc</pre>
+<pre class="cython line score-0">&#xA0;<span class="">046</span>:     cdef double[3] ccrossa</pre>
+<pre class="cython line score-0">&#xA0;<span class="">047</span>:     cdef int i</pre>
+<pre class="cython line score-0">&#xA0;<span class="">048</span>:     cdef double[3] avg_a</pre>
+<pre class="cython line score-0">&#xA0;<span class="">049</span>:     cdef double[3] avg_b</pre>
+<pre class="cython line score-0">&#xA0;<span class="">050</span>:     cdef double[3] avg_c</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">051</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">053</span>:         avg_a[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">052</span>:         avg_a[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_a[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">054</span>:         avg_b[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">053</span>:         avg_b[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_b[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">055</span>:         avg_c[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">054</span>:         avg_c[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_c[__pyx_v_i]) = 0.;
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">056</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">055</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">057</span>:         avg_a[i] += avg_vec[0,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">056</span>:         avg_a[i] += avg_vec[0,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = 0;
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">058</span>:         avg_b[i] += avg_vec[1,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">057</span>:         avg_b[i] += avg_vec[1,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_4 = 1;
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">059</span>:         avg_c[i] += avg_vec[2,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">058</span>:         avg_c[i] += avg_vec[2,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = 2;
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">060</span>:     cross_prod(avg_a,avg_b,acrossb)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">059</span>:     cross_prod(avg_a,avg_b,acrossb)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">061</span>:     cross_prod(avg_b,avg_c,bcrossc)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">060</span>:     cross_prod(avg_b,avg_c,bcrossc)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">062</span>:     cross_prod(avg_c,avg_a,ccrossa)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">061</span>:     cross_prod(avg_c,avg_a,ccrossa)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">063</span>:     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">062</span>:     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)</pre>
 <pre class='cython code score-0 '>  __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0">&#xA0;<span class="">064</span>:     cdef double[3] gradV1</pre>
-<pre class="cython line score-0">&#xA0;<span class="">065</span>:     cdef double[3] gradV8</pre>
-<pre class="cython line score-0">&#xA0;<span class="">066</span>:     cdef double[3] gradV3</pre>
-<pre class="cython line score-0">&#xA0;<span class="">067</span>:     cdef double[3] gradV6</pre>
-<pre class="cython line score-0">&#xA0;<span class="">068</span>:     cdef double[3] gradV7</pre>
-<pre class="cython line score-0">&#xA0;<span class="">069</span>:     cdef double[3] gradV2</pre>
-<pre class="cython line score-0">&#xA0;<span class="">070</span>:     cdef double[3] gradV5</pre>
-<pre class="cython line score-0">&#xA0;<span class="">071</span>:     cdef double[3] gradV4</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">072</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">063</span>:     cdef double[3] gradV1</pre>
+<pre class="cython line score-0">&#xA0;<span class="">064</span>:     cdef double[3] gradV8</pre>
+<pre class="cython line score-0">&#xA0;<span class="">065</span>:     cdef double[3] gradV3</pre>
+<pre class="cython line score-0">&#xA0;<span class="">066</span>:     cdef double[3] gradV6</pre>
+<pre class="cython line score-0">&#xA0;<span class="">067</span>:     cdef double[3] gradV7</pre>
+<pre class="cython line score-0">&#xA0;<span class="">068</span>:     cdef double[3] gradV2</pre>
+<pre class="cython line score-0">&#xA0;<span class="">069</span>:     cdef double[3] gradV5</pre>
+<pre class="cython line score-0">&#xA0;<span class="">070</span>:     cdef double[3] gradV4</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">071</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">073</span>:         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">072</span>:         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">074</span>:         gradV8[i] = -1*gradV1[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">073</span>:         gradV8[i] = -1*gradV1[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">075</span>:         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">074</span>:         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">076</span>:         gradV6[i] = -1*gradV3[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">075</span>:         gradV6[i] = -1*gradV3[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">077</span>:         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">076</span>:         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">078</span>:         gradV2[i] = -1*gradV7[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">077</span>:         gradV2[i] = -1*gradV7[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">079</span>:         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">078</span>:         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">080</span>:         gradV4[i] = -1*gradV5[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">079</span>:         gradV4[i] = -1*gradV5[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
   }
-</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">081</span>:     cdef double prefactor = -kappa * ((1/(l_e*l_e*l_e) * adotbcrossc - 1))</pre>
+</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">080</span>:     cdef double prefactor = -kappa * ((1/(l_e*l_e*l_e) * adotbcrossc - 1))</pre>
 <pre class='cython code score-9 '>  __pyx_t_5 = ((__pyx_v_l_e * __pyx_v_l_e) * __pyx_v_l_e);
   if (unlikely(__pyx_t_5 == 0)) {
     #ifdef WITH_THREAD
@@ -696,50 +695,50 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 81, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 80, __pyx_L1_error)</span>
   }
   __pyx_v_prefactor = ((-__pyx_v_kappa) * (((1.0 / __pyx_t_5) * __pyx_v_adotbcrossc) - 1.0));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">082</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">081</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">083</span>:         correction_force[0][i] = prefactor*gradV1[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">082</span>:         correction_force[0][i] = prefactor*gradV1[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 0;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">084</span>:         correction_force[1][i] = prefactor*gradV2[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">083</span>:         correction_force[1][i] = prefactor*gradV2[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 1;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">085</span>:         correction_force[2][i] = prefactor*gradV3[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">084</span>:         correction_force[2][i] = prefactor*gradV3[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 2;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">086</span>:         correction_force[3][i] = prefactor*gradV4[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">085</span>:         correction_force[3][i] = prefactor*gradV4[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 3;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">087</span>:         correction_force[4][i] = prefactor*gradV5[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">086</span>:         correction_force[4][i] = prefactor*gradV5[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 4;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">088</span>:         correction_force[5][i] = prefactor*gradV6[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">087</span>:         correction_force[5][i] = prefactor*gradV6[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 5;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">089</span>:         correction_force[6][i] = prefactor*gradV7[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">088</span>:         correction_force[6][i] = prefactor*gradV7[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 6;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">090</span>:         correction_force[7][i] = prefactor*gradV8[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">089</span>:         correction_force[7][i] = prefactor*gradV8[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 7;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">091</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">092</span>: #volume correction force calculation taking into account scaling of the positions/lengths in the simulation. I need to calculate all the forces acting on each vertex (or gradient of the energy wrt the vertex position, which is the negative of the force vector acting on the vertex). I can write this to work for a single unit cell at first, but I need to think about how I will store the forces before I add them up, and assign them to the correct vertices.</pre>
-<pre class="cython line score-0">&#xA0;<span class="">093</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">094</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-93" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">095</span>: cpdef get_volume_correction_force_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">090</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">091</span>: #volume correction force calculation taking into account scaling of the positions/lengths in the simulation. I need to calculate all the forces acting on each vertex (or gradient of the energy wrt the vertex position, which is the negative of the force vector acting on the vertex). I can write this to work for a single unit cell at first, but I need to think about how I will store the forces before I add them up, and assign them to the correct vertices.</pre>
+<pre class="cython line score-0">&#xA0;<span class="">092</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">093</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-93" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">094</span>: cpdef get_volume_correction_force_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):</pre>
 <pre class='cython code score-93 '>static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_correction_force_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
 static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_normalized(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_i;
@@ -802,41 +801,41 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_cor
         case  1:
         if (likely((values[1] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 1); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 1); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 2); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 2); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 3); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 3); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 4); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 4); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 5); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 5); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 6); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, 6); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
         }
       }
       if (unlikely(kw_args &gt; 0)) {
-        if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_normalized") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+        if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_normalized") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
       }
     } else if (<span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args) != 7) {
       goto __pyx_L5_argtuple_error;
@@ -849,17 +848,17 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_cor
       values[5] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 5);
       values[6] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 6);
     }
-    __pyx_v_node_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_elements = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_int</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_kappa = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_correction_force_el = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[3], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[4], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_avg_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[5], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
-    __pyx_v_correction_force = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[6], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 95, __pyx_L3_error)</span>
+    __pyx_v_node_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_elements = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_int</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_kappa = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_correction_force_el = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[3], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[4], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_avg_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[5], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
+    __pyx_v_correction_force = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[6], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 94, __pyx_L3_error)</span>
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L3_error)</span>
+  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_normalized", 1, 7, 7, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L3_error)</span>
   __pyx_L3_error:;
   <span class='pyx_c_api'>__Pyx_AddTraceback</span>("get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
@@ -880,13 +879,13 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
   <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_volume_correction_force_normalized", 0);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("node_posns"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_elements.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("elements"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force_el"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("vectors"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("avg_vectors"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force"); <span class='error_goto'>__PYX_ERR(0, 95, __pyx_L1_error)</span> }
-  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)</span>
+  if (unlikely(!__pyx_v_node_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("node_posns"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_elements.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("elements"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_correction_force_el.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force_el"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("vectors"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_avg_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("avg_vectors"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  if (unlikely(!__pyx_v_correction_force.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force"); <span class='error_goto'>__PYX_ERR(0, 94, __pyx_L1_error)</span> }
+  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -908,29 +907,29 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">096</span>:     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""</pre>
-<pre class="cython line score-0">&#xA0;<span class="">097</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">098</span>:     cdef int j</pre>
-<pre class="cython line score-0">&#xA0;<span class="">099</span>:     # cdef double[8][3] correction_force_el</pre>
-<pre class="cython line score-0">&#xA0;<span class="">100</span>:     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">101</span>:     for i in range(correction_force.shape[0]):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">095</span>:     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""</pre>
+<pre class="cython line score-0">&#xA0;<span class="">096</span>:     cdef int i</pre>
+<pre class="cython line score-0">&#xA0;<span class="">097</span>:     cdef int j</pre>
+<pre class="cython line score-0">&#xA0;<span class="">098</span>:     # cdef double[8][3] correction_force_el</pre>
+<pre class="cython line score-0">&#xA0;<span class="">099</span>:     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">100</span>:     for i in range(correction_force.shape[0]):</pre>
 <pre class='cython code score-0 '>  __pyx_t_1 = (__pyx_v_correction_force.shape[0]);
   __pyx_t_2 = __pyx_t_1;
   for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">102</span>:         for j in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">101</span>:         for j in range(3):</pre>
 <pre class='cython code score-0 '>    for (__pyx_t_4 = 0; __pyx_t_4 &lt; 3; __pyx_t_4+=1) {
       __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">103</span>:             correction_force[i][j] = 0.0</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">102</span>:             correction_force[i][j] = 0.0</pre>
 <pre class='cython code score-0 '>      __pyx_t_5 = __pyx_v_i;
       __pyx_t_6 = __pyx_v_j;
       *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_5 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_6)) )) = 0.0;
     }
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">104</span>:     # iterating over elements, get an 8x3 array, then add to each entry in the correction_force array by iterating over j, getting the index from elements[i,j] (the jth node of the ith element), where correction_force_el[j,0] is the x component of the jth node due to the volume correction force</pre>
-<pre class="cython line score-0">&#xA0;<span class="">105</span>:     # cdef double vectors[8][3]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">106</span>:     # cdef double avg_vectors[3][3]</pre>
-<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">107</span>:     with nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">103</span>:     # iterating over elements, get an 8x3 array, then add to each entry in the correction_force array by iterating over j, getting the index from elements[i,j] (the jth node of the ith element), where correction_force_el[j,0] is the x component of the jth node due to the volume correction force</pre>
+<pre class="cython line score-0">&#xA0;<span class="">104</span>:     # cdef double vectors[8][3]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">105</span>:     # cdef double avg_vectors[3][3]</pre>
+<pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">106</span>:     with nogil:</pre>
 <pre class='cython code score-4 '>  {
       #ifdef WITH_THREAD
       PyThreadState *_save;
@@ -950,19 +949,19 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
         __pyx_L9:;
       }
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">108</span>:         for i in range(elements.shape[0]):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">107</span>:         for i in range(elements.shape[0]):</pre>
 <pre class='cython code score-0 '>        __pyx_t_1 = (__pyx_v_elements.shape[0]);
         __pyx_t_2 = __pyx_t_1;
         for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">109</span>:             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">108</span>:             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)</pre>
 <pre class='cython code score-0 '>          __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">110</span>:             get_volume_correction_force_el_normalized(avg_vectors, kappa,correction_force_el)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">109</span>:             get_volume_correction_force_el_normalized(avg_vectors, kappa,correction_force_el)</pre>
 <pre class='cython code score-0 '>          __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el_normalized(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_correction_force_el);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">111</span>:             for j in range(8):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">110</span>:             for j in range(8):</pre>
 <pre class='cython code score-0 '>          for (__pyx_t_4 = 0; __pyx_t_4 &lt; 8; __pyx_t_4+=1) {
             __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">112</span>:                 correction_force[elements[i,j]][0] += correction_force_el[j][0]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">111</span>:                 correction_force[elements[i,j]][0] += correction_force_el[j][0]</pre>
 <pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
             __pyx_t_5 = 0;
             __pyx_t_7 = __pyx_v_i;
@@ -970,7 +969,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
             __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
             __pyx_t_10 = 0;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">113</span>:                 correction_force[elements[i,j]][1] += correction_force_el[j][1]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">112</span>:                 correction_force[elements[i,j]][1] += correction_force_el[j][1]</pre>
 <pre class='cython code score-0 '>            __pyx_t_5 = __pyx_v_j;
             __pyx_t_6 = 1;
             __pyx_t_8 = __pyx_v_i;
@@ -978,7 +977,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
             __pyx_t_10 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_8 * __pyx_v_elements.strides[0]) )) + __pyx_t_7)) )));
             __pyx_t_9 = 1;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">114</span>:                 correction_force[elements[i,j]][2] += correction_force_el[j][2]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">113</span>:                 correction_force[elements[i,j]][2] += correction_force_el[j][2]</pre>
 <pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
             __pyx_t_5 = 2;
             __pyx_t_7 = __pyx_v_i;
@@ -989,11 +988,11 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
           }
         }
       }
-</pre><pre class="cython line score-0">&#xA0;<span class="">115</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">116</span>: #let's create a cdef function that returns the volume correction forces on the nodes of a single element, and call that from the cpdef function that we will call in the python script to get the volume correction force on each object. I should also write a cdef cross function, since that takes up a significant portion of the volume correction force calculation according to the profiler results. I should try writing some example cython functions first before trying to convert these things. I also need to make sure i set up a git repository, or ensure i am using the one i had already set up rather than continuing to do things without a record. try writing the cross product function and compare the results to the numpy function to ensure the result is correct.</pre>
-<pre class="cython line score-0">&#xA0;<span class="">117</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">118</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">119</span>: cdef void get_volume_correction_force_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">114</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">115</span>: #let's create a cdef function that returns the volume correction forces on the nodes of a single element, and call that from the cpdef function that we will call in the python script to get the volume correction force on each object. I should also write a cdef cross function, since that takes up a significant portion of the volume correction force calculation according to the profiler results. I should try writing some example cython functions first before trying to convert these things. I also need to make sure i set up a git repository, or ensure i am using the one i had already set up rather than continuing to do things without a record. try writing the cross product function and compare the results to the numpy function to ensure the result is correct.</pre>
+<pre class="cython line score-0">&#xA0;<span class="">116</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">117</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">118</span>: cdef void get_volume_correction_force_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:</pre>
 <pre class='cython code score-0 '>static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el_normalized(__Pyx_memviewslice __pyx_v_avg_vec, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force) {
   double __pyx_v_acrossb[3];
   double __pyx_v_bcrossc[3];
@@ -1015,134 +1014,134 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
 /* … */
   /* function exit code */
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">120</span>:     cdef double[3] acrossb</pre>
-<pre class="cython line score-0">&#xA0;<span class="">121</span>:     cdef double[3] bcrossc</pre>
-<pre class="cython line score-0">&#xA0;<span class="">122</span>:     cdef double[3] ccrossa</pre>
-<pre class="cython line score-0">&#xA0;<span class="">123</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">124</span>:     cdef double[3] avg_a</pre>
-<pre class="cython line score-0">&#xA0;<span class="">125</span>:     cdef double[3] avg_b</pre>
-<pre class="cython line score-0">&#xA0;<span class="">126</span>:     cdef double[3] avg_c</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">127</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">119</span>:     cdef double[3] acrossb</pre>
+<pre class="cython line score-0">&#xA0;<span class="">120</span>:     cdef double[3] bcrossc</pre>
+<pre class="cython line score-0">&#xA0;<span class="">121</span>:     cdef double[3] ccrossa</pre>
+<pre class="cython line score-0">&#xA0;<span class="">122</span>:     cdef int i</pre>
+<pre class="cython line score-0">&#xA0;<span class="">123</span>:     cdef double[3] avg_a</pre>
+<pre class="cython line score-0">&#xA0;<span class="">124</span>:     cdef double[3] avg_b</pre>
+<pre class="cython line score-0">&#xA0;<span class="">125</span>:     cdef double[3] avg_c</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">126</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">128</span>:         avg_a[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">127</span>:         avg_a[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_a[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">129</span>:         avg_b[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">128</span>:         avg_b[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_b[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">130</span>:         avg_c[i] = 0.</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">129</span>:         avg_c[i] = 0.</pre>
 <pre class='cython code score-0 '>    (__pyx_v_avg_c[__pyx_v_i]) = 0.;
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">131</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">130</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">132</span>:         avg_a[i] += avg_vec[0,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">131</span>:         avg_a[i] += avg_vec[0,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = 0;
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">133</span>:         avg_b[i] += avg_vec[1,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">132</span>:         avg_b[i] += avg_vec[1,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_4 = 1;
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">134</span>:         avg_c[i] += avg_vec[2,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">133</span>:         avg_c[i] += avg_vec[2,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = 2;
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">135</span>:     cross_prod(avg_a,avg_b,acrossb)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">134</span>:     cross_prod(avg_a,avg_b,acrossb)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">136</span>:     cross_prod(avg_b,avg_c,bcrossc)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">135</span>:     cross_prod(avg_b,avg_c,bcrossc)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">137</span>:     cross_prod(avg_c,avg_a,ccrossa)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">136</span>:     cross_prod(avg_c,avg_a,ccrossa)</pre>
 <pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">138</span>:     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">137</span>:     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)</pre>
 <pre class='cython code score-0 '>  __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0">&#xA0;<span class="">139</span>:     cdef double[3] gradV1</pre>
-<pre class="cython line score-0">&#xA0;<span class="">140</span>:     cdef double[3] gradV8</pre>
-<pre class="cython line score-0">&#xA0;<span class="">141</span>:     cdef double[3] gradV3</pre>
-<pre class="cython line score-0">&#xA0;<span class="">142</span>:     cdef double[3] gradV6</pre>
-<pre class="cython line score-0">&#xA0;<span class="">143</span>:     cdef double[3] gradV7</pre>
-<pre class="cython line score-0">&#xA0;<span class="">144</span>:     cdef double[3] gradV2</pre>
-<pre class="cython line score-0">&#xA0;<span class="">145</span>:     cdef double[3] gradV5</pre>
-<pre class="cython line score-0">&#xA0;<span class="">146</span>:     cdef double[3] gradV4</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">147</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">138</span>:     cdef double[3] gradV1</pre>
+<pre class="cython line score-0">&#xA0;<span class="">139</span>:     cdef double[3] gradV8</pre>
+<pre class="cython line score-0">&#xA0;<span class="">140</span>:     cdef double[3] gradV3</pre>
+<pre class="cython line score-0">&#xA0;<span class="">141</span>:     cdef double[3] gradV6</pre>
+<pre class="cython line score-0">&#xA0;<span class="">142</span>:     cdef double[3] gradV7</pre>
+<pre class="cython line score-0">&#xA0;<span class="">143</span>:     cdef double[3] gradV2</pre>
+<pre class="cython line score-0">&#xA0;<span class="">144</span>:     cdef double[3] gradV5</pre>
+<pre class="cython line score-0">&#xA0;<span class="">145</span>:     cdef double[3] gradV4</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">146</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">148</span>:         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">147</span>:         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">149</span>:         gradV8[i] = -1*gradV1[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">148</span>:         gradV8[i] = -1*gradV1[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">150</span>:         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">149</span>:         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">151</span>:         gradV6[i] = -1*gradV3[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">150</span>:         gradV6[i] = -1*gradV3[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">152</span>:         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">151</span>:         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">153</span>:         gradV2[i] = -1*gradV7[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">152</span>:         gradV2[i] = -1*gradV7[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">154</span>:         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">153</span>:         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">155</span>:         gradV4[i] = -1*gradV5[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">154</span>:         gradV4[i] = -1*gradV5[i]</pre>
 <pre class='cython code score-0 '>    (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">156</span>:     cdef double prefactor = -kappa * ((adotbcrossc - 1))</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">155</span>:     cdef double prefactor = -kappa * ((adotbcrossc - 1))</pre>
 <pre class='cython code score-0 '>  __pyx_v_prefactor = ((-__pyx_v_kappa) * (__pyx_v_adotbcrossc - 1.0));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">157</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">156</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">158</span>:         correction_force[0][i] = prefactor*gradV1[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">157</span>:         correction_force[0][i] = prefactor*gradV1[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 0;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">159</span>:         correction_force[1][i] = prefactor*gradV2[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">158</span>:         correction_force[1][i] = prefactor*gradV2[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 1;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">160</span>:         correction_force[2][i] = prefactor*gradV3[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">159</span>:         correction_force[2][i] = prefactor*gradV3[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 2;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">161</span>:         correction_force[3][i] = prefactor*gradV4[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">160</span>:         correction_force[3][i] = prefactor*gradV4[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 3;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">162</span>:         correction_force[4][i] = prefactor*gradV5[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">161</span>:         correction_force[4][i] = prefactor*gradV5[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 4;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">163</span>:         correction_force[5][i] = prefactor*gradV6[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">162</span>:         correction_force[5][i] = prefactor*gradV6[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 5;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">164</span>:         correction_force[6][i] = prefactor*gradV7[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">163</span>:         correction_force[6][i] = prefactor*gradV7[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4 = 6;
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">165</span>:         correction_force[7][i] = prefactor*gradV8[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">164</span>:         correction_force[7][i] = prefactor*gradV8[i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 7;
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">166</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">167</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">168</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">169</span>: cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">165</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">166</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">167</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">168</span>: cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:</pre>
 <pre class='cython code score-0 '>static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__pyx_v_vec1, double *__pyx_v_vec2, double *__pyx_v_result) {
 /* … */
   /* function exit code */
 }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">170</span>:     result[0] = vec1[1]*vec2[2] - vec1[2]*vec2[1]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">169</span>:     result[0] = vec1[1]*vec2[2] - vec1[2]*vec2[1]</pre>
 <pre class='cython code score-0 '>  (__pyx_v_result[0]) = (((__pyx_v_vec1[1]) * (__pyx_v_vec2[2])) - ((__pyx_v_vec1[2]) * (__pyx_v_vec2[1])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">171</span>:     result[1] = vec1[2]*vec2[0] - vec1[0]*vec2[2]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">170</span>:     result[1] = vec1[2]*vec2[0] - vec1[0]*vec2[2]</pre>
 <pre class='cython code score-0 '>  (__pyx_v_result[1]) = (((__pyx_v_vec1[2]) * (__pyx_v_vec2[0])) - ((__pyx_v_vec1[0]) * (__pyx_v_vec2[2])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">172</span>:     result[2] = vec1[0]*vec2[1] - vec1[1]*vec2[0]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">171</span>:     result[2] = vec1[0]*vec2[1] - vec1[1]*vec2[0]</pre>
 <pre class='cython code score-0 '>  (__pyx_v_result[2]) = (((__pyx_v_vec1[0]) * (__pyx_v_vec2[1])) - ((__pyx_v_vec1[1]) * (__pyx_v_vec2[0])));
-</pre><pre class="cython line score-0">&#xA0;<span class="">173</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">174</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">175</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">176</span>: cdef double dot_prod(double[3] vec1, double[3] vec2) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">172</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">173</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">174</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">175</span>: cdef double dot_prod(double[3] vec1, double[3] vec2) nogil:</pre>
 <pre class='cython code score-0 '>static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__pyx_v_vec1, double *__pyx_v_vec2) {
   double __pyx_v_result;
   int __pyx_v_i;
@@ -1152,25 +1151,25 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   __pyx_L0:;
   return __pyx_r;
 }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">177</span>:     cdef double result = 0</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">176</span>:     cdef double result = 0</pre>
 <pre class='cython code score-0 '>  __pyx_v_result = 0.0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">178</span>:     cdef int i</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">179</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">177</span>:     cdef int i</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">178</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">180</span>:         result += vec1[i]*vec2[i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">179</span>:         result += vec1[i]*vec2[i]</pre>
 <pre class='cython code score-0 '>    __pyx_v_result = (__pyx_v_result + ((__pyx_v_vec1[__pyx_v_i]) * (__pyx_v_vec2[__pyx_v_i])));
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">181</span>:     return result</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">180</span>:     return result</pre>
 <pre class='cython code score-0 '>  __pyx_r = __pyx_v_result;
   goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">182</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">183</span>: #helper function for getting the unit cell volume. I need the averaged edge vectors used in the volume calculation for other calculations later (the derivative of the deformed volume with respect to the position of each vertex is used to calculate the volume correction force). However, the deformed volume is also used in that expression. Really these are two helper functions for the volume correction force</pre>
-<pre class="cython line score-0">&#xA0;<span class="">184</span>: #need to cythonize this. what should the return datatype look like, what shape should it have? last index will be contiguous if i make this a numpy array, which sure, whynot</pre>
-<pre class="cython line score-0">&#xA0;<span class="">185</span>: #but i need to look at instantiating numpy arrays in cython code. include a datatype for the numpy array</pre>
-<pre class="cython line score-0">&#xA0;<span class="">186</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">187</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">188</span>: cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements, int index, double[:,::1] vectors, double[:,::1]avg_vectors) nogil:</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">181</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">182</span>: #helper function for getting the unit cell volume. I need the averaged edge vectors used in the volume calculation for other calculations later (the derivative of the deformed volume with respect to the position of each vertex is used to calculate the volume correction force). However, the deformed volume is also used in that expression. Really these are two helper functions for the volume correction force</pre>
+<pre class="cython line score-0">&#xA0;<span class="">183</span>: #need to cythonize this. what should the return datatype look like, what shape should it have? last index will be contiguous if i make this a numpy array, which sure, whynot</pre>
+<pre class="cython line score-0">&#xA0;<span class="">184</span>: #but i need to look at instantiating numpy arrays in cython code. include a datatype for the numpy array</pre>
+<pre class="cython line score-0">&#xA0;<span class="">185</span>: @cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">186</span>: @cython.wraparound(False)</pre>
+<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">187</span>: cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements, int index, double[:,::1] vectors, double[:,::1]avg_vectors) nogil:</pre>
 <pre class='cython code score-2 '>static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, int __pyx_v_index, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors) {
   int __pyx_v_element[8];
   int __pyx_v_i;
@@ -1184,21 +1183,21 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   <span class='pyx_c_api'>__Pyx_WriteUnraisable</span>("get_volume_correction_force_cy_nogil.get_average_edge_vectors", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
   __pyx_L0:;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">189</span>:     """passing in the node positions for vertices, the row indices of the element of interest, a numpy array (8,3) for storing the positions of the nodes of the element, and a (3,3) numpy array that will be manipulated to get the resulting average edge vectors of the element"""</pre>
-<pre class="cython line score-0">&#xA0;<span class="">190</span>:     cdef int[8] element</pre>
-<pre class="cython line score-0">&#xA0;<span class="">191</span>:     cdef int i</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">192</span>:     for i in range(8):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">188</span>:     """passing in the node positions for vertices, the row indices of the element of interest, a numpy array (8,3) for storing the positions of the nodes of the element, and a (3,3) numpy array that will be manipulated to get the resulting average edge vectors of the element"""</pre>
+<pre class="cython line score-0">&#xA0;<span class="">189</span>:     cdef int[8] element</pre>
+<pre class="cython line score-0">&#xA0;<span class="">190</span>:     cdef int i</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">191</span>:     for i in range(8):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 8; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">193</span>:         element[i] = elements[index,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">192</span>:         element[i] = elements[index,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_index;
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_element[__pyx_v_i]) = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_2 * __pyx_v_elements.strides[0]) )) + __pyx_t_3)) )));
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">194</span>:     for i in range(8):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">193</span>:     for i in range(8):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 8; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">195</span>:         vectors[i,:] = node_posns[element[i],:]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">194</span>:         vectors[i,:] = node_posns[element[i],:]</pre>
 <pre class='cython code score-0 '>    __pyx_t_4.data = __pyx_v_node_posns.data;
     __pyx_t_4.memview = __pyx_v_node_posns.memview;
     __PYX_INC_MEMVIEW(&amp;__pyx_t_4, 0);
@@ -1225,7 +1224,7 @@ __pyx_t_5.shape[0] = __pyx_v_vectors.shape[1];
 __pyx_t_5.strides[0] = __pyx_v_vectors.strides[1];
     __pyx_t_5.suboffsets[0] = -1;
 
-if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 195, __pyx_L1_error)</span>
+if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 194, __pyx_L1_error)</span>
     __PYX_XDEC_MEMVIEW(&amp;__pyx_t_5, 0);
     __pyx_t_5.memview = NULL;
     __pyx_t_5.data = NULL;
@@ -1233,10 +1232,10 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 
     __pyx_t_4.memview = NULL;
     __pyx_t_4.data = NULL;
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">196</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">195</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">197</span>:         avg_vectors[0,i] = vectors[2,i] - vectors[0,i] + vectors[3,i] - vectors[1,i] + vectors[6,i] - vectors[4,i] + vectors[7,i] - vectors[5,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">196</span>:         avg_vectors[0,i] = vectors[2,i] - vectors[0,i] + vectors[3,i] - vectors[1,i] + vectors[6,i] - vectors[4,i] + vectors[7,i] - vectors[5,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 2;
     __pyx_t_2 = __pyx_v_i;
     __pyx_t_6 = 0;
@@ -1256,7 +1255,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 
     __pyx_t_20 = 0;
     __pyx_t_21 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_20 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_21)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_3 * __pyx_v_vectors.strides[0]) )) + __pyx_t_2)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_6 * __pyx_v_vectors.strides[0]) )) + __pyx_t_7)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_8 * __pyx_v_vectors.strides[0]) )) + __pyx_t_9)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_10 * __pyx_v_vectors.strides[0]) )) + __pyx_t_11)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_12 * __pyx_v_vectors.strides[0]) )) + __pyx_t_13)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_14 * __pyx_v_vectors.strides[0]) )) + __pyx_t_15)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_16 * __pyx_v_vectors.strides[0]) )) + __pyx_t_17)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_18 * __pyx_v_vectors.strides[0]) )) + __pyx_t_19)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">198</span>:         avg_vectors[1,i] = vectors[4,i] - vectors[0,i] + vectors[6,i] - vectors[2,i] + vectors[5,i] - vectors[1,i] + vectors[7,i] - vectors[3,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">197</span>:         avg_vectors[1,i] = vectors[4,i] - vectors[0,i] + vectors[6,i] - vectors[2,i] + vectors[5,i] - vectors[1,i] + vectors[7,i] - vectors[3,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_19 = 4;
     __pyx_t_18 = __pyx_v_i;
     __pyx_t_17 = 0;
@@ -1276,7 +1275,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 
     __pyx_t_21 = 1;
     __pyx_t_20 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_21 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_20)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_19 * __pyx_v_vectors.strides[0]) )) + __pyx_t_18)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_17 * __pyx_v_vectors.strides[0]) )) + __pyx_t_16)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_15 * __pyx_v_vectors.strides[0]) )) + __pyx_t_14)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_13 * __pyx_v_vectors.strides[0]) )) + __pyx_t_12)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_11 * __pyx_v_vectors.strides[0]) )) + __pyx_t_10)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_9 * __pyx_v_vectors.strides[0]) )) + __pyx_t_8)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_7 * __pyx_v_vectors.strides[0]) )) + __pyx_t_6)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_2 * __pyx_v_vectors.strides[0]) )) + __pyx_t_3)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">199</span>:         avg_vectors[2,i] = vectors[1,i] - vectors[0,i] + vectors[3,i] - vectors[2,i] + vectors[5,i] - vectors[4,i] + vectors[7,i] - vectors[6,i]</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">198</span>:         avg_vectors[2,i] = vectors[1,i] - vectors[0,i] + vectors[3,i] - vectors[2,i] + vectors[5,i] - vectors[4,i] + vectors[7,i] - vectors[6,i]</pre>
 <pre class='cython code score-0 '>    __pyx_t_3 = 1;
     __pyx_t_2 = __pyx_v_i;
     __pyx_t_6 = 0;
@@ -1297,440 +1296,43 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) &lt; 
     __pyx_t_21 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_20 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_21)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_3 * __pyx_v_vectors.strides[0]) )) + __pyx_t_2)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_6 * __pyx_v_vectors.strides[0]) )) + __pyx_t_7)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_8 * __pyx_v_vectors.strides[0]) )) + __pyx_t_9)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_10 * __pyx_v_vectors.strides[0]) )) + __pyx_t_11)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_12 * __pyx_v_vectors.strides[0]) )) + __pyx_t_13)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_14 * __pyx_v_vectors.strides[0]) )) + __pyx_t_15)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_16 * __pyx_v_vectors.strides[0]) )) + __pyx_t_17)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_18 * __pyx_v_vectors.strides[0]) )) + __pyx_t_19)) ))));
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">200</span>:     cdef int j</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">201</span>:     for i in range(3):</pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">199</span>:     cdef int j</pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">200</span>:     for i in range(3):</pre>
 <pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">202</span>:         for j in range(3):</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">201</span>:         for j in range(3):</pre>
 <pre class='cython code score-0 '>    for (__pyx_t_22 = 0; __pyx_t_22 &lt; 3; __pyx_t_22+=1) {
       __pyx_v_j = __pyx_t_22;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">203</span>:             avg_vectors[i,j] *= 0.25</pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">202</span>:             avg_vectors[i,j] *= 0.25</pre>
 <pre class='cython code score-0 '>      __pyx_t_19 = __pyx_v_i;
       __pyx_t_18 = __pyx_v_j;
       *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_19 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_18)) )) *= 0.25;
     }
   }
-</pre><pre class="cython line score-0">&#xA0;<span class="">204</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">205</span>: # cdef void get_average_edge_vectors(node_posns,elements,avg_vectors):</pre>
-<pre class="cython line score-0">&#xA0;<span class="">206</span>: #     counter = 0</pre>
-<pre class="cython line score-0">&#xA0;<span class="">207</span>: #     for el in elements:</pre>
-<pre class="cython line score-0">&#xA0;<span class="">208</span>: #         vectors = node_posns[el]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">209</span>: #         avg_vectors[0,:,counter] = vectors[2] - vectors[0] + vectors[3] - vectors[1] + vectors[6] - vectors[4] + vectors[7] - vectors[5]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">210</span>: #         avg_vectors[1,:,counter] = vectors[4] - vectors[0] + vectors[6] - vectors[2] + vectors[5] - vectors[1] + vectors[7] - vectors[3]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">211</span>: #         avg_vectors[2,:,counter] = vectors[1] - vectors[0] + vectors[3] - vectors[2] + vectors[5] - vectors[4] + vectors[7] - vectors[6]</pre>
-<pre class="cython line score-0">&#xA0;<span class="">212</span>: #         counter += 1</pre>
-<pre class="cython line score-0">&#xA0;<span class="">213</span>: #     avg_vectors *= 0.25</pre>
-<pre class="cython line score-0">&#xA0;<span class="">214</span>: #     return avg_vectors</pre>
-<pre class="cython line score-0">&#xA0;<span class="">215</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">216</span>: #@cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">217</span>: #@cython.wraparound(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">218</span>: #cdef Vec3 cross_prod(Vec3 vec1, Vec3 vec2):</pre>
-<pre class="cython line score-0">&#xA0;<span class="">219</span>: #    cdef Vec3 result</pre>
-<pre class="cython line score-0">&#xA0;<span class="">220</span>: #    result.x = vec1.y*vec2.z - vec1.z*vec2.y</pre>
-<pre class="cython line score-0">&#xA0;<span class="">221</span>: #    result.y = vec1.z*vec2.x - vec1.x*vec2.z</pre>
-<pre class="cython line score-0">&#xA0;<span class="">222</span>: #    result.z = vec1.x*vec2.y - vec1.y*vec2.x</pre>
-<pre class="cython line score-0">&#xA0;<span class="">223</span>: #    return result</pre>
-<pre class="cython line score-0">&#xA0;<span class="">224</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">225</span>: #@cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">226</span>: #@cython.wraparound(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">227</span>: #cdef double dot_prod(Vec3 vec1, Vec3 vec2):</pre>
-<pre class="cython line score-0">&#xA0;<span class="">228</span>:     #cdef double result = vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z</pre>
-<pre class="cython line score-0">&#xA0;<span class="">229</span>:     #return result</pre>
-<pre class="cython line score-0">&#xA0;<span class="">230</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">231</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">232</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-97" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">233</span>: cpdef double get_volume_correction_force_energy_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):</pre>
-<pre class='cython code score-97 '>static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_normalized(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force, CYTHON_UNUSED int __pyx_skip_dispatch) {
-  int __pyx_v_i;
-  int __pyx_v_j;
-  double __pyx_v_total_energy;
-  double __pyx_r;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_volume_correction_force_energy_normalized", 0);
-/* … */
-  /* function exit code */
-  __pyx_L0:;
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-
-/* Python wrapper */
-static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized[] = "calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified";
-static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  __Pyx_memviewslice __pyx_v_node_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_elements = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_kappa;
-  __Pyx_memviewslice __pyx_v_correction_force_el = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_vectors = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_avg_vectors = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_correction_force = { 0, 0, { 0 }, { 0 }, { 0 } };
-  PyObject *__pyx_r = 0;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_volume_correction_force_energy_normalized (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&amp;__pyx_n_s_node_posns,&amp;__pyx_n_s_elements,&amp;__pyx_n_s_kappa,&amp;__pyx_n_s_correction_force_el,&amp;__pyx_n_s_vectors,&amp;__pyx_n_s_avg_vectors,&amp;__pyx_n_s_correction_force,0};
-    PyObject* values[7] = {0,0,0,0,0,0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args);
-      switch (pos_args) {
-        case  7: values[6] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 6);
-        CYTHON_FALLTHROUGH;
-        case  6: values[5] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 5);
-        CYTHON_FALLTHROUGH;
-        case  5: values[4] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 4);
-        CYTHON_FALLTHROUGH;
-        case  4: values[3] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 3);
-        CYTHON_FALLTHROUGH;
-        case  3: values[2] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 2);
-        CYTHON_FALLTHROUGH;
-        case  2: values[1] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = <span class='py_c_api'>PyDict_Size</span>(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_node_posns)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (likely((values[1] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 1); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-        CYTHON_FALLTHROUGH;
-        case  2:
-        if (likely((values[2] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 2); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-        CYTHON_FALLTHROUGH;
-        case  3:
-        if (likely((values[3] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 3); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-        CYTHON_FALLTHROUGH;
-        case  4:
-        if (likely((values[4] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 4); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-        CYTHON_FALLTHROUGH;
-        case  5:
-        if (likely((values[5] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 5); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-        CYTHON_FALLTHROUGH;
-        case  6:
-        if (likely((values[6] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
-        else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, 6); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-        }
-      }
-      if (unlikely(kw_args &gt; 0)) {
-        if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_energy_normalized") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-      }
-    } else if (<span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args) != 7) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 0);
-      values[1] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 1);
-      values[2] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 2);
-      values[3] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 3);
-      values[4] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 4);
-      values[5] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 5);
-      values[6] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 6);
-    }
-    __pyx_v_node_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_elements = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_int</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_kappa = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_correction_force_el = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[3], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[4], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_avg_vectors = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[5], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-    __pyx_v_correction_force = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_double</span>(values[6], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 233, __pyx_L3_error)</span>
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_volume_correction_force_energy_normalized", 1, 7, 7, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L3_error)</span>
-  __pyx_L3_error:;
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("get_volume_correction_force_cy_nogil.get_volume_correction_force_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized(__pyx_self, __pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force);
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-
-  /* function exit code */
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force) {
-  PyObject *__pyx_r = NULL;
-  <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
-  <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_volume_correction_force_energy_normalized", 0);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("node_posns"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_elements.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("elements"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force_el"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("vectors"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("avg_vectors"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  if (unlikely(!__pyx_v_correction_force.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("correction_force"); <span class='error_goto'>__PYX_ERR(0, 233, __pyx_L1_error)</span> }
-  __pyx_t_1 = <span class='py_c_api'>PyFloat_FromDouble</span>(__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0));<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* function exit code */
-  __pyx_L1_error:;
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_AddTraceback</span>("get_volume_correction_force_cy_nogil.get_volume_correction_force_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_node_posns, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_elements, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_correction_force_el, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_vectors, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_avg_vectors, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_v_correction_force, 1);
-  <span class='refnanny'>__Pyx_XGIVEREF</span>(__pyx_r);
-  <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
-  return __pyx_r;
-}
-</pre><pre class="cython line score-0">&#xA0;<span class="">234</span>:     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""</pre>
-<pre class="cython line score-0">&#xA0;<span class="">235</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">236</span>:     cdef int j</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">237</span>:     for i in range(correction_force.shape[0]):</pre>
-<pre class='cython code score-0 '>  __pyx_t_1 = (__pyx_v_correction_force.shape[0]);
-  __pyx_t_2 = __pyx_t_1;
-  for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
-    __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">238</span>:         for j in range(3):</pre>
-<pre class='cython code score-0 '>    for (__pyx_t_4 = 0; __pyx_t_4 &lt; 3; __pyx_t_4+=1) {
-      __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">239</span>:             correction_force[i][j] = 0.0</pre>
-<pre class='cython code score-0 '>      __pyx_t_5 = __pyx_v_i;
-      __pyx_t_6 = __pyx_v_j;
-      *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_5 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_6)) )) = 0.0;
-    }
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">240</span>:     cdef double total_energy = 0</pre>
-<pre class='cython code score-0 '>  __pyx_v_total_energy = 0.0;
-</pre><pre class="cython line score-4" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">241</span>:     with nogil:</pre>
-<pre class='cython code score-4 '>  {
-      #ifdef WITH_THREAD
-      PyThreadState *_save;
-      Py_UNBLOCK_THREADS
-      <span class='pyx_c_api'>__Pyx_FastGIL_Remember</span>();
-      #endif
-      /*try:*/ {
-/* … */
-      /*finally:*/ {
-        /*normal exit:*/{
-          #ifdef WITH_THREAD
-          <span class='pyx_c_api'>__Pyx_FastGIL_Forget</span>();
-          Py_BLOCK_THREADS
-          #endif
-          goto __pyx_L9;
-        }
-        __pyx_L9:;
-      }
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">242</span>:         for i in range(elements.shape[0]):</pre>
-<pre class='cython code score-0 '>        __pyx_t_1 = (__pyx_v_elements.shape[0]);
-        __pyx_t_2 = __pyx_t_1;
-        for (__pyx_t_3 = 0; __pyx_t_3 &lt; __pyx_t_2; __pyx_t_3+=1) {
-          __pyx_v_i = __pyx_t_3;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">243</span>:             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)</pre>
-<pre class='cython code score-0 '>          __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">244</span>:             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)</pre>
-<pre class='cython code score-0 '>          __pyx_v_total_energy = (__pyx_v_total_energy + __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_el_normalized(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_correction_force_el));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">245</span>:             for j in range(8):</pre>
-<pre class='cython code score-0 '>          for (__pyx_t_4 = 0; __pyx_t_4 &lt; 8; __pyx_t_4+=1) {
-            __pyx_v_j = __pyx_t_4;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">246</span>:                 correction_force[elements[i,j]][0] += correction_force_el[j][0]</pre>
-<pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
-            __pyx_t_5 = 0;
-            __pyx_t_7 = __pyx_v_i;
-            __pyx_t_8 = __pyx_v_j;
-            __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
-            __pyx_t_10 = 0;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">247</span>:                 correction_force[elements[i,j]][1] += correction_force_el[j][1]</pre>
-<pre class='cython code score-0 '>            __pyx_t_5 = __pyx_v_j;
-            __pyx_t_6 = 1;
-            __pyx_t_8 = __pyx_v_i;
-            __pyx_t_7 = __pyx_v_j;
-            __pyx_t_10 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_8 * __pyx_v_elements.strides[0]) )) + __pyx_t_7)) )));
-            __pyx_t_9 = 1;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">248</span>:                 correction_force[elements[i,j]][2] += correction_force_el[j][2]</pre>
-<pre class='cython code score-0 '>            __pyx_t_6 = __pyx_v_j;
-            __pyx_t_5 = 2;
-            __pyx_t_7 = __pyx_v_i;
-            __pyx_t_8 = __pyx_v_j;
-            __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
-            __pyx_t_10 = 2;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-          }
-        }
-      }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">249</span>:     return total_energy</pre>
-<pre class='cython code score-0 '>  __pyx_r = __pyx_v_total_energy;
-  goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">250</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">251</span>: @cython.boundscheck(False)</pre>
-<pre class="cython line score-0">&#xA0;<span class="">252</span>: @cython.wraparound(False)</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">253</span>: cdef double get_volume_correction_force_energy_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:</pre>
-<pre class='cython code score-0 '>static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_el_normalized(__Pyx_memviewslice __pyx_v_avg_vec, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force) {
-  double __pyx_v_acrossb[3];
-  double __pyx_v_bcrossc[3];
-  double __pyx_v_ccrossa[3];
-  int __pyx_v_i;
-  double __pyx_v_avg_a[3];
-  double __pyx_v_avg_b[3];
-  double __pyx_v_avg_c[3];
-  double __pyx_v_adotbcrossc;
-  double __pyx_v_gradV1[3];
-  double __pyx_v_gradV8[3];
-  double __pyx_v_gradV3[3];
-  double __pyx_v_gradV6[3];
-  double __pyx_v_gradV7[3];
-  double __pyx_v_gradV2[3];
-  double __pyx_v_gradV5[3];
-  double __pyx_v_gradV4[3];
-  double __pyx_v_prefactor;
-  double __pyx_v_energy;
-  double __pyx_r;
-/* … */
-  /* function exit code */
-  __pyx_L0:;
-  return __pyx_r;
-}
-</pre><pre class="cython line score-0">&#xA0;<span class="">254</span>:     cdef double[3] acrossb</pre>
-<pre class="cython line score-0">&#xA0;<span class="">255</span>:     cdef double[3] bcrossc</pre>
-<pre class="cython line score-0">&#xA0;<span class="">256</span>:     cdef double[3] ccrossa</pre>
-<pre class="cython line score-0">&#xA0;<span class="">257</span>:     cdef int i</pre>
-<pre class="cython line score-0">&#xA0;<span class="">258</span>:     cdef double[3] avg_a</pre>
-<pre class="cython line score-0">&#xA0;<span class="">259</span>:     cdef double[3] avg_b</pre>
-<pre class="cython line score-0">&#xA0;<span class="">260</span>:     cdef double[3] avg_c</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">261</span>:     for i in range(3):</pre>
-<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">262</span>:         avg_a[i] = 0.</pre>
-<pre class='cython code score-0 '>    (__pyx_v_avg_a[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">263</span>:         avg_b[i] = 0.</pre>
-<pre class='cython code score-0 '>    (__pyx_v_avg_b[__pyx_v_i]) = 0.;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">264</span>:         avg_c[i] = 0.</pre>
-<pre class='cython code score-0 '>    (__pyx_v_avg_c[__pyx_v_i]) = 0.;
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">265</span>:     for i in range(3):</pre>
-<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">266</span>:         avg_a[i] += avg_vec[0,i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_3 = 0;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">267</span>:         avg_b[i] += avg_vec[1,i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_4 = 1;
-    __pyx_t_3 = __pyx_v_i;
-    (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">268</span>:         avg_c[i] += avg_vec[2,i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_3 = 2;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">269</span>:     cross_prod(avg_a,avg_b,acrossb)</pre>
-<pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">270</span>:     cross_prod(avg_b,avg_c,bcrossc)</pre>
-<pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">271</span>:     cross_prod(avg_c,avg_a,ccrossa)</pre>
-<pre class='cython code score-0 '>  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">272</span>:     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)</pre>
-<pre class='cython code score-0 '>  __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
-</pre><pre class="cython line score-0">&#xA0;<span class="">273</span>:     cdef double[3] gradV1</pre>
-<pre class="cython line score-0">&#xA0;<span class="">274</span>:     cdef double[3] gradV8</pre>
-<pre class="cython line score-0">&#xA0;<span class="">275</span>:     cdef double[3] gradV3</pre>
-<pre class="cython line score-0">&#xA0;<span class="">276</span>:     cdef double[3] gradV6</pre>
-<pre class="cython line score-0">&#xA0;<span class="">277</span>:     cdef double[3] gradV7</pre>
-<pre class="cython line score-0">&#xA0;<span class="">278</span>:     cdef double[3] gradV2</pre>
-<pre class="cython line score-0">&#xA0;<span class="">279</span>:     cdef double[3] gradV5</pre>
-<pre class="cython line score-0">&#xA0;<span class="">280</span>:     cdef double[3] gradV4</pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">281</span>:     for i in range(3):</pre>
-<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">282</span>:         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">283</span>:         gradV8[i] = -1*gradV1[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">284</span>:         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">285</span>:         gradV6[i] = -1*gradV3[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">286</span>:         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">287</span>:         gradV2[i] = -1*gradV7[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">288</span>:         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">289</span>:         gradV4[i] = -1*gradV5[i]</pre>
-<pre class='cython code score-0 '>    (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">290</span>:     cdef double prefactor = -kappa * ((adotbcrossc - 1))</pre>
-<pre class='cython code score-0 '>  __pyx_v_prefactor = ((-__pyx_v_kappa) * (__pyx_v_adotbcrossc - 1.0));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">291</span>:     for i in range(3):</pre>
-<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">292</span>:         correction_force[0][i] = prefactor*gradV1[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_4 = 0;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">293</span>:         correction_force[1][i] = prefactor*gradV2[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_3 = 1;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">294</span>:         correction_force[2][i] = prefactor*gradV3[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_4 = 2;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">295</span>:         correction_force[3][i] = prefactor*gradV4[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_3 = 3;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">296</span>:         correction_force[4][i] = prefactor*gradV5[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_4 = 4;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">297</span>:         correction_force[5][i] = prefactor*gradV6[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_3 = 5;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">298</span>:         correction_force[6][i] = prefactor*gradV7[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_4 = 6;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">299</span>:         correction_force[7][i] = prefactor*gradV8[i]</pre>
-<pre class='cython code score-0 '>    __pyx_t_3 = 7;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
-  }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">300</span>:     cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)</pre>
-<pre class='cython code score-0 '>  __pyx_v_energy = ((__pyx_v_kappa / 2.0) * pow((__pyx_v_adotbcrossc - 1.0), 2.0));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">301</span>:     return energy</pre>
-<pre class='cython code score-0 '>  __pyx_r = __pyx_v_energy;
-  goto __pyx_L0;
-</pre></div></body></html>
+</pre><pre class="cython line score-0">&#xA0;<span class="">203</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">204</span>: # cdef void get_average_edge_vectors(node_posns,elements,avg_vectors):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">205</span>: #     counter = 0</pre>
+<pre class="cython line score-0">&#xA0;<span class="">206</span>: #     for el in elements:</pre>
+<pre class="cython line score-0">&#xA0;<span class="">207</span>: #         vectors = node_posns[el]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">208</span>: #         avg_vectors[0,:,counter] = vectors[2] - vectors[0] + vectors[3] - vectors[1] + vectors[6] - vectors[4] + vectors[7] - vectors[5]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">209</span>: #         avg_vectors[1,:,counter] = vectors[4] - vectors[0] + vectors[6] - vectors[2] + vectors[5] - vectors[1] + vectors[7] - vectors[3]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">210</span>: #         avg_vectors[2,:,counter] = vectors[1] - vectors[0] + vectors[3] - vectors[2] + vectors[5] - vectors[4] + vectors[7] - vectors[6]</pre>
+<pre class="cython line score-0">&#xA0;<span class="">211</span>: #         counter += 1</pre>
+<pre class="cython line score-0">&#xA0;<span class="">212</span>: #     avg_vectors *= 0.25</pre>
+<pre class="cython line score-0">&#xA0;<span class="">213</span>: #     return avg_vectors</pre>
+<pre class="cython line score-0">&#xA0;<span class="">214</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">215</span>: #@cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">216</span>: #@cython.wraparound(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">217</span>: #cdef Vec3 cross_prod(Vec3 vec1, Vec3 vec2):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">218</span>: #    cdef Vec3 result</pre>
+<pre class="cython line score-0">&#xA0;<span class="">219</span>: #    result.x = vec1.y*vec2.z - vec1.z*vec2.y</pre>
+<pre class="cython line score-0">&#xA0;<span class="">220</span>: #    result.y = vec1.z*vec2.x - vec1.x*vec2.z</pre>
+<pre class="cython line score-0">&#xA0;<span class="">221</span>: #    result.z = vec1.x*vec2.y - vec1.y*vec2.x</pre>
+<pre class="cython line score-0">&#xA0;<span class="">222</span>: #    return result</pre>
+<pre class="cython line score-0">&#xA0;<span class="">223</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">224</span>: #@cython.boundscheck(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">225</span>: #@cython.wraparound(False)</pre>
+<pre class="cython line score-0">&#xA0;<span class="">226</span>: #cdef double dot_prod(Vec3 vec1, Vec3 vec2):</pre>
+<pre class="cython line score-0">&#xA0;<span class="">227</span>:     #cdef double result = vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z</pre>
+<pre class="cython line score-0">&#xA0;<span class="">228</span>:     #return result</pre>
+</div></body></html>

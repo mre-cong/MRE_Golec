@@ -61,12 +61,11 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     def solout(t,y):
         solutions.append([t,*y])
     tolerance = 1e-4
-    accel_spike_tolerance = 1e3
-    max_iters = 30
+    max_iters = 15
     v0 = np.zeros(x0.shape)
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     N_nodes = int(x0.shape[0])
-    my_nsteps = 300
+    my_nsteps = 200
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
     r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
     r.set_solout(solout)
@@ -75,6 +74,9 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
+        #checking if the last solution vector in the solutions variable matches the solution returned by the integration method while debugging an issue with mismatch between accelerations from criteria object and from get_accel() function. issue has been resolved
+        # if not np.allclose(sol,solutions[-1][1:]):
+        #     print('solution returned by integrator and last solution stored by solout do not match')
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
@@ -94,6 +96,11 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
             if i != 0:
                 criteria.append_criteria(other_criteria)
+            #below was used while debugging, found an error where i was not passing the drag coefficient to the criteria object, resulting in the default value being used, leading to incorrect values
+            # print(f'Last recorded acceleration norm average from criteria object is:{np.round(criteria.a_norm_avg[-1],decimals=6)}')
+            # v_norm = np.linalg.norm(np.reshape(sol[int(sol.shape[0]/2):],(int(sol.shape[0]/2/3),3)),axis=1)
+            # v_norm_avg = np.sum(v_norm)/np.shape(v_norm)[0]
+            # print(f'solution returned by integration has velocity norm average of:{np.round(v_norm_avg,decimals=6)}\nLast recorded velocity norm average from criteria object is:{np.round(criteria.v_norm_avg[-1],decimals=6)}')
             break
         else:
             y_0 = sol
@@ -102,7 +109,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             else:
                 last_posns = np.reshape(last_sol[:N_nodes*3],(N_nodes,3))
                 mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
-            if i != 0 and np.max(other_criteria.a_norm_avg) > accel_spike_tolerance:
+            if i != 0 and np.max(other_criteria.a_norm_avg) > 1e3:
                 print(f'strong accelerations detected during integration run {i}')
                 my_nsteps = int(my_nsteps/2)
                 if my_nsteps < 10:
@@ -120,22 +127,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
                 y_0 = last_sol.copy()
             elif i != 0:
                 criteria.append_criteria(other_criteria)
-            if np.max(criteria.a_norm_avg) < accel_spike_tolerance:
-                last_sol = sol
-            elif i == 0:#if the acceleration spike happens during the first integration run...
-                print(f'strong accelerations detected during integration run {i}')
-                my_nsteps = int(my_nsteps/2)
-                if my_nsteps < 10:
-                    print(f'total steps allowed down to: {my_nsteps}\nNo acceptable solution found, returning starting condition')
-                    sol = y_0
-                    del y_0
-                    del solutions
-                    break
-                print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
-                print(f'running with halved maximum number of steps: {my_nsteps}')
-                r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
-                print(f'Increasing drag coefficient from {drag} to {10*drag}')
-                drag *= 10
+            last_sol = sol
         solutions = []
         r.set_solout(solout)
     # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
@@ -155,7 +147,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     plt.close()
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
-    # criteria.plot_criteria(output_dir)
+    criteria.plot_criteria(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     # criteria.plot_criteria_v_time(output_dir)
@@ -315,7 +307,7 @@ class SimCriteria:
     
     def append_criteria(self,other):
         """Append data from one SimCriteria object to another, by appending each member variable. Special cases (like time, iteration number) are appended in a manner to reflect the existence of prior integration iterations of the simulation"""
-        #vars(self) returns a dictionary containing the member variables names and values as key-value pairs, allowing for this dynamic sort of access, meaning that extending the class with more member variables will allow this method to be used without changes (unless a new special case arises)
+        #vars(self) returns a dictionary containing the member variables names and values as key-value pairs, allowing for this dynamic sort of access, meaning that extendingh the class with more member variables will allow this method to be used without changes (unless a new special case arises)
         my_keys = list(vars(self).keys())
         for key in my_keys:
             if key != 'iter_number' and key != 'time':
@@ -1234,7 +1226,7 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
-    drag = 10
+    drag = 100
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -1269,7 +1261,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-06_hysteresis_results_order_{n_discretization}_drag_{drag}_w_v_criteria/'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-08-31_results_drag100_added_velocity_criteria/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1282,7 +1274,7 @@ def main2():
     H_mag = 1/mu0
     n_field_steps = 1
     H_step = H_mag/n_field_steps
-    Hext_angle = (2*np.pi/360)*0.1#30
+    Hext_angle = (2*np.pi/360)*30
     Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])

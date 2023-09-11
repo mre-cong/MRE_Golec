@@ -1363,20 +1363,6 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
  * cdef inline object PyArray_MultiIterNew1(a):
  */
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
-struct __pyx_ctuple_double__and_double;
-typedef struct __pyx_ctuple_double__and_double __pyx_ctuple_double__and_double;
-
-/* "magnetism.pyx":423
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef (double, double) get_wca_force_energy(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double sigma_over_separation = sigma/r
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- */
-struct __pyx_ctuple_double__and_double {
-  double f0;
-  double f1;
-};
 
 /* "View.MemoryView":106
  * 
@@ -2371,7 +2357,6 @@ static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
 static double __pyx_f_9magnetism_dot_prod(__Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
 static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force_energy(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
 static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice, double, double); /*proto*/
 static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int __pyx_skip_dispatch); /*proto*/
 static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, double, int __pyx_skip_dispatch); /*proto*/
@@ -2382,9 +2367,6 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
 static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice, __Pyx_memviewslice, double); /*proto*/
 static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx_memviewslice, __Pyx_memviewslice, double, double); /*proto*/
 static double __pyx_f_9magnetism_get_wca_force(double, double, double); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_energy_normalized(__Pyx_memviewslice, __Pyx_memviewslice, double, double, int __pyx_skip_dispatch); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_energy_normalized(__Pyx_memviewslice, __Pyx_memviewslice, double, double); /*proto*/
-static __pyx_ctuple_double__and_double __pyx_f_9magnetism_get_wca_force_energy(double, double, double); /*proto*/
 static int __Pyx_carray_from_py_double(PyObject *, double *, Py_ssize_t); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
@@ -2447,11 +2429,11 @@ static const char __pyx_k_T[] = "T{";
   static const char __pyx_k_id[] = "id";
   static const char __pyx_k_np[] = "np";
   static const char __pyx_k_pi[] = "pi";
-  static const char __pyx_k__26[] = "^";
-  static const char __pyx_k__27[] = "";
-  static const char __pyx_k__28[] = ":";
-static const char __pyx_k__29[] = "}";
-static const char __pyx_k__30[] = ",";
+  static const char __pyx_k__24[] = "^";
+  static const char __pyx_k__25[] = "";
+  static const char __pyx_k__26[] = ":";
+static const char __pyx_k__27[] = "}";
+static const char __pyx_k__28[] = ",";
 static const char __pyx_k_chi[] = "chi";
 static const char __pyx_k_l_e[] = "l_e";
 static const char __pyx_k_new[] = "__new__";
@@ -2579,11 +2561,11 @@ static PyObject *__pyx_n_s_TypeError;
 static PyObject *__pyx_kp_s_Unable_to_convert_item_to_object;
 static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_View_MemoryView;
+static PyObject *__pyx_kp_b__24;
+static PyObject *__pyx_kp_b__25;
 static PyObject *__pyx_kp_b__26;
 static PyObject *__pyx_kp_b__27;
-static PyObject *__pyx_kp_b__28;
-static PyObject *__pyx_kp_b__29;
-static PyObject *__pyx_kp_u__30;
+static PyObject *__pyx_kp_u__28;
 static PyObject *__pyx_n_s_allocate_buffer;
 static PyObject *__pyx_n_s_base;
 static PyObject *__pyx_n_s_c;
@@ -2671,7 +2653,6 @@ static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED 
 static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e); /* proto */
 static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size); /* proto */
 static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e); /* proto */
-static PyObject *__pyx_pf_9magnetism_12get_dip_dip_forces_energy_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -2728,10 +2709,10 @@ static PyObject *__pyx_int_136983863;
 static PyObject *__pyx_int_184977713;
 static PyObject *__pyx_int_neg_1;
 static PyObject *__pyx_tuple_;
-static PyObject *__pyx_slice__5;
+static PyObject *__pyx_slice__3;
 static PyObject *__pyx_tuple__2;
-static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_tuple__4;
+static PyObject *__pyx_tuple__5;
 static PyObject *__pyx_tuple__6;
 static PyObject *__pyx_tuple__7;
 static PyObject *__pyx_tuple__8;
@@ -2750,15 +2731,13 @@ static PyObject *__pyx_tuple__20;
 static PyObject *__pyx_tuple__21;
 static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__23;
-static PyObject *__pyx_tuple__24;
-static PyObject *__pyx_tuple__25;
+static PyObject *__pyx_tuple__29;
+static PyObject *__pyx_tuple__30;
 static PyObject *__pyx_tuple__31;
 static PyObject *__pyx_tuple__32;
 static PyObject *__pyx_tuple__33;
 static PyObject *__pyx_tuple__34;
-static PyObject *__pyx_tuple__35;
-static PyObject *__pyx_tuple__36;
-static PyObject *__pyx_codeobj__37;
+static PyObject *__pyx_codeobj__35;
 /* Late includes */
 
 /* "magnetism.pyx":13
@@ -3135,359 +3114,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force(__Pyx_memviewslice __
   return __pyx_r;
 }
 
-/* "magnetism.pyx":43
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force_energy(double[:] m_i, double[:] m_j, double[:] r_i, double[:] r_j):             # <<<<<<<<<<<<<<
- *     """Get the force on dipole i due to dipole j, and the energy of the dipole-dipole interaction as the 4th element of the array"""
- *     cdef double[3] rij
- */
-
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_force_energy(__Pyx_memviewslice __pyx_v_m_i, __Pyx_memviewslice __pyx_v_m_j, __Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j) {
-  double __pyx_v_rij[3];
-  int __pyx_v_i;
-  double __pyx_v_rij_mag;
-  PyArrayObject *__pyx_v_force_energy = 0;
-  double __pyx_v_mi_dot_r;
-  double __pyx_v_mj_dot_r;
-  double __pyx_v_m_dot_m;
-  double __pyx_v_prefactor;
-  double __pyx_v_energy_prefactor;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_force_energy;
-  __Pyx_Buffer __pyx_pybuffer_force_energy;
-  PyArrayObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
-  Py_ssize_t __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  struct __pyx_array_obj *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  __Pyx_memviewslice __pyx_t_7 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_t_8 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  PyObject *__pyx_t_9 = NULL;
-  PyObject *__pyx_t_10 = NULL;
-  PyArrayObject *__pyx_t_11 = NULL;
-  double __pyx_t_12;
-  double __pyx_t_13;
-  Py_ssize_t __pyx_t_14;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("get_dip_dip_force_energy", 0);
-  __pyx_pybuffer_force_energy.pybuffer.buf = NULL;
-  __pyx_pybuffer_force_energy.refcount = 0;
-  __pyx_pybuffernd_force_energy.data = NULL;
-  __pyx_pybuffernd_force_energy.rcbuffer = &__pyx_pybuffer_force_energy;
-
-  /* "magnetism.pyx":47
- *     cdef double[3] rij
- *     cdef int i
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "magnetism.pyx":48
- *     cdef int i
- *     for i in range(3):
- *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)
- */
-    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_3 = __pyx_v_i;
-    (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
-  }
-
-  /* "magnetism.pyx":49
- *     for i in range(3):
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
-  __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
-  __pyx_t_7.memview = NULL;
-  __pyx_t_7.data = NULL;
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __pyx_t_8.memview = NULL;
-  __pyx_t_8.data = NULL;
-
-  /* "magnetism.pyx":50
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- *     cdef double mj_dot_r = dot_prod(m_j,rij)
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple__4, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 50, __pyx_L1_error)
-  __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer, (PyObject*)__pyx_t_11, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_force_energy = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 50, __pyx_L1_error)
-    } else {__pyx_pybuffernd_force_energy.diminfo[0].strides = __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force_energy.diminfo[0].shape = __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_t_11 = 0;
-  __pyx_v_force_energy = ((PyArrayObject *)__pyx_t_10);
-  __pyx_t_10 = 0;
-
-  /* "magnetism.pyx":51
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double mi_dot_r = dot_prod(m_i,rij)             # <<<<<<<<<<<<<<
- *     cdef double mj_dot_r = dot_prod(m_j,rij)
- *     cdef double m_dot_m = dot_prod(m_i,m_j)
- */
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_10 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_4 = __pyx_array_new(__pyx_t_10, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_v_mi_dot_r = __pyx_f_9magnetism_dot_prod(__pyx_v_m_i, __pyx_t_8);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __pyx_t_8.memview = NULL;
-  __pyx_t_8.data = NULL;
-
-  /* "magnetism.pyx":52
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- *     cdef double mj_dot_r = dot_prod(m_j,rij)             # <<<<<<<<<<<<<<
- *     cdef double m_dot_m = dot_prod(m_i,m_j)
- *     cdef double prefactor = 3*mu0/(4*np.pi*pow(rij_mag,5))
- */
-  __pyx_t_10 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_10), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_v_mj_dot_r = __pyx_f_9magnetism_dot_prod(__pyx_v_m_j, __pyx_t_8);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __pyx_t_8.memview = NULL;
-  __pyx_t_8.data = NULL;
-
-  /* "magnetism.pyx":53
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- *     cdef double mj_dot_r = dot_prod(m_j,rij)
- *     cdef double m_dot_m = dot_prod(m_i,m_j)             # <<<<<<<<<<<<<<
- *     cdef double prefactor = 3*mu0/(4*np.pi*pow(rij_mag,5))
- *     for i in range(3):
- */
-  __pyx_v_m_dot_m = __pyx_f_9magnetism_dot_prod(__pyx_v_m_i, __pyx_v_m_j);
-
-  /* "magnetism.pyx":54
- *     cdef double mj_dot_r = dot_prod(m_j,rij)
- *     cdef double m_dot_m = dot_prod(m_i,m_j)
- *     cdef double prefactor = 3*mu0/(4*np.pi*pow(rij_mag,5))             # <<<<<<<<<<<<<<
- *     for i in range(3):
- *         force_energy[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
- */
-  __pyx_t_10 = PyFloat_FromDouble((3.0 * __pyx_v_9magnetism_mu0)); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyNumber_Multiply(__pyx_int_4, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 5.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_9 = PyNumber_Multiply(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyNumber_Divide(__pyx_t_10, __pyx_t_9); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_v_prefactor = __pyx_t_12;
-
-  /* "magnetism.pyx":55
- *     cdef double m_dot_m = dot_prod(m_i,m_j)
- *     cdef double prefactor = 3*mu0/(4*np.pi*pow(rij_mag,5))
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         force_energy[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
- *     cdef double energy_prefactor = -1*mu0/(4*np.pi*pow(rij_mag,3))
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "magnetism.pyx":56
- *     cdef double prefactor = 3*mu0/(4*np.pi*pow(rij_mag,5))
- *     for i in range(3):
- *         force_energy[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))             # <<<<<<<<<<<<<<
- *     cdef double energy_prefactor = -1*mu0/(4*np.pi*pow(rij_mag,3))
- *     force_energy[3] = energy_prefactor*(3*mi_dot_r*mj_dot_r/pow(rij_mag,2) - m_dot_m)
- */
-    __pyx_t_3 = __pyx_v_i;
-    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_12 = (((5.0 * (__pyx_v_rij[__pyx_v_i])) * __pyx_v_mi_dot_r) * __pyx_v_mj_dot_r);
-    __pyx_t_13 = pow(__pyx_v_rij_mag, 2.0);
-    if (unlikely(__pyx_t_13 == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 56, __pyx_L1_error)
-    }
-    __pyx_t_14 = __pyx_v_i;
-    *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_force_energy.diminfo[0].strides) = (__pyx_v_prefactor * ((((__pyx_v_mj_dot_r * (*((double *) ( /* dim=0 */ (__pyx_v_m_i.data + __pyx_t_3 * __pyx_v_m_i.strides[0]) )))) + (__pyx_v_mi_dot_r * (*((double *) ( /* dim=0 */ (__pyx_v_m_j.data + __pyx_t_2 * __pyx_v_m_j.strides[0]) ))))) + (__pyx_v_m_dot_m * (__pyx_v_rij[__pyx_v_i]))) - (__pyx_t_12 / __pyx_t_13)));
-  }
-
-  /* "magnetism.pyx":57
- *     for i in range(3):
- *         force_energy[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
- *     cdef double energy_prefactor = -1*mu0/(4*np.pi*pow(rij_mag,3))             # <<<<<<<<<<<<<<
- *     force_energy[3] = energy_prefactor*(3*mi_dot_r*mj_dot_r/pow(rij_mag,2) - m_dot_m)
- *     return force_energy
- */
-  __pyx_t_6 = PyFloat_FromDouble((-1.0 * __pyx_v_9magnetism_mu0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_pi); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = PyNumber_Multiply(__pyx_int_4, __pyx_t_10); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 3.0)); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_9, __pyx_t_10); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyNumber_Divide(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_13 = __pyx_PyFloat_AsDouble(__pyx_t_10); if (unlikely((__pyx_t_13 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_v_energy_prefactor = __pyx_t_13;
-
-  /* "magnetism.pyx":58
- *         force_energy[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
- *     cdef double energy_prefactor = -1*mu0/(4*np.pi*pow(rij_mag,3))
- *     force_energy[3] = energy_prefactor*(3*mi_dot_r*mj_dot_r/pow(rij_mag,2) - m_dot_m)             # <<<<<<<<<<<<<<
- *     return force_energy
- * 
- */
-  __pyx_t_13 = ((3.0 * __pyx_v_mi_dot_r) * __pyx_v_mj_dot_r);
-  __pyx_t_12 = pow(__pyx_v_rij_mag, 2.0);
-  if (unlikely(__pyx_t_12 == 0)) {
-    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 58, __pyx_L1_error)
-  }
-  __pyx_t_2 = 3;
-  *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf, __pyx_t_2, __pyx_pybuffernd_force_energy.diminfo[0].strides) = (__pyx_v_energy_prefactor * ((__pyx_t_13 / __pyx_t_12) - __pyx_v_m_dot_m));
-
-  /* "magnetism.pyx":59
- *     cdef double energy_prefactor = -1*mu0/(4*np.pi*pow(rij_mag,3))
- *     force_energy[3] = energy_prefactor*(3*mi_dot_r*mj_dot_r/pow(rij_mag,2) - m_dot_m)
- *     return force_energy             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
- */
-  __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __Pyx_INCREF(((PyObject *)__pyx_v_force_energy));
-  __pyx_r = ((PyArrayObject *)__pyx_v_force_energy);
-  goto __pyx_L0;
-
-  /* "magnetism.pyx":43
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_dip_dip_force_energy(double[:] m_i, double[:] m_j, double[:] r_i, double[:] r_j):             # <<<<<<<<<<<<<<
- *     """Get the force on dipole i due to dipole j, and the energy of the dipole-dipole interaction as the 4th element of the array"""
- *     cdef double[3] rij
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(((PyObject *)__pyx_t_4));
-  __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_XDECREF(__pyx_t_10);
-  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer);
-  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("magnetism.get_dip_dip_force_energy", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 0;
-  goto __pyx_L2;
-  __pyx_L0:;
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer);
-  __pyx_L2:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_force_energy);
-  __Pyx_XGIVEREF((PyObject *)__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "magnetism.pyx":64
+/* "magnetism.pyx":44
  * @cython.wraparound(False)
  * #carbonyl iron parameters Ms = 1990 kA/m, chi_initial = 131
  * cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):             # <<<<<<<<<<<<<<
@@ -3524,7 +3151,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   __pyx_pybuffernd_M.data = NULL;
   __pyx_pybuffernd_M.rcbuffer = &__pyx_pybuffer_M;
 
-  /* "magnetism.pyx":65
+  /* "magnetism.pyx":45
  * #carbonyl iron parameters Ms = 1990 kA/m, chi_initial = 131
  * cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):
  *     cdef double H_mag = sqrt(dot_prod(H,H))             # <<<<<<<<<<<<<<
@@ -3533,7 +3160,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
  */
   __pyx_v_H_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_v_H, __pyx_v_H));
 
-  /* "magnetism.pyx":66
+  /* "magnetism.pyx":46
  * cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):
  *     cdef double H_mag = sqrt(dot_prod(H,H))
  *     if H_mag == 0:             # <<<<<<<<<<<<<<
@@ -3543,7 +3170,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   __pyx_t_1 = ((__pyx_v_H_mag == 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "magnetism.pyx":67
+    /* "magnetism.pyx":47
  *     cdef double H_mag = sqrt(dot_prod(H,H))
  *     if H_mag == 0:
  *         return np.zeros((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -3551,30 +3178,30 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
  *     cdef np.ndarray[np.float64_t, ndim=1] M = np.empty((3,),dtype=np.float64)
  */
     __Pyx_XDECREF(((PyObject *)__pyx_r));
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 67, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 67, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 47, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 67, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 47, __pyx_L1_error)
     __pyx_r = ((PyArrayObject *)__pyx_t_5);
     __pyx_t_5 = 0;
     goto __pyx_L0;
 
-    /* "magnetism.pyx":66
+    /* "magnetism.pyx":46
  * cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):
  *     cdef double H_mag = sqrt(dot_prod(H,H))
  *     if H_mag == 0:             # <<<<<<<<<<<<<<
@@ -3583,7 +3210,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
  */
   }
 
-  /* "magnetism.pyx":68
+  /* "magnetism.pyx":48
  *     if H_mag == 0:
  *         return np.zeros((3,),dtype=np.float64)
  *     cdef double M_mag = Ms*chi*H_mag/(Ms + chi*H_mag)             # <<<<<<<<<<<<<<
@@ -3594,42 +3221,42 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   __pyx_t_7 = (__pyx_v_Ms + (__pyx_v_chi * __pyx_v_H_mag));
   if (unlikely(__pyx_t_7 == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 68, __pyx_L1_error)
+    __PYX_ERR(0, 48, __pyx_L1_error)
   }
   __pyx_v_M_mag = (__pyx_t_6 / __pyx_t_7);
 
-  /* "magnetism.pyx":69
+  /* "magnetism.pyx":49
  *         return np.zeros((3,),dtype=np.float64)
  *     cdef double M_mag = Ms*chi*H_mag/(Ms + chi*H_mag)
  *     cdef np.ndarray[np.float64_t, ndim=1] M = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef double[3] H_hat
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 69, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 69, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 49, __pyx_L1_error)
   __pyx_t_8 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_M.rcbuffer->pybuffer, (PyObject*)__pyx_t_8, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_M = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_M.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 69, __pyx_L1_error)
+      __PYX_ERR(0, 49, __pyx_L1_error)
     } else {__pyx_pybuffernd_M.diminfo[0].strides = __pyx_pybuffernd_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_M.diminfo[0].shape = __pyx_pybuffernd_M.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -3637,7 +3264,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   __pyx_v_M = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "magnetism.pyx":72
+  /* "magnetism.pyx":52
  *     cdef int i
  *     cdef double[3] H_hat
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3647,7 +3274,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   for (__pyx_t_9 = 0; __pyx_t_9 < 3; __pyx_t_9+=1) {
     __pyx_v_i = __pyx_t_9;
 
-    /* "magnetism.pyx":73
+    /* "magnetism.pyx":53
  *     cdef double[3] H_hat
  *     for i in range(3):
  *         H_hat[i] = H[i]/H_mag             # <<<<<<<<<<<<<<
@@ -3658,11 +3285,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
     __pyx_t_7 = (*((double *) ( /* dim=0 */ (__pyx_v_H.data + __pyx_t_10 * __pyx_v_H.strides[0]) )));
     if (unlikely(__pyx_v_H_mag == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 73, __pyx_L1_error)
+      __PYX_ERR(0, 53, __pyx_L1_error)
     }
     (__pyx_v_H_hat[__pyx_v_i]) = (__pyx_t_7 / __pyx_v_H_mag);
 
-    /* "magnetism.pyx":74
+    /* "magnetism.pyx":54
  *     for i in range(3):
  *         H_hat[i] = H[i]/H_mag
  *         M[i] = M_mag*H_hat[i]             # <<<<<<<<<<<<<<
@@ -3673,7 +3300,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
     *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_M.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_M.diminfo[0].strides) = (__pyx_v_M_mag * (__pyx_v_H_hat[__pyx_v_i]));
   }
 
-  /* "magnetism.pyx":75
+  /* "magnetism.pyx":55
  *         H_hat[i] = H[i]/H_mag
  *         M[i] = M_mag*H_hat[i]
  *     return M             # <<<<<<<<<<<<<<
@@ -3685,7 +3312,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   __pyx_r = ((PyArrayObject *)__pyx_v_M);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":64
+  /* "magnetism.pyx":44
  * @cython.wraparound(False)
  * #carbonyl iron parameters Ms = 1990 kA/m, chi_initial = 131
  * cdef np.ndarray[np.float64_t, ndim=1] get_magnetization(double[:] H, double chi, double Ms):             # <<<<<<<<<<<<<<
@@ -3717,7 +3344,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization(__Pyx_memviewslice __
   return __pyx_r;
 }
 
-/* "magnetism.pyx":80
+/* "magnetism.pyx":60
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] r_j,  double[:] m):             # <<<<<<<<<<<<<<
@@ -3759,7 +3386,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   __pyx_pybuffernd_B.data = NULL;
   __pyx_pybuffernd_B.rcbuffer = &__pyx_pybuffer_B;
 
-  /* "magnetism.pyx":84
+  /* "magnetism.pyx":64
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3769,7 +3396,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":85
+    /* "magnetism.pyx":65
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
@@ -3781,34 +3408,34 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":86
+  /* "magnetism.pyx":66
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
  *     cdef double[3] rij_hat
  *     for i in range(3):
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 86, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
@@ -3818,7 +3445,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":88
+  /* "magnetism.pyx":68
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
  *     cdef double[3] rij_hat
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3828,7 +3455,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":89
+    /* "magnetism.pyx":69
  *     cdef double[3] rij_hat
  *     for i in range(3):
  *         rij_hat[i] = rij[i]/rij_mag             # <<<<<<<<<<<<<<
@@ -3837,66 +3464,66 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
  */
     if (unlikely(__pyx_v_rij_mag == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 89, __pyx_L1_error)
+      __PYX_ERR(0, 69, __pyx_L1_error)
     }
     (__pyx_v_rij_hat[__pyx_v_i]) = ((__pyx_v_rij[__pyx_v_i]) / __pyx_v_rij_mag);
   }
 
-  /* "magnetism.pyx":90
+  /* "magnetism.pyx":70
  *     for i in range(3):
  *         rij_hat[i] = rij[i]/rij_mag
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij_hat);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 90, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 90, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_m_dot_r_hat = __pyx_f_9magnetism_dot_prod(__pyx_v_m, __pyx_t_8);
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":91
+  /* "magnetism.pyx":71
  *         rij_hat[i] = rij[i]/rij_mag
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))
  *     for i in range(3):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 91, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 91, __pyx_L1_error)
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 71, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_B.rcbuffer->pybuffer, (PyObject*)__pyx_t_11, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_B = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_B.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 91, __pyx_L1_error)
+      __PYX_ERR(0, 71, __pyx_L1_error)
     } else {__pyx_pybuffernd_B.diminfo[0].strides = __pyx_pybuffernd_B.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_B.diminfo[0].shape = __pyx_pybuffernd_B.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -3904,38 +3531,38 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   __pyx_v_B = ((PyArrayObject *)__pyx_t_10);
   __pyx_t_10 = 0;
 
-  /* "magnetism.pyx":92
+  /* "magnetism.pyx":72
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))             # <<<<<<<<<<<<<<
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
  */
-  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_9magnetism_mu0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_9magnetism_mu0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = PyNumber_Multiply(__pyx_int_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_6 = PyNumber_Multiply(__pyx_int_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_9 = PyNumber_Multiply(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_9 = PyNumber_Multiply(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_t_10, __pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_t_10, __pyx_t_9); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_prefactor = __pyx_t_12;
 
-  /* "magnetism.pyx":93
+  /* "magnetism.pyx":73
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3945,7 +3572,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":94
+    /* "magnetism.pyx":74
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3))
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])             # <<<<<<<<<<<<<<
@@ -3957,7 +3584,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
     *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_B.rcbuffer->pybuffer.buf, __pyx_t_2, __pyx_pybuffernd_B.diminfo[0].strides) = (__pyx_v_prefactor * (((3.0 * __pyx_v_m_dot_r_hat) * (__pyx_v_rij_hat[__pyx_v_i])) - (*((double *) ( /* dim=0 */ (__pyx_v_m.data + __pyx_t_3 * __pyx_v_m.strides[0]) )))));
   }
 
-  /* "magnetism.pyx":95
+  /* "magnetism.pyx":75
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
  *     return B             # <<<<<<<<<<<<<<
@@ -3969,7 +3596,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field(__Pyx_memviewslice __p
   __pyx_r = ((PyArrayObject *)__pyx_v_B);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":80
+  /* "magnetism.pyx":60
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field(double[:] r_i, double[:] r_j,  double[:] m):             # <<<<<<<<<<<<<<
@@ -4042,17 +3669,17 @@ static PyObject *__pyx_pw_9magnetism_1get_dipole_field(PyObject *__pyx_self, PyO
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_r_j)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, 1); __PYX_ERR(0, 80, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, 1); __PYX_ERR(0, 60, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_m)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, 2); __PYX_ERR(0, 80, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, 2); __PYX_ERR(0, 60, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dipole_field") < 0)) __PYX_ERR(0, 80, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dipole_field") < 0)) __PYX_ERR(0, 60, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -4061,13 +3688,13 @@ static PyObject *__pyx_pw_9magnetism_1get_dipole_field(PyObject *__pyx_self, PyO
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_r_i = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_i.memview)) __PYX_ERR(0, 80, __pyx_L3_error)
-    __pyx_v_r_j = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_j.memview)) __PYX_ERR(0, 80, __pyx_L3_error)
-    __pyx_v_m = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_m.memview)) __PYX_ERR(0, 80, __pyx_L3_error)
+    __pyx_v_r_i = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_i.memview)) __PYX_ERR(0, 60, __pyx_L3_error)
+    __pyx_v_r_j = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_j.memview)) __PYX_ERR(0, 60, __pyx_L3_error)
+    __pyx_v_m = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_m.memview)) __PYX_ERR(0, 60, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 80, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_dipole_field", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 60, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_dipole_field", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4089,10 +3716,10 @@ static PyObject *__pyx_pf_9magnetism_get_dipole_field(CYTHON_UNUSED PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_dipole_field", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_r_i.memview)) { __Pyx_RaiseUnboundLocalError("r_i"); __PYX_ERR(0, 80, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_r_j.memview)) { __Pyx_RaiseUnboundLocalError("r_j"); __PYX_ERR(0, 80, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_m.memview)) { __Pyx_RaiseUnboundLocalError("m"); __PYX_ERR(0, 80, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field(__pyx_v_r_i, __pyx_v_r_j, __pyx_v_m, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L1_error)
+  if (unlikely(!__pyx_v_r_i.memview)) { __Pyx_RaiseUnboundLocalError("r_i"); __PYX_ERR(0, 60, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_r_j.memview)) { __Pyx_RaiseUnboundLocalError("r_j"); __PYX_ERR(0, 60, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_m.memview)) { __Pyx_RaiseUnboundLocalError("m"); __PYX_ERR(0, 60, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field(__pyx_v_r_i, __pyx_v_r_j, __pyx_v_m, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4112,7 +3739,7 @@ static PyObject *__pyx_pf_9magnetism_get_dipole_field(CYTHON_UNUSED PyObject *__
   return __pyx_r;
 }
 
-/* "magnetism.pyx":99
+/* "magnetism.pyx":79
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field_normalized(double[:] r_i, double[:] r_j,  double[:] m, double l_e):             # <<<<<<<<<<<<<<
@@ -4154,7 +3781,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   __pyx_pybuffernd_B.data = NULL;
   __pyx_pybuffernd_B.rcbuffer = &__pyx_pybuffer_B;
 
-  /* "magnetism.pyx":103
+  /* "magnetism.pyx":83
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4164,7 +3791,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":104
+    /* "magnetism.pyx":84
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
@@ -4176,34 +3803,34 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":105
+  /* "magnetism.pyx":85
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
  *     cdef double[3] rij_hat
  *     for i in range(3):
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 85, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
@@ -4213,7 +3840,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":107
+  /* "magnetism.pyx":87
  *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
  *     cdef double[3] rij_hat
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4223,7 +3850,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":108
+    /* "magnetism.pyx":88
  *     cdef double[3] rij_hat
  *     for i in range(3):
  *         rij_hat[i] = rij[i]/rij_mag             # <<<<<<<<<<<<<<
@@ -4232,66 +3859,66 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
  */
     if (unlikely(__pyx_v_rij_mag == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 108, __pyx_L1_error)
+      __PYX_ERR(0, 88, __pyx_L1_error)
     }
     (__pyx_v_rij_hat[__pyx_v_i]) = ((__pyx_v_rij[__pyx_v_i]) / __pyx_v_rij_mag);
   }
 
-  /* "magnetism.pyx":109
+  /* "magnetism.pyx":89
  *     for i in range(3):
  *         rij_hat[i] = rij[i]/rij_mag
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij_hat);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 109, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 89, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_m_dot_r_hat = __pyx_f_9magnetism_dot_prod(__pyx_v_m, __pyx_t_8);
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":110
+  /* "magnetism.pyx":90
  *         rij_hat[i] = rij[i]/rij_mag
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
  *     for i in range(3):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 90, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 90, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_B.rcbuffer->pybuffer, (PyObject*)__pyx_t_11, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_B = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_B.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 110, __pyx_L1_error)
+      __PYX_ERR(0, 90, __pyx_L1_error)
     } else {__pyx_pybuffernd_B.diminfo[0].strides = __pyx_pybuffernd_B.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_B.diminfo[0].shape = __pyx_pybuffernd_B.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -4299,44 +3926,44 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   __pyx_v_B = ((PyArrayObject *)__pyx_t_10);
   __pyx_t_10 = 0;
 
-  /* "magnetism.pyx":111
+  /* "magnetism.pyx":91
  *     cdef double m_dot_r_hat = dot_prod(m,rij_hat)
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))             # <<<<<<<<<<<<<<
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
  */
-  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_9magnetism_mu0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_10 = PyFloat_FromDouble(__pyx_v_9magnetism_mu0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = PyNumber_Multiply(__pyx_int_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_6 = PyNumber_Multiply(__pyx_int_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_rij_mag, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_9 = PyNumber_Multiply(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_9 = PyNumber_Multiply(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_l_e, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(pow(__pyx_v_l_e, 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = PyNumber_Multiply(__pyx_t_9, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_6 = PyNumber_Multiply(__pyx_t_9, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_t_10, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_t_10, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_prefactor = __pyx_t_12;
 
-  /* "magnetism.pyx":112
+  /* "magnetism.pyx":92
  *     cdef np.ndarray[np.float64_t, ndim=1] B = np.empty((3,),dtype=np.float64)
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4346,7 +3973,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":113
+    /* "magnetism.pyx":93
  *     cdef double prefactor = mu0/(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])             # <<<<<<<<<<<<<<
@@ -4358,7 +3985,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
     *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_B.rcbuffer->pybuffer.buf, __pyx_t_2, __pyx_pybuffernd_B.diminfo[0].strides) = (__pyx_v_prefactor * (((3.0 * __pyx_v_m_dot_r_hat) * (__pyx_v_rij_hat[__pyx_v_i])) - (*((double *) ( /* dim=0 */ (__pyx_v_m.data + __pyx_t_3 * __pyx_v_m.strides[0]) )))));
   }
 
-  /* "magnetism.pyx":114
+  /* "magnetism.pyx":94
  *     for i in range(3):
  *         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
  *     return B             # <<<<<<<<<<<<<<
@@ -4370,7 +3997,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dipole_field_normalized(__Pyx_memvi
   __pyx_r = ((PyArrayObject *)__pyx_v_B);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":99
+  /* "magnetism.pyx":79
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field_normalized(double[:] r_i, double[:] r_j,  double[:] m, double l_e):             # <<<<<<<<<<<<<<
@@ -4446,23 +4073,23 @@ static PyObject *__pyx_pw_9magnetism_3get_dipole_field_normalized(PyObject *__py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_r_j)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 1); __PYX_ERR(0, 99, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 1); __PYX_ERR(0, 79, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_m)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 2); __PYX_ERR(0, 99, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 2); __PYX_ERR(0, 79, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 3); __PYX_ERR(0, 99, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, 3); __PYX_ERR(0, 79, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dipole_field_normalized") < 0)) __PYX_ERR(0, 99, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dipole_field_normalized") < 0)) __PYX_ERR(0, 79, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -4472,14 +4099,14 @@ static PyObject *__pyx_pw_9magnetism_3get_dipole_field_normalized(PyObject *__py
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_r_i = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_i.memview)) __PYX_ERR(0, 99, __pyx_L3_error)
-    __pyx_v_r_j = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_j.memview)) __PYX_ERR(0, 99, __pyx_L3_error)
-    __pyx_v_m = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_m.memview)) __PYX_ERR(0, 99, __pyx_L3_error)
-    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L3_error)
+    __pyx_v_r_i = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_i.memview)) __PYX_ERR(0, 79, __pyx_L3_error)
+    __pyx_v_r_j = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_r_j.memview)) __PYX_ERR(0, 79, __pyx_L3_error)
+    __pyx_v_m = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_m.memview)) __PYX_ERR(0, 79, __pyx_L3_error)
+    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 99, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_dipole_field_normalized", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 79, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_dipole_field_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4501,10 +4128,10 @@ static PyObject *__pyx_pf_9magnetism_2get_dipole_field_normalized(CYTHON_UNUSED 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_dipole_field_normalized", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_r_i.memview)) { __Pyx_RaiseUnboundLocalError("r_i"); __PYX_ERR(0, 99, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_r_j.memview)) { __Pyx_RaiseUnboundLocalError("r_j"); __PYX_ERR(0, 99, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_m.memview)) { __Pyx_RaiseUnboundLocalError("m"); __PYX_ERR(0, 99, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field_normalized(__pyx_v_r_i, __pyx_v_r_j, __pyx_v_m, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
+  if (unlikely(!__pyx_v_r_i.memview)) { __Pyx_RaiseUnboundLocalError("r_i"); __PYX_ERR(0, 79, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_r_j.memview)) { __Pyx_RaiseUnboundLocalError("r_j"); __PYX_ERR(0, 79, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_m.memview)) { __Pyx_RaiseUnboundLocalError("m"); __PYX_ERR(0, 79, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field_normalized(__pyx_v_r_i, __pyx_v_r_j, __pyx_v_m, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4524,7 +4151,7 @@ static PyObject *__pyx_pf_9magnetism_2get_dipole_field_normalized(CYTHON_UNUSED 
   return __pyx_r;
 }
 
-/* "magnetism.pyx":120
+/* "magnetism.pyx":100
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
@@ -4602,7 +4229,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __pyx_pybuffernd_H_dip.data = NULL;
   __pyx_pybuffernd_H_dip.rcbuffer = &__pyx_pybuffer_H_dip;
 
-  /* "magnetism.pyx":125
+  /* "magnetism.pyx":105
  *     cdef int j
  *     cdef int count
  *     cdef int max_iters = 5             # <<<<<<<<<<<<<<
@@ -4611,21 +4238,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  */
   __pyx_v_max_iters = 5;
 
-  /* "magnetism.pyx":126
+  /* "magnetism.pyx":106
  *     cdef int count
  *     cdef int max_iters = 5
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_1 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
@@ -4633,32 +4260,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 106, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_current_M.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_current_M = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 126, __pyx_L1_error)
+      __PYX_ERR(0, 106, __pyx_L1_error)
     } else {__pyx_pybuffernd_current_M.diminfo[0].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_current_M.diminfo[0].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_current_M.diminfo[1].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_current_M.diminfo[1].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -4666,21 +4293,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __pyx_v_current_M = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":127
+  /* "magnetism.pyx":107
  *     cdef int max_iters = 5
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  *     #for each particle, get the initial magnetization due to the external field
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_5 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
@@ -4688,32 +4315,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_3);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 107, __pyx_L1_error)
   __pyx_t_7 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_next_M.rcbuffer->pybuffer, (PyObject*)__pyx_t_7, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_next_M = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_next_M.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 127, __pyx_L1_error)
+      __PYX_ERR(0, 107, __pyx_L1_error)
     } else {__pyx_pybuffernd_next_M.diminfo[0].strides = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_next_M.diminfo[0].shape = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_next_M.diminfo[1].strides = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_next_M.diminfo[1].shape = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -4721,49 +4348,49 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __pyx_v_next_M = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "magnetism.pyx":128
+  /* "magnetism.pyx":108
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 128, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 128, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_init_M[0]), __pyx_t_8, sizeof(__pyx_v_init_M[0]) * (3));
 
-  /* "magnetism.pyx":130
+  /* "magnetism.pyx":110
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)             # <<<<<<<<<<<<<<
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]
  */
-  __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_v_Hext, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_v_Hext, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 130, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_init_M[0]), __pyx_t_8, sizeof(__pyx_v_init_M[0]) * (3));
 
-  /* "magnetism.pyx":131
+  /* "magnetism.pyx":111
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)
  *     for i in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -4775,7 +4402,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
     __pyx_v_i = __pyx_t_11;
 
-    /* "magnetism.pyx":132
+    /* "magnetism.pyx":112
  *     init_M = get_magnetization(Hext,chi,Ms)
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]             # <<<<<<<<<<<<<<
@@ -4786,7 +4413,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
     __pyx_t_13 = 0;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[0]);
 
-    /* "magnetism.pyx":133
+    /* "magnetism.pyx":113
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]
  *         current_M[i,1] = init_M[1]             # <<<<<<<<<<<<<<
@@ -4797,7 +4424,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
     __pyx_t_12 = 1;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[1]);
 
-    /* "magnetism.pyx":134
+    /* "magnetism.pyx":114
  *         current_M[i,0] = init_M[0]
  *         current_M[i,1] = init_M[1]
  *         current_M[i,2] = init_M[2]             # <<<<<<<<<<<<<<
@@ -4809,21 +4436,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[2]);
   }
 
-  /* "magnetism.pyx":137
+  /* "magnetism.pyx":117
  *     #for each particle, get the magnetization due to each other particle, keeping track of current and next values of magnetization
  *     #starts with getting the dipolar field due to each particle at each other particle's position
  *     cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
@@ -4831,32 +4458,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 137, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 117, __pyx_L1_error)
   __pyx_t_14 = ((PyArrayObject *)__pyx_t_2);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_H_dip.rcbuffer->pybuffer, (PyObject*)__pyx_t_14, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_H_dip = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 137, __pyx_L1_error)
+      __PYX_ERR(0, 117, __pyx_L1_error)
     } else {__pyx_pybuffernd_H_dip.diminfo[0].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_H_dip.diminfo[0].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_H_dip.diminfo[1].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_H_dip.diminfo[1].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -4864,180 +4491,180 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __pyx_v_H_dip = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "magnetism.pyx":138
+  /* "magnetism.pyx":118
  *     #starts with getting the dipolar field due to each particle at each other particle's position
  *     cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 138, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_B_dip[0]), __pyx_t_8, sizeof(__pyx_v_B_dip[0]) * (3));
 
-  /* "magnetism.pyx":140
+  /* "magnetism.pyx":120
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 140, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_r_i[0]), __pyx_t_8, sizeof(__pyx_v_r_i[0]) * (3));
 
-  /* "magnetism.pyx":141
+  /* "magnetism.pyx":121
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 141, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   memcpy(&(__pyx_v_r_j[0]), __pyx_t_8, sizeof(__pyx_v_r_j[0]) * (3));
 
-  /* "magnetism.pyx":142
+  /* "magnetism.pyx":122
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 142, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   memcpy(&(__pyx_v_m_j[0]), __pyx_t_8, sizeof(__pyx_v_m_j[0]) * (3));
 
-  /* "magnetism.pyx":143
+  /* "magnetism.pyx":123
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  */
-  __pyx_t_2 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_pi); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_pi); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Multiply(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Multiply(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_particle_V = __pyx_t_15;
 
-  /* "magnetism.pyx":144
+  /* "magnetism.pyx":124
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 144, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 144, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
-  /* "magnetism.pyx":145
+  /* "magnetism.pyx":125
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):             # <<<<<<<<<<<<<<
@@ -5049,7 +4676,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   for (__pyx_t_17 = 0; __pyx_t_17 < __pyx_t_16; __pyx_t_17+=1) {
     __pyx_v_count = __pyx_t_17;
 
-    /* "magnetism.pyx":146
+    /* "magnetism.pyx":126
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -5061,7 +4688,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
     for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_10; __pyx_t_18+=1) {
       __pyx_v_i = __pyx_t_18;
 
-      /* "magnetism.pyx":148
+      /* "magnetism.pyx":128
  *         for i in range(particle_posns.shape[0]):
  *             #get particle i position and particle j position, don't calculate field for itself
  *             for j in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -5073,7 +4700,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
       for (__pyx_t_21 = 0; __pyx_t_21 < __pyx_t_20; __pyx_t_21+=1) {
         __pyx_v_j = __pyx_t_21;
 
-        /* "magnetism.pyx":149
+        /* "magnetism.pyx":129
  *             #get particle i position and particle j position, don't calculate field for itself
  *             for j in range(particle_posns.shape[0]):
  *                 if i == j:             # <<<<<<<<<<<<<<
@@ -5085,7 +4712,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           goto __pyx_L11;
         }
 
-        /* "magnetism.pyx":152
+        /* "magnetism.pyx":132
  *                     pass
  *                 else:
  *                     r_i[0] = particle_posns[i,0]             # <<<<<<<<<<<<<<
@@ -5097,7 +4724,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_12 = 0;
           (__pyx_v_r_i[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":153
+          /* "magnetism.pyx":133
  *                 else:
  *                     r_i[0] = particle_posns[i,0]
  *                     r_i[1] = particle_posns[i,1]             # <<<<<<<<<<<<<<
@@ -5108,7 +4735,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_13 = 1;
           (__pyx_v_r_i[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":154
+          /* "magnetism.pyx":134
  *                     r_i[0] = particle_posns[i,0]
  *                     r_i[1] = particle_posns[i,1]
  *                     r_i[2] = particle_posns[i,2]             # <<<<<<<<<<<<<<
@@ -5119,7 +4746,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_12 = 2;
           (__pyx_v_r_i[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":155
+          /* "magnetism.pyx":135
  *                     r_i[1] = particle_posns[i,1]
  *                     r_i[2] = particle_posns[i,2]
  *                     r_j[0] = particle_posns[j,0]             # <<<<<<<<<<<<<<
@@ -5130,7 +4757,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_13 = 0;
           (__pyx_v_r_j[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":156
+          /* "magnetism.pyx":136
  *                     r_i[2] = particle_posns[i,2]
  *                     r_j[0] = particle_posns[j,0]
  *                     r_j[1] = particle_posns[j,1]             # <<<<<<<<<<<<<<
@@ -5141,7 +4768,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_12 = 1;
           (__pyx_v_r_j[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":157
+          /* "magnetism.pyx":137
  *                     r_j[0] = particle_posns[j,0]
  *                     r_j[1] = particle_posns[j,1]
  *                     r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
@@ -5152,77 +4779,77 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __pyx_t_13 = 2;
           (__pyx_v_r_j[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":158
+          /* "magnetism.pyx":138
  *                     r_j[1] = particle_posns[j,1]
  *                     r_j[2] = particle_posns[j,2]
  *                     m_j[:] = particle_V*current_M[j,:]             # <<<<<<<<<<<<<<
  *                     B_dip = get_dipole_field(r_i,r_j,m_j)
  *                     H_dip[i,0] += B_dip[0]/mu0
  */
-          __pyx_t_4 = PyFloat_FromDouble(__pyx_v_particle_V); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 158, __pyx_L1_error)
+          __pyx_t_4 = PyFloat_FromDouble(__pyx_v_particle_V); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
+          __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_GIVEREF(__pyx_t_2);
           PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
-          __Pyx_INCREF(__pyx_slice__5);
-          __Pyx_GIVEREF(__pyx_slice__5);
-          PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+          __Pyx_INCREF(__pyx_slice__3);
+          __Pyx_GIVEREF(__pyx_slice__3);
+          PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
           __pyx_t_2 = 0;
-          __pyx_t_2 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_current_M), __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_current_M), __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_3 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
+          __pyx_t_3 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 158, __pyx_L1_error)
+          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 138, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           memcpy(&(__pyx_v_m_j[0]), __pyx_t_8, sizeof(__pyx_v_m_j[0]) * (3));
 
-          /* "magnetism.pyx":159
+          /* "magnetism.pyx":139
  *                     r_j[2] = particle_posns[j,2]
  *                     m_j[:] = particle_V*current_M[j,:]
  *                     B_dip = get_dipole_field(r_i,r_j,m_j)             # <<<<<<<<<<<<<<
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0
  */
-          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_r_i);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 159, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __pyx_t_23 = __pyx_array_new(__pyx_t_2, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_j);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 159, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_m_j);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 159, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_2 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field(__pyx_t_24, __pyx_t_25, __pyx_t_26, 0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
+          __pyx_t_2 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field(__pyx_t_24, __pyx_t_25, __pyx_t_26, 0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
           __pyx_t_24.memview = NULL;
@@ -5233,11 +4860,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
           __PYX_XDEC_MEMVIEW(&__pyx_t_26, 1);
           __pyx_t_26.memview = NULL;
           __pyx_t_26.data = NULL;
-          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 139, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           memcpy(&(__pyx_v_B_dip[0]), __pyx_t_8, sizeof(__pyx_v_B_dip[0]) * (3));
 
-          /* "magnetism.pyx":160
+          /* "magnetism.pyx":140
  *                     m_j[:] = particle_V*current_M[j,:]
  *                     B_dip = get_dipole_field(r_i,r_j,m_j)
  *                     H_dip[i,0] += B_dip[0]/mu0             # <<<<<<<<<<<<<<
@@ -5246,13 +4873,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 160, __pyx_L1_error)
+            __PYX_ERR(0, 140, __pyx_L1_error)
           }
           __pyx_t_13 = __pyx_v_i;
           __pyx_t_12 = 0;
           *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_H_dip.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_H_dip.diminfo[1].strides) += ((__pyx_v_B_dip[0]) / __pyx_v_9magnetism_mu0);
 
-          /* "magnetism.pyx":161
+          /* "magnetism.pyx":141
  *                     B_dip = get_dipole_field(r_i,r_j,m_j)
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0             # <<<<<<<<<<<<<<
@@ -5261,13 +4888,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 161, __pyx_L1_error)
+            __PYX_ERR(0, 141, __pyx_L1_error)
           }
           __pyx_t_12 = __pyx_v_i;
           __pyx_t_13 = 1;
           *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_H_dip.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_H_dip.diminfo[1].strides) += ((__pyx_v_B_dip[1]) / __pyx_v_9magnetism_mu0);
 
-          /* "magnetism.pyx":162
+          /* "magnetism.pyx":142
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0
  *                     H_dip[i,2] += B_dip[2]/mu0             # <<<<<<<<<<<<<<
@@ -5276,7 +4903,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 162, __pyx_L1_error)
+            __PYX_ERR(0, 142, __pyx_L1_error)
           }
           __pyx_t_13 = __pyx_v_i;
           __pyx_t_12 = 2;
@@ -5285,89 +4912,89 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
         __pyx_L11:;
       }
 
-      /* "magnetism.pyx":163
+      /* "magnetism.pyx":143
  *                     H_dip[i,1] += B_dip[1]/mu0
  *                     H_dip[i,2] += B_dip[2]/mu0
  *             H_tot[:] = Hext[:] + H_dip[i,:]             # <<<<<<<<<<<<<<
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  */
-      __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_Hext, 1, (PyObject *(*)(char *)) __pyx_memview_get_double, (int (*)(char *, PyObject *)) __pyx_memview_set_double, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_Hext, 1, (PyObject *(*)(char *)) __pyx_memview_get_double, (int (*)(char *, PyObject *)) __pyx_memview_set_double, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice__3);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_H_dip), __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_H_dip), __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 163, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
-      /* "magnetism.pyx":164
+      /* "magnetism.pyx":144
  *                     H_dip[i,2] += B_dip[2]/mu0
  *             H_tot[:] = Hext[:] + H_dip[i,:]
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)             # <<<<<<<<<<<<<<
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M
  */
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_23 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_H_tot);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 164, __pyx_L1_error)
+      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_23);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_t_26, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_t_26, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __PYX_XDEC_MEMVIEW(&__pyx_t_26, 1);
       __pyx_t_26.memview = NULL;
       __pyx_t_26.data = NULL;
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 164, __pyx_L1_error)
+      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_next_M), __pyx_t_2, __pyx_t_3) < 0)) __PYX_ERR(0, 164, __pyx_L1_error)
+      if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_next_M), __pyx_t_2, __pyx_t_3) < 0)) __PYX_ERR(0, 144, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
 
-    /* "magnetism.pyx":165
+    /* "magnetism.pyx":145
  *             H_tot[:] = Hext[:] + H_dip[i,:]
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *         current_M = next_M
  *     return next_M
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_3);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
@@ -5375,26 +5002,26 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
     __Pyx_GIVEREF(__pyx_int_3);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_3);
     __pyx_t_3 = 0;
-    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_4);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 165, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 165, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 145, __pyx_L1_error)
     __pyx_t_14 = ((PyArrayObject *)__pyx_t_5);
     {
       __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -5411,13 +5038,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
         __pyx_t_27 = __pyx_t_28 = __pyx_t_29 = 0;
       }
       __pyx_pybuffernd_H_dip.diminfo[0].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_H_dip.diminfo[0].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_H_dip.diminfo[1].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_H_dip.diminfo[1].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[1];
-      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 165, __pyx_L1_error)
+      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
     }
     __pyx_t_14 = 0;
     __Pyx_DECREF_SET(__pyx_v_H_dip, ((PyArrayObject *)__pyx_t_5));
     __pyx_t_5 = 0;
 
-    /* "magnetism.pyx":166
+    /* "magnetism.pyx":146
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M             # <<<<<<<<<<<<<<
@@ -5439,13 +5066,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
         __pyx_t_29 = __pyx_t_28 = __pyx_t_27 = 0;
       }
       __pyx_pybuffernd_current_M.diminfo[0].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_current_M.diminfo[0].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_current_M.diminfo[1].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_current_M.diminfo[1].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[1];
-      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 166, __pyx_L1_error)
+      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
     }
     __Pyx_INCREF(((PyObject *)__pyx_v_next_M));
     __Pyx_DECREF_SET(__pyx_v_current_M, ((PyArrayObject *)__pyx_v_next_M));
   }
 
-  /* "magnetism.pyx":167
+  /* "magnetism.pyx":147
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M
  *     return next_M             # <<<<<<<<<<<<<<
@@ -5457,7 +5084,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __pyx_r = ((PyArrayObject *)__pyx_v_next_M);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":120
+  /* "magnetism.pyx":100
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
@@ -5544,29 +5171,29 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 1); __PYX_ERR(0, 120, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 1); __PYX_ERR(0, 100, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 2); __PYX_ERR(0, 120, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 2); __PYX_ERR(0, 100, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_chi)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 3); __PYX_ERR(0, 120, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 3); __PYX_ERR(0, 100, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_Ms)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 4); __PYX_ERR(0, 120, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 4); __PYX_ERR(0, 100, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_magnetization_iterative") < 0)) __PYX_ERR(0, 120, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_magnetization_iterative") < 0)) __PYX_ERR(0, 100, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -5577,15 +5204,15 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
     }
-    __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 120, __pyx_L3_error)
-    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 120, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L3_error)
-    __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L3_error)
-    __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 120, __pyx_L3_error)
+    __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 120, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 100, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_magnetization_iterative", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -5607,9 +5234,9 @@ static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_magnetization_iterative", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 120, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 120, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
+  if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 100, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 100, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5628,7 +5255,7 @@ static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED 
   return __pyx_r;
 }
 
-/* "magnetism.pyx":171
+/* "magnetism.pyx":151
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
@@ -5706,7 +5333,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __pyx_pybuffernd_H_dip.data = NULL;
   __pyx_pybuffernd_H_dip.rcbuffer = &__pyx_pybuffer_H_dip;
 
-  /* "magnetism.pyx":176
+  /* "magnetism.pyx":156
  *     cdef int j
  *     cdef int count
  *     cdef int max_iters = 5             # <<<<<<<<<<<<<<
@@ -5715,21 +5342,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  */
   __pyx_v_max_iters = 5;
 
-  /* "magnetism.pyx":177
+  /* "magnetism.pyx":157
  *     cdef int count
  *     cdef int max_iters = 5
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_1 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
@@ -5737,32 +5364,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 177, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 177, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 157, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_current_M.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_current_M = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 177, __pyx_L1_error)
+      __PYX_ERR(0, 157, __pyx_L1_error)
     } else {__pyx_pybuffernd_current_M.diminfo[0].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_current_M.diminfo[0].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_current_M.diminfo[1].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_current_M.diminfo[1].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -5770,21 +5397,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __pyx_v_current_M = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":178
+  /* "magnetism.pyx":158
  *     cdef int max_iters = 5
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  *     #for each particle, get the initial magnetization due to the external field
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_5 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
@@ -5792,32 +5419,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_3);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 178, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 178, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 158, __pyx_L1_error)
   __pyx_t_7 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_next_M.rcbuffer->pybuffer, (PyObject*)__pyx_t_7, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_next_M = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_next_M.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 178, __pyx_L1_error)
+      __PYX_ERR(0, 158, __pyx_L1_error)
     } else {__pyx_pybuffernd_next_M.diminfo[0].strides = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_next_M.diminfo[0].shape = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_next_M.diminfo[1].strides = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_next_M.diminfo[1].shape = __pyx_pybuffernd_next_M.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -5825,49 +5452,49 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __pyx_v_next_M = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "magnetism.pyx":179
+  /* "magnetism.pyx":159
  *     cdef np.ndarray[np.float64_t, ndim=2] current_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef np.ndarray[np.float64_t, ndim=2] next_M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 179, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 179, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 179, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_init_M[0]), __pyx_t_8, sizeof(__pyx_v_init_M[0]) * (3));
 
-  /* "magnetism.pyx":181
+  /* "magnetism.pyx":161
  *     cdef double[3] init_M = np.empty((3,),dtype=np.float64)
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)             # <<<<<<<<<<<<<<
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]
  */
-  __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_v_Hext, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_v_Hext, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_init_M[0]), __pyx_t_8, sizeof(__pyx_v_init_M[0]) * (3));
 
-  /* "magnetism.pyx":182
+  /* "magnetism.pyx":162
  *     #for each particle, get the initial magnetization due to the external field
  *     init_M = get_magnetization(Hext,chi,Ms)
  *     for i in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -5879,7 +5506,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=1) {
     __pyx_v_i = __pyx_t_11;
 
-    /* "magnetism.pyx":183
+    /* "magnetism.pyx":163
  *     init_M = get_magnetization(Hext,chi,Ms)
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]             # <<<<<<<<<<<<<<
@@ -5890,7 +5517,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
     __pyx_t_13 = 0;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[0]);
 
-    /* "magnetism.pyx":184
+    /* "magnetism.pyx":164
  *     for i in range(particle_posns.shape[0]):
  *         current_M[i,0] = init_M[0]
  *         current_M[i,1] = init_M[1]             # <<<<<<<<<<<<<<
@@ -5901,7 +5528,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
     __pyx_t_12 = 1;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[1]);
 
-    /* "magnetism.pyx":185
+    /* "magnetism.pyx":165
  *         current_M[i,0] = init_M[0]
  *         current_M[i,1] = init_M[1]
  *         current_M[i,2] = init_M[2]             # <<<<<<<<<<<<<<
@@ -5913,21 +5540,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_current_M.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_current_M.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_current_M.diminfo[1].strides) = (__pyx_v_init_M[2]);
   }
 
-  /* "magnetism.pyx":188
+  /* "magnetism.pyx":168
  *     #for each particle, get the magnetization due to each other particle, keeping track of current and next values of magnetization
  *     #starts with getting the dipolar field due to each particle at each other particle's position
  *     cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
@@ -5935,32 +5562,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_int_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 188, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 188, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 188, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 168, __pyx_L1_error)
   __pyx_t_14 = ((PyArrayObject *)__pyx_t_2);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_H_dip.rcbuffer->pybuffer, (PyObject*)__pyx_t_14, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_H_dip = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 188, __pyx_L1_error)
+      __PYX_ERR(0, 168, __pyx_L1_error)
     } else {__pyx_pybuffernd_H_dip.diminfo[0].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_H_dip.diminfo[0].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_H_dip.diminfo[1].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_H_dip.diminfo[1].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -5968,180 +5595,180 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __pyx_v_H_dip = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "magnetism.pyx":189
+  /* "magnetism.pyx":169
  *     #starts with getting the dipolar field due to each particle at each other particle's position
  *     cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 189, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_B_dip[0]), __pyx_t_8, sizeof(__pyx_v_B_dip[0]) * (3));
 
-  /* "magnetism.pyx":191
+  /* "magnetism.pyx":171
  *     cdef double[3] B_dip = np.zeros((3,),dtype=np.float64)
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 191, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_r_i[0]), __pyx_t_8, sizeof(__pyx_v_r_i[0]) * (3));
 
-  /* "magnetism.pyx":192
+  /* "magnetism.pyx":172
  *     #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   memcpy(&(__pyx_v_r_j[0]), __pyx_t_8, sizeof(__pyx_v_r_j[0]) * (3));
 
-  /* "magnetism.pyx":193
+  /* "magnetism.pyx":173
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   memcpy(&(__pyx_v_m_j[0]), __pyx_t_8, sizeof(__pyx_v_m_j[0]) * (3));
 
-  /* "magnetism.pyx":194
+  /* "magnetism.pyx":174
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  */
-  __pyx_t_2 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_pi); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_pi); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Multiply(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Multiply(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 194, __pyx_L1_error)
+  __pyx_t_15 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_15 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_particle_V = __pyx_t_15;
 
-  /* "magnetism.pyx":195
+  /* "magnetism.pyx":175
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
-  /* "magnetism.pyx":196
+  /* "magnetism.pyx":176
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):             # <<<<<<<<<<<<<<
@@ -6153,7 +5780,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   for (__pyx_t_17 = 0; __pyx_t_17 < __pyx_t_16; __pyx_t_17+=1) {
     __pyx_v_count = __pyx_t_17;
 
-    /* "magnetism.pyx":197
+    /* "magnetism.pyx":177
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -6165,7 +5792,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
     for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_10; __pyx_t_18+=1) {
       __pyx_v_i = __pyx_t_18;
 
-      /* "magnetism.pyx":199
+      /* "magnetism.pyx":179
  *         for i in range(particle_posns.shape[0]):
  *             #get particle i position and particle j position, don't calculate field for itself
  *             for j in range(particle_posns.shape[0]):             # <<<<<<<<<<<<<<
@@ -6177,7 +5804,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
       for (__pyx_t_21 = 0; __pyx_t_21 < __pyx_t_20; __pyx_t_21+=1) {
         __pyx_v_j = __pyx_t_21;
 
-        /* "magnetism.pyx":200
+        /* "magnetism.pyx":180
  *             #get particle i position and particle j position, don't calculate field for itself
  *             for j in range(particle_posns.shape[0]):
  *                 if i == j:             # <<<<<<<<<<<<<<
@@ -6189,7 +5816,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           goto __pyx_L11;
         }
 
-        /* "magnetism.pyx":203
+        /* "magnetism.pyx":183
  *                     pass
  *                 else:
  *                     r_i[0] = particle_posns[i,0]             # <<<<<<<<<<<<<<
@@ -6201,7 +5828,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_12 = 0;
           (__pyx_v_r_i[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":204
+          /* "magnetism.pyx":184
  *                 else:
  *                     r_i[0] = particle_posns[i,0]
  *                     r_i[1] = particle_posns[i,1]             # <<<<<<<<<<<<<<
@@ -6212,7 +5839,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_13 = 1;
           (__pyx_v_r_i[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":205
+          /* "magnetism.pyx":185
  *                     r_i[0] = particle_posns[i,0]
  *                     r_i[1] = particle_posns[i,1]
  *                     r_i[2] = particle_posns[i,2]             # <<<<<<<<<<<<<<
@@ -6223,7 +5850,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_12 = 2;
           (__pyx_v_r_i[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":206
+          /* "magnetism.pyx":186
  *                     r_i[1] = particle_posns[i,1]
  *                     r_i[2] = particle_posns[i,2]
  *                     r_j[0] = particle_posns[j,0]             # <<<<<<<<<<<<<<
@@ -6234,7 +5861,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_13 = 0;
           (__pyx_v_r_j[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":207
+          /* "magnetism.pyx":187
  *                     r_i[2] = particle_posns[i,2]
  *                     r_j[0] = particle_posns[j,0]
  *                     r_j[1] = particle_posns[j,1]             # <<<<<<<<<<<<<<
@@ -6245,7 +5872,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_12 = 1;
           (__pyx_v_r_j[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_12)) )));
 
-          /* "magnetism.pyx":208
+          /* "magnetism.pyx":188
  *                     r_j[0] = particle_posns[j,0]
  *                     r_j[1] = particle_posns[j,1]
  *                     r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
@@ -6256,77 +5883,77 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __pyx_t_13 = 2;
           (__pyx_v_r_j[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_12 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-          /* "magnetism.pyx":209
+          /* "magnetism.pyx":189
  *                     r_j[1] = particle_posns[j,1]
  *                     r_j[2] = particle_posns[j,2]
  *                     m_j[:] = particle_V*current_M[j,:]             # <<<<<<<<<<<<<<
  *                     B_dip = get_dipole_field_normalized(r_i,r_j,m_j,l_e)
  *                     H_dip[i,0] += B_dip[0]/mu0
  */
-          __pyx_t_4 = PyFloat_FromDouble(__pyx_v_particle_V); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 209, __pyx_L1_error)
+          __pyx_t_4 = PyFloat_FromDouble(__pyx_v_particle_V); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
-          __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 209, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
+          __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_GIVEREF(__pyx_t_2);
           PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
-          __Pyx_INCREF(__pyx_slice__5);
-          __Pyx_GIVEREF(__pyx_slice__5);
-          PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+          __Pyx_INCREF(__pyx_slice__3);
+          __Pyx_GIVEREF(__pyx_slice__3);
+          PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
           __pyx_t_2 = 0;
-          __pyx_t_2 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_current_M), __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 209, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_current_M), __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_3 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
+          __pyx_t_3 = PyNumber_Multiply(__pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 209, __pyx_L1_error)
+          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           memcpy(&(__pyx_v_m_j[0]), __pyx_t_8, sizeof(__pyx_v_m_j[0]) * (3));
 
-          /* "magnetism.pyx":210
+          /* "magnetism.pyx":190
  *                     r_j[2] = particle_posns[j,2]
  *                     m_j[:] = particle_V*current_M[j,:]
  *                     B_dip = get_dipole_field_normalized(r_i,r_j,m_j,l_e)             # <<<<<<<<<<<<<<
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0
  */
-          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_r_i);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 210, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __pyx_t_23 = __pyx_array_new(__pyx_t_2, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_j);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 210, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_2 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_m_j);
-          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 210, __pyx_L1_error)
+          if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_23);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-          __pyx_t_2 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field_normalized(__pyx_t_24, __pyx_t_25, __pyx_t_26, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+          __pyx_t_2 = ((PyObject *)__pyx_f_9magnetism_get_dipole_field_normalized(__pyx_t_24, __pyx_t_25, __pyx_t_26, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
           __pyx_t_24.memview = NULL;
@@ -6337,11 +5964,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
           __PYX_XDEC_MEMVIEW(&__pyx_t_26, 1);
           __pyx_t_26.memview = NULL;
           __pyx_t_26.data = NULL;
-          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 210, __pyx_L1_error)
+          if (unlikely(__Pyx_carray_from_py_double(__pyx_t_2, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 190, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           memcpy(&(__pyx_v_B_dip[0]), __pyx_t_8, sizeof(__pyx_v_B_dip[0]) * (3));
 
-          /* "magnetism.pyx":211
+          /* "magnetism.pyx":191
  *                     m_j[:] = particle_V*current_M[j,:]
  *                     B_dip = get_dipole_field_normalized(r_i,r_j,m_j,l_e)
  *                     H_dip[i,0] += B_dip[0]/mu0             # <<<<<<<<<<<<<<
@@ -6350,13 +5977,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 211, __pyx_L1_error)
+            __PYX_ERR(0, 191, __pyx_L1_error)
           }
           __pyx_t_13 = __pyx_v_i;
           __pyx_t_12 = 0;
           *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_H_dip.diminfo[0].strides, __pyx_t_12, __pyx_pybuffernd_H_dip.diminfo[1].strides) += ((__pyx_v_B_dip[0]) / __pyx_v_9magnetism_mu0);
 
-          /* "magnetism.pyx":212
+          /* "magnetism.pyx":192
  *                     B_dip = get_dipole_field_normalized(r_i,r_j,m_j,l_e)
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0             # <<<<<<<<<<<<<<
@@ -6365,13 +5992,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 212, __pyx_L1_error)
+            __PYX_ERR(0, 192, __pyx_L1_error)
           }
           __pyx_t_12 = __pyx_v_i;
           __pyx_t_13 = 1;
           *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_H_dip.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_H_dip.diminfo[1].strides) += ((__pyx_v_B_dip[1]) / __pyx_v_9magnetism_mu0);
 
-          /* "magnetism.pyx":213
+          /* "magnetism.pyx":193
  *                     H_dip[i,0] += B_dip[0]/mu0
  *                     H_dip[i,1] += B_dip[1]/mu0
  *                     H_dip[i,2] += B_dip[2]/mu0             # <<<<<<<<<<<<<<
@@ -6380,7 +6007,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  */
           if (unlikely(__pyx_v_9magnetism_mu0 == 0)) {
             PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-            __PYX_ERR(0, 213, __pyx_L1_error)
+            __PYX_ERR(0, 193, __pyx_L1_error)
           }
           __pyx_t_13 = __pyx_v_i;
           __pyx_t_12 = 2;
@@ -6389,89 +6016,89 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
         __pyx_L11:;
       }
 
-      /* "magnetism.pyx":214
+      /* "magnetism.pyx":194
  *                     H_dip[i,1] += B_dip[1]/mu0
  *                     H_dip[i,2] += B_dip[2]/mu0
  *             H_tot[:] = Hext[:] + H_dip[i,:]             # <<<<<<<<<<<<<<
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  */
-      __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_Hext, 1, (PyObject *(*)(char *)) __pyx_memview_get_double, (int (*)(char *, PyObject *)) __pyx_memview_set_double, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_2 = __pyx_memoryview_fromslice(__pyx_v_Hext, 1, (PyObject *(*)(char *)) __pyx_memview_get_double, (int (*)(char *, PyObject *)) __pyx_memview_set_double, 0);; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice__3);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_H_dip), __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_H_dip), __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 214, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_Add(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 214, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_8, 3) < 0)) __PYX_ERR(0, 194, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
-      /* "magnetism.pyx":215
+      /* "magnetism.pyx":195
  *                     H_dip[i,2] += B_dip[2]/mu0
  *             H_tot[:] = Hext[:] + H_dip[i,:]
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)             # <<<<<<<<<<<<<<
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M
  */
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_23 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_H_tot);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 215, __pyx_L1_error)
+      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_23);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_26 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_26.memview)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_t_26, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_f_9magnetism_get_magnetization(__pyx_t_26, __pyx_v_chi, __pyx_v_Ms)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __PYX_XDEC_MEMVIEW(&__pyx_t_26, 1);
       __pyx_t_26.memview = NULL;
       __pyx_t_26.data = NULL;
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_next_M), __pyx_t_2, __pyx_t_3) < 0)) __PYX_ERR(0, 215, __pyx_L1_error)
+      if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_next_M), __pyx_t_2, __pyx_t_3) < 0)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
 
-    /* "magnetism.pyx":216
+    /* "magnetism.pyx":196
  *             H_tot[:] = Hext[:] + H_dip[i,:]
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *         current_M = next_M
  *     return next_M
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_3 = PyInt_FromSsize_t((__pyx_v_particle_posns.shape[0])); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_3);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
@@ -6479,26 +6106,26 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
     __Pyx_GIVEREF(__pyx_int_3);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_3);
     __pyx_t_3 = 0;
-    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_4);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 196, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 216, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 196, __pyx_L1_error)
     __pyx_t_14 = ((PyArrayObject *)__pyx_t_5);
     {
       __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -6515,13 +6142,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
         __pyx_t_27 = __pyx_t_28 = __pyx_t_29 = 0;
       }
       __pyx_pybuffernd_H_dip.diminfo[0].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_H_dip.diminfo[0].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_H_dip.diminfo[1].strides = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_H_dip.diminfo[1].shape = __pyx_pybuffernd_H_dip.rcbuffer->pybuffer.shape[1];
-      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 216, __pyx_L1_error)
+      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 196, __pyx_L1_error)
     }
     __pyx_t_14 = 0;
     __Pyx_DECREF_SET(__pyx_v_H_dip, ((PyArrayObject *)__pyx_t_5));
     __pyx_t_5 = 0;
 
-    /* "magnetism.pyx":217
+    /* "magnetism.pyx":197
  *             next_M[i,:] = get_magnetization(H_tot,chi,Ms)
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M             # <<<<<<<<<<<<<<
@@ -6543,13 +6170,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
         __pyx_t_29 = __pyx_t_28 = __pyx_t_27 = 0;
       }
       __pyx_pybuffernd_current_M.diminfo[0].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_current_M.diminfo[0].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_current_M.diminfo[1].strides = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_current_M.diminfo[1].shape = __pyx_pybuffernd_current_M.rcbuffer->pybuffer.shape[1];
-      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 217, __pyx_L1_error)
+      if (unlikely(__pyx_t_18 < 0)) __PYX_ERR(0, 197, __pyx_L1_error)
     }
     __Pyx_INCREF(((PyObject *)__pyx_v_next_M));
     __Pyx_DECREF_SET(__pyx_v_current_M, ((PyArrayObject *)__pyx_v_next_M));
   }
 
-  /* "magnetism.pyx":218
+  /* "magnetism.pyx":198
  *         H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
  *         current_M = next_M
  *     return next_M             # <<<<<<<<<<<<<<
@@ -6561,7 +6188,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __pyx_r = ((PyArrayObject *)__pyx_v_next_M);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":171
+  /* "magnetism.pyx":151
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
@@ -6651,35 +6278,35 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 1); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 1); __PYX_ERR(0, 151, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 2); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 2); __PYX_ERR(0, 151, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_chi)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 3); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 3); __PYX_ERR(0, 151, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_Ms)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 4); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 4); __PYX_ERR(0, 151, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 5); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 5); __PYX_ERR(0, 151, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_magnetization_iterative_normalized") < 0)) __PYX_ERR(0, 171, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_magnetization_iterative_normalized") < 0)) __PYX_ERR(0, 151, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 6) {
       goto __pyx_L5_argtuple_error;
@@ -6691,16 +6318,16 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
       values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
     }
-    __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 171, __pyx_L3_error)
-    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 171, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L3_error)
-    __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L3_error)
-    __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L3_error)
-    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[5]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L3_error)
+    __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[5]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 171, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 151, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_magnetization_iterative_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6722,9 +6349,9 @@ static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYT
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_magnetization_iterative_normalized", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 171, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 171, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative_normalized(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+  if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 151, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 151, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative_normalized(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6743,7 +6370,7 @@ static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYT
   return __pyx_r;
 }
 
-/* "magnetism.pyx":225
+/* "magnetism.pyx":205
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):             # <<<<<<<<<<<<<<
@@ -6806,7 +6433,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_pybuffernd_moments.data = NULL;
   __pyx_pybuffernd_moments.rcbuffer = &__pyx_pybuffer_moments;
 
-  /* "magnetism.pyx":227
+  /* "magnetism.pyx":207
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]             # <<<<<<<<<<<<<<
@@ -6815,21 +6442,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  */
   __pyx_v_N_particles = (__pyx_v_particle_posns.shape[0]);
 
-  /* "magnetism.pyx":228
+  /* "magnetism.pyx":208
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef int j
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
@@ -6837,32 +6464,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 208, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_forces = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 228, __pyx_L1_error)
+      __PYX_ERR(0, 208, __pyx_L1_error)
     } else {__pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -6870,49 +6497,49 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_v_forces = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":231
+  /* "magnetism.pyx":211
  *     cdef int i
  *     cdef int j
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
-  __pyx_t_5 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_particle_V = __pyx_t_7;
 
-  /* "magnetism.pyx":232
+  /* "magnetism.pyx":212
  *     cdef int j
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5);
@@ -6920,32 +6547,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 232, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 212, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 232, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 212, __pyx_L1_error)
   __pyx_t_8 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_moments.rcbuffer->pybuffer, (PyObject*)__pyx_t_8, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_moments = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 232, __pyx_L1_error)
+      __PYX_ERR(0, 212, __pyx_L1_error)
     } else {__pyx_pybuffernd_moments.diminfo[0].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_moments.diminfo[0].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_moments.diminfo[1].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_moments.diminfo[1].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -6953,123 +6580,123 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_v_moments = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "magnetism.pyx":233
+  /* "magnetism.pyx":213
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 233, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 233, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   memcpy(&(__pyx_v_r_i[0]), __pyx_t_9, sizeof(__pyx_v_r_i[0]) * (3));
 
-  /* "magnetism.pyx":234
+  /* "magnetism.pyx":214
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_5, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 234, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_5, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 214, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   memcpy(&(__pyx_v_r_j[0]), __pyx_t_9, sizeof(__pyx_v_r_j[0]) * (3));
 
-  /* "magnetism.pyx":235
+  /* "magnetism.pyx":215
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 235, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
 
-  /* "magnetism.pyx":236
+  /* "magnetism.pyx":216
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another             # <<<<<<<<<<<<<<
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 236, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 236, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 236, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
 
-  /* "magnetism.pyx":237
+  /* "magnetism.pyx":217
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):             # <<<<<<<<<<<<<<
@@ -7081,7 +6708,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
 
-    /* "magnetism.pyx":238
+    /* "magnetism.pyx":218
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V             # <<<<<<<<<<<<<<
@@ -7094,7 +6721,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
     __pyx_t_16 = 0;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
 
-    /* "magnetism.pyx":239
+    /* "magnetism.pyx":219
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V
  *         moments[i,1] = M[i,1]*particle_V             # <<<<<<<<<<<<<<
@@ -7107,7 +6734,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
     __pyx_t_15 = 1;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_14 * __pyx_v_M.strides[0]) )) + __pyx_t_13)) ))) * __pyx_v_particle_V);
 
-    /* "magnetism.pyx":240
+    /* "magnetism.pyx":220
  *         moments[i,0] = M[i,0]*particle_V
  *         moments[i,1] = M[i,1]*particle_V
  *         moments[i,2] = M[i,2]*particle_V             # <<<<<<<<<<<<<<
@@ -7121,7 +6748,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
   }
 
-  /* "magnetism.pyx":241
+  /* "magnetism.pyx":221
  *         moments[i,1] = M[i,1]*particle_V
  *         moments[i,2] = M[i,2]*particle_V
  *     for i in range(N_particles):             # <<<<<<<<<<<<<<
@@ -7133,7 +6760,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
 
-    /* "magnetism.pyx":242
+    /* "magnetism.pyx":222
  *         moments[i,2] = M[i,2]*particle_V
  *     for i in range(N_particles):
  *         for j in range(i+1,N_particles):             # <<<<<<<<<<<<<<
@@ -7145,7 +6772,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
     for (__pyx_t_19 = (__pyx_v_i + 1); __pyx_t_19 < __pyx_t_18; __pyx_t_19+=1) {
       __pyx_v_j = __pyx_t_19;
 
-      /* "magnetism.pyx":243
+      /* "magnetism.pyx":223
  *     for i in range(N_particles):
  *         for j in range(i+1,N_particles):
  *             r_i[0] = particle_posns[i,0]             # <<<<<<<<<<<<<<
@@ -7156,7 +6783,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 0;
       (__pyx_v_r_i[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":244
+      /* "magnetism.pyx":224
  *         for j in range(i+1,N_particles):
  *             r_i[0] = particle_posns[i,0]
  *             r_i[1] = particle_posns[i,1]             # <<<<<<<<<<<<<<
@@ -7167,7 +6794,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 1;
       (__pyx_v_r_i[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":245
+      /* "magnetism.pyx":225
  *             r_i[0] = particle_posns[i,0]
  *             r_i[1] = particle_posns[i,1]
  *             r_i[2] = particle_posns[i,2]             # <<<<<<<<<<<<<<
@@ -7178,7 +6805,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 2;
       (__pyx_v_r_i[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":246
+      /* "magnetism.pyx":226
  *             r_i[1] = particle_posns[i,1]
  *             r_i[2] = particle_posns[i,2]
  *             r_j[0] = particle_posns[j,0]             # <<<<<<<<<<<<<<
@@ -7189,7 +6816,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 0;
       (__pyx_v_r_j[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":247
+      /* "magnetism.pyx":227
  *             r_i[2] = particle_posns[i,2]
  *             r_j[0] = particle_posns[j,0]
  *             r_j[1] = particle_posns[j,1]             # <<<<<<<<<<<<<<
@@ -7200,7 +6827,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 1;
       (__pyx_v_r_j[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":248
+      /* "magnetism.pyx":228
  *             r_j[0] = particle_posns[j,0]
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
@@ -7211,66 +6838,66 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 2;
       (__pyx_v_r_j[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":249
+      /* "magnetism.pyx":229
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)             # <<<<<<<<<<<<<<
  *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
  *             forces[i,0] += force[0]
  */
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_20 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_20.memview)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_20 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_20.memview)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_21 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_21 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 249, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 249, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force(__pyx_t_20, __pyx_t_21, __pyx_t_23, __pyx_t_24)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force(__pyx_t_20, __pyx_t_21, __pyx_t_23, __pyx_t_24)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_20, 1);
       __pyx_t_20.memview = NULL;
@@ -7284,40 +6911,40 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
       __pyx_t_24.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 249, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 229, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
 
-      /* "magnetism.pyx":250
+      /* "magnetism.pyx":230
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
  *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)             # <<<<<<<<<<<<<<
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  */
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 250, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 250, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
@@ -7325,11 +6952,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __PYX_XDEC_MEMVIEW(&__pyx_t_23, 1);
       __pyx_t_23.memview = NULL;
       __pyx_t_23.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 250, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
 
-      /* "magnetism.pyx":251
+      /* "magnetism.pyx":231
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
  *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
  *             forces[i,0] += force[0]             # <<<<<<<<<<<<<<
@@ -7340,7 +6967,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[0]);
 
-      /* "magnetism.pyx":252
+      /* "magnetism.pyx":232
  *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]             # <<<<<<<<<<<<<<
@@ -7351,7 +6978,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[1]);
 
-      /* "magnetism.pyx":253
+      /* "magnetism.pyx":233
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]             # <<<<<<<<<<<<<<
@@ -7362,7 +6989,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[2]);
 
-      /* "magnetism.pyx":254
+      /* "magnetism.pyx":234
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]
  *             forces[j,0] -= force[0]             # <<<<<<<<<<<<<<
@@ -7373,7 +7000,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[0]);
 
-      /* "magnetism.pyx":255
+      /* "magnetism.pyx":235
  *             forces[i,2] += force[2]
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]             # <<<<<<<<<<<<<<
@@ -7384,7 +7011,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[1]);
 
-      /* "magnetism.pyx":256
+      /* "magnetism.pyx":236
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]             # <<<<<<<<<<<<<<
@@ -7395,7 +7022,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
 
-      /* "magnetism.pyx":257
+      /* "magnetism.pyx":237
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]
  *             forces[i,0] += wca_force[0]             # <<<<<<<<<<<<<<
@@ -7406,7 +7033,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[0]);
 
-      /* "magnetism.pyx":258
+      /* "magnetism.pyx":238
  *             forces[j,2] -= force[2]
  *             forces[i,0] += wca_force[0]
  *             forces[i,1] += wca_force[1]             # <<<<<<<<<<<<<<
@@ -7417,7 +7044,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[1]);
 
-      /* "magnetism.pyx":259
+      /* "magnetism.pyx":239
  *             forces[i,0] += wca_force[0]
  *             forces[i,1] += wca_force[1]
  *             forces[i,2] += wca_force[2]             # <<<<<<<<<<<<<<
@@ -7428,7 +7055,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[2]);
 
-      /* "magnetism.pyx":260
+      /* "magnetism.pyx":240
  *             forces[i,1] += wca_force[1]
  *             forces[i,2] += wca_force[2]
  *             forces[j,0] -= wca_force[0]             # <<<<<<<<<<<<<<
@@ -7439,7 +7066,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[0]);
 
-      /* "magnetism.pyx":261
+      /* "magnetism.pyx":241
  *             forces[i,2] += wca_force[2]
  *             forces[j,0] -= wca_force[0]
  *             forces[j,1] -= wca_force[1]             # <<<<<<<<<<<<<<
@@ -7450,7 +7077,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[1]);
 
-      /* "magnetism.pyx":262
+      /* "magnetism.pyx":242
  *             forces[j,0] -= wca_force[0]
  *             forces[j,1] -= wca_force[1]
  *             forces[j,2] -= wca_force[2]             # <<<<<<<<<<<<<<
@@ -7463,7 +7090,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
     }
   }
 
-  /* "magnetism.pyx":263
+  /* "magnetism.pyx":243
  *             forces[j,1] -= wca_force[1]
  *             forces[j,2] -= wca_force[2]
  *     return forces             # <<<<<<<<<<<<<<
@@ -7475,7 +7102,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_r = ((PyArrayObject *)__pyx_v_forces);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":225
+  /* "magnetism.pyx":205
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):             # <<<<<<<<<<<<<<
@@ -7554,17 +7181,17 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, 1); __PYX_ERR(0, 225, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, 1); __PYX_ERR(0, 205, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, 2); __PYX_ERR(0, 225, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, 2); __PYX_ERR(0, 205, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces") < 0)) __PYX_ERR(0, 225, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces") < 0)) __PYX_ERR(0, 205, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -7573,13 +7200,13 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 225, __pyx_L3_error)
-    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 225, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 225, __pyx_L3_error)
+    __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 205, __pyx_L3_error)
+    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 205, __pyx_L3_error)
+    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 205, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 225, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 205, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_dip_dip_forces", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7601,9 +7228,9 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_dip_dip_forces", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 225, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 225, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
+  if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 205, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 205, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7622,7 +7249,7 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   return __pyx_r;
 }
 
-/* "magnetism.pyx":267
+/* "magnetism.pyx":247
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
@@ -7685,7 +7312,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_pybuffernd_moments.data = NULL;
   __pyx_pybuffernd_moments.rcbuffer = &__pyx_pybuffer_moments;
 
-  /* "magnetism.pyx":269
+  /* "magnetism.pyx":249
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]             # <<<<<<<<<<<<<<
@@ -7694,21 +7321,21 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
  */
   __pyx_v_N_particles = (__pyx_v_particle_posns.shape[0]);
 
-  /* "magnetism.pyx":270
+  /* "magnetism.pyx":250
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef int i
  *     cdef int j
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
@@ -7716,32 +7343,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 250, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_forces = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 270, __pyx_L1_error)
+      __PYX_ERR(0, 250, __pyx_L1_error)
     } else {__pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -7749,49 +7376,49 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_v_forces = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":273
+  /* "magnetism.pyx":253
  *     cdef int i
  *     cdef int j
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
-  __pyx_t_5 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_particle_V = __pyx_t_7;
 
-  /* "magnetism.pyx":274
+  /* "magnetism.pyx":254
  *     cdef int j
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5);
@@ -7799,32 +7426,32 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __Pyx_GIVEREF(__pyx_int_3);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 274, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 274, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 274, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 254, __pyx_L1_error)
   __pyx_t_8 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_moments.rcbuffer->pybuffer, (PyObject*)__pyx_t_8, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
       __pyx_v_moments = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 274, __pyx_L1_error)
+      __PYX_ERR(0, 254, __pyx_L1_error)
     } else {__pyx_pybuffernd_moments.diminfo[0].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_moments.diminfo[0].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_moments.diminfo[1].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_moments.diminfo[1].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[1];
     }
   }
@@ -7832,123 +7459,123 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_v_moments = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "magnetism.pyx":275
+  /* "magnetism.pyx":255
  *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 275, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 275, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 275, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   memcpy(&(__pyx_v_r_i[0]), __pyx_t_9, sizeof(__pyx_v_r_i[0]) * (3));
 
-  /* "magnetism.pyx":276
+  /* "magnetism.pyx":256
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_5, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_5, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   memcpy(&(__pyx_v_r_j[0]), __pyx_t_9, sizeof(__pyx_v_r_j[0]) * (3));
 
-  /* "magnetism.pyx":277
+  /* "magnetism.pyx":257
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 277, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 277, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 277, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   memcpy(&(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
 
-  /* "magnetism.pyx":278
+  /* "magnetism.pyx":258
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another             # <<<<<<<<<<<<<<
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 278, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 278, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 278, __pyx_L1_error)
+  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   memcpy(&(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
 
-  /* "magnetism.pyx":279
+  /* "magnetism.pyx":259
  *     cdef double[3] force = np.empty((3,),dtype=np.float64)
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):             # <<<<<<<<<<<<<<
@@ -7960,7 +7587,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
 
-    /* "magnetism.pyx":280
+    /* "magnetism.pyx":260
  *     cdef double[3] wca_force = np.empty((3,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V             # <<<<<<<<<<<<<<
@@ -7973,7 +7600,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
     __pyx_t_16 = 0;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
 
-    /* "magnetism.pyx":281
+    /* "magnetism.pyx":261
  *     for i in range(N_particles):
  *         moments[i,0] = M[i,0]*particle_V
  *         moments[i,1] = M[i,1]*particle_V             # <<<<<<<<<<<<<<
@@ -7986,7 +7613,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
     __pyx_t_15 = 1;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_14 * __pyx_v_M.strides[0]) )) + __pyx_t_13)) ))) * __pyx_v_particle_V);
 
-    /* "magnetism.pyx":282
+    /* "magnetism.pyx":262
  *         moments[i,0] = M[i,0]*particle_V
  *         moments[i,1] = M[i,1]*particle_V
  *         moments[i,2] = M[i,2]*particle_V             # <<<<<<<<<<<<<<
@@ -8000,7 +7627,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
   }
 
-  /* "magnetism.pyx":283
+  /* "magnetism.pyx":263
  *         moments[i,1] = M[i,1]*particle_V
  *         moments[i,2] = M[i,2]*particle_V
  *     for i in range(N_particles):             # <<<<<<<<<<<<<<
@@ -8012,7 +7639,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
 
-    /* "magnetism.pyx":284
+    /* "magnetism.pyx":264
  *         moments[i,2] = M[i,2]*particle_V
  *     for i in range(N_particles):
  *         for j in range(i+1,N_particles):             # <<<<<<<<<<<<<<
@@ -8024,7 +7651,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
     for (__pyx_t_19 = (__pyx_v_i + 1); __pyx_t_19 < __pyx_t_18; __pyx_t_19+=1) {
       __pyx_v_j = __pyx_t_19;
 
-      /* "magnetism.pyx":285
+      /* "magnetism.pyx":265
  *     for i in range(N_particles):
  *         for j in range(i+1,N_particles):
  *             r_i[0] = particle_posns[i,0]             # <<<<<<<<<<<<<<
@@ -8035,7 +7662,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 0;
       (__pyx_v_r_i[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":286
+      /* "magnetism.pyx":266
  *         for j in range(i+1,N_particles):
  *             r_i[0] = particle_posns[i,0]
  *             r_i[1] = particle_posns[i,1]             # <<<<<<<<<<<<<<
@@ -8046,7 +7673,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 1;
       (__pyx_v_r_i[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":287
+      /* "magnetism.pyx":267
  *             r_i[0] = particle_posns[i,0]
  *             r_i[1] = particle_posns[i,1]
  *             r_i[2] = particle_posns[i,2]             # <<<<<<<<<<<<<<
@@ -8057,7 +7684,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 2;
       (__pyx_v_r_i[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":288
+      /* "magnetism.pyx":268
  *             r_i[1] = particle_posns[i,1]
  *             r_i[2] = particle_posns[i,2]
  *             r_j[0] = particle_posns[j,0]             # <<<<<<<<<<<<<<
@@ -8068,7 +7695,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 0;
       (__pyx_v_r_j[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":289
+      /* "magnetism.pyx":269
  *             r_i[2] = particle_posns[i,2]
  *             r_j[0] = particle_posns[j,0]
  *             r_j[1] = particle_posns[j,1]             # <<<<<<<<<<<<<<
@@ -8079,7 +7706,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 1;
       (__pyx_v_r_j[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
 
-      /* "magnetism.pyx":290
+      /* "magnetism.pyx":270
  *             r_j[0] = particle_posns[j,0]
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
@@ -8090,66 +7717,66 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 2;
       (__pyx_v_r_j[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
 
-      /* "magnetism.pyx":291
+      /* "magnetism.pyx":271
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)             # <<<<<<<<<<<<<<
  *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
  *             forces[i,0] += force[0]
  */
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_20 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_20.memview)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_20 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_20.memview)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_GIVEREF(__pyx_t_4);
       PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
+      __Pyx_INCREF(__pyx_slice__3);
+      __Pyx_GIVEREF(__pyx_slice__3);
+      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__3);
       __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_21 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_21 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 291, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 291, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force(__pyx_t_20, __pyx_t_21, __pyx_t_23, __pyx_t_24)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force(__pyx_t_20, __pyx_t_21, __pyx_t_23, __pyx_t_24)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_20, 1);
       __pyx_t_20.memview = NULL;
@@ -8163,40 +7790,40 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
       __pyx_t_24.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 291, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
 
-      /* "magnetism.pyx":292
+      /* "magnetism.pyx":272
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
  *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)             # <<<<<<<<<<<<<<
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  */
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 292, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 292, __pyx_L1_error)
+      if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size, __pyx_v_l_e)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 292, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size, __pyx_v_l_e)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
@@ -8204,11 +7831,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __PYX_XDEC_MEMVIEW(&__pyx_t_23, 1);
       __pyx_t_23.memview = NULL;
       __pyx_t_23.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 292, __pyx_L1_error)
+      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       memcpy(&(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
 
-      /* "magnetism.pyx":293
+      /* "magnetism.pyx":273
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
  *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
  *             forces[i,0] += force[0]             # <<<<<<<<<<<<<<
@@ -8219,7 +7846,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[0]);
 
-      /* "magnetism.pyx":294
+      /* "magnetism.pyx":274
  *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]             # <<<<<<<<<<<<<<
@@ -8230,7 +7857,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[1]);
 
-      /* "magnetism.pyx":295
+      /* "magnetism.pyx":275
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]             # <<<<<<<<<<<<<<
@@ -8241,7 +7868,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[2]);
 
-      /* "magnetism.pyx":296
+      /* "magnetism.pyx":276
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]
  *             forces[j,0] -= force[0]             # <<<<<<<<<<<<<<
@@ -8252,7 +7879,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[0]);
 
-      /* "magnetism.pyx":297
+      /* "magnetism.pyx":277
  *             forces[i,2] += force[2]
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]             # <<<<<<<<<<<<<<
@@ -8263,7 +7890,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[1]);
 
-      /* "magnetism.pyx":298
+      /* "magnetism.pyx":278
  *             forces[j,0] -= force[0]
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]             # <<<<<<<<<<<<<<
@@ -8274,7 +7901,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
 
-      /* "magnetism.pyx":299
+      /* "magnetism.pyx":279
  *             forces[j,1] -= force[1]
  *             forces[j,2] -= force[2]
  *             forces[i,0] += wca_force[0]             # <<<<<<<<<<<<<<
@@ -8285,7 +7912,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[0]);
 
-      /* "magnetism.pyx":300
+      /* "magnetism.pyx":280
  *             forces[j,2] -= force[2]
  *             forces[i,0] += wca_force[0]
  *             forces[i,1] += wca_force[1]             # <<<<<<<<<<<<<<
@@ -8296,7 +7923,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[1]);
 
-      /* "magnetism.pyx":301
+      /* "magnetism.pyx":281
  *             forces[i,0] += wca_force[0]
  *             forces[i,1] += wca_force[1]
  *             forces[i,2] += wca_force[2]             # <<<<<<<<<<<<<<
@@ -8307,7 +7934,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[2]);
 
-      /* "magnetism.pyx":302
+      /* "magnetism.pyx":282
  *             forces[i,1] += wca_force[1]
  *             forces[i,2] += wca_force[2]
  *             forces[j,0] -= wca_force[0]             # <<<<<<<<<<<<<<
@@ -8318,7 +7945,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[0]);
 
-      /* "magnetism.pyx":303
+      /* "magnetism.pyx":283
  *             forces[i,2] += wca_force[2]
  *             forces[j,0] -= wca_force[0]
  *             forces[j,1] -= wca_force[1]             # <<<<<<<<<<<<<<
@@ -8329,7 +7956,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[1]);
 
-      /* "magnetism.pyx":304
+      /* "magnetism.pyx":284
  *             forces[j,0] -= wca_force[0]
  *             forces[j,1] -= wca_force[1]
  *             forces[j,2] -= wca_force[2]             # <<<<<<<<<<<<<<
@@ -8342,7 +7969,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
     }
   }
 
-  /* "magnetism.pyx":305
+  /* "magnetism.pyx":285
  *             forces[j,1] -= wca_force[1]
  *             forces[j,2] -= wca_force[2]
  *     return forces             # <<<<<<<<<<<<<<
@@ -8354,7 +7981,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_r = ((PyArrayObject *)__pyx_v_forces);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":267
+  /* "magnetism.pyx":247
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
@@ -8436,23 +8063,23 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 1); __PYX_ERR(0, 267, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 1); __PYX_ERR(0, 247, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 2); __PYX_ERR(0, 267, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 2); __PYX_ERR(0, 247, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 3); __PYX_ERR(0, 267, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 3); __PYX_ERR(0, 247, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces_normalized") < 0)) __PYX_ERR(0, 267, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces_normalized") < 0)) __PYX_ERR(0, 247, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -8462,14 +8089,14 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 267, __pyx_L3_error)
-    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 267, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 267, __pyx_L3_error)
-    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 267, __pyx_L3_error)
+    __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 247, __pyx_L3_error)
+    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 247, __pyx_L3_error)
+    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
+    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 267, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 247, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("magnetism.get_dip_dip_forces_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8491,9 +8118,9 @@ static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUS
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_dip_dip_forces_normalized", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 267, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 267, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+  if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 247, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 247, __pyx_L1_error) }
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8512,7 +8139,7 @@ static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUS
   return __pyx_r;
 }
 
-/* "magnetism.pyx":310
+/* "magnetism.pyx":290
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
@@ -8555,7 +8182,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_pybuffernd_force.data = NULL;
   __pyx_pybuffernd_force.rcbuffer = &__pyx_pybuffer_force;
 
-  /* "magnetism.pyx":312
+  /* "magnetism.pyx":292
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
  *     cdef double wca_mag
  *     cdef double sigma = 1#2*particle_size/(3e-6)             # <<<<<<<<<<<<<<
@@ -8564,7 +8191,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
  */
   __pyx_v_sigma = 1.0;
 
-  /* "magnetism.pyx":313
+  /* "magnetism.pyx":293
  *     cdef double wca_mag
  *     cdef double sigma = 1#2*particle_size/(3e-6)
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
@@ -8573,7 +8200,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
  */
   __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
 
-  /* "magnetism.pyx":316
+  /* "magnetism.pyx":296
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -8583,46 +8210,46 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "magnetism.pyx":317
+    /* "magnetism.pyx":297
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  */
     __pyx_t_2 = __pyx_v_i;
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":318
+  /* "magnetism.pyx":298
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  */
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
-  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_5 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_4), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 298, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_7, __pyx_t_8));
   __PYX_XDEC_MEMVIEW(&__pyx_t_7, 1);
@@ -8632,38 +8259,38 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
 
-  /* "magnetism.pyx":319
+  /* "magnetism.pyx":299
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_np); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_float64); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 319, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) < 0) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_tuple__2, __pyx_t_5); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 299, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 319, __pyx_L1_error)
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 299, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force.rcbuffer->pybuffer, (PyObject*)__pyx_t_11, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 319, __pyx_L1_error)
+      __PYX_ERR(0, 299, __pyx_L1_error)
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -8671,27 +8298,27 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_v_force = ((PyArrayObject *)__pyx_t_10);
   __pyx_t_10 = 0;
 
-  /* "magnetism.pyx":320
+  /* "magnetism.pyx":300
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72             # <<<<<<<<<<<<<<
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 320, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 300, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 320, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_pi); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 300, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 320, __pyx_L1_error)
+  __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 300, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 320, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 300, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_v_eps_constant = __pyx_t_5;
   __pyx_t_5 = 0;
 
-  /* "magnetism.pyx":321
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+  /* "magnetism.pyx":301
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
@@ -8700,17 +8327,17 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_t_13 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 
-    /* "magnetism.pyx":322
+    /* "magnetism.pyx":302
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)             # <<<<<<<<<<<<<<
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  */
-    __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 322, __pyx_L1_error)
+    __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 302, __pyx_L1_error)
     __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_t_12, __pyx_v_rij_mag, __pyx_v_sigma);
 
-    /* "magnetism.pyx":323
+    /* "magnetism.pyx":303
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):             # <<<<<<<<<<<<<<
@@ -8720,7 +8347,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
     for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
       __pyx_v_i = __pyx_t_1;
 
-      /* "magnetism.pyx":324
+      /* "magnetism.pyx":304
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
@@ -8730,14 +8357,14 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
       __pyx_t_12 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 324, __pyx_L1_error)
+        __PYX_ERR(0, 304, __pyx_L1_error)
       }
       __pyx_t_3 = __pyx_v_i;
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force.rcbuffer->pybuffer.buf, __pyx_t_3, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_12 / __pyx_v_rij_mag);
     }
 
-    /* "magnetism.pyx":321
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+    /* "magnetism.pyx":301
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
@@ -8745,7 +8372,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
  */
   }
 
-  /* "magnetism.pyx":325
+  /* "magnetism.pyx":305
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  *     return force             # <<<<<<<<<<<<<<
@@ -8757,7 +8384,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_r = ((PyArrayObject *)__pyx_v_force);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":310
+  /* "magnetism.pyx":290
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
@@ -8793,7 +8420,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   return __pyx_r;
 }
 
-/* "magnetism.pyx":329
+/* "magnetism.pyx":309
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
@@ -8809,7 +8436,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   int __pyx_v_i;
   double __pyx_v_rij_mag;
   PyArrayObject *__pyx_v_force = 0;
-  double __pyx_v_eps_constant;
+  PyObject *__pyx_v_eps_constant = 0;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_force;
   __Pyx_Buffer __pyx_pybuffer_force;
   PyArrayObject *__pyx_r = NULL;
@@ -8836,7 +8463,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_pybuffernd_force.data = NULL;
   __pyx_pybuffernd_force.rcbuffer = &__pyx_pybuffer_force;
 
-  /* "magnetism.pyx":331
+  /* "magnetism.pyx":311
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):
  *     cdef double wca_mag
  *     cdef double sigma = 2*particle_size/l_e             # <<<<<<<<<<<<<<
@@ -8846,11 +8473,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_t_1 = (2.0 * __pyx_v_particle_size);
   if (unlikely(__pyx_v_l_e == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 331, __pyx_L1_error)
+    __PYX_ERR(0, 311, __pyx_L1_error)
   }
   __pyx_v_sigma = (__pyx_t_1 / __pyx_v_l_e);
 
-  /* "magnetism.pyx":332
+  /* "magnetism.pyx":312
  *     cdef double wca_mag
  *     cdef double sigma = 2*particle_size/l_e
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
@@ -8859,7 +8486,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
  */
   __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
 
-  /* "magnetism.pyx":335
+  /* "magnetism.pyx":315
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -8869,46 +8496,46 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "magnetism.pyx":336
+    /* "magnetism.pyx":316
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  */
     __pyx_t_3 = __pyx_v_i;
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_3 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_4 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":337
+  /* "magnetism.pyx":317
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  */
-  __pyx_t_7 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_7 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_5 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_7), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 337, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_t_5 = __pyx_array_new(__pyx_t_7, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 337, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 337, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 317, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_8, __pyx_t_9));
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
@@ -8918,38 +8545,38 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "magnetism.pyx":338
+  /* "magnetism.pyx":318
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_float64); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_float64); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) < 0) __PYX_ERR(0, 338, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 338, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 338, __pyx_L1_error)
+  if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 318, __pyx_L1_error)
   __pyx_t_12 = ((PyArrayObject *)__pyx_t_11);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force.rcbuffer->pybuffer, (PyObject*)__pyx_t_12, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 338, __pyx_L1_error)
+      __PYX_ERR(0, 318, __pyx_L1_error)
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -8957,25 +8584,28 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_v_force = ((PyArrayObject *)__pyx_t_11);
   __pyx_t_11 = 0;
 
-  /* "magnetism.pyx":339
+  /* "magnetism.pyx":319
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72             # <<<<<<<<<<<<<<
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72             # <<<<<<<<<<<<<<
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 339, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 339, __pyx_L1_error)
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_v_eps_constant = (((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0);
+  __pyx_t_6 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_v_eps_constant = __pyx_t_6;
+  __pyx_t_6 = 0;
 
-  /* "magnetism.pyx":340
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+  /* "magnetism.pyx":320
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
@@ -8983,16 +8613,17 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_t_13 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 
-    /* "magnetism.pyx":341
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+    /* "magnetism.pyx":321
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)             # <<<<<<<<<<<<<<
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  */
-    __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_v_eps_constant, __pyx_v_rij_mag, __pyx_v_sigma);
+    __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 321, __pyx_L1_error)
+    __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_t_1, __pyx_v_rij_mag, __pyx_v_sigma);
 
-    /* "magnetism.pyx":342
+    /* "magnetism.pyx":322
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):             # <<<<<<<<<<<<<<
@@ -9002,7 +8633,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
     for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
       __pyx_v_i = __pyx_t_2;
 
-      /* "magnetism.pyx":343
+      /* "magnetism.pyx":323
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
@@ -9012,22 +8643,22 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
       __pyx_t_1 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 343, __pyx_L1_error)
+        __PYX_ERR(0, 323, __pyx_L1_error)
       }
       __pyx_t_4 = __pyx_v_i;
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force.rcbuffer->pybuffer.buf, __pyx_t_4, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_1 / __pyx_v_rij_mag);
     }
 
-    /* "magnetism.pyx":340
- *     cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
+    /* "magnetism.pyx":320
+ *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+ *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  */
   }
 
-  /* "magnetism.pyx":344
+  /* "magnetism.pyx":324
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  *     return force             # <<<<<<<<<<<<<<
@@ -9039,7 +8670,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_r = ((PyArrayObject *)__pyx_v_force);
   goto __pyx_L0;
 
-  /* "magnetism.pyx":329
+  /* "magnetism.pyx":309
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
@@ -9069,12 +8700,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_force.rcbuffer->pybuffer);
   __pyx_L2:;
   __Pyx_XDECREF((PyObject *)__pyx_v_force);
+  __Pyx_XDECREF(__pyx_v_eps_constant);
   __Pyx_XGIVEREF((PyObject *)__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "magnetism.pyx":348
+/* "magnetism.pyx":328
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
@@ -9092,7 +8724,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "magnetism.pyx":349
+  /* "magnetism.pyx":329
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
  *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
@@ -9107,16 +8739,15 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 349, __pyx_L1_error)
+    __PYX_ERR(0, 329, __pyx_L1_error)
   }
   __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
 
-  /* "magnetism.pyx":351
+  /* "magnetism.pyx":331
  *     cdef double sigma_over_separation = sigma/r
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)             # <<<<<<<<<<<<<<
  *     return force_mag
- * 
  */
   __pyx_t_1 = (12.0 * pow(__pyx_v_sigma_over_separation, 13.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -9127,7 +8758,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 351, __pyx_L1_error)
+    __PYX_ERR(0, 331, __pyx_L1_error)
   }
   __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -9138,21 +8769,19 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 351, __pyx_L1_error)
+    __PYX_ERR(0, 331, __pyx_L1_error)
   }
   __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
 
-  /* "magnetism.pyx":352
+  /* "magnetism.pyx":332
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
  *     return force_mag             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
  */
   __pyx_r = __pyx_v_force_mag;
   goto __pyx_L0;
 
-  /* "magnetism.pyx":348
+  /* "magnetism.pyx":328
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
@@ -9164,1347 +8793,6 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   __pyx_L1_error:;
   __Pyx_WriteUnraisable("magnetism.get_wca_force", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
   __pyx_r = 0;
-  __pyx_L0:;
-  return __pyx_r;
-}
-
-/* "magnetism.pyx":356
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_energy_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
- *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole, with the energy being the last row entry, first column"""
- *     cdef int N_particles = particle_posns.shape[0]
- */
-
-static PyObject *__pyx_pw_9magnetism_13get_dip_dip_forces_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_energy_normalized(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
-  int __pyx_v_N_particles;
-  PyArrayObject *__pyx_v_forces = 0;
-  int __pyx_v_i;
-  int __pyx_v_j;
-  double __pyx_v_particle_V;
-  PyArrayObject *__pyx_v_moments = 0;
-  double __pyx_v_r_i[3];
-  double __pyx_v_r_j[3];
-  double __pyx_v_force_energy[4];
-  double __pyx_v_wca_force_energy[4];
-  double __pyx_v_total_energy;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_forces;
-  __Pyx_Buffer __pyx_pybuffer_forces;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_moments;
-  __Pyx_Buffer __pyx_pybuffer_moments;
-  PyArrayObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  PyObject *__pyx_t_5 = NULL;
-  PyArrayObject *__pyx_t_6 = NULL;
-  double __pyx_t_7;
-  PyArrayObject *__pyx_t_8 = NULL;
-  double __pyx_t_9[3];
-  double __pyx_t_10[4];
-  int __pyx_t_11;
-  int __pyx_t_12;
-  int __pyx_t_13;
-  Py_ssize_t __pyx_t_14;
-  Py_ssize_t __pyx_t_15;
-  Py_ssize_t __pyx_t_16;
-  Py_ssize_t __pyx_t_17;
-  int __pyx_t_18;
-  int __pyx_t_19;
-  int __pyx_t_20;
-  __Pyx_memviewslice __pyx_t_21 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_t_22 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  struct __pyx_array_obj *__pyx_t_23 = NULL;
-  __Pyx_memviewslice __pyx_t_24 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_t_25 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("get_dip_dip_forces_energy_normalized", 0);
-  __pyx_pybuffer_forces.pybuffer.buf = NULL;
-  __pyx_pybuffer_forces.refcount = 0;
-  __pyx_pybuffernd_forces.data = NULL;
-  __pyx_pybuffernd_forces.rcbuffer = &__pyx_pybuffer_forces;
-  __pyx_pybuffer_moments.pybuffer.buf = NULL;
-  __pyx_pybuffer_moments.refcount = 0;
-  __pyx_pybuffernd_moments.data = NULL;
-  __pyx_pybuffernd_moments.rcbuffer = &__pyx_pybuffer_moments;
-
-  /* "magnetism.pyx":358
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_energy_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):
- *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole, with the energy being the last row entry, first column"""
- *     cdef int N_particles = particle_posns.shape[0]             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles+1,3),dtype=np.float64)
- *     cdef int i
- */
-  __pyx_v_N_particles = (__pyx_v_particle_posns.shape[0]);
-
-  /* "magnetism.pyx":359
- *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole, with the energy being the last row entry, first column"""
- *     cdef int N_particles = particle_posns.shape[0]
- *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles+1,3),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef int i
- *     cdef int j
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_long((__pyx_v_N_particles + 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
-  __Pyx_INCREF(__pyx_int_3);
-  __Pyx_GIVEREF(__pyx_int_3);
-  PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GIVEREF(__pyx_t_3);
-  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_3);
-  __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 359, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 359, __pyx_L1_error)
-  __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_forces = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 359, __pyx_L1_error)
-    } else {__pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
-    }
-  }
-  __pyx_t_6 = 0;
-  __pyx_v_forces = ((PyArrayObject *)__pyx_t_5);
-  __pyx_t_5 = 0;
-
-  /* "magnetism.pyx":362
- *     cdef int i
- *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
- *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
- */
-  __pyx_t_5 = PyFloat_FromDouble((4.0 / 3.0)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 362, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_v_particle_V = __pyx_t_7;
-
-  /* "magnetism.pyx":363
- *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
- *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
- *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_N_particles); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GIVEREF(__pyx_t_5);
-  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5);
-  __Pyx_INCREF(__pyx_int_3);
-  __Pyx_GIVEREF(__pyx_int_3);
-  PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_3);
-  __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GIVEREF(__pyx_t_3);
-  PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
-  __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 363, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 363, __pyx_L1_error)
-  __pyx_t_8 = ((PyArrayObject *)__pyx_t_4);
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_moments.rcbuffer->pybuffer, (PyObject*)__pyx_t_8, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_moments = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 363, __pyx_L1_error)
-    } else {__pyx_pybuffernd_moments.diminfo[0].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_moments.diminfo[0].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_moments.diminfo[1].strides = __pyx_pybuffernd_moments.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_moments.diminfo[1].shape = __pyx_pybuffernd_moments.rcbuffer->pybuffer.shape[1];
-    }
-  }
-  __pyx_t_8 = 0;
-  __pyx_v_moments = ((PyArrayObject *)__pyx_t_4);
-  __pyx_t_4 = 0;
-
-  /* "magnetism.pyx":364
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
- *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
- *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
- *     cdef double[4] force_energy = np.empty((4,),dtype=np.float64)
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_empty); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__2, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_1, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 364, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  memcpy(&(__pyx_v_r_i[0]), __pyx_t_9, sizeof(__pyx_v_r_i[0]) * (3));
-
-  /* "magnetism.pyx":365
- *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
- *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
- *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double[4] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double[4] wca_force_energy = np.empty((4,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_tuple__2, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_5, __pyx_t_9, 3) < 0)) __PYX_ERR(0, 365, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  memcpy(&(__pyx_v_r_j[0]), __pyx_t_9, sizeof(__pyx_v_r_j[0]) * (3));
-
-  /* "magnetism.pyx":366
- *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
- *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
- *     cdef double[4] force_energy = np.empty((4,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double[4] wca_force_energy = np.empty((4,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
- *     cdef double total_energy = 0
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_empty); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_tuple__4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_3, __pyx_t_10, 4) < 0)) __PYX_ERR(0, 366, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  memcpy(&(__pyx_v_force_energy[0]), __pyx_t_10, sizeof(__pyx_v_force_energy[0]) * (4));
-
-  /* "magnetism.pyx":367
- *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
- *     cdef double[4] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double[4] wca_force_energy = np.empty((4,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another             # <<<<<<<<<<<<<<
- *     cdef double total_energy = 0
- *     for i in range(N_particles):
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_empty); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_tuple__4, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_10, 4) < 0)) __PYX_ERR(0, 367, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  memcpy(&(__pyx_v_wca_force_energy[0]), __pyx_t_10, sizeof(__pyx_v_wca_force_energy[0]) * (4));
-
-  /* "magnetism.pyx":368
- *     cdef double[4] force_energy = np.empty((4,),dtype=np.float64)
- *     cdef double[4] wca_force_energy = np.empty((4,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
- *     cdef double total_energy = 0             # <<<<<<<<<<<<<<
- *     for i in range(N_particles):
- *         moments[i,0] = M[i,0]*particle_V
- */
-  __pyx_v_total_energy = 0.0;
-
-  /* "magnetism.pyx":369
- *     cdef double[4] wca_force_energy = np.empty((4,),dtype=np.float64)#additional repulsive force to keep the particles from collapsing on one another
- *     cdef double total_energy = 0
- *     for i in range(N_particles):             # <<<<<<<<<<<<<<
- *         moments[i,0] = M[i,0]*particle_V
- *         moments[i,1] = M[i,1]*particle_V
- */
-  __pyx_t_11 = __pyx_v_N_particles;
-  __pyx_t_12 = __pyx_t_11;
-  for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
-    __pyx_v_i = __pyx_t_13;
-
-    /* "magnetism.pyx":370
- *     cdef double total_energy = 0
- *     for i in range(N_particles):
- *         moments[i,0] = M[i,0]*particle_V             # <<<<<<<<<<<<<<
- *         moments[i,1] = M[i,1]*particle_V
- *         moments[i,2] = M[i,2]*particle_V
- */
-    __pyx_t_14 = __pyx_v_i;
-    __pyx_t_15 = 0;
-    __pyx_t_16 = __pyx_v_i;
-    __pyx_t_17 = 0;
-    *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_17, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_14 * __pyx_v_M.strides[0]) )) + __pyx_t_15)) ))) * __pyx_v_particle_V);
-
-    /* "magnetism.pyx":371
- *     for i in range(N_particles):
- *         moments[i,0] = M[i,0]*particle_V
- *         moments[i,1] = M[i,1]*particle_V             # <<<<<<<<<<<<<<
- *         moments[i,2] = M[i,2]*particle_V
- *     for i in range(N_particles):
- */
-    __pyx_t_15 = __pyx_v_i;
-    __pyx_t_14 = 1;
-    __pyx_t_17 = __pyx_v_i;
-    __pyx_t_16 = 1;
-    *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_15 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
-
-    /* "magnetism.pyx":372
- *         moments[i,0] = M[i,0]*particle_V
- *         moments[i,1] = M[i,1]*particle_V
- *         moments[i,2] = M[i,2]*particle_V             # <<<<<<<<<<<<<<
- *     for i in range(N_particles):
- *         for j in range(i+1,N_particles):
- */
-    __pyx_t_14 = __pyx_v_i;
-    __pyx_t_15 = 2;
-    __pyx_t_16 = __pyx_v_i;
-    __pyx_t_17 = 2;
-    *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_moments.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_17, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_14 * __pyx_v_M.strides[0]) )) + __pyx_t_15)) ))) * __pyx_v_particle_V);
-  }
-
-  /* "magnetism.pyx":373
- *         moments[i,1] = M[i,1]*particle_V
- *         moments[i,2] = M[i,2]*particle_V
- *     for i in range(N_particles):             # <<<<<<<<<<<<<<
- *         for j in range(i+1,N_particles):
- *             r_i[0] = particle_posns[i,0]
- */
-  __pyx_t_11 = __pyx_v_N_particles;
-  __pyx_t_12 = __pyx_t_11;
-  for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
-    __pyx_v_i = __pyx_t_13;
-
-    /* "magnetism.pyx":374
- *         moments[i,2] = M[i,2]*particle_V
- *     for i in range(N_particles):
- *         for j in range(i+1,N_particles):             # <<<<<<<<<<<<<<
- *             r_i[0] = particle_posns[i,0]
- *             r_i[1] = particle_posns[i,1]
- */
-    __pyx_t_18 = __pyx_v_N_particles;
-    __pyx_t_19 = __pyx_t_18;
-    for (__pyx_t_20 = (__pyx_v_i + 1); __pyx_t_20 < __pyx_t_19; __pyx_t_20+=1) {
-      __pyx_v_j = __pyx_t_20;
-
-      /* "magnetism.pyx":375
- *     for i in range(N_particles):
- *         for j in range(i+1,N_particles):
- *             r_i[0] = particle_posns[i,0]             # <<<<<<<<<<<<<<
- *             r_i[1] = particle_posns[i,1]
- *             r_i[2] = particle_posns[i,2]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 0;
-      (__pyx_v_r_i[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_15 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-
-      /* "magnetism.pyx":376
- *         for j in range(i+1,N_particles):
- *             r_i[0] = particle_posns[i,0]
- *             r_i[1] = particle_posns[i,1]             # <<<<<<<<<<<<<<
- *             r_i[2] = particle_posns[i,2]
- *             r_j[0] = particle_posns[j,0]
- */
-      __pyx_t_14 = __pyx_v_i;
-      __pyx_t_15 = 1;
-      (__pyx_v_r_i[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_15)) )));
-
-      /* "magnetism.pyx":377
- *             r_i[0] = particle_posns[i,0]
- *             r_i[1] = particle_posns[i,1]
- *             r_i[2] = particle_posns[i,2]             # <<<<<<<<<<<<<<
- *             r_j[0] = particle_posns[j,0]
- *             r_j[1] = particle_posns[j,1]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 2;
-      (__pyx_v_r_i[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_15 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-
-      /* "magnetism.pyx":378
- *             r_i[1] = particle_posns[i,1]
- *             r_i[2] = particle_posns[i,2]
- *             r_j[0] = particle_posns[j,0]             # <<<<<<<<<<<<<<
- *             r_j[1] = particle_posns[j,1]
- *             r_j[2] = particle_posns[j,2]
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 0;
-      (__pyx_v_r_j[0]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_15)) )));
-
-      /* "magnetism.pyx":379
- *             r_i[2] = particle_posns[i,2]
- *             r_j[0] = particle_posns[j,0]
- *             r_j[1] = particle_posns[j,1]             # <<<<<<<<<<<<<<
- *             r_j[2] = particle_posns[j,2]
- *             force_energy = get_dip_dip_force_energy(moments[i,:],moments[j,:],r_i,r_j)
- */
-      __pyx_t_15 = __pyx_v_j;
-      __pyx_t_14 = 1;
-      (__pyx_v_r_j[1]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_15 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-
-      /* "magnetism.pyx":380
- *             r_j[0] = particle_posns[j,0]
- *             r_j[1] = particle_posns[j,1]
- *             r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
- *             force_energy = get_dip_dip_force_energy(moments[i,:],moments[j,:],r_i,r_j)
- *             total_energy += force_energy[3]
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 2;
-      (__pyx_v_r_j[2]) = (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_15)) )));
-
-      /* "magnetism.pyx":381
- *             r_j[1] = particle_posns[j,1]
- *             r_j[2] = particle_posns[j,2]
- *             force_energy = get_dip_dip_force_energy(moments[i,:],moments[j,:],r_i,r_j)             # <<<<<<<<<<<<<<
- *             total_energy += force_energy[3]
- *             wca_force_energy = get_particle_wca_force_energy_normalized(r_i,r_j,particle_size,l_e)
- */
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_GIVEREF(__pyx_t_4);
-      PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
-      __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_21 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_j); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_GIVEREF(__pyx_t_4);
-      PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
-      __Pyx_INCREF(__pyx_slice__5);
-      __Pyx_GIVEREF(__pyx_slice__5);
-      PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_slice__5);
-      __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_moments), __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_22 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(__pyx_t_4, PyBUF_WRITABLE); if (unlikely(!__pyx_t_22.memview)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_23 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_23);
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_23);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force_energy(__pyx_t_21, __pyx_t_22, __pyx_t_24, __pyx_t_25)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __PYX_XDEC_MEMVIEW(&__pyx_t_21, 1);
-      __pyx_t_21.memview = NULL;
-      __pyx_t_21.data = NULL;
-      __PYX_XDEC_MEMVIEW(&__pyx_t_22, 1);
-      __pyx_t_22.memview = NULL;
-      __pyx_t_22.data = NULL;
-      __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
-      __pyx_t_24.memview = NULL;
-      __pyx_t_24.data = NULL;
-      __PYX_XDEC_MEMVIEW(&__pyx_t_25, 1);
-      __pyx_t_25.memview = NULL;
-      __pyx_t_25.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_10, 4) < 0)) __PYX_ERR(0, 381, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      memcpy(&(__pyx_v_force_energy[0]), __pyx_t_10, sizeof(__pyx_v_force_energy[0]) * (4));
-
-      /* "magnetism.pyx":382
- *             r_j[2] = particle_posns[j,2]
- *             force_energy = get_dip_dip_force_energy(moments[i,:],moments[j,:],r_i,r_j)
- *             total_energy += force_energy[3]             # <<<<<<<<<<<<<<
- *             wca_force_energy = get_particle_wca_force_energy_normalized(r_i,r_j,particle_size,l_e)
- *             forces[i,0] += force_energy[0]
- */
-      __pyx_v_total_energy = (__pyx_v_total_energy + (__pyx_v_force_energy[3]));
-
-      /* "magnetism.pyx":383
- *             force_energy = get_dip_dip_force_energy(moments[i,:],moments[j,:],r_i,r_j)
- *             total_energy += force_energy[3]
- *             wca_force_energy = get_particle_wca_force_energy_normalized(r_i,r_j,particle_size,l_e)             # <<<<<<<<<<<<<<
- *             forces[i,0] += force_energy[0]
- *             forces[i,1] += force_energy[1]
- */
-      __pyx_t_3 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_23 = __pyx_array_new(__pyx_t_4, sizeof(double), PyBytes_AS_STRING(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_23);
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_25 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_23 = __pyx_array_new(__pyx_t_3, sizeof(double), PyBytes_AS_STRING(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_23);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_24 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_23), PyBUF_WRITABLE); if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_DECREF(((PyObject *)__pyx_t_23)); __pyx_t_23 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_energy_normalized(__pyx_t_25, __pyx_t_24, __pyx_v_particle_size, __pyx_v_l_e)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      __PYX_XDEC_MEMVIEW(&__pyx_t_25, 1);
-      __pyx_t_25.memview = NULL;
-      __pyx_t_25.data = NULL;
-      __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
-      __pyx_t_24.memview = NULL;
-      __pyx_t_24.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_double(__pyx_t_4, __pyx_t_10, 4) < 0)) __PYX_ERR(0, 383, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      memcpy(&(__pyx_v_wca_force_energy[0]), __pyx_t_10, sizeof(__pyx_v_wca_force_energy[0]) * (4));
-
-      /* "magnetism.pyx":384
- *             total_energy += force_energy[3]
- *             wca_force_energy = get_particle_wca_force_energy_normalized(r_i,r_j,particle_size,l_e)
- *             forces[i,0] += force_energy[0]             # <<<<<<<<<<<<<<
- *             forces[i,1] += force_energy[1]
- *             forces[i,2] += force_energy[2]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 0;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force_energy[0]);
-
-      /* "magnetism.pyx":385
- *             wca_force_energy = get_particle_wca_force_energy_normalized(r_i,r_j,particle_size,l_e)
- *             forces[i,0] += force_energy[0]
- *             forces[i,1] += force_energy[1]             # <<<<<<<<<<<<<<
- *             forces[i,2] += force_energy[2]
- *             forces[j,0] -= force_energy[0]
- */
-      __pyx_t_14 = __pyx_v_i;
-      __pyx_t_15 = 1;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force_energy[1]);
-
-      /* "magnetism.pyx":386
- *             forces[i,0] += force_energy[0]
- *             forces[i,1] += force_energy[1]
- *             forces[i,2] += force_energy[2]             # <<<<<<<<<<<<<<
- *             forces[j,0] -= force_energy[0]
- *             forces[j,1] -= force_energy[1]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 2;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force_energy[2]);
-
-      /* "magnetism.pyx":387
- *             forces[i,1] += force_energy[1]
- *             forces[i,2] += force_energy[2]
- *             forces[j,0] -= force_energy[0]             # <<<<<<<<<<<<<<
- *             forces[j,1] -= force_energy[1]
- *             forces[j,2] -= force_energy[2]
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 0;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force_energy[0]);
-
-      /* "magnetism.pyx":388
- *             forces[i,2] += force_energy[2]
- *             forces[j,0] -= force_energy[0]
- *             forces[j,1] -= force_energy[1]             # <<<<<<<<<<<<<<
- *             forces[j,2] -= force_energy[2]
- *             forces[i,0] += wca_force_energy[0]
- */
-      __pyx_t_15 = __pyx_v_j;
-      __pyx_t_14 = 1;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force_energy[1]);
-
-      /* "magnetism.pyx":389
- *             forces[j,0] -= force_energy[0]
- *             forces[j,1] -= force_energy[1]
- *             forces[j,2] -= force_energy[2]             # <<<<<<<<<<<<<<
- *             forces[i,0] += wca_force_energy[0]
- *             forces[i,1] += wca_force_energy[1]
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 2;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force_energy[2]);
-
-      /* "magnetism.pyx":390
- *             forces[j,1] -= force_energy[1]
- *             forces[j,2] -= force_energy[2]
- *             forces[i,0] += wca_force_energy[0]             # <<<<<<<<<<<<<<
- *             forces[i,1] += wca_force_energy[1]
- *             forces[i,2] += wca_force_energy[2]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 0;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force_energy[0]);
-
-      /* "magnetism.pyx":391
- *             forces[j,2] -= force_energy[2]
- *             forces[i,0] += wca_force_energy[0]
- *             forces[i,1] += wca_force_energy[1]             # <<<<<<<<<<<<<<
- *             forces[i,2] += wca_force_energy[2]
- *             forces[j,0] -= wca_force_energy[0]
- */
-      __pyx_t_14 = __pyx_v_i;
-      __pyx_t_15 = 1;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force_energy[1]);
-
-      /* "magnetism.pyx":392
- *             forces[i,0] += wca_force_energy[0]
- *             forces[i,1] += wca_force_energy[1]
- *             forces[i,2] += wca_force_energy[2]             # <<<<<<<<<<<<<<
- *             forces[j,0] -= wca_force_energy[0]
- *             forces[j,1] -= wca_force_energy[1]
- */
-      __pyx_t_15 = __pyx_v_i;
-      __pyx_t_14 = 2;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force_energy[2]);
-
-      /* "magnetism.pyx":393
- *             forces[i,1] += wca_force_energy[1]
- *             forces[i,2] += wca_force_energy[2]
- *             forces[j,0] -= wca_force_energy[0]             # <<<<<<<<<<<<<<
- *             forces[j,1] -= wca_force_energy[1]
- *             forces[j,2] -= wca_force_energy[2]
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 0;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force_energy[0]);
-
-      /* "magnetism.pyx":394
- *             forces[i,2] += wca_force_energy[2]
- *             forces[j,0] -= wca_force_energy[0]
- *             forces[j,1] -= wca_force_energy[1]             # <<<<<<<<<<<<<<
- *             forces[j,2] -= wca_force_energy[2]
- *             total_energy += wca_force_energy[3]
- */
-      __pyx_t_15 = __pyx_v_j;
-      __pyx_t_14 = 1;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force_energy[1]);
-
-      /* "magnetism.pyx":395
- *             forces[j,0] -= wca_force_energy[0]
- *             forces[j,1] -= wca_force_energy[1]
- *             forces[j,2] -= wca_force_energy[2]             # <<<<<<<<<<<<<<
- *             total_energy += wca_force_energy[3]
- *     forces[N_particles,0] = total_energy
- */
-      __pyx_t_14 = __pyx_v_j;
-      __pyx_t_15 = 2;
-      *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force_energy[2]);
-
-      /* "magnetism.pyx":396
- *             forces[j,1] -= wca_force_energy[1]
- *             forces[j,2] -= wca_force_energy[2]
- *             total_energy += wca_force_energy[3]             # <<<<<<<<<<<<<<
- *     forces[N_particles,0] = total_energy
- *     return forces
- */
-      __pyx_v_total_energy = (__pyx_v_total_energy + (__pyx_v_wca_force_energy[3]));
-    }
-  }
-
-  /* "magnetism.pyx":397
- *             forces[j,2] -= wca_force_energy[2]
- *             total_energy += wca_force_energy[3]
- *     forces[N_particles,0] = total_energy             # <<<<<<<<<<<<<<
- *     return forces
- * 
- */
-  __pyx_t_15 = __pyx_v_N_particles;
-  __pyx_t_14 = 0;
-  *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) = __pyx_v_total_energy;
-
-  /* "magnetism.pyx":398
- *             total_energy += wca_force_energy[3]
- *     forces[N_particles,0] = total_energy
- *     return forces             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
- */
-  __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __Pyx_INCREF(((PyObject *)__pyx_v_forces));
-  __pyx_r = ((PyArrayObject *)__pyx_v_forces);
-  goto __pyx_L0;
-
-  /* "magnetism.pyx":356
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_energy_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
- *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole, with the energy being the last row entry, first column"""
- *     cdef int N_particles = particle_posns.shape[0]
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
-  __Pyx_XDECREF(__pyx_t_5);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_21, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_22, 1);
-  __Pyx_XDECREF(((PyObject *)__pyx_t_23));
-  __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_25, 1);
-  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_forces.rcbuffer->pybuffer);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_moments.rcbuffer->pybuffer);
-  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("magnetism.get_dip_dip_forces_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 0;
-  goto __pyx_L2;
-  __pyx_L0:;
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_forces.rcbuffer->pybuffer);
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_moments.rcbuffer->pybuffer);
-  __pyx_L2:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_forces);
-  __Pyx_XDECREF((PyObject *)__pyx_v_moments);
-  __Pyx_XGIVEREF((PyObject *)__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* Python wrapper */
-static PyObject *__pyx_pw_9magnetism_13get_dip_dip_forces_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9magnetism_12get_dip_dip_forces_energy_normalized[] = "Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole, with the energy being the last row entry, first column";
-static PyObject *__pyx_pw_9magnetism_13get_dip_dip_forces_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  __Pyx_memviewslice __pyx_v_M = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_particle_size;
-  double __pyx_v_l_e;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("get_dip_dip_forces_energy_normalized (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_M,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_size,&__pyx_n_s_l_e,0};
-    PyObject* values[4] = {0,0,0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-        CYTHON_FALLTHROUGH;
-        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-        CYTHON_FALLTHROUGH;
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_M)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_energy_normalized", 1, 4, 4, 1); __PYX_ERR(0, 356, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_energy_normalized", 1, 4, 4, 2); __PYX_ERR(0, 356, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_energy_normalized", 1, 4, 4, 3); __PYX_ERR(0, 356, __pyx_L3_error)
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces_energy_normalized") < 0)) __PYX_ERR(0, 356, __pyx_L3_error)
-      }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-    }
-    __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 356, __pyx_L3_error)
-    __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 356, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 356, __pyx_L3_error)
-    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 356, __pyx_L3_error)
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_energy_normalized", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 356, __pyx_L3_error)
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("magnetism.get_dip_dip_forces_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_12get_dip_dip_forces_energy_normalized(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_9magnetism_12get_dip_dip_forces_energy_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e) {
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("get_dip_dip_forces_energy_normalized", 0);
-  __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 356, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 356, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_energy_normalized(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 356, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("magnetism.get_dip_dip_forces_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __PYX_XDEC_MEMVIEW(&__pyx_v_M, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_particle_posns, 1);
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "magnetism.pyx":402
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_energy_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
- *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
- */
-
-static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_energy_normalized(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, double __pyx_v_particle_size, double __pyx_v_l_e) {
-  double __pyx_v_wca_mag;
-  double __pyx_v_sigma;
-  double __pyx_v_cutoff_length;
-  double __pyx_v_rij[3];
-  int __pyx_v_i;
-  double __pyx_v_rij_mag;
-  PyArrayObject *__pyx_v_force_energy = 0;
-  double __pyx_v_eps_constant;
-  double __pyx_v_energy;
-  __Pyx_LocalBuf_ND __pyx_pybuffernd_force_energy;
-  __Pyx_Buffer __pyx_pybuffer_force_energy;
-  PyArrayObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  double __pyx_t_1;
-  int __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  Py_ssize_t __pyx_t_4;
-  struct __pyx_array_obj *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  PyObject *__pyx_t_7 = NULL;
-  __Pyx_memviewslice __pyx_t_8 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_t_9 = { 0, 0, { 0 }, { 0 }, { 0 } };
-  PyObject *__pyx_t_10 = NULL;
-  PyObject *__pyx_t_11 = NULL;
-  PyArrayObject *__pyx_t_12 = NULL;
-  int __pyx_t_13;
-  __pyx_ctuple_double__and_double __pyx_t_14;
-  double __pyx_t_15;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("get_particle_wca_force_energy_normalized", 0);
-  __pyx_pybuffer_force_energy.pybuffer.buf = NULL;
-  __pyx_pybuffer_force_energy.refcount = 0;
-  __pyx_pybuffernd_force_energy.data = NULL;
-  __pyx_pybuffernd_force_energy.rcbuffer = &__pyx_pybuffer_force_energy;
-
-  /* "magnetism.pyx":404
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_energy_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):
- *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e             # <<<<<<<<<<<<<<
- *     cdef double cutoff_length = pow(2,(1/6))*sigma
- *     cdef double[3] rij
- */
-  __pyx_t_1 = (2.0 * __pyx_v_particle_size);
-  if (unlikely(__pyx_v_l_e == 0)) {
-    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 404, __pyx_L1_error)
-  }
-  __pyx_v_sigma = (__pyx_t_1 / __pyx_v_l_e);
-
-  /* "magnetism.pyx":405
- *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
- *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
- *     cdef double[3] rij
- *     cdef int i
- */
-  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
-
-  /* "magnetism.pyx":408
- *     cdef double[3] rij
- *     cdef int i
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- */
-  for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
-    __pyx_v_i = __pyx_t_2;
-
-    /* "magnetism.pyx":409
- *     cdef int i
- *     for i in range(3):
- *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
- *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.zeros((4,),dtype=np.float64)
- */
-    __pyx_t_3 = __pyx_v_i;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_3 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_4 * __pyx_v_r_j.strides[0]) ))));
-  }
-
-  /* "magnetism.pyx":410
- *     for i in range(3):
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.zeros((4,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
- */
-  __pyx_t_7 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_7), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_5 = __pyx_array_new(__pyx_t_7, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 410, __pyx_L1_error)
-  __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_8, __pyx_t_9));
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __pyx_t_8.memview = NULL;
-  __pyx_t_8.data = NULL;
-  __PYX_XDEC_MEMVIEW(&__pyx_t_9, 1);
-  __pyx_t_9.memview = NULL;
-  __pyx_t_9.data = NULL;
-
-  /* "magnetism.pyx":411
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.zeros((4,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
- *     cdef double energy = 0
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_zeros); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_float64); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_11);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) < 0) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__4, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 411, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_11);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 411, __pyx_L1_error)
-  __pyx_t_12 = ((PyArrayObject *)__pyx_t_11);
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer, (PyObject*)__pyx_t_12, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
-      __pyx_v_force_energy = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 411, __pyx_L1_error)
-    } else {__pyx_pybuffernd_force_energy.diminfo[0].strides = __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force_energy.diminfo[0].shape = __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.shape[0];
-    }
-  }
-  __pyx_t_12 = 0;
-  __pyx_v_force_energy = ((PyArrayObject *)__pyx_t_11);
-  __pyx_t_11 = 0;
-
-  /* "magnetism.pyx":412
- *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.zeros((4,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72             # <<<<<<<<<<<<<<
- *     cdef double energy = 0
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
- */
-  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 412, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 412, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 412, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_v_eps_constant = (((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0);
-
-  /* "magnetism.pyx":413
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.zeros((4,),dtype=np.float64)
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
- *     cdef double energy = 0             # <<<<<<<<<<<<<<
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)
- */
-  __pyx_v_energy = 0.0;
-
-  /* "magnetism.pyx":414
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
- *     cdef double energy = 0
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)
- *         for i in range(3):
- */
-  __pyx_t_13 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
-  if (__pyx_t_13) {
-
-    /* "magnetism.pyx":415
- *     cdef double energy = 0
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)             # <<<<<<<<<<<<<<
- *         for i in range(3):
- *             force_energy[i] += wca_mag * rij[i] / rij_mag
- */
-    __pyx_t_14 = __pyx_f_9magnetism_get_wca_force_energy(__pyx_v_eps_constant, __pyx_v_rij_mag, __pyx_v_sigma);
-    __pyx_t_1 = __pyx_t_14.f0;
-    __pyx_t_15 = __pyx_t_14.f1;
-    __pyx_v_wca_mag = __pyx_t_1;
-    __pyx_v_energy = __pyx_t_15;
-
-    /* "magnetism.pyx":416
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)
- *         for i in range(3):             # <<<<<<<<<<<<<<
- *             force_energy[i] += wca_mag * rij[i] / rij_mag
- *         force_energy[3] = energy
- */
-    for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
-      __pyx_v_i = __pyx_t_2;
-
-      /* "magnetism.pyx":417
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)
- *         for i in range(3):
- *             force_energy[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
- *         force_energy[3] = energy
- *     return force_energy
- */
-      __pyx_t_15 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
-      if (unlikely(__pyx_v_rij_mag == 0)) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 417, __pyx_L1_error)
-      }
-      __pyx_t_4 = __pyx_v_i;
-      *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf, __pyx_t_4, __pyx_pybuffernd_force_energy.diminfo[0].strides) += (__pyx_t_15 / __pyx_v_rij_mag);
-    }
-
-    /* "magnetism.pyx":418
- *         for i in range(3):
- *             force_energy[i] += wca_mag * rij[i] / rij_mag
- *         force_energy[3] = energy             # <<<<<<<<<<<<<<
- *     return force_energy
- * 
- */
-    __pyx_t_4 = 3;
-    *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force_energy.rcbuffer->pybuffer.buf, __pyx_t_4, __pyx_pybuffernd_force_energy.diminfo[0].strides) = __pyx_v_energy;
-
-    /* "magnetism.pyx":414
- *     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
- *     cdef double energy = 0
- *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
- *         wca_mag, energy = get_wca_force_energy(eps_constant,rij_mag,sigma)
- *         for i in range(3):
- */
-  }
-
-  /* "magnetism.pyx":419
- *             force_energy[i] += wca_mag * rij[i] / rij_mag
- *         force_energy[3] = energy
- *     return force_energy             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
- */
-  __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __Pyx_INCREF(((PyObject *)__pyx_v_force_energy));
-  __pyx_r = ((PyArrayObject *)__pyx_v_force_energy);
-  goto __pyx_L0;
-
-  /* "magnetism.pyx":402
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_energy_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
- *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(((PyObject *)__pyx_t_5));
-  __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_7);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_t_9, 1);
-  __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_11);
-  { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
-    __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer);
-  __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("magnetism.get_particle_wca_force_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 0;
-  goto __pyx_L2;
-  __pyx_L0:;
-  __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_force_energy.rcbuffer->pybuffer);
-  __pyx_L2:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_force_energy);
-  __Pyx_XGIVEREF((PyObject *)__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "magnetism.pyx":423
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef (double, double) get_wca_force_energy(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double sigma_over_separation = sigma/r
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- */
-
-static __pyx_ctuple_double__and_double __pyx_f_9magnetism_get_wca_force_energy(double __pyx_v_eps_constant, double __pyx_v_r, double __pyx_v_sigma) {
-  double __pyx_v_sigma_over_separation;
-  double __pyx_v_potential;
-  double __pyx_v_force_mag;
-  __pyx_ctuple_double__and_double __pyx_r;
-  double __pyx_t_1;
-  double __pyx_t_2;
-  __pyx_ctuple_double__and_double __pyx_t_3;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-
-  /* "magnetism.pyx":424
- * @cython.wraparound(False)
- * cdef (double, double) get_wca_force_energy(double eps_constant, double r, double sigma) nogil:
- *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
- */
-  if (unlikely(__pyx_v_r == 0)) {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-    #endif
-    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    #ifdef WITH_THREAD
-    __Pyx_PyGILState_Release(__pyx_gilstate_save);
-    #endif
-    __PYX_ERR(0, 424, __pyx_L1_error)
-  }
-  __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
-
-  /* "magnetism.pyx":425
- * cdef (double, double) get_wca_force_energy(double eps_constant, double r, double sigma) nogil:
- *     cdef double sigma_over_separation = sigma/r
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)             # <<<<<<<<<<<<<<
- *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
- *     return (force_mag, potential)
- */
-  __pyx_v_potential = ((4.0 * __pyx_v_eps_constant) * ((pow(__pyx_v_sigma_over_separation, 12.0) - pow(__pyx_v_sigma_over_separation, 6.0)) + (1.0 / 4.0)));
-
-  /* "magnetism.pyx":426
- *     cdef double sigma_over_separation = sigma/r
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)             # <<<<<<<<<<<<<<
- *     return (force_mag, potential)
- */
-  __pyx_t_1 = (12.0 * pow(__pyx_v_sigma_over_separation, 13.0));
-  if (unlikely(__pyx_v_sigma == 0)) {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-    #endif
-    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    #ifdef WITH_THREAD
-    __Pyx_PyGILState_Release(__pyx_gilstate_save);
-    #endif
-    __PYX_ERR(0, 426, __pyx_L1_error)
-  }
-  __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
-  if (unlikely(__pyx_v_sigma == 0)) {
-    #ifdef WITH_THREAD
-    PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-    #endif
-    PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    #ifdef WITH_THREAD
-    __Pyx_PyGILState_Release(__pyx_gilstate_save);
-    #endif
-    __PYX_ERR(0, 426, __pyx_L1_error)
-  }
-  __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
-
-  /* "magnetism.pyx":427
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
- *     return (force_mag, potential)             # <<<<<<<<<<<<<<
- */
-  __pyx_t_3.f0 = __pyx_v_force_mag;
-  __pyx_t_3.f1 = __pyx_v_potential;
-  __pyx_r = __pyx_t_3;
-  goto __pyx_L0;
-
-  /* "magnetism.pyx":423
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef (double, double) get_wca_force_energy(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double sigma_over_separation = sigma/r
- *     cdef double potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6) + 1/4)
- */
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_WriteUnraisable("magnetism.get_wca_force_energy", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
-  __Pyx_pretend_to_initialize(&__pyx_r);
   __pyx_L0:;
   return __pyx_r;
 }
@@ -11041,7 +9329,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
  * 
  * cdef inline int import_umath() except -1:
  */
-      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 944, __pyx_L5_except_error)
+      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 944, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_Raise(__pyx_t_8, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -11173,7 +9461,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
  * 
  * cdef inline int import_ufunc() except -1:
  */
-      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 950, __pyx_L5_except_error)
+      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 950, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_Raise(__pyx_t_8, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -11305,7 +9593,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
  * 
  * cdef extern from *:
  */
-      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 956, __pyx_L5_except_error)
+      __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_ImportError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(1, 956, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_Raise(__pyx_t_8, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -12058,7 +10346,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *         if itemsize <= 0:
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 134, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12090,7 +10378,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *         if not isinstance(format, bytes):
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 137, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 137, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12217,7 +10505,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 149, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 149, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -12491,7 +10779,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __
  * 
  *             if self.dtype_is_object:
  */
-      __pyx_t_10 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_10)) __PYX_ERR(2, 177, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_Call(__pyx_builtin_MemoryError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_10)) __PYX_ERR(2, 177, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_Raise(__pyx_t_10, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -12735,7 +11023,7 @@ static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(stru
  *         info.buf = self.data
  *         info.len = self.len
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 193, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 193, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -13469,7 +11757,7 @@ static PyObject *__pyx_pf___pyx_array___reduce_cython__(CYTHON_UNUSED struct __p
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -13525,7 +11813,7 @@ static PyObject *__pyx_pf___pyx_array_2__setstate_cython__(CYTHON_UNUSED struct 
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -15254,7 +13542,7 @@ static int __pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_6__setit
  * 
  *         have_slices, index = _unellipsify(index, self.view.ndim)
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 420, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 420, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -16302,7 +14590,7 @@ static PyObject *__pyx_memoryview_convert_item_to_object(struct __pyx_memoryview
  *         else:
  *             if len(self.view.format) == 1:
  */
-      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(2, 497, __pyx_L5_except_error)
+      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(2, 497, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_Raise(__pyx_t_6, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -16664,7 +14952,7 @@ static int __pyx_memoryview___pyx_pf_15View_dot_MemoryView_10memoryview_8__getbu
  * 
  *         if flags & PyBUF_ND:
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 522, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 522, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -17213,7 +15501,7 @@ static PyObject *__pyx_pf_15View_dot_MemoryView_10memoryview_7strides___get__(st
  * 
  *         return tuple([stride for stride in self.view.strides[:self.view.ndim]])
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 572, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 572, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -17330,7 +15618,7 @@ static PyObject *__pyx_pf_15View_dot_MemoryView_10memoryview_10suboffsets___get_
     __Pyx_XDECREF(__pyx_r);
     __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->view.ndim); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 579, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyNumber_Multiply(__pyx_tuple__19, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 579, __pyx_L1_error)
+    __pyx_t_3 = PyNumber_Multiply(__pyx_tuple__17, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(2, 579, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_r = __pyx_t_3;
@@ -18368,7 +16656,7 @@ static PyObject *__pyx_pf___pyx_memoryview___reduce_cython__(CYTHON_UNUSED struc
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -18424,7 +16712,7 @@ static PyObject *__pyx_pf___pyx_memoryview_2__setstate_cython__(CYTHON_UNUSED st
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__21, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__19, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -18781,9 +17069,9 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
         __Pyx_GOTREF(__pyx_t_7);
         { Py_ssize_t __pyx_temp;
           for (__pyx_temp=0; __pyx_temp < ((__pyx_v_ndim - __pyx_t_8) + 1); __pyx_temp++) {
-            __Pyx_INCREF(__pyx_slice__5);
-            __Pyx_GIVEREF(__pyx_slice__5);
-            PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_slice__5);
+            __Pyx_INCREF(__pyx_slice__3);
+            __Pyx_GIVEREF(__pyx_slice__3);
+            PyList_SET_ITEM(__pyx_t_7, __pyx_temp, __pyx_slice__3);
           }
         }
         __pyx_t_9 = __Pyx_PyList_Extend(__pyx_v_result, __pyx_t_7); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(2, 684, __pyx_L1_error)
@@ -18816,7 +17104,7 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
  *         else:
  */
       /*else*/ {
-        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_result, __pyx_slice__5); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(2, 687, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyList_Append(__pyx_v_result, __pyx_slice__3); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(2, 687, __pyx_L1_error)
       }
       __pyx_L7:;
 
@@ -18956,9 +17244,9 @@ static PyObject *_unellipsify(PyObject *__pyx_v_index, int __pyx_v_ndim) {
     __Pyx_GOTREF(__pyx_t_3);
     { Py_ssize_t __pyx_temp;
       for (__pyx_temp=0; __pyx_temp < __pyx_v_nslices; __pyx_temp++) {
-        __Pyx_INCREF(__pyx_slice__5);
-        __Pyx_GIVEREF(__pyx_slice__5);
-        PyList_SET_ITEM(__pyx_t_3, __pyx_temp, __pyx_slice__5);
+        __Pyx_INCREF(__pyx_slice__3);
+        __Pyx_GIVEREF(__pyx_slice__3);
+        PyList_SET_ITEM(__pyx_t_3, __pyx_temp, __pyx_slice__3);
       }
     }
     __pyx_t_9 = __Pyx_PyList_Extend(__pyx_v_result, __pyx_t_3); if (unlikely(__pyx_t_9 == ((int)-1))) __PYX_ERR(2, 698, __pyx_L1_error)
@@ -19085,7 +17373,7 @@ static PyObject *assert_direct_dimensions(Py_ssize_t *__pyx_v_suboffsets, int __
  * 
  * 
  */
-      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 705, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__20, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 705, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -21269,7 +19557,7 @@ static PyObject *__pyx_pf___pyx_memoryviewslice___reduce_cython__(CYTHON_UNUSED 
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__23, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__21, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 2, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -21325,7 +19613,7 @@ static PyObject *__pyx_pf___pyx_memoryviewslice_2__setstate_cython__(CYTHON_UNUS
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__24, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -24602,7 +22890,7 @@ static PyObject *__pyx_pf_15View_dot_MemoryView___pyx_unpickle_Enum(CYTHON_UNUSE
  */
   __pyx_t_1 = __Pyx_PyInt_From_long(__pyx_v___pyx_checksum); if (unlikely(!__pyx_t_1)) __PYX_ERR(2, 4, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_t_1, __pyx_tuple__25, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __pyx_t_2 = (__Pyx_PySequence_ContainsTF(__pyx_t_1, __pyx_tuple__23, Py_NE)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(2, 4, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
@@ -24988,8 +23276,8 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
  *         else:
  *             alignment = b''
  */
-      __Pyx_INCREF(__pyx_kp_b__26);
-      __pyx_v_alignment = __pyx_kp_b__26;
+      __Pyx_INCREF(__pyx_kp_b__24);
+      __pyx_v_alignment = __pyx_kp_b__24;
 
       /* "BufferFormatFromTypeInfo":1474
  *         assert type.fields.type != NULL
@@ -25009,8 +23297,8 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
  *         parts = [b"T{"]
  */
     /*else*/ {
-      __Pyx_INCREF(__pyx_kp_b__27);
-      __pyx_v_alignment = __pyx_kp_b__27;
+      __Pyx_INCREF(__pyx_kp_b__25);
+      __pyx_v_alignment = __pyx_kp_b__25;
     }
     __pyx_L4:;
 
@@ -25069,7 +23357,7 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
  *             field += 1
  * 
  */
-      __pyx_t_2 = PyNumber_Add(__pyx_v_part, __pyx_kp_b__28); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 1484, __pyx_L1_error)
+      __pyx_t_2 = PyNumber_Add(__pyx_v_part, __pyx_kp_b__26); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 1484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_4 = __Pyx_PyBytes_FromString(__pyx_v_field->name); if (unlikely(!__pyx_t_4)) __PYX_ERR(2, 1484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
@@ -25077,7 +23365,7 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = PyNumber_Add(__pyx_t_5, __pyx_kp_b__28); if (unlikely(!__pyx_t_4)) __PYX_ERR(2, 1484, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_Add(__pyx_t_5, __pyx_kp_b__26); if (unlikely(!__pyx_t_4)) __PYX_ERR(2, 1484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_parts, __pyx_t_4); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(2, 1484, __pyx_L1_error)
@@ -25102,7 +23390,7 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
  */
     __pyx_t_4 = __Pyx_PyBytes_Join(__pyx_v_alignment, __pyx_v_parts); if (unlikely(!__pyx_t_4)) __PYX_ERR(2, 1487, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyNumber_Add(__pyx_t_4, __pyx_kp_b__29); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 1487, __pyx_L1_error)
+    __pyx_t_5 = PyNumber_Add(__pyx_t_4, __pyx_kp_b__27); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 1487, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (!(likely(PyBytes_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||((void)PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "bytes", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(2, 1487, __pyx_L1_error)
@@ -25170,7 +23458,7 @@ static PyObject *__pyx_format_from_typeinfo(__Pyx_TypeInfo *__pyx_v_type) {
  *         else:
  *             result = fmt.string
  */
-      __pyx_t_5 = PyUnicode_Join(__pyx_kp_u__30, __pyx_v_extents); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 1492, __pyx_L1_error)
+      __pyx_t_5 = PyUnicode_Join(__pyx_kp_u__28, __pyx_v_extents); if (unlikely(!__pyx_t_5)) __PYX_ERR(2, 1492, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_2 = PyUnicode_Format(__pyx_kp_u_s, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 1492, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
@@ -25985,7 +24273,6 @@ static PyMethodDef __pyx_methods[] = {
   {"get_magnetization_iterative_normalized", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9magnetism_7get_magnetization_iterative_normalized, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9magnetism_6get_magnetization_iterative_normalized},
   {"get_dip_dip_forces", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9magnetism_9get_dip_dip_forces, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9magnetism_8get_dip_dip_forces},
   {"get_dip_dip_forces_normalized", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9magnetism_11get_dip_dip_forces_normalized, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9magnetism_10get_dip_dip_forces_normalized},
-  {"get_dip_dip_forces_energy_normalized", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_9magnetism_13get_dip_dip_forces_energy_normalized, METH_VARARGS|METH_KEYWORDS, __pyx_doc_9magnetism_12get_dip_dip_forces_energy_normalized},
   {0, 0, 0, 0}
 };
 
@@ -26060,11 +24347,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_Unable_to_convert_item_to_object, __pyx_k_Unable_to_convert_item_to_object, sizeof(__pyx_k_Unable_to_convert_item_to_object), 0, 0, 1, 0},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
   {&__pyx_n_s_View_MemoryView, __pyx_k_View_MemoryView, sizeof(__pyx_k_View_MemoryView), 0, 0, 1, 1},
+  {&__pyx_kp_b__24, __pyx_k__24, sizeof(__pyx_k__24), 0, 0, 0, 0},
+  {&__pyx_kp_b__25, __pyx_k__25, sizeof(__pyx_k__25), 0, 0, 0, 0},
   {&__pyx_kp_b__26, __pyx_k__26, sizeof(__pyx_k__26), 0, 0, 0, 0},
   {&__pyx_kp_b__27, __pyx_k__27, sizeof(__pyx_k__27), 0, 0, 0, 0},
-  {&__pyx_kp_b__28, __pyx_k__28, sizeof(__pyx_k__28), 0, 0, 0, 0},
-  {&__pyx_kp_b__29, __pyx_k__29, sizeof(__pyx_k__29), 0, 0, 0, 0},
-  {&__pyx_kp_u__30, __pyx_k__30, sizeof(__pyx_k__30), 0, 1, 0, 0},
+  {&__pyx_kp_u__28, __pyx_k__28, sizeof(__pyx_k__28), 0, 1, 0, 0},
   {&__pyx_n_s_allocate_buffer, __pyx_k_allocate_buffer, sizeof(__pyx_k_allocate_buffer), 0, 0, 1, 1},
   {&__pyx_n_s_base, __pyx_k_base, sizeof(__pyx_k_base), 0, 0, 1, 1},
   {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
@@ -26182,30 +24469,16 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "magnetism.pyx":50
- *         rij[i] = r_i[i] - r_j[i]
- *     cdef double rij_mag = sqrt(dot_prod(rij,rij))
- *     cdef np.ndarray[np.float64_t, ndim=1] force_energy = np.empty((4,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double mi_dot_r = dot_prod(m_i,rij)
- *     cdef double mj_dot_r = dot_prod(m_j,rij)
- */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_int_4); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_tuple__3); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 50, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
-
-  /* "magnetism.pyx":158
+  /* "magnetism.pyx":138
  *                     r_j[1] = particle_posns[j,1]
  *                     r_j[2] = particle_posns[j,2]
  *                     m_j[:] = particle_V*current_M[j,:]             # <<<<<<<<<<<<<<
  *                     B_dip = get_dipole_field(r_i,r_j,m_j)
  *                     H_dip[i,0] += B_dip[0]/mu0
  */
-  __pyx_slice__5 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__5)) __PYX_ERR(0, 158, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_slice__5);
-  __Pyx_GIVEREF(__pyx_slice__5);
+  __pyx_slice__3 = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice__3)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_slice__3);
+  __Pyx_GIVEREF(__pyx_slice__3);
 
   /* ".venv/lib/python3.10/site-packages/numpy/__init__.pxd":944
  *         __pyx_import_array()
@@ -26214,9 +24487,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * cdef inline int import_umath() except -1:
  */
-  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_u_numpy_core_multiarray_failed_to); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(1, 944, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__6);
-  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_numpy_core_multiarray_failed_to); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(1, 944, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
 
   /* ".venv/lib/python3.10/site-packages/numpy/__init__.pxd":950
  *         _import_umath()
@@ -26225,9 +24498,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * cdef inline int import_ufunc() except -1:
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_numpy_core_umath_failed_to_impor); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(1, 950, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_numpy_core_umath_failed_to_impor); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(1, 950, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
 
   /* "View.MemoryView":134
  * 
@@ -26236,9 +24509,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if itemsize <= 0:
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_Empty_shape_tuple_for_cython_arr); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(2, 134, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_tuple__6 = PyTuple_Pack(1, __pyx_kp_s_Empty_shape_tuple_for_cython_arr); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(2, 134, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
 
   /* "View.MemoryView":137
  * 
@@ -26247,9 +24520,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if not isinstance(format, bytes):
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_itemsize_0_for_cython_array); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(2, 137, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_s_itemsize_0_for_cython_array); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(2, 137, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__7);
+  __Pyx_GIVEREF(__pyx_tuple__7);
 
   /* "View.MemoryView":149
  * 
@@ -26258,9 +24531,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_shape_and_str); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(2, 149, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_shape_and_str); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(2, 149, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
 
   /* "View.MemoryView":177
  *             self.data = <char *>malloc(self.len)
@@ -26269,9 +24542,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *             if self.dtype_is_object:
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_array_data); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(2, 177, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_s_unable_to_allocate_array_data); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(2, 177, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
 
   /* "View.MemoryView":193
  *             bufmode = PyBUF_F_CONTIGUOUS | PyBUF_ANY_CONTIGUOUS
@@ -26280,9 +24553,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         info.buf = self.data
  *         info.len = self.len
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_s_Can_only_create_a_buffer_that_is); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(2, 193, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_s_Can_only_create_a_buffer_that_is); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(2, 193, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -26290,18 +24563,18 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(2, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__13);
-  __Pyx_GIVEREF(__pyx_tuple__13);
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(2, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__14);
-  __Pyx_GIVEREF(__pyx_tuple__14);
+  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
 
   /* "View.MemoryView":420
  *     def __setitem__(memoryview self, object index, object value):
@@ -26310,9 +24583,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         have_slices, index = _unellipsify(index, self.view.ndim)
  */
-  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_s_Cannot_assign_to_read_only_memor); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(2, 420, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__15);
-  __Pyx_GIVEREF(__pyx_tuple__15);
+  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_s_Cannot_assign_to_read_only_memor); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(2, 420, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
 
   /* "View.MemoryView":497
  *             result = struct.unpack(self.view.format, bytesitem)
@@ -26321,9 +24594,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *         else:
  *             if len(self.view.format) == 1:
  */
-  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_s_Unable_to_convert_item_to_object); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(2, 497, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_s_Unable_to_convert_item_to_object); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(2, 497, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__14);
+  __Pyx_GIVEREF(__pyx_tuple__14);
 
   /* "View.MemoryView":522
  *     def __getbuffer__(self, Py_buffer *info, int flags):
@@ -26332,9 +24605,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         if flags & PyBUF_ND:
  */
-  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_s_Cannot_create_writable_memory_vi); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(2, 522, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
+  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_s_Cannot_create_writable_memory_vi); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(2, 522, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__15);
+  __Pyx_GIVEREF(__pyx_tuple__15);
 
   /* "View.MemoryView":572
  *         if self.view.strides == NULL:
@@ -26343,9 +24616,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         return tuple([stride for stride in self.view.strides[:self.view.ndim]])
  */
-  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_s_Buffer_view_does_not_expose_stri); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(2, 572, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_s_Buffer_view_does_not_expose_stri); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(2, 572, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__16);
+  __Pyx_GIVEREF(__pyx_tuple__16);
 
   /* "View.MemoryView":579
  *     def suboffsets(self):
@@ -26354,12 +24627,12 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  *         return tuple([suboffset for suboffset in self.view.suboffsets[:self.view.ndim]])
  */
-  __pyx_tuple__19 = PyTuple_New(1); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(2, 579, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
+  __pyx_tuple__17 = PyTuple_New(1); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(2, 579, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_INCREF(__pyx_int_neg_1);
   __Pyx_GIVEREF(__pyx_int_neg_1);
-  PyTuple_SET_ITEM(__pyx_tuple__19, 0, __pyx_int_neg_1);
-  __Pyx_GIVEREF(__pyx_tuple__19);
+  PyTuple_SET_ITEM(__pyx_tuple__17, 0, __pyx_int_neg_1);
+  __Pyx_GIVEREF(__pyx_tuple__17);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -26367,18 +24640,18 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(2, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__20);
-  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__21 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(2, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
+  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__19);
+  __Pyx_GIVEREF(__pyx_tuple__19);
 
   /* "View.MemoryView":705
  *     for suboffset in suboffsets[:ndim]:
@@ -26387,9 +24660,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_s_Indirect_dimensions_not_supporte); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(2, 705, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__22);
-  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_tuple__20 = PyTuple_Pack(1, __pyx_kp_s_Indirect_dimensions_not_supporte); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(2, 705, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
 
   /* "(tree fragment)":2
  * def __reduce_cython__(self):
@@ -26397,21 +24670,21 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  */
-  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(2, 2, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
+  __pyx_tuple__21 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(2, 2, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__21);
+  __Pyx_GIVEREF(__pyx_tuple__21);
 
   /* "(tree fragment)":4
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")
  * def __setstate_cython__(self, __pyx_state):
  *     raise TypeError("no default __reduce__ due to non-trivial __cinit__")             # <<<<<<<<<<<<<<
  */
-  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(2, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__24);
-  __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_tuple__25 = PyTuple_Pack(3, __pyx_int_184977713, __pyx_int_136983863, __pyx_int_112105877); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(2, 4, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__25);
-  __Pyx_GIVEREF(__pyx_tuple__25);
+  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_s_no_default___reduce___due_to_non); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__22);
+  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_tuple__23 = PyTuple_Pack(3, __pyx_int_184977713, __pyx_int_136983863, __pyx_int_112105877); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(2, 4, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__23);
+  __Pyx_GIVEREF(__pyx_tuple__23);
 
   /* "View.MemoryView":287
  *         return self.name
@@ -26420,9 +24693,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(2, 287, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
+  __pyx_tuple__29 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct_or_indirect); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(2, 287, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__29);
+  __Pyx_GIVEREF(__pyx_tuple__29);
 
   /* "View.MemoryView":288
  * 
@@ -26431,9 +24704,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_tuple__32 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(2, 288, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__32);
-  __Pyx_GIVEREF(__pyx_tuple__32);
+  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_kp_s_strided_and_direct); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(2, 288, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
 
   /* "View.MemoryView":289
  * cdef generic = Enum("<strided and direct or indirect>")
@@ -26442,9 +24715,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__33 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(2, 289, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__33);
-  __Pyx_GIVEREF(__pyx_tuple__33);
+  __pyx_tuple__31 = PyTuple_Pack(1, __pyx_kp_s_strided_and_indirect); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(2, 289, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__31);
+  __Pyx_GIVEREF(__pyx_tuple__31);
 
   /* "View.MemoryView":292
  * 
@@ -26453,9 +24726,9 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_tuple__34 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(2, 292, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__34);
-  __Pyx_GIVEREF(__pyx_tuple__34);
+  __pyx_tuple__32 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_direct); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(2, 292, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
 
   /* "View.MemoryView":293
  * 
@@ -26464,19 +24737,19 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__35 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(2, 293, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__35);
-  __Pyx_GIVEREF(__pyx_tuple__35);
+  __pyx_tuple__33 = PyTuple_Pack(1, __pyx_kp_s_contiguous_and_indirect); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(2, 293, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__33);
+  __Pyx_GIVEREF(__pyx_tuple__33);
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_Enum(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_tuple__36 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(2, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__36);
-  __Pyx_GIVEREF(__pyx_tuple__36);
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(2, 1, __pyx_L1_error)
+  __pyx_tuple__34 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(2, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__34);
+  __Pyx_GIVEREF(__pyx_tuple__34);
+  __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(2, 1, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -26945,7 +25218,7 @@ if (!__Pyx_RefNanny) {
  * cdef strided = Enum("<strided and direct>") # default
  * cdef indirect = Enum("<strided and indirect>")
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__31, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 287, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__29, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 287, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XGOTREF(generic);
   __Pyx_DECREF_SET(generic, __pyx_t_2);
@@ -26959,7 +25232,7 @@ if (!__Pyx_RefNanny) {
  * cdef indirect = Enum("<strided and indirect>")
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__32, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 288, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__30, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XGOTREF(strided);
   __Pyx_DECREF_SET(strided, __pyx_t_2);
@@ -26973,7 +25246,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__33, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 289, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__31, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 289, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XGOTREF(indirect);
   __Pyx_DECREF_SET(indirect, __pyx_t_2);
@@ -26987,7 +25260,7 @@ if (!__Pyx_RefNanny) {
  * cdef indirect_contiguous = Enum("<contiguous and indirect>")
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__34, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 292, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__32, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 292, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XGOTREF(contiguous);
   __Pyx_DECREF_SET(contiguous, __pyx_t_2);
@@ -27001,7 +25274,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__35, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 293, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_MemviewEnum_type), __pyx_tuple__33, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(2, 293, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XGOTREF(indirect_contiguous);
   __Pyx_DECREF_SET(indirect_contiguous, __pyx_t_2);

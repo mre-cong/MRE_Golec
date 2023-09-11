@@ -764,7 +764,6 @@ static CYTHON_INLINE float __PYX_NAN() {
 
     /* NumPy API declarations from "numpy/__init__.pxd" */
     
-#include <math.h>
 #include "pythread.h"
 #include <stdlib.h>
 #include "pystate.h"
@@ -1365,8 +1364,8 @@ typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
 typedef npy_cdouble __pyx_t_5numpy_complex_t;
 struct __pyx_t_36get_volume_correction_force_cy_nogil_Vec3;
 
-/* "get_volume_correction_force_cy_nogil.pyx":14
- * from libc.math cimport pow
+/* "get_volume_correction_force_cy_nogil.pyx":13
+ * cimport numpy as np
  * #cstruct for a 3D vector
  * cdef struct Vec3:             # <<<<<<<<<<<<<<
  *     double x, y, z
@@ -2297,8 +2296,6 @@ static PyTypeObject *__pyx_ptype_5numpy_flexible = 0;
 static PyTypeObject *__pyx_ptype_5numpy_character = 0;
 static PyTypeObject *__pyx_ptype_5numpy_ufunc = 0;
 
-/* Module declarations from 'libc.math' */
-
 /* Module declarations from 'get_volume_correction_force_cy_nogil' */
 static PyTypeObject *__pyx_array_type = 0;
 static PyTypeObject *__pyx_MemviewEnum_type = 0;
@@ -2318,8 +2315,6 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
 static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *, double *, double *); /*proto*/
 static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *, double *); /*proto*/
 static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__Pyx_memviewslice, __Pyx_memviewslice, int, __Pyx_memviewslice, __Pyx_memviewslice); /*proto*/
-static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_normalized(__Pyx_memviewslice, __Pyx_memviewslice, double, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int __pyx_skip_dispatch); /*proto*/
-static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_el_normalized(__Pyx_memviewslice, double, __Pyx_memviewslice); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
 static PyObject *__pyx_memoryview_new(PyObject *, int, int, __Pyx_TypeInfo *); /*proto*/
@@ -2564,7 +2559,6 @@ static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_n_s_vectors;
 static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_correction_force(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, double __pyx_v_l_e, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force); /* proto */
 static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_correction_force_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force); /* proto */
-static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -2647,7 +2641,7 @@ static PyObject *__pyx_tuple__27;
 static PyObject *__pyx_codeobj__28;
 /* Late includes */
 
-/* "get_volume_correction_force_cy_nogil.pyx":20
+/* "get_volume_correction_force_cy_nogil.pyx":19
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef get_volume_correction_force(double[:,::1] node_posns,int[:,::1] elements, double kappa, double l_e,double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
@@ -2673,7 +2667,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
   Py_ssize_t __pyx_t_10;
   __Pyx_RefNannySetupContext("get_volume_correction_force", 0);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":26
+  /* "get_volume_correction_force_cy_nogil.pyx":25
  *     # cdef double[8][3] correction_force_el
  *     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated
  *     for i in range(correction_force.shape[0]):             # <<<<<<<<<<<<<<
@@ -2685,7 +2679,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":27
+    /* "get_volume_correction_force_cy_nogil.pyx":26
  *     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated
  *     for i in range(correction_force.shape[0]):
  *         for j in range(3):             # <<<<<<<<<<<<<<
@@ -2695,7 +2689,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
     for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
       __pyx_v_j = __pyx_t_4;
 
-      /* "get_volume_correction_force_cy_nogil.pyx":28
+      /* "get_volume_correction_force_cy_nogil.pyx":27
  *     for i in range(correction_force.shape[0]):
  *         for j in range(3):
  *             correction_force[i][j] = 0.0             # <<<<<<<<<<<<<<
@@ -2708,7 +2702,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
     }
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":32
+  /* "get_volume_correction_force_cy_nogil.pyx":31
  *     # cdef double vectors[8][3]
  *     # cdef double avg_vectors[3][3]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -2723,7 +2717,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
       #endif
       /*try:*/ {
 
-        /* "get_volume_correction_force_cy_nogil.pyx":33
+        /* "get_volume_correction_force_cy_nogil.pyx":32
  *     # cdef double avg_vectors[3][3]
  *     with nogil:
  *         for i in range(elements.shape[0]):             # <<<<<<<<<<<<<<
@@ -2735,7 +2729,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "get_volume_correction_force_cy_nogil.pyx":34
+          /* "get_volume_correction_force_cy_nogil.pyx":33
  *     with nogil:
  *         for i in range(elements.shape[0]):
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)             # <<<<<<<<<<<<<<
@@ -2744,7 +2738,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
  */
           __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
 
-          /* "get_volume_correction_force_cy_nogil.pyx":35
+          /* "get_volume_correction_force_cy_nogil.pyx":34
  *         for i in range(elements.shape[0]):
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
  *             get_volume_correction_force_el(avg_vectors, kappa, l_e,correction_force_el)             # <<<<<<<<<<<<<<
@@ -2753,7 +2747,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
  */
           __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el);
 
-          /* "get_volume_correction_force_cy_nogil.pyx":36
+          /* "get_volume_correction_force_cy_nogil.pyx":35
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
  *             get_volume_correction_force_el(avg_vectors, kappa, l_e,correction_force_el)
  *             for j in range(8):             # <<<<<<<<<<<<<<
@@ -2763,7 +2757,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
           for (__pyx_t_4 = 0; __pyx_t_4 < 8; __pyx_t_4+=1) {
             __pyx_v_j = __pyx_t_4;
 
-            /* "get_volume_correction_force_cy_nogil.pyx":37
+            /* "get_volume_correction_force_cy_nogil.pyx":36
  *             get_volume_correction_force_el(avg_vectors, kappa, l_e,correction_force_el)
  *             for j in range(8):
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]             # <<<<<<<<<<<<<<
@@ -2778,7 +2772,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
             __pyx_t_10 = 0;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
 
-            /* "get_volume_correction_force_cy_nogil.pyx":38
+            /* "get_volume_correction_force_cy_nogil.pyx":37
  *             for j in range(8):
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
  *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]             # <<<<<<<<<<<<<<
@@ -2793,7 +2787,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
             __pyx_t_9 = 1;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
 
-            /* "get_volume_correction_force_cy_nogil.pyx":39
+            /* "get_volume_correction_force_cy_nogil.pyx":38
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
  *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
  *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]             # <<<<<<<<<<<<<<
@@ -2811,7 +2805,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
         }
       }
 
-      /* "get_volume_correction_force_cy_nogil.pyx":32
+      /* "get_volume_correction_force_cy_nogil.pyx":31
  *     # cdef double vectors[8][3]
  *     # cdef double avg_vectors[3][3]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -2830,7 +2824,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
       }
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":20
+  /* "get_volume_correction_force_cy_nogil.pyx":19
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef get_volume_correction_force(double[:,::1] node_posns,int[:,::1] elements, double kappa, double l_e,double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
@@ -2898,47 +2892,47 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_cor
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 1); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 1); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 2); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 2); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 3); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 3); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 4); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 4); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 5); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 5); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 6); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 6); __PYX_ERR(0, 19, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 7); __PYX_ERR(0, 20, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, 7); __PYX_ERR(0, 19, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force") < 0)) __PYX_ERR(0, 20, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force") < 0)) __PYX_ERR(0, 19, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 8) {
       goto __pyx_L5_argtuple_error;
@@ -2952,18 +2946,18 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_cor
       values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
       values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
     }
-    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_elements = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_kappa = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_correction_force_el = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_avg_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
-    __pyx_v_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 20, __pyx_L3_error)
+    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_elements = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_kappa = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_correction_force_el = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_avg_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
+    __pyx_v_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 19, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 20, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_volume_correction_force", 1, 8, 8, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 19, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("get_volume_correction_force_cy_nogil.get_volume_correction_force", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2985,13 +2979,13 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_volume_correction_force", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_elements.memview)) { __Pyx_RaiseUnboundLocalError("elements"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { __Pyx_RaiseUnboundLocalError("correction_force_el"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_vectors.memview)) { __Pyx_RaiseUnboundLocalError("vectors"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { __Pyx_RaiseUnboundLocalError("avg_vectors"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force.memview)) { __Pyx_RaiseUnboundLocalError("correction_force"); __PYX_ERR(0, 20, __pyx_L1_error) }
-  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 20, __pyx_L1_error)
+  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_elements.memview)) { __Pyx_RaiseUnboundLocalError("elements"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_correction_force_el.memview)) { __Pyx_RaiseUnboundLocalError("correction_force_el"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_vectors.memview)) { __Pyx_RaiseUnboundLocalError("vectors"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_avg_vectors.memview)) { __Pyx_RaiseUnboundLocalError("avg_vectors"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_correction_force.memview)) { __Pyx_RaiseUnboundLocalError("correction_force"); __PYX_ERR(0, 19, __pyx_L1_error) }
+  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_l_e, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3014,7 +3008,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_get_volume_corr
   return __pyx_r;
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":44
+/* "get_volume_correction_force_cy_nogil.pyx":43
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_volume_correction_force_el(double[:,::1] avg_vec, double kappa, double l_e, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
@@ -3049,7 +3043,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":52
+  /* "get_volume_correction_force_cy_nogil.pyx":51
  *     cdef double[3] avg_b
  *     cdef double[3] avg_c
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3059,7 +3053,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":53
+    /* "get_volume_correction_force_cy_nogil.pyx":52
  *     cdef double[3] avg_c
  *     for i in range(3):
  *         avg_a[i] = 0.             # <<<<<<<<<<<<<<
@@ -3068,7 +3062,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_avg_a[__pyx_v_i]) = 0.;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":54
+    /* "get_volume_correction_force_cy_nogil.pyx":53
  *     for i in range(3):
  *         avg_a[i] = 0.
  *         avg_b[i] = 0.             # <<<<<<<<<<<<<<
@@ -3077,7 +3071,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_avg_b[__pyx_v_i]) = 0.;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":55
+    /* "get_volume_correction_force_cy_nogil.pyx":54
  *         avg_a[i] = 0.
  *         avg_b[i] = 0.
  *         avg_c[i] = 0.             # <<<<<<<<<<<<<<
@@ -3087,7 +3081,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_avg_c[__pyx_v_i]) = 0.;
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":56
+  /* "get_volume_correction_force_cy_nogil.pyx":55
  *         avg_b[i] = 0.
  *         avg_c[i] = 0.
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3097,7 +3091,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":57
+    /* "get_volume_correction_force_cy_nogil.pyx":56
  *         avg_c[i] = 0.
  *     for i in range(3):
  *         avg_a[i] += avg_vec[0,i]             # <<<<<<<<<<<<<<
@@ -3109,7 +3103,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":58
+    /* "get_volume_correction_force_cy_nogil.pyx":57
  *     for i in range(3):
  *         avg_a[i] += avg_vec[0,i]
  *         avg_b[i] += avg_vec[1,i]             # <<<<<<<<<<<<<<
@@ -3121,7 +3115,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":59
+    /* "get_volume_correction_force_cy_nogil.pyx":58
  *         avg_a[i] += avg_vec[0,i]
  *         avg_b[i] += avg_vec[1,i]
  *         avg_c[i] += avg_vec[2,i]             # <<<<<<<<<<<<<<
@@ -3134,7 +3128,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":60
+  /* "get_volume_correction_force_cy_nogil.pyx":59
  *         avg_b[i] += avg_vec[1,i]
  *         avg_c[i] += avg_vec[2,i]
  *     cross_prod(avg_a,avg_b,acrossb)             # <<<<<<<<<<<<<<
@@ -3143,7 +3137,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":61
+  /* "get_volume_correction_force_cy_nogil.pyx":60
  *         avg_c[i] += avg_vec[2,i]
  *     cross_prod(avg_a,avg_b,acrossb)
  *     cross_prod(avg_b,avg_c,bcrossc)             # <<<<<<<<<<<<<<
@@ -3152,7 +3146,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":62
+  /* "get_volume_correction_force_cy_nogil.pyx":61
  *     cross_prod(avg_a,avg_b,acrossb)
  *     cross_prod(avg_b,avg_c,bcrossc)
  *     cross_prod(avg_c,avg_a,ccrossa)             # <<<<<<<<<<<<<<
@@ -3161,7 +3155,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":63
+  /* "get_volume_correction_force_cy_nogil.pyx":62
  *     cross_prod(avg_b,avg_c,bcrossc)
  *     cross_prod(avg_c,avg_a,ccrossa)
  *     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)             # <<<<<<<<<<<<<<
@@ -3170,7 +3164,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":72
+  /* "get_volume_correction_force_cy_nogil.pyx":71
  *     cdef double[3] gradV5
  *     cdef double[3] gradV4
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3180,7 +3174,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":73
+    /* "get_volume_correction_force_cy_nogil.pyx":72
  *     cdef double[3] gradV4
  *     for i in range(3):
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3189,7 +3183,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":74
+    /* "get_volume_correction_force_cy_nogil.pyx":73
  *     for i in range(3):
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV8[i] = -1*gradV1[i]             # <<<<<<<<<<<<<<
@@ -3198,7 +3192,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":75
+    /* "get_volume_correction_force_cy_nogil.pyx":74
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV8[i] = -1*gradV1[i]
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3207,7 +3201,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":76
+    /* "get_volume_correction_force_cy_nogil.pyx":75
  *         gradV8[i] = -1*gradV1[i]
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV6[i] = -1*gradV3[i]             # <<<<<<<<<<<<<<
@@ -3216,7 +3210,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":77
+    /* "get_volume_correction_force_cy_nogil.pyx":76
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV6[i] = -1*gradV3[i]
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3225,7 +3219,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":78
+    /* "get_volume_correction_force_cy_nogil.pyx":77
  *         gradV6[i] = -1*gradV3[i]
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV2[i] = -1*gradV7[i]             # <<<<<<<<<<<<<<
@@ -3234,7 +3228,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":79
+    /* "get_volume_correction_force_cy_nogil.pyx":78
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV2[i] = -1*gradV7[i]
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3243,7 +3237,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":80
+    /* "get_volume_correction_force_cy_nogil.pyx":79
  *         gradV2[i] = -1*gradV7[i]
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV4[i] = -1*gradV5[i]             # <<<<<<<<<<<<<<
@@ -3253,7 +3247,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":81
+  /* "get_volume_correction_force_cy_nogil.pyx":80
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV4[i] = -1*gradV5[i]
  *     cdef double prefactor = -kappa * ((1/(l_e*l_e*l_e) * adotbcrossc - 1))             # <<<<<<<<<<<<<<
@@ -3269,11 +3263,11 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 81, __pyx_L1_error)
+    __PYX_ERR(0, 80, __pyx_L1_error)
   }
   __pyx_v_prefactor = ((-__pyx_v_kappa) * (((1.0 / __pyx_t_5) * __pyx_v_adotbcrossc) - 1.0));
 
-  /* "get_volume_correction_force_cy_nogil.pyx":82
+  /* "get_volume_correction_force_cy_nogil.pyx":81
  *         gradV4[i] = -1*gradV5[i]
  *     cdef double prefactor = -kappa * ((1/(l_e*l_e*l_e) * adotbcrossc - 1))
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3283,7 +3277,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":83
+    /* "get_volume_correction_force_cy_nogil.pyx":82
  *     cdef double prefactor = -kappa * ((1/(l_e*l_e*l_e) * adotbcrossc - 1))
  *     for i in range(3):
  *         correction_force[0][i] = prefactor*gradV1[i]             # <<<<<<<<<<<<<<
@@ -3294,7 +3288,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":84
+    /* "get_volume_correction_force_cy_nogil.pyx":83
  *     for i in range(3):
  *         correction_force[0][i] = prefactor*gradV1[i]
  *         correction_force[1][i] = prefactor*gradV2[i]             # <<<<<<<<<<<<<<
@@ -3305,7 +3299,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":85
+    /* "get_volume_correction_force_cy_nogil.pyx":84
  *         correction_force[0][i] = prefactor*gradV1[i]
  *         correction_force[1][i] = prefactor*gradV2[i]
  *         correction_force[2][i] = prefactor*gradV3[i]             # <<<<<<<<<<<<<<
@@ -3316,7 +3310,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":86
+    /* "get_volume_correction_force_cy_nogil.pyx":85
  *         correction_force[1][i] = prefactor*gradV2[i]
  *         correction_force[2][i] = prefactor*gradV3[i]
  *         correction_force[3][i] = prefactor*gradV4[i]             # <<<<<<<<<<<<<<
@@ -3327,7 +3321,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":87
+    /* "get_volume_correction_force_cy_nogil.pyx":86
  *         correction_force[2][i] = prefactor*gradV3[i]
  *         correction_force[3][i] = prefactor*gradV4[i]
  *         correction_force[4][i] = prefactor*gradV5[i]             # <<<<<<<<<<<<<<
@@ -3338,7 +3332,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":88
+    /* "get_volume_correction_force_cy_nogil.pyx":87
  *         correction_force[3][i] = prefactor*gradV4[i]
  *         correction_force[4][i] = prefactor*gradV5[i]
  *         correction_force[5][i] = prefactor*gradV6[i]             # <<<<<<<<<<<<<<
@@ -3349,7 +3343,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":89
+    /* "get_volume_correction_force_cy_nogil.pyx":88
  *         correction_force[4][i] = prefactor*gradV5[i]
  *         correction_force[5][i] = prefactor*gradV6[i]
  *         correction_force[6][i] = prefactor*gradV7[i]             # <<<<<<<<<<<<<<
@@ -3360,7 +3354,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":90
+    /* "get_volume_correction_force_cy_nogil.pyx":89
  *         correction_force[5][i] = prefactor*gradV6[i]
  *         correction_force[6][i] = prefactor*gradV7[i]
  *         correction_force[7][i] = prefactor*gradV8[i]             # <<<<<<<<<<<<<<
@@ -3372,7 +3366,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":44
+  /* "get_volume_correction_force_cy_nogil.pyx":43
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_volume_correction_force_el(double[:,::1] avg_vec, double kappa, double l_e, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
@@ -3387,7 +3381,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   __pyx_L0:;
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":95
+/* "get_volume_correction_force_cy_nogil.pyx":94
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef get_volume_correction_force_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
@@ -3413,7 +3407,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
   Py_ssize_t __pyx_t_10;
   __Pyx_RefNannySetupContext("get_volume_correction_force_normalized", 0);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":101
+  /* "get_volume_correction_force_cy_nogil.pyx":100
  *     # cdef double[8][3] correction_force_el
  *     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated
  *     for i in range(correction_force.shape[0]):             # <<<<<<<<<<<<<<
@@ -3425,7 +3419,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":102
+    /* "get_volume_correction_force_cy_nogil.pyx":101
  *     # because of the way that the nogil statements require things to be handled without interfacing with python, and because the elements of the volume correction force are accumulated, it is necessary to instantiate(or reset) the values of the elements to zero whenever the function is invoked so that garbage data is not used and forces across timesteps are not accumulated
  *     for i in range(correction_force.shape[0]):
  *         for j in range(3):             # <<<<<<<<<<<<<<
@@ -3435,7 +3429,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
     for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
       __pyx_v_j = __pyx_t_4;
 
-      /* "get_volume_correction_force_cy_nogil.pyx":103
+      /* "get_volume_correction_force_cy_nogil.pyx":102
  *     for i in range(correction_force.shape[0]):
  *         for j in range(3):
  *             correction_force[i][j] = 0.0             # <<<<<<<<<<<<<<
@@ -3448,7 +3442,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
     }
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":107
+  /* "get_volume_correction_force_cy_nogil.pyx":106
  *     # cdef double vectors[8][3]
  *     # cdef double avg_vectors[3][3]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3463,7 +3457,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
       #endif
       /*try:*/ {
 
-        /* "get_volume_correction_force_cy_nogil.pyx":108
+        /* "get_volume_correction_force_cy_nogil.pyx":107
  *     # cdef double avg_vectors[3][3]
  *     with nogil:
  *         for i in range(elements.shape[0]):             # <<<<<<<<<<<<<<
@@ -3475,7 +3469,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
         for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
           __pyx_v_i = __pyx_t_3;
 
-          /* "get_volume_correction_force_cy_nogil.pyx":109
+          /* "get_volume_correction_force_cy_nogil.pyx":108
  *     with nogil:
  *         for i in range(elements.shape[0]):
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)             # <<<<<<<<<<<<<<
@@ -3484,7 +3478,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
  */
           __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
 
-          /* "get_volume_correction_force_cy_nogil.pyx":110
+          /* "get_volume_correction_force_cy_nogil.pyx":109
  *         for i in range(elements.shape[0]):
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
  *             get_volume_correction_force_el_normalized(avg_vectors, kappa,correction_force_el)             # <<<<<<<<<<<<<<
@@ -3493,7 +3487,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
  */
           __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_el_normalized(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_correction_force_el);
 
-          /* "get_volume_correction_force_cy_nogil.pyx":111
+          /* "get_volume_correction_force_cy_nogil.pyx":110
  *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
  *             get_volume_correction_force_el_normalized(avg_vectors, kappa,correction_force_el)
  *             for j in range(8):             # <<<<<<<<<<<<<<
@@ -3503,7 +3497,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
           for (__pyx_t_4 = 0; __pyx_t_4 < 8; __pyx_t_4+=1) {
             __pyx_v_j = __pyx_t_4;
 
-            /* "get_volume_correction_force_cy_nogil.pyx":112
+            /* "get_volume_correction_force_cy_nogil.pyx":111
  *             get_volume_correction_force_el_normalized(avg_vectors, kappa,correction_force_el)
  *             for j in range(8):
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]             # <<<<<<<<<<<<<<
@@ -3518,7 +3512,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
             __pyx_t_10 = 0;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
 
-            /* "get_volume_correction_force_cy_nogil.pyx":113
+            /* "get_volume_correction_force_cy_nogil.pyx":112
  *             for j in range(8):
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
  *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]             # <<<<<<<<<<<<<<
@@ -3533,7 +3527,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
             __pyx_t_9 = 1;
             *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
 
-            /* "get_volume_correction_force_cy_nogil.pyx":114
+            /* "get_volume_correction_force_cy_nogil.pyx":113
  *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
  *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
  *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]             # <<<<<<<<<<<<<<
@@ -3551,7 +3545,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
         }
       }
 
-      /* "get_volume_correction_force_cy_nogil.pyx":107
+      /* "get_volume_correction_force_cy_nogil.pyx":106
  *     # cdef double vectors[8][3]
  *     # cdef double avg_vectors[3][3]
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -3570,7 +3564,7 @@ static PyObject *__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_corre
       }
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":95
+  /* "get_volume_correction_force_cy_nogil.pyx":94
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cpdef get_volume_correction_force_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
@@ -3635,41 +3629,41 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_cor
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 1); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 1); __PYX_ERR(0, 94, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 2); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 2); __PYX_ERR(0, 94, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 3); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 3); __PYX_ERR(0, 94, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 4); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 4); __PYX_ERR(0, 94, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 5); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 5); __PYX_ERR(0, 94, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 6); __PYX_ERR(0, 95, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, 6); __PYX_ERR(0, 94, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_normalized") < 0)) __PYX_ERR(0, 95, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_normalized") < 0)) __PYX_ERR(0, 94, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 7) {
       goto __pyx_L5_argtuple_error;
@@ -3682,17 +3676,17 @@ static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_cor
       values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
       values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
     }
-    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_elements = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_kappa = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_correction_force_el = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_avg_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 95, __pyx_L3_error)
+    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_elements = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_kappa = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_correction_force_el = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_avg_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
+    __pyx_v_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 94, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 95, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_normalized", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 94, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3714,13 +3708,13 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_volume_correction_force_normalized", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_elements.memview)) { __Pyx_RaiseUnboundLocalError("elements"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { __Pyx_RaiseUnboundLocalError("correction_force_el"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_vectors.memview)) { __Pyx_RaiseUnboundLocalError("vectors"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { __Pyx_RaiseUnboundLocalError("avg_vectors"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force.memview)) { __Pyx_RaiseUnboundLocalError("correction_force"); __PYX_ERR(0, 95, __pyx_L1_error) }
-  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
+  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_elements.memview)) { __Pyx_RaiseUnboundLocalError("elements"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_correction_force_el.memview)) { __Pyx_RaiseUnboundLocalError("correction_force_el"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_vectors.memview)) { __Pyx_RaiseUnboundLocalError("vectors"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_avg_vectors.memview)) { __Pyx_RaiseUnboundLocalError("avg_vectors"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_correction_force.memview)) { __Pyx_RaiseUnboundLocalError("correction_force"); __PYX_ERR(0, 94, __pyx_L1_error) }
+  __pyx_t_1 = __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3743,7 +3737,7 @@ static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_2get_volume_cor
   return __pyx_r;
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":119
+/* "get_volume_correction_force_cy_nogil.pyx":118
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_volume_correction_force_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
@@ -3774,7 +3768,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   Py_ssize_t __pyx_t_3;
   Py_ssize_t __pyx_t_4;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":127
+  /* "get_volume_correction_force_cy_nogil.pyx":126
  *     cdef double[3] avg_b
  *     cdef double[3] avg_c
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3784,7 +3778,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":128
+    /* "get_volume_correction_force_cy_nogil.pyx":127
  *     cdef double[3] avg_c
  *     for i in range(3):
  *         avg_a[i] = 0.             # <<<<<<<<<<<<<<
@@ -3793,7 +3787,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_avg_a[__pyx_v_i]) = 0.;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":129
+    /* "get_volume_correction_force_cy_nogil.pyx":128
  *     for i in range(3):
  *         avg_a[i] = 0.
  *         avg_b[i] = 0.             # <<<<<<<<<<<<<<
@@ -3802,7 +3796,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_avg_b[__pyx_v_i]) = 0.;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":130
+    /* "get_volume_correction_force_cy_nogil.pyx":129
  *         avg_a[i] = 0.
  *         avg_b[i] = 0.
  *         avg_c[i] = 0.             # <<<<<<<<<<<<<<
@@ -3812,7 +3806,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_avg_c[__pyx_v_i]) = 0.;
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":131
+  /* "get_volume_correction_force_cy_nogil.pyx":130
  *         avg_b[i] = 0.
  *         avg_c[i] = 0.
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3822,7 +3816,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":132
+    /* "get_volume_correction_force_cy_nogil.pyx":131
  *         avg_c[i] = 0.
  *     for i in range(3):
  *         avg_a[i] += avg_vec[0,i]             # <<<<<<<<<<<<<<
@@ -3834,7 +3828,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":133
+    /* "get_volume_correction_force_cy_nogil.pyx":132
  *     for i in range(3):
  *         avg_a[i] += avg_vec[0,i]
  *         avg_b[i] += avg_vec[1,i]             # <<<<<<<<<<<<<<
@@ -3846,7 +3840,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":134
+    /* "get_volume_correction_force_cy_nogil.pyx":133
  *         avg_a[i] += avg_vec[0,i]
  *         avg_b[i] += avg_vec[1,i]
  *         avg_c[i] += avg_vec[2,i]             # <<<<<<<<<<<<<<
@@ -3859,7 +3853,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":135
+  /* "get_volume_correction_force_cy_nogil.pyx":134
  *         avg_b[i] += avg_vec[1,i]
  *         avg_c[i] += avg_vec[2,i]
  *     cross_prod(avg_a,avg_b,acrossb)             # <<<<<<<<<<<<<<
@@ -3868,7 +3862,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":136
+  /* "get_volume_correction_force_cy_nogil.pyx":135
  *         avg_c[i] += avg_vec[2,i]
  *     cross_prod(avg_a,avg_b,acrossb)
  *     cross_prod(avg_b,avg_c,bcrossc)             # <<<<<<<<<<<<<<
@@ -3877,7 +3871,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":137
+  /* "get_volume_correction_force_cy_nogil.pyx":136
  *     cross_prod(avg_a,avg_b,acrossb)
  *     cross_prod(avg_b,avg_c,bcrossc)
  *     cross_prod(avg_c,avg_a,ccrossa)             # <<<<<<<<<<<<<<
@@ -3886,7 +3880,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":138
+  /* "get_volume_correction_force_cy_nogil.pyx":137
  *     cross_prod(avg_b,avg_c,bcrossc)
  *     cross_prod(avg_c,avg_a,ccrossa)
  *     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)             # <<<<<<<<<<<<<<
@@ -3895,7 +3889,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
 
-  /* "get_volume_correction_force_cy_nogil.pyx":147
+  /* "get_volume_correction_force_cy_nogil.pyx":146
  *     cdef double[3] gradV5
  *     cdef double[3] gradV4
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3905,7 +3899,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":148
+    /* "get_volume_correction_force_cy_nogil.pyx":147
  *     cdef double[3] gradV4
  *     for i in range(3):
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3914,7 +3908,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":149
+    /* "get_volume_correction_force_cy_nogil.pyx":148
  *     for i in range(3):
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV8[i] = -1*gradV1[i]             # <<<<<<<<<<<<<<
@@ -3923,7 +3917,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":150
+    /* "get_volume_correction_force_cy_nogil.pyx":149
  *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV8[i] = -1*gradV1[i]
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3932,7 +3926,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":151
+    /* "get_volume_correction_force_cy_nogil.pyx":150
  *         gradV8[i] = -1*gradV1[i]
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV6[i] = -1*gradV3[i]             # <<<<<<<<<<<<<<
@@ -3941,7 +3935,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":152
+    /* "get_volume_correction_force_cy_nogil.pyx":151
  *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
  *         gradV6[i] = -1*gradV3[i]
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3950,7 +3944,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":153
+    /* "get_volume_correction_force_cy_nogil.pyx":152
  *         gradV6[i] = -1*gradV3[i]
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV2[i] = -1*gradV7[i]             # <<<<<<<<<<<<<<
@@ -3959,7 +3953,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":154
+    /* "get_volume_correction_force_cy_nogil.pyx":153
  *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV2[i] = -1*gradV7[i]
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
@@ -3968,7 +3962,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
     (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":155
+    /* "get_volume_correction_force_cy_nogil.pyx":154
  *         gradV2[i] = -1*gradV7[i]
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV4[i] = -1*gradV5[i]             # <<<<<<<<<<<<<<
@@ -3978,7 +3972,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":156
+  /* "get_volume_correction_force_cy_nogil.pyx":155
  *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
  *         gradV4[i] = -1*gradV5[i]
  *     cdef double prefactor = -kappa * ((adotbcrossc - 1))             # <<<<<<<<<<<<<<
@@ -3987,7 +3981,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
  */
   __pyx_v_prefactor = ((-__pyx_v_kappa) * (__pyx_v_adotbcrossc - 1.0));
 
-  /* "get_volume_correction_force_cy_nogil.pyx":157
+  /* "get_volume_correction_force_cy_nogil.pyx":156
  *         gradV4[i] = -1*gradV5[i]
  *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -3997,7 +3991,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":158
+    /* "get_volume_correction_force_cy_nogil.pyx":157
  *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
  *     for i in range(3):
  *         correction_force[0][i] = prefactor*gradV1[i]             # <<<<<<<<<<<<<<
@@ -4008,7 +4002,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":159
+    /* "get_volume_correction_force_cy_nogil.pyx":158
  *     for i in range(3):
  *         correction_force[0][i] = prefactor*gradV1[i]
  *         correction_force[1][i] = prefactor*gradV2[i]             # <<<<<<<<<<<<<<
@@ -4019,7 +4013,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":160
+    /* "get_volume_correction_force_cy_nogil.pyx":159
  *         correction_force[0][i] = prefactor*gradV1[i]
  *         correction_force[1][i] = prefactor*gradV2[i]
  *         correction_force[2][i] = prefactor*gradV3[i]             # <<<<<<<<<<<<<<
@@ -4030,7 +4024,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":161
+    /* "get_volume_correction_force_cy_nogil.pyx":160
  *         correction_force[1][i] = prefactor*gradV2[i]
  *         correction_force[2][i] = prefactor*gradV3[i]
  *         correction_force[3][i] = prefactor*gradV4[i]             # <<<<<<<<<<<<<<
@@ -4041,7 +4035,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":162
+    /* "get_volume_correction_force_cy_nogil.pyx":161
  *         correction_force[2][i] = prefactor*gradV3[i]
  *         correction_force[3][i] = prefactor*gradV4[i]
  *         correction_force[4][i] = prefactor*gradV5[i]             # <<<<<<<<<<<<<<
@@ -4052,7 +4046,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":163
+    /* "get_volume_correction_force_cy_nogil.pyx":162
  *         correction_force[3][i] = prefactor*gradV4[i]
  *         correction_force[4][i] = prefactor*gradV5[i]
  *         correction_force[5][i] = prefactor*gradV6[i]             # <<<<<<<<<<<<<<
@@ -4063,7 +4057,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_4 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":164
+    /* "get_volume_correction_force_cy_nogil.pyx":163
  *         correction_force[4][i] = prefactor*gradV5[i]
  *         correction_force[5][i] = prefactor*gradV6[i]
  *         correction_force[6][i] = prefactor*gradV7[i]             # <<<<<<<<<<<<<<
@@ -4074,7 +4068,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     __pyx_t_3 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":165
+    /* "get_volume_correction_force_cy_nogil.pyx":164
  *         correction_force[5][i] = prefactor*gradV6[i]
  *         correction_force[6][i] = prefactor*gradV7[i]
  *         correction_force[7][i] = prefactor*gradV8[i]             # <<<<<<<<<<<<<<
@@ -4086,7 +4080,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":119
+  /* "get_volume_correction_force_cy_nogil.pyx":118
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_volume_correction_force_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
@@ -4097,7 +4091,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
   /* function exit code */
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":169
+/* "get_volume_correction_force_cy_nogil.pyx":168
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:             # <<<<<<<<<<<<<<
@@ -4107,7 +4101,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction
 
 static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__pyx_v_vec1, double *__pyx_v_vec2, double *__pyx_v_result) {
 
-  /* "get_volume_correction_force_cy_nogil.pyx":170
+  /* "get_volume_correction_force_cy_nogil.pyx":169
  * @cython.wraparound(False)
  * cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:
  *     result[0] = vec1[1]*vec2[2] - vec1[2]*vec2[1]             # <<<<<<<<<<<<<<
@@ -4116,7 +4110,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__
  */
   (__pyx_v_result[0]) = (((__pyx_v_vec1[1]) * (__pyx_v_vec2[2])) - ((__pyx_v_vec1[2]) * (__pyx_v_vec2[1])));
 
-  /* "get_volume_correction_force_cy_nogil.pyx":171
+  /* "get_volume_correction_force_cy_nogil.pyx":170
  * cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:
  *     result[0] = vec1[1]*vec2[2] - vec1[2]*vec2[1]
  *     result[1] = vec1[2]*vec2[0] - vec1[0]*vec2[2]             # <<<<<<<<<<<<<<
@@ -4125,7 +4119,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__
  */
   (__pyx_v_result[1]) = (((__pyx_v_vec1[2]) * (__pyx_v_vec2[0])) - ((__pyx_v_vec1[0]) * (__pyx_v_vec2[2])));
 
-  /* "get_volume_correction_force_cy_nogil.pyx":172
+  /* "get_volume_correction_force_cy_nogil.pyx":171
  *     result[0] = vec1[1]*vec2[2] - vec1[2]*vec2[1]
  *     result[1] = vec1[2]*vec2[0] - vec1[0]*vec2[2]
  *     result[2] = vec1[0]*vec2[1] - vec1[1]*vec2[0]             # <<<<<<<<<<<<<<
@@ -4134,7 +4128,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__
  */
   (__pyx_v_result[2]) = (((__pyx_v_vec1[0]) * (__pyx_v_vec2[1])) - ((__pyx_v_vec1[1]) * (__pyx_v_vec2[0])));
 
-  /* "get_volume_correction_force_cy_nogil.pyx":169
+  /* "get_volume_correction_force_cy_nogil.pyx":168
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void cross_prod(double[3] vec1, double[3] vec2, double[3] result) nogil:             # <<<<<<<<<<<<<<
@@ -4145,7 +4139,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(double *__
   /* function exit code */
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":176
+/* "get_volume_correction_force_cy_nogil.pyx":175
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double dot_prod(double[3] vec1, double[3] vec2) nogil:             # <<<<<<<<<<<<<<
@@ -4159,7 +4153,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
   double __pyx_r;
   int __pyx_t_1;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":177
+  /* "get_volume_correction_force_cy_nogil.pyx":176
  * @cython.wraparound(False)
  * cdef double dot_prod(double[3] vec1, double[3] vec2) nogil:
  *     cdef double result = 0             # <<<<<<<<<<<<<<
@@ -4168,7 +4162,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
  */
   __pyx_v_result = 0.0;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":179
+  /* "get_volume_correction_force_cy_nogil.pyx":178
  *     cdef double result = 0
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4178,7 +4172,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":180
+    /* "get_volume_correction_force_cy_nogil.pyx":179
  *     cdef int i
  *     for i in range(3):
  *         result += vec1[i]*vec2[i]             # <<<<<<<<<<<<<<
@@ -4188,7 +4182,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
     __pyx_v_result = (__pyx_v_result + ((__pyx_v_vec1[__pyx_v_i]) * (__pyx_v_vec2[__pyx_v_i])));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":181
+  /* "get_volume_correction_force_cy_nogil.pyx":180
  *     for i in range(3):
  *         result += vec1[i]*vec2[i]
  *     return result             # <<<<<<<<<<<<<<
@@ -4198,7 +4192,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
   __pyx_r = __pyx_v_result;
   goto __pyx_L0;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":176
+  /* "get_volume_correction_force_cy_nogil.pyx":175
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double dot_prod(double[3] vec1, double[3] vec2) nogil:             # <<<<<<<<<<<<<<
@@ -4211,7 +4205,7 @@ static double __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(double *__
   return __pyx_r;
 }
 
-/* "get_volume_correction_force_cy_nogil.pyx":188
+/* "get_volume_correction_force_cy_nogil.pyx":187
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements, int index, double[:,::1] vectors, double[:,::1]avg_vectors) nogil:             # <<<<<<<<<<<<<<
@@ -4249,7 +4243,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vect
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "get_volume_correction_force_cy_nogil.pyx":192
+  /* "get_volume_correction_force_cy_nogil.pyx":191
  *     cdef int[8] element
  *     cdef int i
  *     for i in range(8):             # <<<<<<<<<<<<<<
@@ -4259,7 +4253,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vect
   for (__pyx_t_1 = 0; __pyx_t_1 < 8; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":193
+    /* "get_volume_correction_force_cy_nogil.pyx":192
  *     cdef int i
  *     for i in range(8):
  *         element[i] = elements[index,i]             # <<<<<<<<<<<<<<
@@ -4271,7 +4265,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vect
     (__pyx_v_element[__pyx_v_i]) = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_2 * __pyx_v_elements.strides[0]) )) + __pyx_t_3)) )));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":194
+  /* "get_volume_correction_force_cy_nogil.pyx":193
  *     for i in range(8):
  *         element[i] = elements[index,i]
  *     for i in range(8):             # <<<<<<<<<<<<<<
@@ -4281,7 +4275,7 @@ static void __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vect
   for (__pyx_t_1 = 0; __pyx_t_1 < 8; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":195
+    /* "get_volume_correction_force_cy_nogil.pyx":194
  *         element[i] = elements[index,i]
  *     for i in range(8):
  *         vectors[i,:] = node_posns[element[i],:]             # <<<<<<<<<<<<<<
@@ -4314,7 +4308,7 @@ __pyx_t_5.shape[0] = __pyx_v_vectors.shape[1];
 __pyx_t_5.strides[0] = __pyx_v_vectors.strides[1];
     __pyx_t_5.suboffsets[0] = -1;
 
-if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0)) __PYX_ERR(0, 195, __pyx_L1_error)
+if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0)) __PYX_ERR(0, 194, __pyx_L1_error)
     __PYX_XDEC_MEMVIEW(&__pyx_t_5, 0);
     __pyx_t_5.memview = NULL;
     __pyx_t_5.data = NULL;
@@ -4323,7 +4317,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     __pyx_t_4.data = NULL;
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":196
+  /* "get_volume_correction_force_cy_nogil.pyx":195
  *     for i in range(8):
  *         vectors[i,:] = node_posns[element[i],:]
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4333,7 +4327,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":197
+    /* "get_volume_correction_force_cy_nogil.pyx":196
  *         vectors[i,:] = node_posns[element[i],:]
  *     for i in range(3):
  *         avg_vectors[0,i] = vectors[2,i] - vectors[0,i] + vectors[3,i] - vectors[1,i] + vectors[6,i] - vectors[4,i] + vectors[7,i] - vectors[5,i]             # <<<<<<<<<<<<<<
@@ -4360,7 +4354,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     __pyx_t_21 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_20 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_21)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_3 * __pyx_v_vectors.strides[0]) )) + __pyx_t_2)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_6 * __pyx_v_vectors.strides[0]) )) + __pyx_t_7)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_8 * __pyx_v_vectors.strides[0]) )) + __pyx_t_9)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_10 * __pyx_v_vectors.strides[0]) )) + __pyx_t_11)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_12 * __pyx_v_vectors.strides[0]) )) + __pyx_t_13)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_14 * __pyx_v_vectors.strides[0]) )) + __pyx_t_15)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_16 * __pyx_v_vectors.strides[0]) )) + __pyx_t_17)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_18 * __pyx_v_vectors.strides[0]) )) + __pyx_t_19)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":198
+    /* "get_volume_correction_force_cy_nogil.pyx":197
  *     for i in range(3):
  *         avg_vectors[0,i] = vectors[2,i] - vectors[0,i] + vectors[3,i] - vectors[1,i] + vectors[6,i] - vectors[4,i] + vectors[7,i] - vectors[5,i]
  *         avg_vectors[1,i] = vectors[4,i] - vectors[0,i] + vectors[6,i] - vectors[2,i] + vectors[5,i] - vectors[1,i] + vectors[7,i] - vectors[3,i]             # <<<<<<<<<<<<<<
@@ -4387,7 +4381,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     __pyx_t_20 = __pyx_v_i;
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_21 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_20)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_19 * __pyx_v_vectors.strides[0]) )) + __pyx_t_18)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_17 * __pyx_v_vectors.strides[0]) )) + __pyx_t_16)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_15 * __pyx_v_vectors.strides[0]) )) + __pyx_t_14)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_13 * __pyx_v_vectors.strides[0]) )) + __pyx_t_12)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_11 * __pyx_v_vectors.strides[0]) )) + __pyx_t_10)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_9 * __pyx_v_vectors.strides[0]) )) + __pyx_t_8)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_7 * __pyx_v_vectors.strides[0]) )) + __pyx_t_6)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_2 * __pyx_v_vectors.strides[0]) )) + __pyx_t_3)) ))));
 
-    /* "get_volume_correction_force_cy_nogil.pyx":199
+    /* "get_volume_correction_force_cy_nogil.pyx":198
  *         avg_vectors[0,i] = vectors[2,i] - vectors[0,i] + vectors[3,i] - vectors[1,i] + vectors[6,i] - vectors[4,i] + vectors[7,i] - vectors[5,i]
  *         avg_vectors[1,i] = vectors[4,i] - vectors[0,i] + vectors[6,i] - vectors[2,i] + vectors[5,i] - vectors[1,i] + vectors[7,i] - vectors[3,i]
  *         avg_vectors[2,i] = vectors[1,i] - vectors[0,i] + vectors[3,i] - vectors[2,i] + vectors[5,i] - vectors[4,i] + vectors[7,i] - vectors[6,i]             # <<<<<<<<<<<<<<
@@ -4415,7 +4409,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vectors.data + __pyx_t_20 * __pyx_v_avg_vectors.strides[0]) )) + __pyx_t_21)) )) = ((((((((*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_3 * __pyx_v_vectors.strides[0]) )) + __pyx_t_2)) ))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_6 * __pyx_v_vectors.strides[0]) )) + __pyx_t_7)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_8 * __pyx_v_vectors.strides[0]) )) + __pyx_t_9)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_10 * __pyx_v_vectors.strides[0]) )) + __pyx_t_11)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_12 * __pyx_v_vectors.strides[0]) )) + __pyx_t_13)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_14 * __pyx_v_vectors.strides[0]) )) + __pyx_t_15)) )))) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_16 * __pyx_v_vectors.strides[0]) )) + __pyx_t_17)) )))) - (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_vectors.data + __pyx_t_18 * __pyx_v_vectors.strides[0]) )) + __pyx_t_19)) ))));
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":201
+  /* "get_volume_correction_force_cy_nogil.pyx":200
  *         avg_vectors[2,i] = vectors[1,i] - vectors[0,i] + vectors[3,i] - vectors[2,i] + vectors[5,i] - vectors[4,i] + vectors[7,i] - vectors[6,i]
  *     cdef int j
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -4425,7 +4419,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
   for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
     __pyx_v_i = __pyx_t_1;
 
-    /* "get_volume_correction_force_cy_nogil.pyx":202
+    /* "get_volume_correction_force_cy_nogil.pyx":201
  *     cdef int j
  *     for i in range(3):
  *         for j in range(3):             # <<<<<<<<<<<<<<
@@ -4435,7 +4429,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     for (__pyx_t_22 = 0; __pyx_t_22 < 3; __pyx_t_22+=1) {
       __pyx_v_j = __pyx_t_22;
 
-      /* "get_volume_correction_force_cy_nogil.pyx":203
+      /* "get_volume_correction_force_cy_nogil.pyx":202
  *     for i in range(3):
  *         for j in range(3):
  *             avg_vectors[i,j] *= 0.25             # <<<<<<<<<<<<<<
@@ -4448,7 +4442,7 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
     }
   }
 
-  /* "get_volume_correction_force_cy_nogil.pyx":188
+  /* "get_volume_correction_force_cy_nogil.pyx":187
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements, int index, double[:,::1] vectors, double[:,::1]avg_vectors) nogil:             # <<<<<<<<<<<<<<
@@ -4463,755 +4457,6 @@ if (unlikely(__pyx_memoryview_copy_contents(__pyx_t_4, __pyx_t_5, 1, 1, 0) < 0))
   __PYX_XDEC_MEMVIEW(&__pyx_t_5, 0);
   __Pyx_WriteUnraisable("get_volume_correction_force_cy_nogil.get_average_edge_vectors", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 1);
   __pyx_L0:;
-}
-
-/* "get_volume_correction_force_cy_nogil.pyx":233
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cpdef double get_volume_correction_force_energy_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
- *     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""
- *     cdef int i
- */
-
-static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_normalized(__Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force, CYTHON_UNUSED int __pyx_skip_dispatch) {
-  int __pyx_v_i;
-  int __pyx_v_j;
-  double __pyx_v_total_energy;
-  double __pyx_r;
-  __Pyx_RefNannyDeclarations
-  Py_ssize_t __pyx_t_1;
-  Py_ssize_t __pyx_t_2;
-  int __pyx_t_3;
-  int __pyx_t_4;
-  Py_ssize_t __pyx_t_5;
-  Py_ssize_t __pyx_t_6;
-  Py_ssize_t __pyx_t_7;
-  Py_ssize_t __pyx_t_8;
-  Py_ssize_t __pyx_t_9;
-  Py_ssize_t __pyx_t_10;
-  __Pyx_RefNannySetupContext("get_volume_correction_force_energy_normalized", 0);
-
-  /* "get_volume_correction_force_cy_nogil.pyx":237
- *     cdef int i
- *     cdef int j
- *     for i in range(correction_force.shape[0]):             # <<<<<<<<<<<<<<
- *         for j in range(3):
- *             correction_force[i][j] = 0.0
- */
-  __pyx_t_1 = (__pyx_v_correction_force.shape[0]);
-  __pyx_t_2 = __pyx_t_1;
-  for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
-    __pyx_v_i = __pyx_t_3;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":238
- *     cdef int j
- *     for i in range(correction_force.shape[0]):
- *         for j in range(3):             # <<<<<<<<<<<<<<
- *             correction_force[i][j] = 0.0
- *     cdef double total_energy = 0
- */
-    for (__pyx_t_4 = 0; __pyx_t_4 < 3; __pyx_t_4+=1) {
-      __pyx_v_j = __pyx_t_4;
-
-      /* "get_volume_correction_force_cy_nogil.pyx":239
- *     for i in range(correction_force.shape[0]):
- *         for j in range(3):
- *             correction_force[i][j] = 0.0             # <<<<<<<<<<<<<<
- *     cdef double total_energy = 0
- *     with nogil:
- */
-      __pyx_t_5 = __pyx_v_i;
-      __pyx_t_6 = __pyx_v_j;
-      *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_5 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_6)) )) = 0.0;
-    }
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":240
- *         for j in range(3):
- *             correction_force[i][j] = 0.0
- *     cdef double total_energy = 0             # <<<<<<<<<<<<<<
- *     with nogil:
- *         for i in range(elements.shape[0]):
- */
-  __pyx_v_total_energy = 0.0;
-
-  /* "get_volume_correction_force_cy_nogil.pyx":241
- *             correction_force[i][j] = 0.0
- *     cdef double total_energy = 0
- *     with nogil:             # <<<<<<<<<<<<<<
- *         for i in range(elements.shape[0]):
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
- */
-  {
-      #ifdef WITH_THREAD
-      PyThreadState *_save;
-      Py_UNBLOCK_THREADS
-      __Pyx_FastGIL_Remember();
-      #endif
-      /*try:*/ {
-
-        /* "get_volume_correction_force_cy_nogil.pyx":242
- *     cdef double total_energy = 0
- *     with nogil:
- *         for i in range(elements.shape[0]):             # <<<<<<<<<<<<<<
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
- *             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)
- */
-        __pyx_t_1 = (__pyx_v_elements.shape[0]);
-        __pyx_t_2 = __pyx_t_1;
-        for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
-          __pyx_v_i = __pyx_t_3;
-
-          /* "get_volume_correction_force_cy_nogil.pyx":243
- *     with nogil:
- *         for i in range(elements.shape[0]):
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)             # <<<<<<<<<<<<<<
- *             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)
- *             for j in range(8):
- */
-          __pyx_f_36get_volume_correction_force_cy_nogil_get_average_edge_vectors(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_i, __pyx_v_vectors, __pyx_v_avg_vectors);
-
-          /* "get_volume_correction_force_cy_nogil.pyx":244
- *         for i in range(elements.shape[0]):
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
- *             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)             # <<<<<<<<<<<<<<
- *             for j in range(8):
- *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
- */
-          __pyx_v_total_energy = (__pyx_v_total_energy + __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_el_normalized(__pyx_v_avg_vectors, __pyx_v_kappa, __pyx_v_correction_force_el));
-
-          /* "get_volume_correction_force_cy_nogil.pyx":245
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
- *             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)
- *             for j in range(8):             # <<<<<<<<<<<<<<
- *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
- *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
- */
-          for (__pyx_t_4 = 0; __pyx_t_4 < 8; __pyx_t_4+=1) {
-            __pyx_v_j = __pyx_t_4;
-
-            /* "get_volume_correction_force_cy_nogil.pyx":246
- *             total_energy += get_volume_correction_force_energy_el_normalized(avg_vectors, kappa,correction_force_el)
- *             for j in range(8):
- *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]             # <<<<<<<<<<<<<<
- *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
- *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]
- */
-            __pyx_t_6 = __pyx_v_j;
-            __pyx_t_5 = 0;
-            __pyx_t_7 = __pyx_v_i;
-            __pyx_t_8 = __pyx_v_j;
-            __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
-            __pyx_t_10 = 0;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-
-            /* "get_volume_correction_force_cy_nogil.pyx":247
- *             for j in range(8):
- *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
- *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]             # <<<<<<<<<<<<<<
- *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]
- *     return total_energy
- */
-            __pyx_t_5 = __pyx_v_j;
-            __pyx_t_6 = 1;
-            __pyx_t_8 = __pyx_v_i;
-            __pyx_t_7 = __pyx_v_j;
-            __pyx_t_10 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_8 * __pyx_v_elements.strides[0]) )) + __pyx_t_7)) )));
-            __pyx_t_9 = 1;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_10 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_9)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_5 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_6)) )));
-
-            /* "get_volume_correction_force_cy_nogil.pyx":248
- *                 correction_force[elements[i,j]][0] += correction_force_el[j][0]
- *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
- *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]             # <<<<<<<<<<<<<<
- *     return total_energy
- * 
- */
-            __pyx_t_6 = __pyx_v_j;
-            __pyx_t_5 = 2;
-            __pyx_t_7 = __pyx_v_i;
-            __pyx_t_8 = __pyx_v_j;
-            __pyx_t_9 = (*((int *) ( /* dim=1 */ ((char *) (((int *) ( /* dim=0 */ (__pyx_v_elements.data + __pyx_t_7 * __pyx_v_elements.strides[0]) )) + __pyx_t_8)) )));
-            __pyx_t_10 = 2;
-            *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_9 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_10)) )) += (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force_el.data + __pyx_t_6 * __pyx_v_correction_force_el.strides[0]) )) + __pyx_t_5)) )));
-          }
-        }
-      }
-
-      /* "get_volume_correction_force_cy_nogil.pyx":241
- *             correction_force[i][j] = 0.0
- *     cdef double total_energy = 0
- *     with nogil:             # <<<<<<<<<<<<<<
- *         for i in range(elements.shape[0]):
- *             get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
- */
-      /*finally:*/ {
-        /*normal exit:*/{
-          #ifdef WITH_THREAD
-          __Pyx_FastGIL_Forget();
-          Py_BLOCK_THREADS
-          #endif
-          goto __pyx_L9;
-        }
-        __pyx_L9:;
-      }
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":249
- *                 correction_force[elements[i,j]][1] += correction_force_el[j][1]
- *                 correction_force[elements[i,j]][2] += correction_force_el[j][2]
- *     return total_energy             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
- */
-  __pyx_r = __pyx_v_total_energy;
-  goto __pyx_L0;
-
-  /* "get_volume_correction_force_cy_nogil.pyx":233
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cpdef double get_volume_correction_force_energy_normalized(double[:,::1] node_posns,int[:,::1] elements, double kappa, double[:,::1] correction_force_el,double[:,::1] vectors, double[:,::1] avg_vectors, double[:,::1] correction_force):             # <<<<<<<<<<<<<<
- *     """calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified"""
- *     cdef int i
- */
-
-  /* function exit code */
-  __pyx_L0:;
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* Python wrapper */
-static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized[] = "calculate the volume correction force on each of the vertices of the unit cell of each element. must pass an array for correction_force that will be modified";
-static PyObject *__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  __Pyx_memviewslice __pyx_v_node_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_elements = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_kappa;
-  __Pyx_memviewslice __pyx_v_correction_force_el = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_vectors = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_avg_vectors = { 0, 0, { 0 }, { 0 }, { 0 } };
-  __Pyx_memviewslice __pyx_v_correction_force = { 0, 0, { 0 }, { 0 }, { 0 } };
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("get_volume_correction_force_energy_normalized (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_node_posns,&__pyx_n_s_elements,&__pyx_n_s_kappa,&__pyx_n_s_correction_force_el,&__pyx_n_s_vectors,&__pyx_n_s_avg_vectors,&__pyx_n_s_correction_force,0};
-    PyObject* values[7] = {0,0,0,0,0,0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
-        CYTHON_FALLTHROUGH;
-        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
-        CYTHON_FALLTHROUGH;
-        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
-        CYTHON_FALLTHROUGH;
-        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-        CYTHON_FALLTHROUGH;
-        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-        CYTHON_FALLTHROUGH;
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_node_posns)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_elements)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 1); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_kappa)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 2); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force_el)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 3); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  4:
-        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_vectors)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 4); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  5:
-        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_avg_vectors)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 5); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  6:
-        if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_correction_force)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, 6); __PYX_ERR(0, 233, __pyx_L3_error)
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_volume_correction_force_energy_normalized") < 0)) __PYX_ERR(0, 233, __pyx_L3_error)
-      }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 7) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-      values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
-      values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
-      values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
-    }
-    __pyx_v_node_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_node_posns.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_elements = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_elements.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_kappa = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_kappa == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_correction_force_el = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force_el.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_vectors.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_avg_vectors = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_avg_vectors.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-    __pyx_v_correction_force = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_correction_force.memview)) __PYX_ERR(0, 233, __pyx_L3_error)
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get_volume_correction_force_energy_normalized", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 233, __pyx_L3_error)
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("get_volume_correction_force_cy_nogil.get_volume_correction_force_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized(__pyx_self, __pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_node_posns, __Pyx_memviewslice __pyx_v_elements, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force_el, __Pyx_memviewslice __pyx_v_vectors, __Pyx_memviewslice __pyx_v_avg_vectors, __Pyx_memviewslice __pyx_v_correction_force) {
-  PyObject *__pyx_r = NULL;
-  __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("get_volume_correction_force_energy_normalized", 0);
-  __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_node_posns.memview)) { __Pyx_RaiseUnboundLocalError("node_posns"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_elements.memview)) { __Pyx_RaiseUnboundLocalError("elements"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force_el.memview)) { __Pyx_RaiseUnboundLocalError("correction_force_el"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_vectors.memview)) { __Pyx_RaiseUnboundLocalError("vectors"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_avg_vectors.memview)) { __Pyx_RaiseUnboundLocalError("avg_vectors"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_correction_force.memview)) { __Pyx_RaiseUnboundLocalError("correction_force"); __PYX_ERR(0, 233, __pyx_L1_error) }
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_normalized(__pyx_v_node_posns, __pyx_v_elements, __pyx_v_kappa, __pyx_v_correction_force_el, __pyx_v_vectors, __pyx_v_avg_vectors, __pyx_v_correction_force, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 233, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_r = __pyx_t_1;
-  __pyx_t_1 = 0;
-  goto __pyx_L0;
-
-  /* function exit code */
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("get_volume_correction_force_cy_nogil.get_volume_correction_force_energy_normalized", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
-  __pyx_L0:;
-  __PYX_XDEC_MEMVIEW(&__pyx_v_node_posns, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_elements, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_correction_force_el, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_vectors, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_avg_vectors, 1);
-  __PYX_XDEC_MEMVIEW(&__pyx_v_correction_force, 1);
-  __Pyx_XGIVEREF(__pyx_r);
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "get_volume_correction_force_cy_nogil.pyx":253
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef double get_volume_correction_force_energy_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
- *     cdef double[3] acrossb
- *     cdef double[3] bcrossc
- */
-
-static double __pyx_f_36get_volume_correction_force_cy_nogil_get_volume_correction_force_energy_el_normalized(__Pyx_memviewslice __pyx_v_avg_vec, double __pyx_v_kappa, __Pyx_memviewslice __pyx_v_correction_force) {
-  double __pyx_v_acrossb[3];
-  double __pyx_v_bcrossc[3];
-  double __pyx_v_ccrossa[3];
-  int __pyx_v_i;
-  double __pyx_v_avg_a[3];
-  double __pyx_v_avg_b[3];
-  double __pyx_v_avg_c[3];
-  double __pyx_v_adotbcrossc;
-  double __pyx_v_gradV1[3];
-  double __pyx_v_gradV8[3];
-  double __pyx_v_gradV3[3];
-  double __pyx_v_gradV6[3];
-  double __pyx_v_gradV7[3];
-  double __pyx_v_gradV2[3];
-  double __pyx_v_gradV5[3];
-  double __pyx_v_gradV4[3];
-  double __pyx_v_prefactor;
-  double __pyx_v_energy;
-  double __pyx_r;
-  int __pyx_t_1;
-  int __pyx_t_2;
-  Py_ssize_t __pyx_t_3;
-  Py_ssize_t __pyx_t_4;
-
-  /* "get_volume_correction_force_cy_nogil.pyx":261
- *     cdef double[3] avg_b
- *     cdef double[3] avg_c
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         avg_a[i] = 0.
- *         avg_b[i] = 0.
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":262
- *     cdef double[3] avg_c
- *     for i in range(3):
- *         avg_a[i] = 0.             # <<<<<<<<<<<<<<
- *         avg_b[i] = 0.
- *         avg_c[i] = 0.
- */
-    (__pyx_v_avg_a[__pyx_v_i]) = 0.;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":263
- *     for i in range(3):
- *         avg_a[i] = 0.
- *         avg_b[i] = 0.             # <<<<<<<<<<<<<<
- *         avg_c[i] = 0.
- *     for i in range(3):
- */
-    (__pyx_v_avg_b[__pyx_v_i]) = 0.;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":264
- *         avg_a[i] = 0.
- *         avg_b[i] = 0.
- *         avg_c[i] = 0.             # <<<<<<<<<<<<<<
- *     for i in range(3):
- *         avg_a[i] += avg_vec[0,i]
- */
-    (__pyx_v_avg_c[__pyx_v_i]) = 0.;
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":265
- *         avg_b[i] = 0.
- *         avg_c[i] = 0.
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         avg_a[i] += avg_vec[0,i]
- *         avg_b[i] += avg_vec[1,i]
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":266
- *         avg_c[i] = 0.
- *     for i in range(3):
- *         avg_a[i] += avg_vec[0,i]             # <<<<<<<<<<<<<<
- *         avg_b[i] += avg_vec[1,i]
- *         avg_c[i] += avg_vec[2,i]
- */
-    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_3 = 0;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_avg_a[__pyx_t_2]) = ((__pyx_v_avg_a[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":267
- *     for i in range(3):
- *         avg_a[i] += avg_vec[0,i]
- *         avg_b[i] += avg_vec[1,i]             # <<<<<<<<<<<<<<
- *         avg_c[i] += avg_vec[2,i]
- *     cross_prod(avg_a,avg_b,acrossb)
- */
-    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_4 = 1;
-    __pyx_t_3 = __pyx_v_i;
-    (__pyx_v_avg_b[__pyx_t_2]) = ((__pyx_v_avg_b[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_4 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_3)) ))));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":268
- *         avg_a[i] += avg_vec[0,i]
- *         avg_b[i] += avg_vec[1,i]
- *         avg_c[i] += avg_vec[2,i]             # <<<<<<<<<<<<<<
- *     cross_prod(avg_a,avg_b,acrossb)
- *     cross_prod(avg_b,avg_c,bcrossc)
- */
-    __pyx_t_2 = __pyx_v_i;
-    __pyx_t_3 = 2;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_avg_c[__pyx_t_2]) = ((__pyx_v_avg_c[__pyx_t_2]) + (*((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_avg_vec.data + __pyx_t_3 * __pyx_v_avg_vec.strides[0]) )) + __pyx_t_4)) ))));
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":269
- *         avg_b[i] += avg_vec[1,i]
- *         avg_c[i] += avg_vec[2,i]
- *     cross_prod(avg_a,avg_b,acrossb)             # <<<<<<<<<<<<<<
- *     cross_prod(avg_b,avg_c,bcrossc)
- *     cross_prod(avg_c,avg_a,ccrossa)
- */
-  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_a, __pyx_v_avg_b, __pyx_v_acrossb);
-
-  /* "get_volume_correction_force_cy_nogil.pyx":270
- *         avg_c[i] += avg_vec[2,i]
- *     cross_prod(avg_a,avg_b,acrossb)
- *     cross_prod(avg_b,avg_c,bcrossc)             # <<<<<<<<<<<<<<
- *     cross_prod(avg_c,avg_a,ccrossa)
- *     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)
- */
-  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_b, __pyx_v_avg_c, __pyx_v_bcrossc);
-
-  /* "get_volume_correction_force_cy_nogil.pyx":271
- *     cross_prod(avg_a,avg_b,acrossb)
- *     cross_prod(avg_b,avg_c,bcrossc)
- *     cross_prod(avg_c,avg_a,ccrossa)             # <<<<<<<<<<<<<<
- *     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)
- *     cdef double[3] gradV1
- */
-  __pyx_f_36get_volume_correction_force_cy_nogil_cross_prod(__pyx_v_avg_c, __pyx_v_avg_a, __pyx_v_ccrossa);
-
-  /* "get_volume_correction_force_cy_nogil.pyx":272
- *     cross_prod(avg_b,avg_c,bcrossc)
- *     cross_prod(avg_c,avg_a,ccrossa)
- *     cdef double adotbcrossc = dot_prod(avg_a,bcrossc)             # <<<<<<<<<<<<<<
- *     cdef double[3] gradV1
- *     cdef double[3] gradV8
- */
-  __pyx_v_adotbcrossc = __pyx_f_36get_volume_correction_force_cy_nogil_dot_prod(__pyx_v_avg_a, __pyx_v_bcrossc);
-
-  /* "get_volume_correction_force_cy_nogil.pyx":281
- *     cdef double[3] gradV5
- *     cdef double[3] gradV4
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV8[i] = -1*gradV1[i]
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":282
- *     cdef double[3] gradV4
- *     for i in range(3):
- *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
- *         gradV8[i] = -1*gradV1[i]
- *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- */
-    (__pyx_v_gradV1[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":283
- *     for i in range(3):
- *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV8[i] = -1*gradV1[i]             # <<<<<<<<<<<<<<
- *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV6[i] = -1*gradV3[i]
- */
-    (__pyx_v_gradV8[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV1[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":284
- *         gradV1[i] = -1*bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV8[i] = -1*gradV1[i]
- *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
- *         gradV6[i] = -1*gradV3[i]
- *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
- */
-    (__pyx_v_gradV3[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) - (1.0 * (__pyx_v_ccrossa[__pyx_v_i]))) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":285
- *         gradV8[i] = -1*gradV1[i]
- *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV6[i] = -1*gradV3[i]             # <<<<<<<<<<<<<<
- *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV2[i] = -1*gradV7[i]
- */
-    (__pyx_v_gradV6[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV3[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":286
- *         gradV3[i] = bcrossc[i] -1*ccrossa[i] -1*acrossb[i]
- *         gradV6[i] = -1*gradV3[i]
- *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
- *         gradV2[i] = -1*gradV7[i]
- *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
- */
-    (__pyx_v_gradV7[__pyx_v_i]) = (((__pyx_v_bcrossc[__pyx_v_i]) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":287
- *         gradV6[i] = -1*gradV3[i]
- *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV2[i] = -1*gradV7[i]             # <<<<<<<<<<<<<<
- *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV4[i] = -1*gradV5[i]
- */
-    (__pyx_v_gradV2[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV7[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":288
- *         gradV7[i] = bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV2[i] = -1*gradV7[i]
- *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]             # <<<<<<<<<<<<<<
- *         gradV4[i] = -1*gradV5[i]
- *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
- */
-    (__pyx_v_gradV5[__pyx_v_i]) = (((-1.0 * (__pyx_v_bcrossc[__pyx_v_i])) + (__pyx_v_ccrossa[__pyx_v_i])) - (1.0 * (__pyx_v_acrossb[__pyx_v_i])));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":289
- *         gradV2[i] = -1*gradV7[i]
- *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV4[i] = -1*gradV5[i]             # <<<<<<<<<<<<<<
- *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
- *     for i in range(3):
- */
-    (__pyx_v_gradV4[__pyx_v_i]) = (-1.0 * (__pyx_v_gradV5[__pyx_v_i]));
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":290
- *         gradV5[i] = -1*bcrossc[i] + ccrossa[i] -1*acrossb[i]
- *         gradV4[i] = -1*gradV5[i]
- *     cdef double prefactor = -kappa * ((adotbcrossc - 1))             # <<<<<<<<<<<<<<
- *     for i in range(3):
- *         correction_force[0][i] = prefactor*gradV1[i]
- */
-  __pyx_v_prefactor = ((-__pyx_v_kappa) * (__pyx_v_adotbcrossc - 1.0));
-
-  /* "get_volume_correction_force_cy_nogil.pyx":291
- *         gradV4[i] = -1*gradV5[i]
- *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
- *     for i in range(3):             # <<<<<<<<<<<<<<
- *         correction_force[0][i] = prefactor*gradV1[i]
- *         correction_force[1][i] = prefactor*gradV2[i]
- */
-  for (__pyx_t_1 = 0; __pyx_t_1 < 3; __pyx_t_1+=1) {
-    __pyx_v_i = __pyx_t_1;
-
-    /* "get_volume_correction_force_cy_nogil.pyx":292
- *     cdef double prefactor = -kappa * ((adotbcrossc - 1))
- *     for i in range(3):
- *         correction_force[0][i] = prefactor*gradV1[i]             # <<<<<<<<<<<<<<
- *         correction_force[1][i] = prefactor*gradV2[i]
- *         correction_force[2][i] = prefactor*gradV3[i]
- */
-    __pyx_t_4 = 0;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV1[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":293
- *     for i in range(3):
- *         correction_force[0][i] = prefactor*gradV1[i]
- *         correction_force[1][i] = prefactor*gradV2[i]             # <<<<<<<<<<<<<<
- *         correction_force[2][i] = prefactor*gradV3[i]
- *         correction_force[3][i] = prefactor*gradV4[i]
- */
-    __pyx_t_3 = 1;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV2[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":294
- *         correction_force[0][i] = prefactor*gradV1[i]
- *         correction_force[1][i] = prefactor*gradV2[i]
- *         correction_force[2][i] = prefactor*gradV3[i]             # <<<<<<<<<<<<<<
- *         correction_force[3][i] = prefactor*gradV4[i]
- *         correction_force[4][i] = prefactor*gradV5[i]
- */
-    __pyx_t_4 = 2;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV3[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":295
- *         correction_force[1][i] = prefactor*gradV2[i]
- *         correction_force[2][i] = prefactor*gradV3[i]
- *         correction_force[3][i] = prefactor*gradV4[i]             # <<<<<<<<<<<<<<
- *         correction_force[4][i] = prefactor*gradV5[i]
- *         correction_force[5][i] = prefactor*gradV6[i]
- */
-    __pyx_t_3 = 3;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV4[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":296
- *         correction_force[2][i] = prefactor*gradV3[i]
- *         correction_force[3][i] = prefactor*gradV4[i]
- *         correction_force[4][i] = prefactor*gradV5[i]             # <<<<<<<<<<<<<<
- *         correction_force[5][i] = prefactor*gradV6[i]
- *         correction_force[6][i] = prefactor*gradV7[i]
- */
-    __pyx_t_4 = 4;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV5[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":297
- *         correction_force[3][i] = prefactor*gradV4[i]
- *         correction_force[4][i] = prefactor*gradV5[i]
- *         correction_force[5][i] = prefactor*gradV6[i]             # <<<<<<<<<<<<<<
- *         correction_force[6][i] = prefactor*gradV7[i]
- *         correction_force[7][i] = prefactor*gradV8[i]
- */
-    __pyx_t_3 = 5;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV6[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":298
- *         correction_force[4][i] = prefactor*gradV5[i]
- *         correction_force[5][i] = prefactor*gradV6[i]
- *         correction_force[6][i] = prefactor*gradV7[i]             # <<<<<<<<<<<<<<
- *         correction_force[7][i] = prefactor*gradV8[i]
- *     cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)
- */
-    __pyx_t_4 = 6;
-    __pyx_t_3 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_4 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_3)) )) = (__pyx_v_prefactor * (__pyx_v_gradV7[__pyx_v_i]));
-
-    /* "get_volume_correction_force_cy_nogil.pyx":299
- *         correction_force[5][i] = prefactor*gradV6[i]
- *         correction_force[6][i] = prefactor*gradV7[i]
- *         correction_force[7][i] = prefactor*gradV8[i]             # <<<<<<<<<<<<<<
- *     cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)
- *     return energy
- */
-    __pyx_t_3 = 7;
-    __pyx_t_4 = __pyx_v_i;
-    *((double *) ( /* dim=1 */ ((char *) (((double *) ( /* dim=0 */ (__pyx_v_correction_force.data + __pyx_t_3 * __pyx_v_correction_force.strides[0]) )) + __pyx_t_4)) )) = (__pyx_v_prefactor * (__pyx_v_gradV8[__pyx_v_i]));
-  }
-
-  /* "get_volume_correction_force_cy_nogil.pyx":300
- *         correction_force[6][i] = prefactor*gradV7[i]
- *         correction_force[7][i] = prefactor*gradV8[i]
- *     cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)             # <<<<<<<<<<<<<<
- *     return energy
- */
-  __pyx_v_energy = ((__pyx_v_kappa / 2.0) * pow((__pyx_v_adotbcrossc - 1.0), 2.0));
-
-  /* "get_volume_correction_force_cy_nogil.pyx":301
- *         correction_force[7][i] = prefactor*gradV8[i]
- *     cdef double energy = kappa / 2 * pow((adotbcrossc - 1),2)
- *     return energy             # <<<<<<<<<<<<<<
- */
-  __pyx_r = __pyx_v_energy;
-  goto __pyx_L0;
-
-  /* "get_volume_correction_force_cy_nogil.pyx":253
- * @cython.boundscheck(False)
- * @cython.wraparound(False)
- * cdef double get_volume_correction_force_energy_el_normalized(double[:,::1] avg_vec, double kappa, double[:,::1] correction_force) nogil:             # <<<<<<<<<<<<<<
- *     cdef double[3] acrossb
- *     cdef double[3] bcrossc
- */
-
-  /* function exit code */
-  __pyx_L0:;
-  return __pyx_r;
 }
 
 /* ".venv/lib/python3.10/site-packages/numpy/__init__.pxd":734
@@ -20002,7 +19247,6 @@ static PyTypeObject __pyx_type___pyx_memoryviewslice = {
 static PyMethodDef __pyx_methods[] = {
   {"get_volume_correction_force", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_36get_volume_correction_force_cy_nogil_1get_volume_correction_force, METH_VARARGS|METH_KEYWORDS, __pyx_doc_36get_volume_correction_force_cy_nogil_get_volume_correction_force},
   {"get_volume_correction_force_normalized", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_36get_volume_correction_force_cy_nogil_3get_volume_correction_force_normalized, METH_VARARGS|METH_KEYWORDS, __pyx_doc_36get_volume_correction_force_cy_nogil_2get_volume_correction_force_normalized},
-  {"get_volume_correction_force_energy_normalized", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_36get_volume_correction_force_cy_nogil_5get_volume_correction_force_energy_normalized, METH_VARARGS|METH_KEYWORDS, __pyx_doc_36get_volume_correction_force_cy_nogil_4get_volume_correction_force_energy_normalized},
   {0, 0, 0, 0}
 };
 
@@ -20148,7 +19392,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 25, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 944, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(2, 134, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(2, 149, __pyx_L1_error)
