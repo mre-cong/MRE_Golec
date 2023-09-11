@@ -1211,13 +1211,13 @@ def main2():
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
-    n_discretization = 1
-    l_e = (particle_diameter/2) / (n_discretization + 1/2)
+    discretization_order = 1
+    l_e = (particle_diameter/2) / (discretization_order + 1/2)
     #particle separation
     separation_meters = 9e-6
     separation_volume_elements = int(separation_meters / l_e)
     separation = separation_volume_elements#20#12#4
-    radius = (n_discretization + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
+    radius = (discretization_order + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
     #l_e = (3/5)*1e-6#3e-6#cubic element side length
     # Lx = 41*l_e#27*l_e#15*l_e
     # Ly = 23*l_e#17*l_e#11*l_e
@@ -1226,7 +1226,7 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
-    drag = 100
+    drag = 10
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -1261,7 +1261,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-08-31_results_drag100_added_velocity_criteria/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-11_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1274,7 +1274,7 @@ def main2():
     H_mag = 1/mu0
     n_field_steps = 1
     H_step = H_mag/n_field_steps
-    Hext_angle = (2*np.pi/360)*30
+    Hext_angle = (2*np.pi/360)*0.1#30
     Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
