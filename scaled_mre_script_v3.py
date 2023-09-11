@@ -131,23 +131,10 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         solutions = []
         r.set_solout(solout)
     # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
-    #TODO formalize the below and above sections relating to the displacement of nodes between integration iterations (outer integration loop). can the displacement be used as part of the convergence criteria? I also need to do checking on the acceleration norm and other criteria to determine if the system has collapsed in a manner it should not, and utilize the stored "last_sol" as a new starting point with a smaller number of allowed integration steps (inner integration loop) or just accept the last_sol as the solution
-    fig, axs = plt.subplots(2)
-    axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
-    axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
-    axs[0].set_title('displacement between integration iterations')
-    axs[0].set_ylabel('displacement mean (units of l_e)')
-    axs[1].set_ylabel('displacement max (units of l_e)')
-    axs[1].set_xlabel('iteration number')
-    # Hide x labels and tick labels for top plots and y ticks for right plots
-    for ax in axs.flat:
-        ax.label_outer()
-    # plt.show()
-    plt.savefig(output_dir+'displacement.png')
-    plt.close()
+    plot_displacement_v_integration(max_iters,mean_displacement,max_displacement,output_dir)
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
-    criteria.plot_criteria(output_dir)
+    # criteria.plot_criteria(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     # criteria.plot_criteria_v_time(output_dir)
@@ -160,6 +147,19 @@ def get_displacement_norms(final_posns,start_posns):
     mean_displacement = np.mean(displacement_norms)
     return mean_displacement,max_displacement
 
+def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement,output_dir):
+    fig, axs = plt.subplots(2)
+    axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
+    axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
+    axs[0].set_title('displacement between integration iterations')
+    axs[0].set_ylabel('displacement mean (units of l_e)')
+    axs[1].set_ylabel('displacement max (units of l_e)')
+    axs[1].set_xlabel('iteration number')
+    # Hide x labels and tick labels for top plots and y ticks for right plots
+    for ax in axs.flat:
+        ax.label_outer()
+    plt.savefig(output_dir+'displacement.png')
+    plt.close()
 def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
