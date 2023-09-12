@@ -907,7 +907,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         mre.analyze.post_plot_cut_normalized(eq_posns,x0,springs_var,particles,boundary_conditions,output_dir)
 
 def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10):
@@ -941,8 +941,9 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
+    return delta
 
 def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
     for count, Hext in enumerate(Hext_series):
@@ -971,7 +972,7 @@ def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,el
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
 
 def initialize(*args):
@@ -1178,7 +1179,7 @@ def main():
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         # mre.analyze.post_plot_v2(x0,springs,boundary_conditions,output_dir)
         # mre.analyze.post_plot_v3(node_posns,x0,springs,boundary_conditions,boundaries,output_dir)
         # mre.analyze.post_plot_cut(normalized_posns,x0,springs_var,particles,dimensions,l_e,boundary_conditions,output_dir)
@@ -1294,7 +1295,8 @@ def main2():
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag)
+    simulation_time = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag)
+    my_sim.append_log(f'Simulation took:{simulation_time} seconds\n')
 
 def main3():
     #TODO completely update this, or toss it. reference main2() to see how things have changed regarding the use of particle diameter to determine l_e values, Lx,Ly,Lz, and the recent addition of the drag coefficient to the simulation log file/choice of drag coefficient occurring within the main() function rather than being a fixed coefficient inside the get_scaled_accel() function

@@ -535,7 +535,7 @@ def read_criteria_file(fn):
     return results
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
-def write_output_file(count,posns,applied_field,boundary_conditions,output_dir):
+def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(f'{output_dir}output_{count}.h5','w')
     f.create_array('/','node_posns',posns)
@@ -548,6 +548,7 @@ def write_output_file(count,posns,applied_field,boundary_conditions,output_dir):
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
+    f.create_array('/','simulation_time',sim_time)
     f.close()
 
 def read_output_file(fn):
@@ -557,8 +558,10 @@ def read_output_file(fn):
     bc_object = f.get_node('/','boundary_conditions')
     bc = bc_object.read()
     boundary_condition = bc[0]
+    time_object = f.get_node('/','simulation_time')
+    sim_time = time_object.read()
     f.close()
-    return node_posns, bc, boundary_condition
+    return node_posns, bc, boundary_condition, sim_time
 
 def test_element_setting():
     import time
