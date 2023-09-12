@@ -912,6 +912,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
 
 def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10):
     eq_posns = x0.copy()
+    total_delta = 0
     for count, Hext in enumerate(Hext_series):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('free',('free','free'),0) 
@@ -928,6 +929,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # post_plot(posns,c,k)
         end = time.time()
         delta = end - start
+        total_delta += delta
         #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
         # end_result = sol.y[:,-1]
         #below getting the solution at the final time, is the solution provided from scipy.integrate.ode. no more issue with memory overhead since this way, instead of using solve_ivp(), doesn't record the itnermediate states, just spits out the state at the desired time
@@ -943,7 +945,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
-    return delta
+    return total_delta
 
 def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
     for count, Hext in enumerate(Hext_series):
@@ -1291,7 +1293,7 @@ def main2():
     my_sim.write_log(output_dir)
     field_or_strain_type_string = 'magnetic field'
     mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,Hext_series,field_or_strain_type_string,output_dir)
-    read_posns,read_mass,read_springs,read_elements, read_boundaries, read_particles, read_parameters, read_series, read_type = mre.initialize.read_init_file(output_dir+'init.h5')
+    # read_posns,read_mass,read_springs,read_elements, read_boundaries, read_particles, read_parameters, read_series, read_type = mre.initialize.read_init_file(output_dir+'init.h5')
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
