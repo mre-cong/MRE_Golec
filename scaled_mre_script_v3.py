@@ -1189,6 +1189,8 @@ def main2():
     start = time.time()
     E = 9e3
     nu = 0.499
+    max_integrations = 10
+    max_integration_steps = 200
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
@@ -1223,6 +1225,7 @@ def main2():
     elements = springs.get_elements_v2_normalized(N_nodes_x, N_nodes_y, N_nodes_z)
     boundaries = mre.initialize.get_boundaries(normalized_posns)
     k = mre.initialize.get_spring_constants(E, l_e)
+    kappa = mre.initialize.get_kappa(E, nu)
     dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
     node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
     k = np.array(k,dtype=np.float64)
@@ -1232,7 +1235,9 @@ def main2():
     springs_var = springs_var[:num_springs,:]
 
     particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
-    kappa = mre.initialize.get_kappa(E, nu)
+    particle_size = radius
+    chi = 131
+    Ms = 1.9e6
     #TODO: for distributed computing, I can't depend on looking at existing initialization files to extract variables. I'll have to either instantiate them based on command line arguments or an input file containing similar information, or (and this method seems like it is not th ebest for distributed computing) have separate "jobs" that i run locally or distributed to generate the init files, and use those as transferred input files for the main program (actually running the numerical integration to find equilibrium node configurations)
     # particles = np.array([])
     # kappa = mre.initialize.get_kappa(E, nu)
@@ -1246,9 +1251,6 @@ def main2():
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    my_sim = mre.initialize.Simulation(E,nu,kappa,drag,l_e,Lx,Ly,Lz)
-    my_sim.set_time(t_f)
-    my_sim.write_log(output_dir)
     # strains = np.array([0.01])
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
@@ -1263,9 +1265,6 @@ def main2():
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
     # Hext = np.array([10000,0,0],dtype=np.float64)
-    particle_size = radius
-    chi = 131
-    Ms = 1.9e6
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
     x0 = normalized_posns.copy()
@@ -1286,7 +1285,12 @@ def main2():
     scaled_kappa = (l_e**2)*beta_new
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
-    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,output_dir)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_diameter,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
+    my_sim.set_time(t_f)
+    my_sim.write_log(output_dir)
+    field_or_strain_type_string = 'magnetic field'
+    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,Hext_series,field_or_strain_type_string,output_dir)
+    read_posns,read_mass,read_springs,read_elements, read_boundaries, read_particles, read_parameters, read_series, read_type = mre.initialize.read_init_file(output_dir+'init.h5')
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
