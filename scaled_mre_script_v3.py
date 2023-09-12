@@ -74,9 +74,6 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
-        #checking if the last solution vector in the solutions variable matches the solution returned by the integration method while debugging an issue with mismatch between accelerations from criteria object and from get_accel() function. issue has been resolved
-        # if not np.allclose(sol,solutions[-1][1:]):
-        #     print('solution returned by integrator and last solution stored by solout do not match')
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
@@ -84,9 +81,6 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         else:
             other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
-        # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
-        # final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
-        # final_v = np.reshape(solutions[-1][N_nodes*3+1:],(N_nodes,3))
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
         v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
@@ -96,15 +90,11 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
             if i != 0:
                 criteria.append_criteria(other_criteria)
-            #below was used while debugging, found an error where i was not passing the drag coefficient to the criteria object, resulting in the default value being used, leading to incorrect values
-            # print(f'Last recorded acceleration norm average from criteria object is:{np.round(criteria.a_norm_avg[-1],decimals=6)}')
-            # v_norm = np.linalg.norm(np.reshape(sol[int(sol.shape[0]/2):],(int(sol.shape[0]/2/3),3)),axis=1)
-            # v_norm_avg = np.sum(v_norm)/np.shape(v_norm)[0]
-            # print(f'solution returned by integration has velocity norm average of:{np.round(v_norm_avg,decimals=6)}\nLast recorded velocity norm average from criteria object is:{np.round(criteria.v_norm_avg[-1],decimals=6)}')
             break
         else:
             y_0 = sol
             if i == 0:
+                #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
                 mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
             else:
                 last_posns = np.reshape(last_sol[:N_nodes*3],(N_nodes,3))
@@ -600,19 +590,10 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
     accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
-    #TODO instead of reshaping as a 3N by 1, do (3*N,), and try concatenating. ideally should work and remove an additional and unnecessary reshape call
     N_nodes = int(np.round(N/3))
     accel = np.reshape(accel,(3*N_nodes,))
     v0 = y[N:]
     result = np.concatenate((v0,accel))
-    # accel = np.reshape(accel,(3*N_nodes,1))
-    # v0 = np.reshape(y[N:],(N_nodes,3))
-    # result = np.concatenate((v0.reshape((3*N_nodes,1)),accel))
-    # alternative to concatenate is to create an empty array and then assign the values, this should in theory be faster
-    # result = np.reshape(result,(result.shape[0],))
-    # same_result = np.allclose(result,my_result)
-    # if not same_result:
-    #     print('alternative implementation with less reshapes does not match existing result variable')
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
@@ -926,7 +907,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
         mre.analyze.post_plot_cut_normalized(eq_posns,x0,springs_var,particles,boundary_conditions,output_dir)
 
 def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10):
@@ -960,7 +941,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
 
 def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
@@ -990,7 +971,7 @@ def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,el
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
 
 def initialize(*args):
@@ -1159,7 +1140,6 @@ def main():
     beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
     #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
     beta_i = beta/m
-    #TODO properly motivated average acceleration l2 norm tolerance to consider system converged to a solution
     tolerance = 1e-4
     for count, strain in enumerate(strains):
         #TODO better implementation of boundary conditions
@@ -1198,7 +1178,7 @@ def main():
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,boundary_conditions,output_dir)
+        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,output_dir)
         # mre.analyze.post_plot_v2(x0,springs,boundary_conditions,output_dir)
         # mre.analyze.post_plot_v3(node_posns,x0,springs,boundary_conditions,boundaries,output_dir)
         # mre.analyze.post_plot_cut(normalized_posns,x0,springs_var,particles,dimensions,l_e,boundary_conditions,output_dir)
@@ -1206,6 +1186,7 @@ def main():
         # mre.analyze.post_plot_particle(node_posns,x0,particle_nodes,springs,boundary_conditions,output_dir)
     
 def main2():
+    start = time.time()
     E = 9e3
     nu = 0.499
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
@@ -1305,7 +1286,10 @@ def main2():
     scaled_kappa = (l_e**2)*beta_new
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
-    mre.initialize.write_init_file(normalized_posns,springs_var,elements,particles,boundaries,output_dir)
+    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,output_dir)
+    end = time.time()
+    delta = end - start
+    print(f'Time to initialize:{delta} seconds\n')
     run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag)
 
 def main3():

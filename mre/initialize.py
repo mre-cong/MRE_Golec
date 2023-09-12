@@ -414,10 +414,11 @@ class Simulation(object):
             f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
-def write_init_file(posns,springs,elements,particles,boundaries,output_dir):
+def write_init_file(posns,mass,springs,elements,particles,boundaries,output_dir):
     """Write out the node positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'init.h5','w')
     f.create_array('/','node_posns',posns)
+    f.create_array('/','mass',mass)
     f.create_array('/','springs',springs)
     f.create_array('/','elements',elements)
     f.create_group('/','boundaries',"Boundary Nodes")
@@ -430,17 +431,19 @@ def read_init_file(fn):
     f = tb.open_file(fn,'r')
     node_object = f.get_node('/','node_posns')
     node_posns = node_object.read()
+    mass_object = f.get_node('/','mass')
+    mass = mass_object.read()
     spring_object = f.get_node('/','springs')
     springs = spring_object.read()
     element_object = f.get_node('/','elements')
     elements = element_object.read()
-    # particle_object = f.get_node('/','particles')
-    # particles = particle_object.read()
+    particle_object = f.get_node('/','particles')
+    particles = particle_object.read()
     boundaries = {}
     for leaf in f.root.boundaries._f_walknodes('Leaf'):
         boundaries[leaf.name] = leaf.read()
     f.close()
-    return node_posns, springs, elements, boundaries
+    return node_posns, mass, springs, elements, boundaries, particles
 
 def write_criteria_file(criteria_obj,output_dir):
     """write out a file containing the simulation criteria at each integration step. intended for reproducing figures/plots"""
@@ -459,7 +462,7 @@ def read_criteria_file(fn):
     return results
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
-def write_output_file(count,posns,boundary_conditions,output_dir):
+def write_output_file(count,posns,applied_field,boundary_conditions,output_dir):
     """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(f'{output_dir}output_{count}.h5','w')
     f.create_array('/','node_posns',posns)
@@ -467,6 +470,7 @@ def write_output_file(count,posns,boundary_conditions,output_dir):
     # f.create_array('/node_posns',str(count),posns)
     # f.create_group('/','boundary_conditions','Applied Boundary Conditions')
     # f.create_group('/','applied_field')
+    f.create_array('/','applied_field',applied_field)
     dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
@@ -481,7 +485,7 @@ def read_output_file(fn):
     bc = bc_object.read()
     boundary_condition = bc[0]
     f.close()
-    return node_posns, boundary_condition
+    return node_posns, bc, boundary_condition
 
 def test_element_setting():
     import time
