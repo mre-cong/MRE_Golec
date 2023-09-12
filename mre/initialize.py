@@ -368,10 +368,19 @@ class Simulation(object):
     Lz : length in z direction of the object [m]
     """
     #TODO flesh out this class based approach to the simulation interface
-    def __init__(self,E=1,nu=0.49,drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4):
-        """Initializes simulation with default values if they are not passed"""
+    def __init__(self,E=1,nu=0.49,kappa=0,k=np.zeros((3,)),drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4,particle_size=3e-6,particle_Ms=1.9e6,particle_chi=131,max_integrations=10,max_integration_steps=200):
+        """Initializes simulation with default values if they are not passed.
+        E: Young's Modulus (Pa)
+        nu: Poisson Ratio (unitless)
+        kappa: Additional Bulk Modulus (Pa)
+        drag: Viscous Term (unitless)
+        l_e: Volume Element Edge Length (m)
+        Lx, Ly, Lz: Simulation Dimensions (m)
+        N_el_x, N_el_y, N_el_z: Number of Volume Elements in Direction ()
+        """
         self.E = E
         self.nu = nu
+        self.kappa = kappa
         self.drag = drag
         self.l_e = l_e
         self.Lx = Lx
@@ -385,6 +394,13 @@ class Simulation(object):
         N_el_x = N_nodes_x - 1
         N_el_y = N_nodes_y - 1
         N_el_z = N_nodes_z - 1
+        self.N_el = np.array([N_el_x,N_el_y,N_el_z])
+        self.stiffness = k
+        self.Ms = particle_Ms
+        self.chi = particle_chi
+        self.particle_size = particle_size
+        self.max_integrations = max_integrations
+        self.max_integration_steps = max_integration_steps
         
     def set_time(self,time):
         self.t_f = time
@@ -413,8 +429,24 @@ class Simulation(object):
         with open(output_dir+'logfile.txt','a') as f_obj:
             f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
 
+
+class SimulationTable(tb.IsDescirption):
+    """Used to define a table with named fields and type information that can be saved to a hdf5 format file using PyTables"""
+    young_modulus = tb.Float64Col()
+    poisson_ratio = tb.Float64Col()
+    spring_stiffness = tb.Float64Col(shape=(3,1))
+    kappa = tb.Float64Col()#additional bulk modulus
+    drag = tb.Float64Col()
+    element_length = tb.Float64Col()
+    num_elements = tb.Float64Col(shape=(3,1))#number of volume elements in each direction
+    particle_Ms = tb.Float64Col()
+    particle_chi = tb.Float64Col()
+    particle_size = tb.Float64Col()
+    max_integrations = tb.Int32Col()
+    max_integration_steps = tb.Int32Col()
+
     #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
-def write_init_file(posns,mass,springs,elements,particles,boundaries,output_dir):
+def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationObject,output_dir):
     """Write out the node positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'init.h5','w')
     f.create_array('/','node_posns',posns)
@@ -425,6 +457,24 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,output_dir)
     for key in boundaries.keys():
         f.create_array('/boundaries',key,boundaries[key])
     f.create_array('/','particles',particles)
+    table = f.create_table('/','parameters',SimulationTable,"Simulation Parameters")
+    parameters = table.row
+    parameters['young_modulus'] = simulationObject.E
+    parameters['poisson_ratio'] = simulationObject.nu
+    parameters['spring_stiffness'] = simulationObject.stiffness
+    parameters['kappa'] = simulationObject.kappa
+    parameters['drag'] = simulationObject.drag
+    parameters['element_length'] = simulationObject.l_e
+    parameters['num_elements'] = simulationObject.N_el
+    parameters['particle_Ms'] = simulationObject.Ms
+    parameters['particle_chi'] = simulationObject.chi
+    parameters['particle_size'] = simulationObject.particle_size
+    parameters['max_integrations'] = simulationObject.max_integrations
+    parameters['max_integration_steps'] = simulationObject.max_integration_steps
+    # injects the parameter values to the table
+    parameters.append()
+    # flushes the table buffers
+    table.flush()
     f.close()
 
 def read_init_file(fn):
@@ -442,8 +492,10 @@ def read_init_file(fn):
     boundaries = {}
     for leaf in f.root.boundaries._f_walknodes('Leaf'):
         boundaries[leaf.name] = leaf.read()
+    param_table = f.root.parameters
+    parameters = param_table.read()
     f.close()
-    return node_posns, mass, springs, elements, boundaries, particles
+    return node_posns, mass, springs, elements, boundaries, particles, parameters
 
 def write_criteria_file(criteria_obj,output_dir):
     """write out a file containing the simulation criteria at each integration step. intended for reproducing figures/plots"""

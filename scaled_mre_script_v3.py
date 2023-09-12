@@ -1114,7 +1114,7 @@ def main():
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    my_sim = mre.initialize.Simulation(E,nu,l_e,Lx,Ly,Lz)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
     
@@ -1242,11 +1242,11 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-11_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-12_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    my_sim = mre.initialize.Simulation(E,nu,drag,l_e,Lx,Ly,Lz)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,drag,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
     # strains = np.array([0.01])
@@ -1335,7 +1335,7 @@ def main3():
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    my_sim = mre.initialize.Simulation(E,nu,drag,l_e,Lx,Ly,Lz)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,drag,l_e,Lx,Ly,Lz)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
     # strains = np.array([0.01])
