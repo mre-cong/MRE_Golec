@@ -1199,8 +1199,8 @@ def main2():
     start = time.time()
     E = 9e3
     nu = 0.499
-    max_integrations = 15
-    max_integration_steps = 200
+    max_integrations = 20
+    max_integration_steps = 300
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order

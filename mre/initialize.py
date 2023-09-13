@@ -496,6 +496,7 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationO
     f.close()
 
 def read_init_file(fn):
+    """Read hdf5 format file and return initialized node positions, node masses, springs variable, elements, boundaries dict, particles variable, parameters tuple,the series of fields or strains applied, and a string description of the field series or strain series type"""
     f = tb.open_file(fn,'r')
     node_object = f.get_node('/','node_posns')
     node_posns = node_object.read()
@@ -552,6 +553,7 @@ def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,out
     f.close()
 
 def read_output_file(fn):
+    """Read hdf5 format output file. Returns node positions, boundary conditions tuple, first boundary condition tuple entry, and the simulation time to completion"""
     f = tb.open_file(fn,'r')
     node_object = f.get_node('/','node_posns')
     node_posns = node_object.read()
