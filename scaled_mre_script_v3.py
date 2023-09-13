@@ -81,8 +81,10 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
             criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+            max_accel_norm_avg = np.max(criteria.a_norm_avg)
         else:
             other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+            max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
         v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
@@ -94,7 +96,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
                 criteria.append_criteria(other_criteria)
             return_status = 0
             break
-        elif np.max(other_criteria.a_norm_avg) > 1e3:
+        elif max_accel_norm_avg > 1e3:
             print(f'strong accelerations detected during integration run {i}')
             my_nsteps = int(my_nsteps/2)
             if my_nsteps < 10:
@@ -113,13 +115,17 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             y_0 = backstop_solution.copy()
         else:
             y_0 = sol.copy()
-            if i == 0:
-                #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
-                mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
-            else:
-                last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
-                mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            if i != 0:
                 criteria.append_criteria(other_criteria)
+            # if i == 0:
+            #     #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
+            # else:
+            #     last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            #     criteria.append_criteria(other_criteria)
             backstop_solution = sol.copy()
         solutions = []
         r.set_solout(solout)
@@ -1193,7 +1199,7 @@ def main2():
     start = time.time()
     E = 9e3
     nu = 0.499
-    max_integrations = 10
+    max_integrations = 15
     max_integration_steps = 200
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
