@@ -94,45 +94,41 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
                 criteria.append_criteria(other_criteria)
             return_status = 0
             break
+        elif np.max(other_criteria.a_norm_avg) > 1e3:
+            print(f'strong accelerations detected during integration run {i}')
+            my_nsteps = int(my_nsteps/2)
+            if my_nsteps < 10:
+                print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
+                sol = backstop_solution.copy()
+                del backstop_solution
+                del y_0
+                del solutions
+                return_status = -1
+                break
+            print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
+            print(f'running with halved maximum number of steps: {my_nsteps}')
+            r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
+            print(f'Increasing drag coefficient from {drag} to {10*drag}')
+            drag *= 10
+            y_0 = backstop_solution.copy()
         else:
-            y_0 = sol
+            y_0 = sol.copy()
             if i == 0:
                 #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
                 mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
             else:
-                last_posns = np.reshape(last_sol[:N_nodes*3],(N_nodes,3))
+                last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
                 mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
-            if i != 0 and np.max(other_criteria.a_norm_avg) > 1e3:
-                print(f'strong accelerations detected during integration run {i}')
-                my_nsteps = int(my_nsteps/2)
-                if my_nsteps < 10:
-                    print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
-                    sol = last_sol.copy()
-                    del last_sol
-                    del y_0
-                    del solutions
-                    return_status = -1
-                    break
-                print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
-                print(f'running with halved maximum number of steps: {my_nsteps}')
-                r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
-                print(f'Increasing drag coefficient from {drag} to {10*drag}')
-                drag *= 10
-                y_0 = last_sol.copy()
-            elif i != 0:
                 criteria.append_criteria(other_criteria)
-            last_sol = sol
+            backstop_solution = sol.copy()
         solutions = []
         r.set_solout(solout)
-    # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
-    # criteria.plot_criteria(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return_status = 1
-    # criteria.plot_criteria_v_time(output_dir)
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
 def get_displacement_norms(final_posns,start_posns):
@@ -915,7 +911,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         mre.analyze.post_plot_cut_normalized(eq_posns,x0,springs_var,particles,boundary_conditions,output_dir)
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -926,7 +922,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
             os.mkdir(current_output_dir)
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,eq_posns,current_output_dir)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1302,8 +1298,8 @@ def main2():
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag)
-    my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n')
+    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
+    my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main3():
     #TODO completely update this, or toss it. reference main2() to see how things have changed regarding the use of particle diameter to determine l_e values, Lx,Ly,Lz, and the recent addition of the drag coefficient to the simulation log file/choice of drag coefficient occurring within the main() function rather than being a fixed coefficient inside the get_scaled_accel() function
