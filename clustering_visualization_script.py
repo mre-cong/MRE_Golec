@@ -26,6 +26,7 @@ def main():
 
     stiffness = params[0][-2]
     # print(params.dtype)
+    plot_outer_surfaces_contours(initial_node_posns,final_posns,boundaries,output_dir)
     plot_outer_surfaces(initial_node_posns,final_posns,springs_var,boundaries,output_dir,spring_type=stiffness[0])
 
     plot_regular_spacing_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir)
@@ -278,14 +279,150 @@ def plot_outer_surfaces(eq_node_posns,node_posns,springs,boundaries,output_dir,s
         fig.colorbar(img,ax=ax)
         # ax.scatter(posns[:,0],posns[:,1],posns[:,2],color='b',marker='o')
         # mre.analyze.plot_subset_springs(ax,node_posns,boundaries[view],springs,spring_color='b',spring_type=spring_type)
-        # ax.axis('equal')
+        ax.axis('equal')
         ax.set_title(view)
-    plt.show()
+    # plt.show()
+    savename = output_dir + f'surface_pcolormesh_visualization.png'
+    plt.savefig(savename)
+    # plt.close()
 
-def plot_outer_surfaces_contours():
-    """plot the outer surfaces of the simulated volume, using contours (contourf())"""
+def plot_outer_surfaces_contours(eq_node_posns,node_posns,boundaries,output_dir):
+    """plot the outer surfaces of the simulated volume, using contours (tricontourf())"""
+    # (plane, (elevation, azimuthal, roll))
+    views = [('top', ( 90,-90, 0)),
+            ('front', (  0,-90, 0)),
+            ('left', (  0,  0, 0)),
+            ('bot',(-90, 90, 0)),
+            ('back',(  0, 90, 0)),
+            ('right',(  0,180, 0))]
+    fig, axs = plt.subplots(2,3)
+    # fig, axs = plt.subplots(2,3,subplot_kw=dict(projection='3d'))
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    for index in range(len(views)):
+        view, angles = views[index]
+        row = int(np.mod(index,2))
+        col = int(np.mod(index,3))
+        ax = axs[row,col]
+        # ax.view_init(elev=angles[0],azim=angles[1],roll=angles[2])
+        posns = node_posns[boundaries[view]]
+        eq_posns = eq_node_posns[boundaries[view]]
+        if view == 'top' or view == 'bot':
+            z = posns[:,2]
+            x = posns[:,0]
+            y = posns[:,1]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,1]) + 1)
+            xmax = np.max(eq_posns[:,0])
+            xmin = -0.1
+            ymax = np.max(eq_posns[:,1])
+            ymin = -0.1
+        elif view == 'front' or view == 'back':
+            z = posns[:,1]
+            x = posns[:,0]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+            xmax = np.max(eq_posns[:,0])
+            xmin = -0.1
+            ymax = np.max(eq_posns[:,2])
+            ymin = -0.1
+        else:
+            z = posns[:,0]
+            x = posns[:,1]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,1]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+            xmax = np.max(eq_posns[:,1])
+            xmin = -0.1
+            ymax = np.max(eq_posns[:,2])
+            ymin = -0.1
+        img = ax.tricontourf(x,y,z,levels=10)
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_xlim((xmin,xmax))
+        ax.set_ylim((ymin,ymax))
+        ax.set_title(view)
+    fig.tight_layout()
+    savename = output_dir + f'surface_tricontourf_visualization.png'
+    plt.savefig(savename)
     return 0
 
+#copied and modified from matplotlib gallery on event handling, image slices viewer
+# class IndexTracker:
+#     def __init__(self,ax, X):
+#         self.index = 0
+#         self.X = X
+#         self.ax = ax
+#         self.im = ax.imshow(self.X[:,:, self.index])
+#         self.update()
+    
+#     def on_scroll(self, event):
+#         print(event.button, event.step)
+#         increment = 1 if event.button == 'up' else -1
+#         max_index = self.X.shape[-1] -1
+#         self.index = np.clip(self.index + increment, 0, max_index)
+#         self.update()
+
+#     def update(self):
+#         self.im.set_data(self.X[:,:,self.index])
+#         self.ax.set_title(f'Use scroll whell to nagigate\nindex {self.index}')
+#         self.im.axes.figure.canvas.draw()
+
+# x, y, z = np.ogrid[-1:10:100j, -10:10:100j, 1:10:20j]
+# X = np.sin( x * y * z) / (x*y*z)
+# fig, ax = plt.subplots()
+# #create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
+# tracker = IndexTracker(ax,X)
+
+# fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
+# plt.show()
+
+class IndexTracker:
+    def __init__(self,ax, X):
+        self.index = 0
+        self.X = X
+        self.ax = ax
+        self.im = ax.imshow(self.X[:,:, self.index])
+        self.update()
+    
+    def on_scroll(self, event):
+        print(event.button, event.step)
+        increment = 1 if event.button == 'up' else -1
+        max_index = self.X.shape[-1] -1
+        self.index = np.clip(self.index + increment, 0, max_index)
+        self.update()
+
+    def update(self):
+        self.im.set_data(self.X[:,:,self.index])
+        self.ax.set_title(f'Use scroll whell to nagigate\nindex {self.index}')
+        self.im.axes.figure.canvas.draw()
+
+fig, ax = plt.subplots()
+#create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
+tracker = IndexTracker(ax,X)
+
+fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
+plt.show()
+
+def plot_cut_pcolormesh(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    fig = plt.figure()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    
 def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
