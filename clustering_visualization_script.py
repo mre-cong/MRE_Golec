@@ -6,18 +6,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 plt.switch_backend('TkAgg')
-import scipy.integrate as sci
 import time
 import os
-import lib_programname
 import tables as tb#pytables, for HDF5 interface
-import get_volume_correction_force_cy_nogil
-import get_spring_force_cy
 import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
-import springs
-import magnetism
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -29,6 +23,10 @@ def main():
 
     initial_node_posns, _, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
+
+    stiffness = params[0][-2]
+    # print(params.dtype)
+    plot_outer_surfaces(initial_node_posns,final_posns,springs_var,boundaries,output_dir,spring_type=stiffness[0])
 
     plot_regular_spacing_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir)
     plot_regular_cuts_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir)
@@ -58,6 +56,7 @@ def main():
     # plot_clustering_visualization(initial_node_posns,final_posns,chosen_nodes,springs_var,particles,output_dir)
 
 def plot_clustering_visualization(eq_node_posns,final_node_posns,chosen_nodes,springs,particles,output_dir):
+    """Plot a set of chosen nodes, passed as a list of integers representing the row index of the node in final_node_posns"""
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
@@ -90,6 +89,7 @@ def plot_clustering_visualization(eq_node_posns,final_node_posns,chosen_nodes,sp
     plt.close()
 
 def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particles,output_dir):
+    """On a single figure, plot multiple regularly spaced cuts through the volume (currently cuts of constant z value)"""
     # cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     # cut_type_index = cut_type_dict[cut_type]
     Lx = eq_node_posns[:,0].max()
@@ -98,6 +98,7 @@ def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particle
     #number of cuts to plot (trying to get some sense of the volume without plotting everything)
     N_cuts = 10
     step_size = int(Lx)//int(N_cuts)
+    #TODO use gets_both_ends to determine if both boundary surfaces are plotted, and plot the missing surface if it would be skipped by regular spacing
     gets_both_ends = np.mod(Lx,N_cuts)
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
@@ -131,6 +132,7 @@ def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particle
     plt.close()
 
 def plot_regular_spacing_volumetric(eq_node_posns,final_node_posns,springs,particles,output_dir):
+    """Plot regularly spaced volume elements in 3D, not as cuts"""
     # cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     # cut_type_index = cut_type_dict[cut_type]
     Lx = eq_node_posns[:,0].max()
@@ -179,6 +181,110 @@ def plot_regular_spacing_volumetric(eq_node_posns,final_node_posns,springs,parti
     savename = output_dir + f'regular_spacing_cluster_volumetric_visualization.png'
     plt.savefig(savename)
     plt.close()
+
+#plot all 3D view planes to show each outer surface of the simulated volume
+def plot_outer_surfaces(eq_node_posns,node_posns,springs,boundaries,output_dir,spring_type=None):
+    """Plot the outer surfaces of the simulated volume"""
+    # (plane, (elevation, azimuthal, roll))
+    views = [('top', ( 90,-90, 0)),
+            ('front', (  0,-90, 0)),
+            ('left', (  0,  0, 0)),
+            ('bot',(-90, 90, 0)),
+            ('back',(  0, 90, 0)),
+            ('right',(  0,180, 0))]
+    # I like this approach, but i can't see the plots well enough with so many of them. the sizing just doesn't match what i need, unsurprisingly. maybe the bigger issue is that scatter is just not the rightway to handle this. i am going to try doing some surface plots.
+    # fig, axs = plt.subplots(2,3,subplot_kw=dict(projection='3d'))
+    # default_width,default_height = fig.get_size_inches()
+    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_dpi(200)
+    # for index in range(len(views)):
+    #     view, angles = views[index]
+    #     row = int(np.mod(index,2))
+    #     col = int(np.mod(index,3))
+    #     ax = axs[row,col]
+    #     ax.view_init(elev=angles[0],azim=angles[1],roll=angles[2])
+    #     posns = node_posns[boundaries[view]]
+    #     ax.scatter(posns[:,0],posns[:,1],posns[:,2],color='b',marker='o')
+    #     mre.analyze.plot_subset_springs(ax,node_posns,boundaries[view],springs,spring_color='b',spring_type=spring_type)
+    #     # ax.axis('equal')
+    #     ax.set_title(view)
+
+    # Attempt 2, using surface plots. (attempt 3 might use scatter or surface, but more importantly, i should try doing side by sides of just two of the boundaries. or maybe go back to one)
+    fig, axs = plt.subplots(2,3)
+    # fig, axs = plt.subplots(2,3,subplot_kw=dict(projection='3d'))
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    for index in range(len(views)):
+        view, angles = views[index]
+        row = int(np.mod(index,2))
+        col = int(np.mod(index,3))
+        ax = axs[row,col]
+        # ax.view_init(elev=angles[0],azim=angles[1],roll=angles[2])
+        posns = node_posns[boundaries[view]]
+        eq_posns = eq_node_posns[boundaries[view]]
+        if view == 'top' or view == 'bot':
+            z = posns[:,2]
+            x = posns[:,0]
+            y = posns[:,1]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,1]) + 1)
+        elif view == 'front' or view == 'back':
+            z = posns[:,1]
+            x = posns[:,0]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+        else:
+            z = posns[:,0]
+            x = posns[:,1]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,1]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+        #need to convert from 1D vectors to 2D matrices
+        #coordinates of the corners of quadrilaterlas of a pcolormesh:
+        #(X[i+1,j],Y[i+1,j])       (X[i+1,j+1],Y[i+1,j+1])
+        #              *----------*
+        #              |          |
+        #              *----------*
+        #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
+        sort_indices = np.argsort(x)
+        sorted_x = x[sort_indices]
+        sorted_y = y[sort_indices]
+        sorted_z = z[sort_indices]
+        X = np.zeros((Ny,Nx))
+        Y = np.zeros((Ny,Nx))
+        Z = np.zeros((Ny,Nx))
+        start = 0
+        end = Ny
+        for i in range(Nx):
+            X[:,i] = sorted_x[start:(i+1)*end]
+            Y[:,i] = sorted_y[start:(i+1)*end]
+            Z[:,i] = sorted_z[start:(i+1)*end]
+            start = (i+1)*end
+        #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest. but can i also just use the sorting of the first column for all the row rearrangement?
+        # sorted_indices = np.argsort(Y[:,0])
+        for i in range(Nx):
+            sorted_indices = np.argsort(Y[:,i])
+            X[:,i] = X[sorted_indices,i]
+            Y[:,i] = Y[sorted_indices,i]
+            Z[:,i] = Z[sorted_indices,i]
+        #SANITY CHECK: because i know how the corners need to be arranged, I can check to make sure they are arranged correctly
+        for i in range(Ny-1):
+            for j in range(Nx-1):
+                assert X[i,j] < X[i,j+1] and X[i+1,j] < X[i+1,j+1] and Y[i,j] < Y[i+1,j] and Y[i,j+1] < Y[i+1,j+1], 'Quadrilateral corners are out of order from pmeshcolor expectations, image will draw incorrectly'
+        img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        # ax.scatter(posns[:,0],posns[:,1],posns[:,2],color='b',marker='o')
+        # mre.analyze.plot_subset_springs(ax,node_posns,boundaries[view],springs,spring_color='b',spring_type=spring_type)
+        # ax.axis('equal')
+        ax.set_title(view)
+    plt.show()
+
+def plot_outer_surfaces_contours():
+    """plot the outer surfaces of the simulated volume, using contours (contourf())"""
+    return 0
 
 def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
