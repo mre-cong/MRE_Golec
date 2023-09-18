@@ -26,6 +26,14 @@ def main():
 
     stiffness = params[0][-2]
     # print(params.dtype)
+    fig, ax = plt.subplots()
+    cut_type = 'xy'
+    #create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
+    tracker = IndexTracker(fig,ax,cut_type,initial_node_posns,final_posns)
+
+    fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
+    plt.show()
+
     plot_outer_surfaces_contours(initial_node_posns,final_posns,boundaries,output_dir)
     plot_outer_surfaces(initial_node_posns,final_posns,springs_var,boundaries,output_dir,spring_type=stiffness[0])
 
@@ -368,7 +376,7 @@ def plot_outer_surfaces_contours(eq_node_posns,node_posns,boundaries,output_dir)
 
 #     def update(self):
 #         self.im.set_data(self.X[:,:,self.index])
-#         self.ax.set_title(f'Use scroll whell to nagigate\nindex {self.index}')
+#         self.ax.set_title(f'Use scroll whell to navigate\nindex {self.index}')
 #         self.im.axes.figure.canvas.draw()
 
 # x, y, z = np.ogrid[-1:10:100j, -10:10:100j, 1:10:20j]
@@ -381,33 +389,116 @@ def plot_outer_surfaces_contours(eq_node_posns,node_posns,boundaries,output_dir)
 # plt.show()
 
 class IndexTracker:
-    def __init__(self,ax, X):
+    def __init__(self,fig,ax,cut_type,eq_node_posns,node_posns):
         self.index = 0
-        self.X = X
+        cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+        cut_type_index = cut_type_dict[cut_type]
+        self.max_index = int(np.max(eq_node_posns[:,cut_type_index]))
+        self.fig = fig
         self.ax = ax
-        self.im = ax.imshow(self.X[:,:, self.index])
+        self.cut_type = cut_type
+        self.eq_node_posns = eq_node_posns
+        self.node_posns = node_posns
+        self.im = self.plot_cut_pcolormesh(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index)
+        self.fig.colorbar(self.im,ax=self.ax)
         self.update()
     
     def on_scroll(self, event):
         print(event.button, event.step)
         increment = 1 if event.button == 'up' else -1
-        max_index = self.X.shape[-1] -1
+        max_index = self.max_index
         self.index = np.clip(self.index + increment, 0, max_index)
         self.update()
 
     def update(self):
-        self.im.set_data(self.X[:,:,self.index])
-        self.ax.set_title(f'Use scroll whell to nagigate\nindex {self.index}')
+        plt.cla()
+        self.im = self.plot_cut_pcolormesh(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index)
+        self.ax.set_title(f'Use scroll whell to navigate\nindex {self.index}')
         self.im.axes.figure.canvas.draw()
 
-fig, ax = plt.subplots()
-#create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
-tracker = IndexTracker(ax,X)
+    def plot_cut_pcolormesh(self,fig,ax,cut_type,eq_node_posns,node_posns,index):
+        """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+        
+        cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+        
+        tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+        cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+        cut_type_index = cut_type_dict[cut_type]
+        Lx = eq_node_posns[:,0].max()
+        Ly = eq_node_posns[:,1].max()
+        Lz = eq_node_posns[:,2].max()
+        # fig, ax = plt.subplots()
+        # default_width,default_height = fig.get_size_inches()
+        # fig.set_size_inches(3*default_width,3*default_height)
+        # fig.set_dpi(200)
+        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
+        posns = node_posns[cut_nodes]
+        eq_posns = eq_node_posns[cut_nodes]
+        if cut_type == 'xy':
+            z = posns[:,2]
+            x = posns[:,0]
+            y = posns[:,1]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,1]) + 1)
+        elif 'xz':
+            z = posns[:,1]
+            x = posns[:,0]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,0]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+        else:
+            z = posns[:,0]
+            x = posns[:,1]
+            y = posns[:,2]
+            Nx = int(np.max(eq_posns[:,1]) + 1)
+            Ny = int(np.max(eq_posns[:,2]) + 1)
+        #need to convert from 1D vectors to 2D matrices
+        #coordinates of the corners of quadrilaterlas of a pcolormesh:
+        #(X[i+1,j],Y[i+1,j])       (X[i+1,j+1],Y[i+1,j+1])
+        #              *----------*
+        #              |          |
+        #              *----------*
+        #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
+        sort_indices = np.argsort(x)
+        sorted_x = x[sort_indices]
+        sorted_y = y[sort_indices]
+        sorted_z = z[sort_indices]
+        X = np.zeros((Ny,Nx))
+        Y = np.zeros((Ny,Nx))
+        Z = np.zeros((Ny,Nx))
+        start = 0
+        end = Ny
+        for i in range(Nx):
+            X[:,i] = sorted_x[start:(i+1)*end]
+            Y[:,i] = sorted_y[start:(i+1)*end]
+            Z[:,i] = sorted_z[start:(i+1)*end]
+            start = (i+1)*end
+        #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest.
+        for i in range(Nx):
+            sorted_indices = np.argsort(Y[:,i])
+            X[:,i] = X[sorted_indices,i]
+            Y[:,i] = Y[sorted_indices,i]
+            Z[:,i] = Z[sorted_indices,i]
+        #SANITY CHECK: because i know how the corners need to be arranged, I can check to make sure they are arranged correctly
+        for i in range(Ny-1):
+            for j in range(Nx-1):
+                assert X[i,j] < X[i,j+1] and X[i+1,j] < X[i+1,j+1] and Y[i,j] < Y[i+1,j] and Y[i,j+1] < Y[i+1,j+1], 'Quadrilateral corners are out of order from pmeshcolor expectations, image will draw incorrectly'
+        img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        # fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_title(f'{cut_type}' + f'layer {index}')
+        # plt.show()
+        return img
 
-fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
-plt.show()
+# fig, ax = plt.subplots()
+# #create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
+# tracker = IndexTracker(ax,X)
 
-def plot_cut_pcolormesh(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
+# fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
+# plt.show()
+
+def plot_cut_pcolormesh(cut_type,eq_node_posns,node_posns,index,particles,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -418,11 +509,74 @@ def plot_cut_pcolormesh(cut_type,eq_node_posns,node_posns,springs,particles,boun
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    fig = plt.figure()
+    fig, ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
     fig.set_dpi(200)
-    
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
+    posns = node_posns[cut_nodes]
+    eq_posns = eq_node_posns[cut_nodes]
+    if cut_type == 'xy':
+        z = posns[:,2]
+        x = posns[:,0]
+        y = posns[:,1]
+        Nx = int(np.max(eq_posns[:,0]) + 1)
+        Ny = int(np.max(eq_posns[:,1]) + 1)
+    elif 'xz':
+        z = posns[:,1]
+        x = posns[:,0]
+        y = posns[:,2]
+        Nx = int(np.max(eq_posns[:,0]) + 1)
+        Ny = int(np.max(eq_posns[:,2]) + 1)
+    else:
+        z = posns[:,0]
+        x = posns[:,1]
+        y = posns[:,2]
+        Nx = int(np.max(eq_posns[:,1]) + 1)
+        Ny = int(np.max(eq_posns[:,2]) + 1)
+    #need to convert from 1D vectors to 2D matrices
+    #coordinates of the corners of quadrilaterlas of a pcolormesh:
+    #(X[i+1,j],Y[i+1,j])       (X[i+1,j+1],Y[i+1,j+1])
+    #              *----------*
+    #              |          |
+    #              *----------*
+    #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
+    sort_indices = np.argsort(x)
+    sorted_x = x[sort_indices]
+    sorted_y = y[sort_indices]
+    sorted_z = z[sort_indices]
+    X = np.zeros((Ny,Nx))
+    Y = np.zeros((Ny,Nx))
+    Z = np.zeros((Ny,Nx))
+    start = 0
+    end = Ny
+    for i in range(Nx):
+        X[:,i] = sorted_x[start:(i+1)*end]
+        Y[:,i] = sorted_y[start:(i+1)*end]
+        Z[:,i] = sorted_z[start:(i+1)*end]
+        start = (i+1)*end
+    #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest. but can i also just use the sorting of the first column for all the row rearrangement?
+    # sorted_indices = np.argsort(Y[:,0])
+    for i in range(Nx):
+        sorted_indices = np.argsort(Y[:,i])
+        X[:,i] = X[sorted_indices,i]
+        Y[:,i] = Y[sorted_indices,i]
+        Z[:,i] = Z[sorted_indices,i]
+    #SANITY CHECK: because i know how the corners need to be arranged, I can check to make sure they are arranged correctly
+    for i in range(Ny-1):
+        for j in range(Nx-1):
+            assert X[i,j] < X[i,j+1] and X[i+1,j] < X[i+1,j+1] and Y[i,j] < Y[i+1,j] and Y[i,j+1] < Y[i+1,j+1], 'Quadrilateral corners are out of order from pmeshcolor expectations, image will draw incorrectly'
+    img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+    #don't forget to add a colorbar and limits
+    fig.colorbar(img,ax=ax)
+    # ax.scatter(posns[:,0],posns[:,1],posns[:,2],color='b',marker='o')
+    # mre.analyze.plot_subset_springs(ax,node_posns,boundaries[view],springs,spring_color='b',spring_type=spring_type)
+    ax.axis('equal')
+    ax.set_title(f'{cut_type}' + f'layer {index}')
+    # plt.show()
+    savename = output_dir + f'cut_pcolormesh_visualization.png'
+    plt.savefig(savename)
+
 def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
