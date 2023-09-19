@@ -400,7 +400,7 @@ class IndexTracker:
         self.eq_node_posns = eq_node_posns
         self.node_posns = node_posns
         self.im = self.plot_cut_pcolormesh(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index)
-        self.fig.colorbar(self.im,ax=self.ax)
+        self.cbar = self.fig.colorbar(self.im,ax=self.ax)
         self.update()
     
     def on_scroll(self, event):
@@ -413,6 +413,10 @@ class IndexTracker:
     def update(self):
         plt.cla()
         self.im = self.plot_cut_pcolormesh(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index)
+        try:
+            self.cbar.update_normal(self.im)
+        except:
+            print('No existing colorbar to update')
         self.ax.set_title(f'Use scroll whell to navigate\nindex {self.index}')
         self.im.axes.figure.canvas.draw()
 
@@ -438,6 +442,9 @@ class IndexTracker:
             z = posns[:,2]
             x = posns[:,0]
             y = posns[:,1]
+            init_x = posns[:,0]
+            init_y = posns[:,1]
+            comparison_sort_indices = np.argsort(init_x)
             Nx = int(np.max(eq_posns[:,0]) + 1)
             Ny = int(np.max(eq_posns[:,1]) + 1)
         elif 'xz':
@@ -460,29 +467,43 @@ class IndexTracker:
         #              *----------*
         #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
         sort_indices = np.argsort(x)
+        print(f'First sort of final and initial node positions the same: {np.allclose(sort_indices,comparison_sort_indices)}')
         sorted_x = x[sort_indices]
         sorted_y = y[sort_indices]
         sorted_z = z[sort_indices]
         X = np.zeros((Ny,Nx))
         Y = np.zeros((Ny,Nx))
         Z = np.zeros((Ny,Nx))
+        init_X = np.zeros((Ny,Nx))
+        init_Y = np.zeros((Ny,Nx))
+        sorted_init_x = init_x[comparison_sort_indices]
+        sorted_init_y = init_y[comparison_sort_indices]
         start = 0
         end = Ny
         for i in range(Nx):
             X[:,i] = sorted_x[start:(i+1)*end]
             Y[:,i] = sorted_y[start:(i+1)*end]
             Z[:,i] = sorted_z[start:(i+1)*end]
+            init_X[:,i] = sorted_init_x[start:(i+1)*end]
+            init_Y[:,i] = sorted_init_y[start:(i+1)*end]
             start = (i+1)*end
         #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest.
         for i in range(Nx):
             sorted_indices = np.argsort(Y[:,i])
+            comparison_sorted_indices = np.argsort(init_Y[:,i])
+            print(f'Second sort, {i}th row of positions the same:{np.allclose(sorted_indices,comparison_sorted_indices)}')
             X[:,i] = X[sorted_indices,i]
             Y[:,i] = Y[sorted_indices,i]
             Z[:,i] = Z[sorted_indices,i]
+            init_X[:,i] = init_X[comparison_sorted_indices,i]
+            init_Y[:,i] = init_Y[comparison_sorted_indices,i]
         #SANITY CHECK: because i know how the corners need to be arranged, I can check to make sure they are arranged correctly
         for i in range(Ny-1):
             for j in range(Nx-1):
                 assert X[i,j] < X[i,j+1] and X[i+1,j] < X[i+1,j+1] and Y[i,j] < Y[i+1,j] and Y[i,j+1] < Y[i+1,j+1], 'Quadrilateral corners are out of order from pmeshcolor expectations, image will draw incorrectly'
+        for i in range(Ny-1):
+            for j in range(Nx-1):
+                assert init_X[i,j] < init_X[i,j+1] and init_X[i+1,j] < init_X[i+1,j+1] and init_Y[i,j] < init_Y[i+1,j] and init_Y[i,j+1] < init_Y[i+1,j+1], 'Quadrilateral corners for initialized positions are out of order from pmeshcolor expectations, image will draw incorrectly'
         img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
         # fig.colorbar(img,ax=ax)
