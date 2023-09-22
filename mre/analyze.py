@@ -245,7 +245,7 @@ def plot_subset_springs(ax,node_posns,nodes,springs,spring_color,spring_type=Non
                                 np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
                                 np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
                 ax.plot(x,y,z,color=spring_color)
-        elif np.isclose(spring_type,spring[2]):
+        elif np.isclose(spring_type,spring[2]) or np.isclose(spring_type/2,spring[2]) or np.isclose(spring_type/4,spring[2]):
             subset = set(spring[:2])
             if subset < nodes_set:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
                 x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),

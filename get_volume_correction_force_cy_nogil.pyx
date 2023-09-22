@@ -9,6 +9,7 @@ cimport cython
 # from cython.parallel import prange
 # import numpy as np
 cimport numpy as np
+import numpy as np
 #cstruct for a 3D vector
 cdef struct Vec3:
     double x, y, z
@@ -200,6 +201,44 @@ cdef void get_average_edge_vectors(double[:,::1] node_posns,int[:,::1] elements,
     for i in range(3):
         for j in range(3):
             avg_vectors[i,j] *= 0.25
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=3] get_avg_edge_vectors_normalized(double[:,::1] node_posns,int[:,::1] elements, double[:,::1] vectors, double[:,::1] avg_vectors):
+    """calculate the average edge vectors of each element. must pass an (3,3) shape array for avg_vectors that will be modified"""
+    cdef int i
+    cdef int j
+    cdef np.ndarray[np.float64_t, ndim=2] element_avg_vectors = np.zeros((elements.shape[0],3),dtype=np.float64)
+    for i in range(elements.shape[0]):
+        get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
+        element_avg_vectors[i,:,:] = avg_vectors
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] get_element_volume_normalized(double[:,:,::1] avg_vectors):
+    """calculate the volume of each element."""
+    cdef np.ndarray[np.float64_t, ndim=1] element_volumes = np.zeros((avg_vectors.shape[0],),dtype=np.float64)
+    cdef double[3] bcrossc
+    cdef double adotbcrossc
+    cdef int i
+    cdef int j
+    cdef double[3] avg_a
+    cdef double[3] avg_b
+    cdef double[3] avg_c
+    for j in range(avg_vectors.shape[0]):
+        for i in range(3):
+            avg_a[i] = 0.
+            avg_b[i] = 0.
+            avg_c[i] = 0.
+        for i in range(3):
+            avg_a[i] += avg_vectors[j,0,i]
+            avg_b[i] += avg_vectors[j,1,i]
+            avg_c[i] += avg_vectors[j,2,i]
+        cross_prod(avg_b,avg_c,bcrossc)
+        adotbcrossc = dot_prod(avg_a,bcrossc)
+        element_volumes[j] = adotbcrossc
+    return element_volumes
 
 # cdef void get_average_edge_vectors(node_posns,elements,avg_vectors):
 #     counter = 0

@@ -25,9 +25,14 @@ def main():
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
 
     stiffness = params[0][-2]
+    # An attempt to pull out the parameter entries i want without counting which element it is. there are better ways to handle this, like an additional function that takes the params variable and returns the variables in params with appropriate names
     # print(params.dtype)
+    # params_entries = params.dtype
+    # for i in range(len(params_entries)):
+    #     if params_entries.descr[i][0] == 'num_elements':
+    #         N_elements = params[0][i]
     fig, ax = plt.subplots()
-    cut_type = 'xy'
+    cut_type = 'xz'
     #create an IndexTracker and make sure it lives during the whole lifetime of the figure by assignign it to a variable
     tracker = IndexTracker(fig,ax,cut_type,initial_node_posns,final_posns)
 
@@ -38,7 +43,7 @@ def main():
     plot_outer_surfaces(initial_node_posns,final_posns,springs_var,boundaries,output_dir,spring_type=stiffness[0])
 
     plot_regular_spacing_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir)
-    plot_regular_cuts_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir)
+    plot_regular_cuts_volumetric(initial_node_posns,final_posns,springs_var,particles,output_dir,spring_type=stiffness[0])
     #find the interior region including the particles, for plotting
     my_max = np.zeros((3,))
     my_min = np.zeros((3,))
@@ -97,7 +102,7 @@ def plot_clustering_visualization(eq_node_posns,final_node_posns,chosen_nodes,sp
     plt.savefig(savename)
     plt.close()
 
-def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particles,output_dir):
+def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particles,output_dir,spring_type=None):
     """On a single figure, plot multiple regularly spaced cuts through the volume (currently cuts of constant z value)"""
     # cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     # cut_type_index = cut_type_dict[cut_type]
@@ -118,7 +123,7 @@ def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particle
     for i in range(N_cuts):
         cut_nodes = np.isclose(np.ones((eq_node_posns.shape[0],))*step_size*i,eq_node_posns[:,cut_type_index]).nonzero()[0]
         ax.scatter(final_node_posns[cut_nodes,0],final_node_posns[cut_nodes,1],final_node_posns[cut_nodes,2],color ='b',marker='o')
-        mre.analyze.plot_subset_springs(ax,final_node_posns,cut_nodes,springs,spring_color='b')
+        mre.analyze.plot_subset_springs(ax,final_node_posns,cut_nodes,springs,spring_color='b',spring_type=spring_type)
     cut_nodes_set = set(cut_nodes)
     #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
     particle_nodes_set = set(particles.ravel())
@@ -127,7 +132,7 @@ def plot_regular_cuts_volumetric(eq_node_posns,final_node_posns,springs,particle
     #*particle_cut_nodes, = particle_cut_nodes_set
     particle_cut_nodes = [x for x in particle_cut_nodes_set]
     ax.scatter(final_node_posns[particle_cut_nodes,0],final_node_posns[particle_cut_nodes,1],final_node_posns[particle_cut_nodes,2],color='k',marker='o')
-    mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r')
+    mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
     ax.set_xlim((-0.3,1.2*Lx))
     ax.set_ylim((0,1.2*Ly))
     ax.set_zlim((0,1.2*Lz))
@@ -438,25 +443,51 @@ class IndexTracker:
         cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
         posns = node_posns[cut_nodes]
         eq_posns = eq_node_posns[cut_nodes]
+        # i need to sort things properly, so that the nodes defining the quadrilateral faces are in an appropriate order for pcolormesh, BUT I also need to ensure that those quadrilateral faces still reflect the initial node configurations (the faces are the faces of the cubic volume elements). if some sort of inversion or flipping of the node positions has happened in the simulation, i want to know about it. I know something about the way the nodes are initialized in position (first incrementing in z position until the maximum z value, then x, finally y. think about how an odometer works with rolling over). in that way, the xz plane is a good place to start. 
+        nodes_per_row = int(Lx + 1)
+        nodes_per_column = int(Lz + 1)
+        nodes_per_plane = nodes_per_row*nodes_per_column
+        #the first xz plane is the nodes 0 to nodes_per_plane -1, then nodes_per_plane to 2*nodes_per_plane -1, and so on
+        # for reshaping, the "X" array should increment in "X" value as the column index increases, "Y" array as the row index increases. for xz planes, x -> "X", z -> "Y" is the mapping. the first column of the "X" and "Y" arrays should have a constant X value, so they belong to the nodes 0 to nodes_per_col-1, and so on for the columns until the thing is filled...  
         if cut_type == 'xy':
             z = posns[:,2]
             x = posns[:,0]
             y = posns[:,1]
-            init_x = posns[:,0]
-            init_y = posns[:,1]
+            init_x = eq_posns[:,0]
+            init_y = eq_posns[:,1]
             comparison_sort_indices = np.argsort(init_x)
             Nx = int(np.max(eq_posns[:,0]) + 1)
             Ny = int(np.max(eq_posns[:,1]) + 1)
-        elif 'xz':
-            z = posns[:,1]
-            x = posns[:,0]
-            y = posns[:,2]
+        elif cut_type == 'xz':
             Nx = int(np.max(eq_posns[:,0]) + 1)
             Ny = int(np.max(eq_posns[:,2]) + 1)
+            X = np.zeros((Ny,Nx))
+            Y = np.zeros((Ny,Nx))
+            Z = np.zeros((Ny,Nx))
+            start_index = index*nodes_per_plane
+            for i in range(Nx):
+                #for the moment, doing the below but with the initialized node positions to see if the layers that won't plot with the final node positions will plot
+                X[:,i] = eq_node_posns[start_index+i*Ny:start_index+(i+1)*Ny,0]
+                Y[:,i] = eq_node_posns[start_index+i*Ny:start_index+(i+1)*Ny,2]
+                Z[:,i] = eq_node_posns[start_index+i*Ny:start_index+(i+1)*Ny,1]
+                # X[:,i] = node_posns[start_index+i*Ny:start_index+(i+1)*Ny,0]
+                # Y[:,i] = node_posns[start_index+i*Ny:start_index+(i+1)*Ny,2]
+                # Z[:,i] = node_posns[start_index+i*Ny:start_index+(i+1)*Ny,1]
+            # z = posns[:,1]
+            # x = posns[:,0]
+            # y = posns[:,2]
+            # init_x = eq_posns[:,0]
+            # init_y = eq_posns[:,2]
+            # comparison_sort_indices = np.argsort(init_x)
+            # Nx = int(np.max(eq_posns[:,0]) + 1)
+            # Ny = int(np.max(eq_posns[:,2]) + 1)
         else:
             z = posns[:,0]
             x = posns[:,1]
             y = posns[:,2]
+            init_x = eq_posns[:,1]
+            init_y = eq_posns[:,2]
+            comparison_sort_indices = np.argsort(init_x)
             Nx = int(np.max(eq_posns[:,1]) + 1)
             Ny = int(np.max(eq_posns[:,2]) + 1)
         #need to convert from 1D vectors to 2D matrices
@@ -466,44 +497,45 @@ class IndexTracker:
         #              |          |
         #              *----------*
         #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
-        sort_indices = np.argsort(x)
-        print(f'First sort of final and initial node positions the same: {np.allclose(sort_indices,comparison_sort_indices)}')
-        sorted_x = x[sort_indices]
-        sorted_y = y[sort_indices]
-        sorted_z = z[sort_indices]
-        X = np.zeros((Ny,Nx))
-        Y = np.zeros((Ny,Nx))
-        Z = np.zeros((Ny,Nx))
-        init_X = np.zeros((Ny,Nx))
-        init_Y = np.zeros((Ny,Nx))
-        sorted_init_x = init_x[comparison_sort_indices]
-        sorted_init_y = init_y[comparison_sort_indices]
-        start = 0
-        end = Ny
-        for i in range(Nx):
-            X[:,i] = sorted_x[start:(i+1)*end]
-            Y[:,i] = sorted_y[start:(i+1)*end]
-            Z[:,i] = sorted_z[start:(i+1)*end]
-            init_X[:,i] = sorted_init_x[start:(i+1)*end]
-            init_Y[:,i] = sorted_init_y[start:(i+1)*end]
-            start = (i+1)*end
-        #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest.
-        for i in range(Nx):
-            sorted_indices = np.argsort(Y[:,i])
-            comparison_sorted_indices = np.argsort(init_Y[:,i])
-            print(f'Second sort, {i}th row of positions the same:{np.allclose(sorted_indices,comparison_sorted_indices)}')
-            X[:,i] = X[sorted_indices,i]
-            Y[:,i] = Y[sorted_indices,i]
-            Z[:,i] = Z[sorted_indices,i]
-            init_X[:,i] = init_X[comparison_sorted_indices,i]
-            init_Y[:,i] = init_Y[comparison_sorted_indices,i]
+
+        # sort_indices = np.argsort(x)
+        # print(f'First sort of final and initial node positions the same: {np.allclose(sort_indices,comparison_sort_indices)}')
+        # sorted_x = x[sort_indices]
+        # sorted_y = y[sort_indices]
+        # sorted_z = z[sort_indices]
+        # X = np.zeros((Ny,Nx))
+        # Y = np.zeros((Ny,Nx))
+        # Z = np.zeros((Ny,Nx))
+        # init_X = np.zeros((Ny,Nx))
+        # init_Y = np.zeros((Ny,Nx))
+        # sorted_init_x = init_x[comparison_sort_indices]
+        # sorted_init_y = init_y[comparison_sort_indices]
+        # start = 0
+        # end = Ny
+        # for i in range(Nx):
+        #     X[:,i] = sorted_x[start:(i+1)*end]
+        #     Y[:,i] = sorted_y[start:(i+1)*end]
+        #     Z[:,i] = sorted_z[start:(i+1)*end]
+        #     init_X[:,i] = sorted_init_x[start:(i+1)*end]
+        #     init_Y[:,i] = sorted_init_y[start:(i+1)*end]
+        #     start = (i+1)*end
+        # #first sorting and then distributing values has the X array behaving as necessary, with the incrememnt in the column index resulting in an increase in the x position, but I also want the Y array to have an increment in the row index result in an increase in the y position. I need to do more sorting, but without destroying the sorted nature of the X array, and I need to use argsort to sort the X and Z arrays to match the sorted Y array. Within each column of Y, I need to sort from lowest to highest.
+        # for i in range(Nx):
+        #     sorted_indices = np.argsort(Y[:,i])
+        #     comparison_sorted_indices = np.argsort(init_Y[:,i])
+        #     print(f'Second sort, {i}th row of positions the same:{np.allclose(sorted_indices,comparison_sorted_indices)}')
+        #     X[:,i] = X[sorted_indices,i]
+        #     Y[:,i] = Y[sorted_indices,i]
+        #     Z[:,i] = Z[sorted_indices,i]
+        #     init_X[:,i] = init_X[comparison_sorted_indices,i]
+        #     init_Y[:,i] = init_Y[comparison_sorted_indices,i]
         #SANITY CHECK: because i know how the corners need to be arranged, I can check to make sure they are arranged correctly
         for i in range(Ny-1):
             for j in range(Nx-1):
                 assert X[i,j] < X[i,j+1] and X[i+1,j] < X[i+1,j+1] and Y[i,j] < Y[i+1,j] and Y[i,j+1] < Y[i+1,j+1], 'Quadrilateral corners are out of order from pmeshcolor expectations, image will draw incorrectly'
-        for i in range(Ny-1):
-            for j in range(Nx-1):
-                assert init_X[i,j] < init_X[i,j+1] and init_X[i+1,j] < init_X[i+1,j+1] and init_Y[i,j] < init_Y[i+1,j] and init_Y[i,j+1] < init_Y[i+1,j+1], 'Quadrilateral corners for initialized positions are out of order from pmeshcolor expectations, image will draw incorrectly'
+        # for i in range(Ny-1):
+        #     for j in range(Nx-1):
+        #         assert init_X[i,j] < init_X[i,j+1] and init_X[i+1,j] < init_X[i+1,j+1] and init_Y[i,j] < init_Y[i+1,j] and init_Y[i,j+1] < init_Y[i+1,j+1], 'Quadrilateral corners for initialized positions are out of order from pmeshcolor expectations, image will draw incorrectly'
         img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
         # fig.colorbar(img,ax=ax)
