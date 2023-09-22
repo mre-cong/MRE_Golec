@@ -209,10 +209,14 @@ cpdef np.ndarray[np.float64_t, ndim=3] get_avg_edge_vectors_normalized(double[:,
     """calculate the average edge vectors of each element. must pass an (3,3) shape array for avg_vectors that will be modified"""
     cdef int i
     cdef int j
-    cdef np.ndarray[np.float64_t, ndim=2] element_avg_vectors = np.zeros((elements.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=3] element_avg_vectors = np.zeros((elements.shape[0],3,3),dtype=np.float64)
     for i in range(elements.shape[0]):
         get_average_edge_vectors(node_posns,elements,i,vectors,avg_vectors)
-        element_avg_vectors[i,:,:] = avg_vectors
+        for j in range(3):
+            element_avg_vectors[i,0,j] = avg_vectors[0,j]
+            element_avg_vectors[i,1,j] = avg_vectors[1,j]
+            element_avg_vectors[i,2,j] = avg_vectors[2,j]
+    return element_avg_vectors
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

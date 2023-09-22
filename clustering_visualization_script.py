@@ -12,6 +12,7 @@ import tables as tb#pytables, for HDF5 interface
 import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
+import get_volume_correction_force_cy_nogil
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -24,6 +25,16 @@ def main():
     initial_node_posns, _, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
 
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    avg_edge_vectors = get_volume_correction_force_cy_nogil.get_avg_edge_vectors_normalized(final_posns,elements,vectors,avg_vectors)
+    approx_element_volumes = get_volume_correction_force_cy_nogil.get_element_volume_normalized(avg_edge_vectors)
+
+    fig, ax = plt.subplots()
+    counts, bins = np.histogram(approx_element_volumes,100)
+    plt.hist(bins[:-1],bins,weights=counts)
+    ax.set_title('Distribution of approximate element volumes')
+    plt.show()
     stiffness = params[0][-2]
     # An attempt to pull out the parameter entries i want without counting which element it is. there are better ways to handle this, like an additional function that takes the params variable and returns the variables in params with appropriate names
     # print(params.dtype)
