@@ -1257,7 +1257,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-13_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-26_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1265,12 +1265,12 @@ def main2():
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
     H_mag = 1/mu0
-    n_field_steps = 1
+    n_field_steps = 10
     H_step = H_mag/n_field_steps
-    Hext_angle = (2*np.pi/360)*0.1#30
-    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
+    Hext_angle = (2*np.pi/360)*0#30
+    Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
-    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)

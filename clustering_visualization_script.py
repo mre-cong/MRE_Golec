@@ -37,16 +37,28 @@ def main():
     avg_edge_vectors = get_volume_correction_force_cy_nogil.get_avg_edge_vectors_normalized(final_posns,elements,vectors,avg_vectors)
     approx_element_volumes = get_volume_correction_force_cy_nogil.get_element_volume_normalized(avg_edge_vectors)
     avg_edge_vector_norms = np.linalg.norm(avg_edge_vectors,axis=2)
+    x_avg_vectors_inversion = avg_edge_vectors[:,0,0] > 0
+    y_avg_vectors_inversion = avg_edge_vectors[:,1,1] > 0
+    z_avg_vectors_inversion = avg_edge_vectors[:,2,2] > 0
+    print(f'average edge vectors in x direction show no inversion?:{np.alltrue(x_avg_vectors_inversion)}')
+    print(f'average edge vectors in y direction show no inversion?:{np.alltrue(y_avg_vectors_inversion)}')
+    print(f'average edge vectors in z direction show no inversion?:{np.alltrue(z_avg_vectors_inversion)}')
+    print(f'number of inverted edge vectors:{elements.shape[0] - np.count_nonzero(x_avg_vectors_inversion)}')
+
+    # histogram of element volumes
     # fig, ax = plt.subplots()
     # counts, bins = np.histogram(approx_element_volumes,100)
     # plt.hist(bins[:-1],bins,weights=counts)
     # ax.set_title('Distribution of approximate element volumes')
     # plt.show()
+
+    # histogram of average element edge norms
     # fig, ax = plt.subplots()
     # counts, bins = np.histogram(np.ravel(avg_edge_vector_norms),100)
     # plt.hist(bins[:-1],bins,weights=counts)
     # ax.set_title('Distribution of average element edge norms')
     # plt.show()
+
     strongly_deformed_count = 0
     for i in range(elements.shape[0]):
         if np.abs(avg_edge_vector_norms[i,0]-1) > 0.2 or np.abs(avg_edge_vector_norms[i,1]-1) > 0.2 or np.abs(avg_edge_vector_norms[i,2]-1) > 0.2:
@@ -55,11 +67,18 @@ def main():
     stiffness = params[0][-2]
     cut_type = 'yz'
     index = 14
-    # plot_scatter_color_depth_visualization(initial_node_posns,final_posns,cut_type,index,springs_var,particles,output_dir,spring_type=stiffness[0],tag="")
-    fig, ax = plt.subplots()
-    scatter_interactive = ScatterIndexTracker(fig,ax,cut_type,initial_node_posns,final_posns,springs_var,particles,spring_type=stiffness[0])
-    fig.canvas.mpl_connect('scroll_event', scatter_interactive.on_scroll)
-    plt.show()
+    for index in range(int(np.max(initial_node_posns[:,0]))):
+        plot_scatter_color_depth_visualization(initial_node_posns,final_posns,cut_type,index,springs_var,particles,output_dir,spring_type=stiffness[0],tag="")
+    # cut_type = 'xz'
+    # for index in range(int(np.max(initial_node_posns[:,0]))):
+    #     plot_scatter_color_depth_visualization(initial_node_posns,final_posns,cut_type,index,springs_var,particles,output_dir,spring_type=stiffness[0],tag="")
+    cut_type = 'xy'
+    for index in range(int(np.max(initial_node_posns[:,2]))):
+        plot_scatter_color_depth_visualization(initial_node_posns,final_posns,cut_type,index,springs_var,particles,output_dir,spring_type=stiffness[0],tag="")
+    # fig, ax = plt.subplots()
+    # scatter_interactive = ScatterIndexTracker(fig,ax,cut_type,initial_node_posns,final_posns,springs_var,particles,spring_type=stiffness[0])
+    # fig.canvas.mpl_connect('scroll_event', scatter_interactive.on_scroll)
+    # plt.show()
 
     # An attempt to pull out the parameter entries i want without counting which element it is. there are better ways to handle this, like an additional function that takes the params variable and returns the variables in params with appropriate names
     # print(params.dtype)
@@ -158,21 +177,26 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
         yvar = final_node_posns[chosen_nodes,2]
         xlabel = 'Y (l_e)'
         ylabel = 'Z (l_e)'
+        xlim = (-0.1,Ly*1.1)
+        ylim = (-0.1,Lz*1.1)
     elif cut_type_index == 1:
         xvar = final_node_posns[chosen_nodes,0]
         yvar = final_node_posns[chosen_nodes,2]
         xlabel = 'X (l_e)'
         ylabel = 'Z (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Lz*1.1)
     else:
         xvar = final_node_posns[chosen_nodes,0]
         yvar = final_node_posns[chosen_nodes,1]
         xlabel = 'X (l_e)'
         ylabel = 'Y (l_e)'
-    sc = ax.scatter(xvar,yvar,c=depth_color,marker='o')
-    plt.colorbar(sc)
-    # ax.scatter(final_node_posns[chosen_nodes,0],final_node_posns[chosen_nodes,1],final_node_posns[chosen_nodes,2],color ='b',marker='o')
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Ly*1.1)
     #TODO add a colorscheme for springs that reflects the displacement from equilibrium length
-    # mre.analyze.plot_subset_springs(ax,final_node_posns,chosen_nodes,springs,spring_color='b',spring_type=spring_type)
+    mre.analyze.plot_subset_springs_2D(ax,cut_type,final_node_posns,chosen_nodes,springs,spring_color='b',spring_type=spring_type)
+    sc = ax.scatter(xvar,yvar,c=depth_color,marker='o',zorder=2.5)
+    plt.colorbar(sc)
     cut_nodes_set = set(chosen_nodes)
     particle_nodes_set = set(particles.ravel())
     particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
@@ -188,18 +212,15 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
     else:
         xvar = final_node_posns[particle_cut_nodes,0]
         yvar = final_node_posns[particle_cut_nodes,1]
-    ax.scatter(xvar,yvar,color='k',marker='o')
-    # ax.scatter(final_node_posns[particle_cut_nodes,0],final_node_posns[particle_cut_nodes,1],final_node_posns[particle_cut_nodes,2],color='k',marker='o')
-    mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
-    ax.set_xlim((-0.3,1.2*Lx))
-    ax.set_ylim((0,1.2*Ly))
-    # ax.set_zlim((0,1.2*Lz))
+    # ax.scatter(xvar,yvar,color='k',marker='o')
+    mre.analyze.plot_subset_springs_2D(ax,cut_type,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    # ax.set_zlabel('Z (m)')
     ax.axis('equal')
-    plt.show()
-    savename = output_dir + f'scatter_color_depth_visualization.png'
+    # plt.show()
+    savename = output_dir + f'scatter_color_depth_visualization_{cut_type}_{index}.png'
     plt.savefig(savename)
     plt.close()
 
@@ -562,7 +583,7 @@ class ScatterIndexTracker:
             ylabel = 'Y (l_e)'
             xlim = (-0.1,Lx*1.1)
             ylim = (-0.1,Ly*1.1)
-        sc = ax.scatter(xvar,yvar,c=depth_color,marker='o')
+        sc = ax.scatter(xvar,yvar,c=depth_color,marker='o',zorder=2.5)
         # plt.colorbar(sc)
         # ax.scatter(final_node_posns[chosen_nodes,0],final_node_posns[chosen_nodes,1],final_node_posns[chosen_nodes,2],color ='b',marker='o')
         #TODO add a colorscheme for springs that reflects the displacement from equilibrium length
@@ -584,6 +605,7 @@ class ScatterIndexTracker:
             yvar = final_node_posns[particle_cut_nodes,1]
         ax.scatter(xvar,yvar,color='k',marker='o')
         # ax.scatter(final_node_posns[particle_cut_nodes,0],final_node_posns[particle_cut_nodes,1],final_node_posns[particle_cut_nodes,2],color='k',marker='o')
+        #issue with plotting the springs, is that the plot_subset_springs function is plotting in 3D, and i'm doing a 2D projection. the particular plane i am using isn't reflected in this version of the function, so i need a new version of the function, or i need to extend the function to handle the case that i am plotting
         mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
         ax.set_xlim(xlim)
         ax.set_ylim(ylim)

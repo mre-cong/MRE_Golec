@@ -253,6 +253,38 @@ def plot_subset_springs(ax,node_posns,nodes,springs,spring_color,spring_type=Non
                                 np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
                 ax.plot(x,y,z,color=spring_color)
 
+def plot_subset_springs_2D(ax,cut_type,node_posns,nodes,springs,spring_color,spring_type=None):
+    """Plot a subset of the springs which are connected to the nodes passed to the function"""
+    if isinstance(nodes,set):
+        nodes_set = nodes
+    else:
+        nodes_set = set(np.unique(nodes))
+    for spring in springs:
+        if spring_type is None:
+            subset = set(spring[:2])
+            if subset < nodes_set:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
+                x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                                np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                                np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+                if cut_type == 'xy':
+                    ax.plot(x,y,color=spring_color)
+                elif cut_type == 'xz':
+                    ax.plot(x,z,color=spring_color)
+                elif cut_type == 'yz':
+                    ax.plot(y,z,color=spring_color)
+        elif np.isclose(spring_type,spring[2]) or np.isclose(spring_type/2,spring[2]) or np.isclose(spring_type/4,spring[2]):
+            subset = set(spring[:2])
+            if subset < nodes_set:#if the two node indices for the spring are a subset of the node indices for nodes on the boundaries...
+                x,y,z = (np.array((node_posns[int(spring[0]),0],node_posns[int(spring[1]),0])),
+                                np.array((node_posns[int(spring[0]),1],node_posns[int(spring[1]),1])),
+                                np.array((node_posns[int(spring[0]),2],node_posns[int(spring[1]),2])))
+                if cut_type == 'xy':
+                    ax.plot(x,y,color=spring_color)
+                elif cut_type == 'xz':
+                    ax.plot(x,z,color=spring_color)
+                elif cut_type == 'yz':
+                    ax.plot(y,z,color=spring_color)
+
 #TODO !!! properly incorporate the fact that there might be more than one particle
 def post_plot_particle(eq_node_posns,node_posns,particles,springs,boundary_conditions,output_dir):
     particle_node_posns = node_posns[particles]
