@@ -16,6 +16,13 @@ import get_volume_correction_force_cy_nogil
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
+def plot_element(node_posns,element,springs):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection= '3d')
+    ax.scatter(node_posns[element,0],node_posns[element,1],node_posns[element,2],color ='b',marker='o')
+    mre.analyze.plot_subset_springs(ax,node_posns,element,springs,spring_color='b')
+    plt.show()
+
 def main():
     drag = 10
     discretization_order = 1
@@ -29,13 +36,31 @@ def main():
     avg_vectors = np.empty((3,3),dtype=np.float64)
     avg_edge_vectors = get_volume_correction_force_cy_nogil.get_avg_edge_vectors_normalized(final_posns,elements,vectors,avg_vectors)
     approx_element_volumes = get_volume_correction_force_cy_nogil.get_element_volume_normalized(avg_edge_vectors)
-
-    fig, ax = plt.subplots()
-    counts, bins = np.histogram(approx_element_volumes,100)
-    plt.hist(bins[:-1],bins,weights=counts)
-    ax.set_title('Distribution of approximate element volumes')
-    plt.show()
+    avg_edge_vector_norms = np.linalg.norm(avg_edge_vectors,axis=2)
+    # fig, ax = plt.subplots()
+    # counts, bins = np.histogram(approx_element_volumes,100)
+    # plt.hist(bins[:-1],bins,weights=counts)
+    # ax.set_title('Distribution of approximate element volumes')
+    # plt.show()
+    # fig, ax = plt.subplots()
+    # counts, bins = np.histogram(np.ravel(avg_edge_vector_norms),100)
+    # plt.hist(bins[:-1],bins,weights=counts)
+    # ax.set_title('Distribution of average element edge norms')
+    # plt.show()
+    strongly_deformed_count = 0
+    for i in range(elements.shape[0]):
+        if np.abs(avg_edge_vector_norms[i,0]-1) > 0.2 or np.abs(avg_edge_vector_norms[i,1]-1) > 0.2 or np.abs(avg_edge_vector_norms[i,2]-1) > 0.2:
+            strongly_deformed_count += 1
+            # plot_element(final_posns,elements[i],springs_var)
     stiffness = params[0][-2]
+    cut_type = 'yz'
+    index = 14
+    # plot_scatter_color_depth_visualization(initial_node_posns,final_posns,cut_type,index,springs_var,particles,output_dir,spring_type=stiffness[0],tag="")
+    fig, ax = plt.subplots()
+    scatter_interactive = ScatterIndexTracker(fig,ax,cut_type,initial_node_posns,final_posns,springs_var,particles,spring_type=stiffness[0])
+    fig.canvas.mpl_connect('scroll_event', scatter_interactive.on_scroll)
+    plt.show()
+
     # An attempt to pull out the parameter entries i want without counting which element it is. there are better ways to handle this, like an additional function that takes the params variable and returns the variables in params with appropriate names
     # print(params.dtype)
     # params_entries = params.dtype
@@ -110,6 +135,71 @@ def plot_clustering_visualization(eq_node_posns,final_node_posns,chosen_nodes,sp
     ax.axis('equal')
     plt.show()
     savename = output_dir + f'cluster_volumetric_visualization.png'
+    plt.savefig(savename)
+    plt.close()
+
+def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_type,index,springs,particles,output_dir,spring_type=None,tag=""):
+    """Plot a set of chosen nodes, passed as a list of integers representing the row index of the node in final_node_posns"""
+    #TODO add spring type to plot_subset_springs, and to function arguments. add argument or somehow get the type of cut, to properly label the axes on the image. use the "depth" (odd node position out) to give a list of numbers to be mapped to colors using cmap and norm (which means selecting or else using the default cmap (and most likly letting norm do it's default), and setting the colorbar)
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    chosen_nodes = np.isclose(np.ones((eq_node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    fig = plt.figure()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax = fig.add_subplot()
+    depth_color = final_node_posns[chosen_nodes,cut_type_index]
+    if cut_type_index == 0:
+        xvar = final_node_posns[chosen_nodes,1]
+        yvar = final_node_posns[chosen_nodes,2]
+        xlabel = 'Y (l_e)'
+        ylabel = 'Z (l_e)'
+    elif cut_type_index == 1:
+        xvar = final_node_posns[chosen_nodes,0]
+        yvar = final_node_posns[chosen_nodes,2]
+        xlabel = 'X (l_e)'
+        ylabel = 'Z (l_e)'
+    else:
+        xvar = final_node_posns[chosen_nodes,0]
+        yvar = final_node_posns[chosen_nodes,1]
+        xlabel = 'X (l_e)'
+        ylabel = 'Y (l_e)'
+    sc = ax.scatter(xvar,yvar,c=depth_color,marker='o')
+    plt.colorbar(sc)
+    # ax.scatter(final_node_posns[chosen_nodes,0],final_node_posns[chosen_nodes,1],final_node_posns[chosen_nodes,2],color ='b',marker='o')
+    #TODO add a colorscheme for springs that reflects the displacement from equilibrium length
+    # mre.analyze.plot_subset_springs(ax,final_node_posns,chosen_nodes,springs,spring_color='b',spring_type=spring_type)
+    cut_nodes_set = set(chosen_nodes)
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    if cut_type_index == 0:
+        xvar = final_node_posns[particle_cut_nodes,1]
+        yvar = final_node_posns[particle_cut_nodes,2]
+    elif cut_type_index == 1:
+        xvar = final_node_posns[particle_cut_nodes,0]
+        yvar = final_node_posns[particle_cut_nodes,2]
+    else:
+        xvar = final_node_posns[particle_cut_nodes,0]
+        yvar = final_node_posns[particle_cut_nodes,1]
+    ax.scatter(xvar,yvar,color='k',marker='o')
+    # ax.scatter(final_node_posns[particle_cut_nodes,0],final_node_posns[particle_cut_nodes,1],final_node_posns[particle_cut_nodes,2],color='k',marker='o')
+    mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
+    ax.set_xlim((-0.3,1.2*Lx))
+    ax.set_ylim((0,1.2*Ly))
+    # ax.set_zlim((0,1.2*Lz))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    # ax.set_zlabel('Z (m)')
+    ax.axis('equal')
+    plt.show()
+    savename = output_dir + f'scatter_color_depth_visualization.png'
     plt.savefig(savename)
     plt.close()
 
@@ -403,6 +493,106 @@ def plot_outer_surfaces_contours(eq_node_posns,node_posns,boundaries,output_dir)
 
 # fig.canvas.mpl_connect('scroll_event', tracker.on_scroll)
 # plt.show()
+class ScatterIndexTracker:
+    def __init__(self,fig,ax,cut_type,eq_node_posns,node_posns,springs,particles,spring_type=None):
+        self.index = 0
+        cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+        cut_type_index = cut_type_dict[cut_type]
+        self.max_index = int(np.max(eq_node_posns[:,cut_type_index]))
+        self.fig = fig
+        self.ax = ax
+        self.cut_type = cut_type
+        self.eq_node_posns = eq_node_posns
+        self.node_posns = node_posns
+        self.springs = springs
+        self.particles = particles
+        self.spring_type = spring_type
+        self.im = self.plot_scatter_color_depth_visualization(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index,self.springs,self.particles,self.spring_type)
+        self.cbar = self.fig.colorbar(self.im,ax=self.ax)
+        self.update()
+    
+    def on_scroll(self, event):
+        print(event.button, event.step)
+        increment = 1 if event.button == 'up' else -1
+        max_index = self.max_index
+        self.index = np.clip(self.index + increment, 0, max_index)
+        self.update()
+
+    def update(self):
+        plt.cla()
+        self.im = self.plot_scatter_color_depth_visualization(self.fig,self.ax,self.cut_type,self.eq_node_posns,self.node_posns,self.index,self.springs,self.particles,self.spring_type)
+        try:
+            self.cbar.update_normal(self.im)
+        except:
+            print('No existing colorbar to update')
+        self.ax.set_title(f'Use scroll whell to navigate\nindex {self.index}')
+        self.im.axes.figure.canvas.draw()
+    
+    def plot_scatter_color_depth_visualization(self,fig,ax,cut_type,eq_node_posns,final_node_posns,index,springs,particles,spring_type=None,tag=""):
+        """Plot a set of chosen nodes, passed as a list of integers representing the row index of the node in final_node_posns"""
+        #TODO add spring type to plot_subset_springs, and to function arguments. add argument or somehow get the type of cut, to properly label the axes on the image. use the "depth" (odd node position out) to give a list of numbers to be mapped to colors using cmap and norm (which means selecting or else using the default cmap (and most likly letting norm do it's default), and setting the colorbar)
+        cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+        cut_type_index = cut_type_dict[cut_type]
+        chosen_nodes = np.isclose(np.ones((eq_node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
+        Lx = eq_node_posns[:,0].max()
+        Ly = eq_node_posns[:,1].max()
+        Lz = eq_node_posns[:,2].max()
+        # default_width,default_height = fig.get_size_inches()
+        # fig.set_size_inches(3*default_width,3*default_height)
+        # fig.set_dpi(200)
+        depth_color = final_node_posns[chosen_nodes,cut_type_index]
+        if cut_type_index == 0:
+            xvar = final_node_posns[chosen_nodes,1]
+            yvar = final_node_posns[chosen_nodes,2]
+            xlabel = 'Y (l_e)'
+            ylabel = 'Z (l_e)'
+            xlim = (-0.1,Ly*1.1)
+            ylim = (-0.1,Lz*1.1)
+        elif cut_type_index == 1:
+            xvar = final_node_posns[chosen_nodes,0]
+            yvar = final_node_posns[chosen_nodes,2]
+            xlabel = 'X (l_e)'
+            ylabel = 'Z (l_e)'
+            xlim = (-0.1,Lx*1.1)
+            ylim = (-0.1,Lz*1.1)
+        else:
+            xvar = final_node_posns[chosen_nodes,0]
+            yvar = final_node_posns[chosen_nodes,1]
+            xlabel = 'X (l_e)'
+            ylabel = 'Y (l_e)'
+            xlim = (-0.1,Lx*1.1)
+            ylim = (-0.1,Ly*1.1)
+        sc = ax.scatter(xvar,yvar,c=depth_color,marker='o')
+        # plt.colorbar(sc)
+        # ax.scatter(final_node_posns[chosen_nodes,0],final_node_posns[chosen_nodes,1],final_node_posns[chosen_nodes,2],color ='b',marker='o')
+        #TODO add a colorscheme for springs that reflects the displacement from equilibrium length
+        # mre.analyze.plot_subset_springs(ax,final_node_posns,chosen_nodes,springs,spring_color='b',spring_type=spring_type)
+        cut_nodes_set = set(chosen_nodes)
+        particle_nodes_set = set(particles.ravel())
+        particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+        #alternative to below, use set unpacking
+        #*particle_cut_nodes, = particle_cut_nodes_set
+        particle_cut_nodes = [x for x in particle_cut_nodes_set]
+        if cut_type_index == 0:
+            xvar = final_node_posns[particle_cut_nodes,1]
+            yvar = final_node_posns[particle_cut_nodes,2]
+        elif cut_type_index == 1:
+            xvar = final_node_posns[particle_cut_nodes,0]
+            yvar = final_node_posns[particle_cut_nodes,2]
+        else:
+            xvar = final_node_posns[particle_cut_nodes,0]
+            yvar = final_node_posns[particle_cut_nodes,1]
+        ax.scatter(xvar,yvar,color='k',marker='o')
+        # ax.scatter(final_node_posns[particle_cut_nodes,0],final_node_posns[particle_cut_nodes,1],final_node_posns[particle_cut_nodes,2],color='k',marker='o')
+        mre.analyze.plot_subset_springs(ax,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
+        ax.set_xlim(xlim)
+        ax.set_ylim(ylim)
+        # ax.set_zlim((0,1.2*Lz))
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        # ax.set_zlabel('Z (m)')
+        ax.axis('equal')
+        return sc
 
 class IndexTracker:
     def __init__(self,fig,ax,cut_type,eq_node_posns,node_posns):
