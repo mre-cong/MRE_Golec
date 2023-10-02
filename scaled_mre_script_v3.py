@@ -73,6 +73,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     r.set_solout(solout)
     max_displacement = np.zeros((max_integrations,))
     mean_displacement = np.zeros((max_integrations,))
+    return_status = 1
     for i in range(max_integrations):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
@@ -134,7 +135,6 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     criteria.plot_criteria_subplot(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
-    return_status = 1
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
 def get_displacement_norms(final_posns,start_posns):
@@ -1204,7 +1204,7 @@ def main2():
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
-    discretization_order = 1
+    discretization_order = 2
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
     #particle separation
     separation_meters = 9e-6
@@ -1219,7 +1219,7 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
-    drag = 10
+    drag = 1
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -1257,7 +1257,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-26_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-27_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1265,10 +1265,10 @@ def main2():
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
     H_mag = 1/mu0
-    n_field_steps = 10
+    n_field_steps = 1
     H_step = H_mag/n_field_steps
     Hext_angle = (2*np.pi/360)*0#30
-    Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
+    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     Hext_series = np.zeros((len(Hext_series_magnitude),3))

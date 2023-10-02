@@ -74,7 +74,7 @@ cdef void get_spring_force_WCA(const int row, const int node_i, const int node_j
     for i in range(3):
         spring_force[i] = spring_mag * rij[i] / rij_mag
     cdef double wca_mag
-    cdef double sigma = 0.25*eq_length
+    cdef double sigma = 0.45*eq_length
     cdef double cutoff_length = pow(2,(1/6))*sigma
     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
         wca_mag = get_wca_force(rij_mag,sigma)
@@ -84,7 +84,7 @@ cdef void get_spring_force_WCA(const int row, const int node_i, const int node_j
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double get_wca_force(double r, double sigma) nogil:
-    cdef double eps_constant = 10
+    cdef double eps_constant = 1
     cdef double sigma_over_separation = sigma/r
     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)

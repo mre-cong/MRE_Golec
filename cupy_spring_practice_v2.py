@@ -203,6 +203,7 @@ def main():
     max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
     edges = np.empty((max_springs,4),dtype=np.float64)
     num_springs = springs.get_springs(node_types, edges, max_springs, k, dimensions, l_e)
+    print(f'Comparing run times for CPU bound versus GPU implementations of spring force calculation for system with {num_springs} springs')
     edges = edges[:num_springs,:]
     
     #raw kernels are important for dealing with more complicated user defined kernels.
@@ -285,6 +286,114 @@ def main():
         }
         }
         ''', 'spring_force')
+    
+    element_kernel = cp.RawKernel(r'''
+    extern "C" __global__
+    void element_force(const int* elements, const float* node_posns, const float kappa, float* forces, const int size_elements) {
+        int tid = blockDim.x * blockIdx.x + threadIdx.x;
+        if (tid < size_elements)
+        {
+            //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
+            float avg_vector_i[3];
+            float avg_vector_j[3];
+            float avg_vector_k[3];
+            avg_vector_i[0] = (node_posns[3*elements[8*tid+2]] - node_posns[3*elements[8*tid]] + node_posns[3*elements[8*tid+3]] - node_posns[3*elements[8*tid+1]] + node_posns[3*elements[8*tid+6]] - node_posns[3*elements[8*tid+4]] + node_posns[3*elements[8*tid+7]] - node_posns[3*elements[8*tid+5]])/4;
+            avg_vector_i[1] = (node_posns[1+3*elements[8*tid+2]] - node_posns[1+3*elements[8*tid]] + node_posns[1+3*elements[8*tid+3]] - node_posns[1+3*elements[8*tid+1]] + node_posns[1+3*elements[8*tid+6]] - node_posns[1+3*elements[8*tid+4]] + node_posns[1+3*elements[8*tid+7]] - node_posns[1+3*elements[8*tid+5]])/4;
+            avg_vector_i[2] = (node_posns[2+3*elements[8*tid+2]] - node_posns[2+3*elements[8*tid]] + node_posns[2+3*elements[8*tid+3]] - node_posns[2+3*elements[8*tid+1]] + node_posns[2+3*elements[8*tid+6]] - node_posns[2+3*elements[8*tid+4]] + node_posns[2+3*elements[8*tid+7]] - node_posns[2+3*elements[8*tid+5]])/4;
+                                  
+            avg_vector_j[0] = (node_posns[3*elements[8*tid+4]] - node_posns[3*elements[8*tid]] + node_posns[3*elements[8*tid+6]] - node_posns[3*elements[8*tid+2]] + node_posns[3*elements[8*tid+5]] - node_posns[3*elements[8*tid+1]] + node_posns[3*elements[8*tid+7]] - node_posns[3*elements[8*tid+3]])/4;
+            avg_vector_j[1] = (node_posns[1+3*elements[8*tid+4]] - node_posns[1+3*elements[8*tid]] + node_posns[1+3*elements[8*tid+6]] - node_posns[1+3*elements[8*tid+2]] + node_posns[1+3*elements[8*tid+5]] - node_posns[1+3*elements[8*tid+1]] + node_posns[1+3*elements[8*tid+7]] - node_posns[1+3*elements[8*tid+3]])/4;
+            avg_vector_j[2] = (node_posns[2+3*elements[8*tid+4]] - node_posns[2+3*elements[8*tid]] + node_posns[2+3*elements[8*tid+6]] - node_posns[2+3*elements[8*tid+2]] + node_posns[2+3*elements[8*tid+5]] - node_posns[2+3*elements[8*tid+1]] + node_posns[2+3*elements[8*tid+7]] - node_posns[2+3*elements[8*tid+3]])/4;
+                                  
+            avg_vector_k[0] = (node_posns[3*elements[8*tid+1]] - node_posns[3*elements[8*tid]] + node_posns[3*elements[8*tid+3]] - node_posns[3*elements[8*tid+2]] + node_posns[3*elements[8*tid+5]] - node_posns[3*elements[8*tid+4]] + node_posns[3*elements[8*tid+7]] - node_posns[3*elements[8*tid+6]])/4;
+            avg_vector_k[1] = (node_posns[1+3*elements[8*tid+1]] - node_posns[1+3*elements[8*tid]] + node_posns[1+3*elements[8*tid+3]] - node_posns[1+3*elements[8*tid+2]] + node_posns[1+3*elements[8*tid+5]] - node_posns[1+3*elements[8*tid+4]] + node_posns[1+3*elements[8*tid+7]] - node_posns[1+3*elements[8*tid+6]])/4;
+            avg_vector_k[2] = (node_posns[2+3*elements[8*tid+1]] - node_posns[2+3*elements[8*tid]] + node_posns[2+3*elements[8*tid+3]] - node_posns[2+3*elements[8*tid+2]] + node_posns[2+3*elements[8*tid+5]] - node_posns[2+3*elements[8*tid+4]] + node_posns[2+3*elements[8*tid+7]] - node_posns[2+3*elements[8*tid+6]])/4;
+
+            //need to get cross products of average vectors, stored as variables for gradient vectors, prefactor, then atomicAdd for assignment to forces
+            float acrossb[3];
+            float bcrossc[3];
+            float ccrossa[3];
+            float adotbcrossc;
+                                  
+            acrossb[0] = avg_vector_i[1]*avg_vector_j[2] - avg_vector_i[2]*avg_vector_j[2];
+            acrossb[1] = avg_vector_i[2]*avg_vector_j[0] - avg_vector_i[0]*avg_vector_j[2];
+            acrossb[2] = avg_vector_i[0]*avg_vector_j[1] - avg_vector_i[1]*avg_vector_j[0];
+                                  
+            bcrossc[0] = avg_vector_j[1]*avg_vector_k[2] - avg_vector_j[2]*avg_vector_k[2];
+            bcrossc[1] = avg_vector_j[2]*avg_vector_k[0] - avg_vector_j[0]*avg_vector_k[2];
+            bcrossc[2] = avg_vector_j[0]*avg_vector_k[1] - avg_vector_j[1]*avg_vector_k[0];
+                                  
+            ccrossa[0] = avg_vector_k[1]*avg_vector_i[2] - avg_vector_k[2]*avg_vector_i[2];
+            ccrossa[1] = avg_vector_k[2]*avg_vector_i[0] - avg_vector_k[0]*avg_vector_i[2];
+            ccrossa[2] = avg_vector_k[0]*avg_vector_i[1] - avg_vector_k[1]*avg_vector_i[0];
+                                  
+            adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
+                                  
+            float[3] gradV1;
+            float[3] gradV8;
+            float[3] gradV3;
+            float[3] gradV6;
+            float[3] gradV7;
+            float[3] gradV2;
+            float[3] gradV5;
+            float[3] gradV4;
+                                  
+            gradV1[0] = -1*bcrossc[0] -1*ccrossa[0] -1*acrossb[0];
+            gradV8[0] = -1*gradV1[0];
+            gradV3[0] = bcrossc[0] -1*ccrossa[0] -1*acrossb[0];
+            gradV6[0] = -1*gradV3[0];
+            gradV7[0] = bcrossc[0] + ccrossa[0] -1*acrossb[0];
+            gradV2[0] = -1*gradV7[0];
+            gradV5[0] = -1*bcrossc[0] + ccrossa[0] -1*acrossb[0];
+            gradV4[0] = -1*gradV5[0];
+            
+            gradV1[1] = -1*bcrossc[1] -1*ccrossa[1] -1*acrossb[1];
+            gradV8[1] = -1*gradV1[1];
+            gradV3[1] = bcrossc[1] -1*ccrossa[1] -1*acrossb[1];
+            gradV6[1] = -1*gradV3[1];
+            gradV7[1] = bcrossc[1] + ccrossa[1] -1*acrossb[1];
+            gradV2[1] = -1*gradV7[1];
+            gradV5[1] = -1*bcrossc[1] + ccrossa[1] -1*acrossb[1];
+            gradV4[1] = -1*gradV5[1];
+                                  
+            gradV1[2] = -1*bcrossc[2] -1*ccrossa[2] -1*acrossb[2];
+            gradV8[2] = -1*gradV1[2];
+            gradV3[2] = bcrossc[2] -1*ccrossa[2] -1*acrossb[2];
+            gradV6[2] = -1*gradV3[2];
+            gradV7[2] = bcrossc[2] + ccrossa[2] -1*acrossb[2];
+            gradV2[2] = -1*gradV7[2];
+            gradV5[2] = -1*bcrossc[2] + ccrossa[2] -1*acrossb[2];
+            gradV4[2] = -1*gradV5[2];
+                                  
+            float prefactor = -kappa * ((adotbcrossc - 1))
+            atomicAdd(&forces[3*elements[8*tid]],prefactor*gradV1[0]);
+            atomicAdd(&forces[3*elements[8*tid]+1],prefactor*gradV1[1]);
+            atomicAdd(&forces[3*elements[8*tid]+2],prefactor*gradV1[2]);
+            atomicAdd(&forces[3*elements[8*tid+1]],prefactor*gradV2[0]);
+            atomicAdd(&forces[3*elements[8*tid+1]+1],prefactor*gradV2[1]);
+            atomicAdd(&forces[3*elements[8*tid+1]+2],prefactor*gradV2[2]);
+            atomicAdd(&forces[3*elements[8*tid+2]],prefactor*gradV3[0]);
+            atomicAdd(&forces[3*elements[8*tid+2]+1],prefactor*gradV3[1]);
+            atomicAdd(&forces[3*elements[8*tid+2]+2],prefactor*gradV3[2]);
+            atomicAdd(&forces[3*elements[8*tid+3]],prefactor*gradV4[0]);
+            atomicAdd(&forces[3*elements[8*tid+3]+1],prefactor*gradV4[1]);
+            atomicAdd(&forces[3*elements[8*tid+3]+2],prefactor*gradV4[2]);
+            atomicAdd(&forces[3*elements[8*tid+4]],prefactor*gradV5[0]);
+            atomicAdd(&forces[3*elements[8*tid+4]+1],prefactor*gradV5[1]);
+            atomicAdd(&forces[3*elements[8*tid+4]+2],prefactor*gradV5[2]);
+            atomicAdd(&forces[3*elements[8*tid+5]],prefactor*gradV6[0]);
+            atomicAdd(&forces[3*elements[8*tid+5]+1],prefactor*gradV6[1]);
+            atomicAdd(&forces[3*elements[8*tid+5]+2],prefactor*gradV6[2]);
+            atomicAdd(&forces[3*elements[8*tid+6]],prefactor*gradV7[0]);
+            atomicAdd(&forces[3*elements[8*tid+6]+1],prefactor*gradV7[1]);
+            atomicAdd(&forces[3*elements[8*tid+6]+2],prefactor*gradV7[2]);
+            atomicAdd(&forces[3*elements[8*tid+7]],prefactor*gradV8[0]);
+            atomicAdd(&forces[3*elements[8*tid+7]+1],prefactor*gradV8[1]);
+            atomicAdd(&forces[3*elements[8*tid+7]+2],prefactor*gradV8[2]);
+        }
+        }
+        ''', 'element_force')
+
     node_posns[:,0] *= 1.05
     # cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
     cupy_edges = cp.array(edges.astype(np.float32)).reshape((edges.shape[0]*edges.shape[1],1),order='C')
@@ -322,8 +431,8 @@ def main():
         spring_force = np.zeros((node_posns.shape[0],3),np.float32)
         springs.accumulate_spring_forces(host_cupy_forces, edges,spring_force)
     
-    execution_gpu_v2 = cupyx.profiler.benchmark(spring_func_less_transfers_v2,(edges,cupy_edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
-    delta_gpu_2 = np.sum(execution_gpu_v2.gpu_times)
+    # execution_gpu_v2 = cupyx.profiler.benchmark(spring_func_less_transfers_v2,(edges,cupy_edges,node_posns,N_nodes,size_edges),n_repeat=N_iterations)
+    # delta_gpu_2 = np.sum(execution_gpu_v2.gpu_times)
     # start = time.perf_counter()
     # for i in range(N_iterations):
     #     spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
@@ -392,8 +501,8 @@ edges = np.array(edges,dtype=np.float64)
     print("CPU time is {} seconds".format(delta_np))
     print("GPU time is {} seconds".format(delta_gpu_naive))
     print("GPU is {}x faster than CPU".format(delta_np/delta_gpu_naive))
-    print("v2 GPU time is {} seconds".format(delta_gpu_2))
-    print("v2 GPU is {}x faster than CPU".format(delta_np/delta_gpu_2))
+    # print("v2 GPU time is {} seconds".format(delta_gpu_2))
+    # print("v2 GPU is {}x faster than CPU".format(delta_np/delta_gpu_2))
     return
 
 if __name__ == "__main__":

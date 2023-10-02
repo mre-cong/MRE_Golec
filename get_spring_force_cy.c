@@ -3005,7 +3005,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
  *     for i in range(3):
  *         spring_force[i] = spring_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
  *     cdef double wca_mag
- *     cdef double sigma = 0.25*eq_length
+ *     cdef double sigma = 0.45*eq_length
  */
     __pyx_t_6 = (__pyx_v_spring_mag * (__pyx_v_rij[__pyx_v_i]));
     if (unlikely(__pyx_v_rij_mag == 0)) {
@@ -3024,15 +3024,15 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
   /* "get_spring_force_cy.pyx":77
  *         spring_force[i] = spring_mag * rij[i] / rij_mag
  *     cdef double wca_mag
- *     cdef double sigma = 0.25*eq_length             # <<<<<<<<<<<<<<
+ *     cdef double sigma = 0.45*eq_length             # <<<<<<<<<<<<<<
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  */
-  __pyx_v_sigma = (0.25 * __pyx_v_eq_length);
+  __pyx_v_sigma = (0.45 * __pyx_v_eq_length);
 
   /* "get_spring_force_cy.pyx":78
  *     cdef double wca_mag
- *     cdef double sigma = 0.25*eq_length
+ *     cdef double sigma = 0.45*eq_length
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
  *         wca_mag = get_wca_force(rij_mag,sigma)
@@ -3040,7 +3040,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
   __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
 
   /* "get_spring_force_cy.pyx":79
- *     cdef double sigma = 0.25*eq_length
+ *     cdef double sigma = 0.45*eq_length
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(rij_mag,sigma)
@@ -3091,7 +3091,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
     }
 
     /* "get_spring_force_cy.pyx":79
- *     cdef double sigma = 0.25*eq_length
+ *     cdef double sigma = 0.45*eq_length
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
  *         wca_mag = get_wca_force(rij_mag,sigma)
@@ -3118,7 +3118,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = 10
+ *     cdef double eps_constant = 1
  *     cdef double sigma_over_separation = sigma/r
  */
 
@@ -3136,15 +3136,15 @@ static double __pyx_f_19get_spring_force_cy_get_wca_force(double __pyx_v_r, doub
   /* "get_spring_force_cy.pyx":87
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:
- *     cdef double eps_constant = 10             # <<<<<<<<<<<<<<
+ *     cdef double eps_constant = 1             # <<<<<<<<<<<<<<
  *     cdef double sigma_over_separation = sigma/r
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  */
-  __pyx_v_eps_constant = 10.0;
+  __pyx_v_eps_constant = 1.0;
 
   /* "get_spring_force_cy.pyx":88
  * cdef double get_wca_force(double r, double sigma) nogil:
- *     cdef double eps_constant = 10
+ *     cdef double eps_constant = 1
  *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
@@ -3206,7 +3206,7 @@ static double __pyx_f_19get_spring_force_cy_get_wca_force(double __pyx_v_r, doub
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double r, double sigma) nogil:             # <<<<<<<<<<<<<<
- *     cdef double eps_constant = 10
+ *     cdef double eps_constant = 1
  *     cdef double sigma_over_separation = sigma/r
  */
 

@@ -268,7 +268,7 @@ def main():
     E = 1
     nu = 0.49
     l_e = .1
-    Lx = .2
+    Lx = .4
     Ly = .2
     Lz = .2
     dt = 1e-3
