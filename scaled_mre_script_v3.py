@@ -1204,7 +1204,7 @@ def main2():
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
-    discretization_order = 2
+    discretization_order = 1
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
     #particle separation
     separation_meters = 9e-6
@@ -1257,7 +1257,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-27_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-02_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 

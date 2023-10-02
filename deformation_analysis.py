@@ -3,6 +3,8 @@
 #Calculate displacement vector field and from that, calculate deformation/displacement gradient, strain tensor (linear), Green strain tensor (nonlinear), and left/right deformation tensor (FF^T, (F^T)F)
 #from scaled accelerations, calculate forces and then stress tensor field
 
+#TODO because i am dealing with a scaled system, i need to do conversions, either before calculating or after calculating relevant quantities (displacement, displacement gradient, etc.)
+
 import numpy as np
 import matplotlib.pyplot as plt
 plt.switch_backend('TkAgg')
@@ -33,9 +35,17 @@ def main():
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
     
     displacement = get_displacement_field(initial_node_posns,final_posns)
+    # print(f'{params.dtype}')
     for i in range(len(params[0])):
         if params.dtype.descr[i][0] == 'num_elements':
             num_elements = params[0][i]
+        if params.dtype.descr[i][0] == 'poisson_ratio':
+            nu = params[0][i]
+        if params.dtype.descr[i][0] == 'young_modulus':
+            E = params[0][i]
+    #getting the Lame parameters from Young's modulus and poisson ratio. see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
     num_nodes = num_elements + 1
     xdisplacement_3D, ydisplacement_3D, zdisplacement_3D = get_component_3D_arrays(displacement,num_nodes)
     xdisplacement_gradient = np.gradient(xdisplacement_3D)
@@ -60,6 +70,17 @@ def main():
     strain_tensor = get_strain_tensor(gradu)
     green_strain_tensor = get_green_strain_tensor(gradu)
 
+    index = 13
+    cut_type = 'xy'
+    displacements = (xdisplacement_3D,ydisplacement_3D,zdisplacement_3D)
+    # subplot_cut_pcolormesh_displacement(cut_type,initial_node_posns,displacements,index,output_dir,tag="")
+
+    subplot_cut_pcolormesh_strain(cut_type,initial_node_posns,green_strain_tensor,index,output_dir,tag="nonlinear")
+
+    subplot_cut_pcolormesh_strain(cut_type,initial_node_posns,strain_tensor,index,output_dir,tag="")
+
+    # plot_cut_pcolormesh_displacement(cut_type,initial_node_posns,xdisplacement_3D,index,output_dir,tag="")
+
     #i'm fairly confident that i have correctly calculated the gradient of the displacement field, the deformation gradient, and the linear and nonlinear strain tensors. i know that in the case of small displacements the two strain tensors should coincide. i also know that if there were rigid body rotations the strain linear tensor would no longer be useful, and I would need to use the deformation tensor to calculate F F^T (or F^T F) and get V V^T or (U^T U) and then find the square root of the matrix, or else use the iterative algorithm for polar decompositions to go from the deformation gradient to the rotation matrix, then calculate the inverse of the rotation matrix and pre or post multiply F to get V or U. V and U are good strain tensors even for large deformations and rigid body rotations, where the lienar strain tensor can have large differences for the same deformations with and without rigid body rotations. However, the Green strain tensor is supposed to not be corrupted by rigid body rotations.
 
     #don't forget that shear terms (off diagonal) of strain are half of the engineering shear values because they are components in a strain tensor
@@ -68,6 +89,21 @@ def main():
 
     #I can run strain simulations to try and get effective moduli. to get moduli as a function of position I need to be more thoughtful. the stiffness is a fourth rank tensor, with symmetry arguments, and for isotropic homogeneous media, there are only 2 independent elements. I still need to better understand the symmetry arguments, and see if i can go from the strain functions to stress using the stiffness tensor. or if i can use the forces on the nodes, can i get the stress tensor directly? I need to review my notes from days in the prior few weeks. I can draw imaginary planes through the node positions and then calculate force per (undeformed) area. is that appropriate? the normal example is an infinitessimal cube volume, where the direction and magnitude of forces on opposite faces have to balance to avoid a rotation (angular momentum balance, same for linear momentum (or torque/force))
     print('hm')
+
+def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
+    """stress for homogeneous isotropic material defined by Hooke's law in 3D"""
+    stress = np.zeros((np.shape(strain)))
+    stress[:,:,:,0,0] = 2*shear_modulus*strain[:,:,:,0,0] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
+    stress[:,:,:,1,1] = 2*shear_modulus*strain[:,:,:,1,1] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
+    stress[:,:,:,2,2] = 2*shear_modulus*strain[:,:,:,2,2] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
+    stress[:,:,:,0,1] = 2*shear_modulus*strain[:,:,:,0,1]
+    stress[:,:,:,0,2] = 2*shear_modulus*strain[:,:,:,0,2]
+    stress[:,:,:,1,2] = 2*shear_modulus*strain[:,:,:,1,2]
+    stress[:,:,:,1,0] = 2*shear_modulus*strain[:,:,:,1,0]
+    stress[:,:,:,2,0] = 2*shear_modulus*strain[:,:,:,2,0]
+    stress[:,:,:,2,1] = 2*shear_modulus*strain[:,:,:,2,1]
+    return stress
+    
 
 def get_strain_tensor(gradu):
     """Calculate the symmetric, linear strain tensor at each point on the grid representing the initial node positions using the gradient of the displacement field."""
@@ -103,15 +139,15 @@ def get_gradu(xdisplacement_gradient,ydisplacement_gradient,zdisplacement_gradie
     yshape = int(dimensions[1])
     zshape = int(dimensions[2])
     gradu = np.zeros((xshape,yshape,zshape,3,3))
-    gradu[:,:,:,0,0] = xdisplacement_gradient[0][0,0,0]
-    gradu[:,:,:,1,1] = ydisplacement_gradient[1][0,0,0]
-    gradu[:,:,:,2,2] = zdisplacement_gradient[2][0,0,0]
-    gradu[:,:,:,0,1] = xdisplacement_gradient[1][0,0,0]
-    gradu[:,:,:,0,2] = xdisplacement_gradient[2][0,0,0]
-    gradu[:,:,:,1,2] = ydisplacement_gradient[2][0,0,0]
-    gradu[:,:,:,1,0] = ydisplacement_gradient[0][0,0,0]
-    gradu[:,:,:,2,0] = zdisplacement_gradient[0][0,0,0]
-    gradu[:,:,:,2,1] = zdisplacement_gradient[1][0,0,0]
+    gradu[:,:,:,0,0] = xdisplacement_gradient[0][:,:,:]
+    gradu[:,:,:,1,1] = ydisplacement_gradient[1][:,:,:]
+    gradu[:,:,:,2,2] = zdisplacement_gradient[2][:,:,:]
+    gradu[:,:,:,0,1] = xdisplacement_gradient[1][:,:,:]
+    gradu[:,:,:,0,2] = xdisplacement_gradient[2][:,:,:]
+    gradu[:,:,:,1,2] = ydisplacement_gradient[2][:,:,:]
+    gradu[:,:,:,1,0] = ydisplacement_gradient[0][:,:,:]
+    gradu[:,:,:,2,0] = zdisplacement_gradient[0][:,:,:]
+    gradu[:,:,:,2,1] = zdisplacement_gradient[1][:,:,:]
     return gradu
 
 def get_deformation_gradient(xdisplacement_gradient,ydisplacement_gradient,zdisplacement_gradient,dimensions):
@@ -216,6 +252,173 @@ def plot_displacement_field_visualization(eq_node_posns,final_node_posns,cut_typ
     savename = output_dir + f'displacement_field_visualization_{cut_type}_{index}.png'
     plt.savefig(savename)
     plt.close()
+
+def plot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacement_component,index,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the displacement components of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
+    fig, ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
+
+    if cut_type == 'xy':
+        Z = displacement_component[:,:,index]
+        X = xposns[:,:,index]
+        Y = yposns[:,:,index]
+    elif 'xz':
+        Z = displacement_component[:,index,:]
+        X = xposns[:,index,:]
+        Y = zposns[:,index,:]
+    else:
+        Z = displacement_component[index,:,:]
+        X = yposns[index,:,:]
+        Y = zposns[index,:,:]
+    #need to convert from 1D vectors to 2D matrices
+    #coordinates of the corners of quadrilaterlas of a pcolormesh:
+    #(X[i+1,j],Y[i+1,j])       (X[i+1,j+1],Y[i+1,j+1])
+    #              *----------*
+    #              |          |
+    #              *----------*
+    #(X[i,j],Y[i,j])           (X[i,j+1],Y[i,j+1])
+
+    img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+    #don't forget to add a colorbar and limits
+    fig.colorbar(img,ax=ax)
+    ax.axis('equal')
+    ax.set_title('displacement ' + f'{cut_type}' + f'layer {index}')
+    plt.show()
+    savename = output_dir + f'cut_pcolormesh_displacement_visualization.png'
+    plt.savefig(savename)
+
+def subplot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacements,index,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the displacement components of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
+    fig, axs = plt.subplots(2,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
+
+    component_dict = {0:'x',1:'y',2:'z',3:'norm'}
+    for i in range(4):
+        row = np.floor_divide(i,2)
+        col = i%2
+        ax = axs[row,col]
+        if i != 3:
+            displacement_component = displacements[i]
+        else:
+            displacement_component = np.sqrt(np.power(displacements[0],2) +np.power(displacements[1],2) + np.power(displacements[2],2)) 
+        if cut_type == 'xy':
+            Z = displacement_component[:,:,index]
+            X = xposns[:,:,index]
+            Y = yposns[:,:,index]
+            xlabel = 'X'
+            ylabel = 'Y'
+        elif 'xz':
+            Z = displacement_component[:,index,:]
+            X = xposns[:,index,:]
+            Y = zposns[:,index,:]
+            xlabel = 'X'
+            ylabel = 'Z'
+        else:
+            Z = displacement_component[index,:,:]
+            X = yposns[index,:,:]
+            Y = zposns[index,:,:]
+            xlabel = 'Y'
+            ylabel = 'Z'
+        img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_title(f'displacement {component_dict[i]}' + f'{cut_type}' + f'layer {index}')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+    plt.show()
+    savename = output_dir + f'subplots_cut_pcolormesh_displacement_visualization.png'
+    plt.savefig(savename)
+
+def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the displacement components of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
+    fig, axs = plt.subplots(2,3)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
+
+    component_dict = {0:'xx',1:'yy',2:'zz',3:'xy',4:'xz',5:'yz'}
+    for i in range(6):
+        row = np.floor_divide(i,3)
+        col = i%3
+        ax = axs[row,col]
+        if i == 0:
+            strain_component = strain[:,:,:,0,0]
+        elif i == 1:
+            strain_component = strain[:,:,:,1,1]
+        elif i == 2:
+            strain_component = strain[:,:,:,2,2]
+        elif i == 3:
+            strain_component = strain[:,:,:,0,1]
+        elif i == 4:
+            strain_component = strain[:,:,:,0,2]
+        elif i == 5:
+            strain_component = strain[:,:,:,1,2]
+        if cut_type == 'xy':
+            Z = strain_component[:,:,index]
+            X = xposns[:,:,index]
+            Y = yposns[:,:,index]
+            xlabel = 'X'
+            ylabel = 'Y'
+        elif 'xz':
+            Z = strain_component[:,index,:]
+            X = xposns[:,index,:]
+            Y = zposns[:,index,:]
+            xlabel = 'X'
+            ylabel = 'Z'
+        else:
+            Z = strain_component[index,:,:]
+            X = yposns[index,:,:]
+            Y = zposns[index,:,:]
+            xlabel = 'Y'
+            ylabel = 'Z'
+        img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_title(tag+f'strain {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+    plt.show()
+    savename = output_dir + f'subplots_cut_pcolormesh_'+tag+'strain_visualization.png'
+    plt.savefig(savename)
 
 if __name__ == "__main__":
     main()
