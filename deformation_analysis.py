@@ -33,7 +33,30 @@ def main():
 
     initial_node_posns, _, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
-    
+    criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
+
+    sim_criteria_time = criteria['time']
+    timestep = sim_criteria_time[1:] - sim_criteria_time[:-1]
+    iter_number = criteria['iter_number']
+    fig, axs = plt.subplots(1,3)
+    default_width, default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(100)
+    axs[0].plot(sim_criteria_time[:timestep.shape[0]],timestep,'.')
+    axs[0].set_title('Time Step Taken')
+    axs[0].set_xlabel('scaled time')
+    axs[0].set_ylabel('time step')
+    axs[1].plot(iter_number[:timestep.shape[0]],timestep,'.')
+    axs[1].set_title('Time Step Taken')
+    axs[1].set_xlabel('integration number')
+    axs[1].set_ylabel('time step')
+    axs[2].plot(iter_number,sim_criteria_time,'.')
+    axs[2].set_title('Total Time')
+    axs[2].set_xlabel('integration number')
+    axs[2].set_ylabel('total scaled time')
+    plt.show()
+    plt.close()
+
     displacement = get_displacement_field(initial_node_posns,final_posns)
     # print(f'{params.dtype}')
     for i in range(len(params[0])):
@@ -104,7 +127,6 @@ def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
     stress[:,:,:,2,1] = 2*shear_modulus*strain[:,:,:,2,1]
     return stress
     
-
 def get_strain_tensor(gradu):
     """Calculate the symmetric, linear strain tensor at each point on the grid representing the initial node positions using the gradient of the displacement field."""
     strain_tensor = np.zeros(np.shape(gradu))
@@ -409,7 +431,8 @@ def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir
             Y = zposns[index,:,:]
             xlabel = 'Y'
             ylabel = 'Z'
-        img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        img = ax.pcolormesh(X,Y,Z)
+        # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
         fig.colorbar(img,ax=ax)
         ax.axis('equal')
@@ -419,6 +442,25 @@ def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir
     plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_'+tag+'strain_visualization.png'
     plt.savefig(savename)
+
+def plot_residual_acceleration_hist(a_norms,output_dir):
+    """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
+    max_accel = np.max(a_norms)
+    mean_accel = np.mean(a_norms)
+    rms_accel = np.sqrt(np.sum(np.power(a_norms,2))/np.shape(a_norms)[0])
+    counts, bins = np.histogram(a_norms, bins=20)
+    fig,ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    ax.hist(bins[:-1], bins, weights=counts)
+    sigma = np.std(a_norms)
+    mu = mean_accel
+    ax.set_title(f'Residual Acceleration Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
+    ax.set_xlabel('acceleration norm')
+    ax.set_ylabel('counts')
+    savename = output_dir +'node_residual_acceleration_hist.png'
+    plt.savefig(savename)
+    plt.close()
 
 if __name__ == "__main__":
     main()

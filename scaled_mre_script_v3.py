@@ -80,6 +80,8 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        # accel_sorted_node_indices = np.argsort(a_norms)[::-1]#returns sorting indices from highest to lowest acceleration norm
+        # top_fifty = accel_sorted_node_indices[:50]
         if i == 0:
             criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
             max_accel_norm_avg = np.max(criteria.a_norm_avg)
@@ -134,8 +136,28 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
+    plot_residual_acceleration_hist(a_norms,output_dir)
     mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
+
+def plot_residual_acceleration_hist(a_norms,output_dir):
+    """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
+    max_accel = np.max(a_norms)
+    mean_accel = np.mean(a_norms)
+    rms_accel = np.sqrt(np.sum(np.power(a_norms,2))/np.shape(a_norms)[0])
+    counts, bins = np.histogram(a_norms, bins=20)
+    fig,ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    ax.hist(bins[:-1], bins, weights=counts)
+    sigma = np.std(a_norms)
+    mu = mean_accel
+    ax.set_title(f'Residual Acceleration Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
+    ax.set_xlabel('acceleration norm')
+    ax.set_ylabel('counts')
+    savename = output_dir +'node_residual_acceleration_hist.png'
+    plt.savefig(savename)
+    plt.close()
 
 def get_displacement_norms(final_posns,start_posns):
     displacement = final_posns-start_posns
@@ -157,6 +179,7 @@ def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement
         ax.label_outer()
     plt.savefig(output_dir+'displacement.png')
     plt.close()
+    
 def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
@@ -202,6 +225,7 @@ class SimCriteria:
     def __init__(self,solutions,*args):
         self.get_criteria_per_iteration(solutions,*args)
         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+        self.timestep = self.time[1:] - self.time[:-1]
 
     def get_criteria_per_iteration(self,solutions,*args):
         iterations = np.array(solutions).shape[0]
@@ -438,6 +462,25 @@ class SimCriteria:
         plt.close()
         # plt.show()
         # plt.close('all')
+
+        fig, axs = plt.subplots(1,3)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
+        axs[0,0].set_title('Time Step Taken')
+        axs[0,0].set_xlabel('scaled time')
+        axs[0,0].set_ylabel('time step')
+        axs[0,1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
+        axs[0,1].set_title('Time Step Taken')
+        axs[0,1].set_xlabel('integration number')
+        axs[0,1].set_ylabel('time step')
+        axs[0,2].plot(self.iter_number,self.time,'.')
+        axs[0,2].set_title('Total Time')
+        axs[0,2].set_xlabel('integration number')
+        axs[0,2].set_ylabel('total scaled time')
+        savename = output_dir + 'timestep_per_iteration_and_time.png'
+        plt.savefig(savename)
+        plt.close()
 
     def plot_criteria_v_time(self,output_dir):
         if not (os.path.isdir(output_dir)):
@@ -1219,7 +1262,7 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
-    drag = 1
+    drag = 10
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
