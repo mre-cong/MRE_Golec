@@ -15,6 +15,7 @@ import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
 import get_volume_correction_force_cy_nogil
+import simulate
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -29,47 +30,95 @@ def main():
     drag = 10
     discretization_order = 1
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-09-13_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-02_results_order_{discretization_order}_drag_{drag}/'
 
-    initial_node_posns, _, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
+    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
     criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
 
-    sim_criteria_time = criteria['time']
-    timestep = sim_criteria_time[1:] - sim_criteria_time[:-1]
-    iter_number = criteria['iter_number']
-    fig, axs = plt.subplots(1,3)
-    default_width, default_height = fig.get_size_inches()
-    fig.set_size_inches(2*default_width,2*default_height)
-    fig.set_dpi(100)
-    axs[0].plot(sim_criteria_time[:timestep.shape[0]],timestep,'.')
-    axs[0].set_title('Time Step Taken')
-    axs[0].set_xlabel('scaled time')
-    axs[0].set_ylabel('time step')
-    axs[1].plot(iter_number[:timestep.shape[0]],timestep,'.')
-    axs[1].set_title('Time Step Taken')
-    axs[1].set_xlabel('integration number')
-    axs[1].set_ylabel('time step')
-    axs[2].plot(iter_number,sim_criteria_time,'.')
-    axs[2].set_title('Total Time')
-    axs[2].set_xlabel('integration number')
-    axs[2].set_ylabel('total scaled time')
-    plt.show()
-    plt.close()
-
-    displacement = get_displacement_field(initial_node_posns,final_posns)
     # print(f'{params.dtype}')
+
     for i in range(len(params[0])):
         if params.dtype.descr[i][0] == 'num_elements':
             num_elements = params[0][i]
+            num_nodes = num_elements + 1
         if params.dtype.descr[i][0] == 'poisson_ratio':
             nu = params[0][i]
         if params.dtype.descr[i][0] == 'young_modulus':
             E = params[0][i]
+        if params.dtype.descr[i][0] == 'kappa':
+            kappa = params[0][i]
+        if params.dtype.descr[i][0] == 'scaling_factor':
+            beta = params[0][i]
+        if params.dtype.descr[i][0] == 'element_length':
+            l_e = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_mass':
+            particle_mass = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_size':
+            particle_size = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_Ms':
+            Ms = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_chi':
+            chi = params[0][i]
+        if params.dtype.descr[i][0] == 'young_modulus':
+            E = params[0][i]
+
+    # sim_criteria_time = criteria['time']
+    # timestep = sim_criteria_time[1:] - sim_criteria_time[:-1]
+    # iter_number = criteria['iter_number']
+    # fig, axs = plt.subplots(1,3)
+    # default_width, default_height = fig.get_size_inches()
+    # fig.set_size_inches(2*default_width,2*default_height)
+    # fig.set_dpi(100)
+    # axs[0].plot(sim_criteria_time[:timestep.shape[0]],timestep,'.')
+    # axs[0].set_title('Time Step Taken')
+    # axs[0].set_xlabel('scaled time')
+    # axs[0].set_ylabel('time step')
+    # axs[1].plot(iter_number[:timestep.shape[0]],timestep,'.')
+    # axs[1].set_title('Time Step Taken')
+    # axs[1].set_xlabel('integration number')
+    # axs[1].set_ylabel('time step')
+    # axs[2].plot(iter_number,sim_criteria_time,'.')
+    # axs[2].set_title('Total Time')
+    # axs[2].set_xlabel('integration number')
+    # axs[2].set_ylabel('total scaled time')
+    # # plt.show()
+    # savename = output_dir + 'timestep_per_iteration_and_time.png'
+    # plt.savefig(savename)
+    # plt.close()
+
+    dimensions = (np.max(initial_node_posns[:,0]),np.max(initial_node_posns[:,1]),np.max(initial_node_posns[:,2]))
+    beta_i = beta/node_mass
+    Hext = series[0]
+    x0 = final_posns
+    v0 = np.zeros(x0.shape)
+    sol = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    #TODO adjust the read output file function to return a proper boundary conditions variable
+    boundary_conditions = (str(boundary_conditions[0][0]),(str(boundary_conditions[0][1]),str(boundary_conditions[0][2])),boundary_conditions[0][3])
+    a_var = simulate.get_accel_scaled(sol,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+    a_norms = np.linalg.norm(a_var,axis=1)
+
+    # plot_residual_acceleration_hist(a_norms,output_dir)
+
+    # visualize residual acceleration with pcolormesh or i guess the scatter plot with color for depth could be modified
+    # use argsort to find the strongest acceleration norm nodes, and find out how many of them there are, and where they are (so that you can visualize the parts of the simulation volume that have high accelerations)
+
+    accel_sorted_node_indices = np.argsort(a_norms)[::-1]#returns sorting indices from highest to lowest acceleration norm
+    top_fifty = accel_sorted_node_indices[:50]
+
+    strong_resid_accel_nodes = initial_node_posns[top_fifty]
+    strong_resid_accel_vals = a_norms[top_fifty]
+
+    # plot_residual_acceleration_hist(a_norms[top_fifty],output_dir)
+    index = 13
+    cut_type = 'xy'
+    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,a_var,index,output_dir,tag="")
+
+    displacement = get_displacement_field(initial_node_posns,final_posns)
+
     #getting the Lame parameters from Young's modulus and poisson ratio. see en.wikipedia.org/wiki/Lame_parameters
     lame_lambda = E*nu/((1+nu)*(1-2*nu))
     shear_modulus = E/(2*(1+nu))
-    num_nodes = num_elements + 1
     xdisplacement_3D, ydisplacement_3D, zdisplacement_3D = get_component_3D_arrays(displacement,num_nodes)
     xdisplacement_gradient = np.gradient(xdisplacement_3D)
     ydisplacement_gradient = np.gradient(ydisplacement_3D)
@@ -93,6 +142,8 @@ def main():
     strain_tensor = get_strain_tensor(gradu)
     green_strain_tensor = get_green_strain_tensor(gradu)
 
+    stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+
     index = 13
     cut_type = 'xy'
     displacements = (xdisplacement_3D,ydisplacement_3D,zdisplacement_3D)
@@ -101,6 +152,8 @@ def main():
     subplot_cut_pcolormesh_strain(cut_type,initial_node_posns,green_strain_tensor,index,output_dir,tag="nonlinear")
 
     subplot_cut_pcolormesh_strain(cut_type,initial_node_posns,strain_tensor,index,output_dir,tag="")
+
+    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,index,output_dir,tag="stress")
 
     # plot_cut_pcolormesh_displacement(cut_type,initial_node_posns,xdisplacement_3D,index,output_dir,tag="")
 
@@ -116,6 +169,7 @@ def main():
 def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
     """stress for homogeneous isotropic material defined by Hooke's law in 3D"""
     stress = np.zeros((np.shape(strain)))
+    print(f'The shape of the result of the trace function on the strain tensor variable is {np.shape(np.trace(strain,axis1=3,axis2=4))}')
     stress[:,:,:,0,0] = 2*shear_modulus*strain[:,:,:,0,0] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
     stress[:,:,:,1,1] = 2*shear_modulus*strain[:,:,:,1,1] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
     stress[:,:,:,2,2] = 2*shear_modulus*strain[:,:,:,2,2] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
@@ -321,9 +375,10 @@ def plot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacement_compone
     plt.show()
     savename = output_dir + f'cut_pcolormesh_displacement_visualization.png'
     plt.savefig(savename)
+    plt.close()
 
 def subplot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacements,index,output_dir,tag=""):
-    """Plot a cut through the simulated volume, showing the displacement components of the nodes that sat at the center of the initialized system.
+    """Plot a cut through the simulated volume, showing the displacement components of the nodes.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
     
@@ -377,9 +432,77 @@ def subplot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacements,ind
     plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_displacement_visualization.png'
     plt.savefig(savename)
+    plt.close()
+
+def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the vectorfield components of some property of the nodes.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
+    fig, axs = plt.subplots(2,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
+    #if the shape has 2 members, reshape the vectorfield variable to a 3D grid of values
+    if len(np.shape(vectorfield)) ==  2:
+        xvectorfield_3D, yvectorfield_3D, zvectorfield_3D = get_component_3D_arrays(vectorfield,dimensions)
+        vectorfield = (xvectorfield_3D,yvectorfield_3D,zvectorfield_3D)
+    #if the shape has 3 members, assume the vectorfield variable is already in the appropriate format of a 3D grid of values for plotting with pcolormesh
+    elif len(np.shape(vectorfield)) == 3:
+        pass
+    else:
+        raise ValueError(f'shape of vector field {np.shape(vectorfield)} must be 2D or 3D')
+
+    component_dict = {0:'x',1:'y',2:'z',3:'norm'}
+    for i in range(4):
+        row = np.floor_divide(i,2)
+        col = i%2
+        ax = axs[row,col]
+        if i != 3:
+            vectorfield_component = vectorfield[i]
+        else:
+            vectorfield_component = np.sqrt(np.power(vectorfield[0],2) +np.power(vectorfield[1],2) + np.power(vectorfield[2],2)) 
+        if cut_type == 'xy':
+            Z = vectorfield_component[:,:,index]
+            X = xposns[:,:,index]
+            Y = yposns[:,:,index]
+            xlabel = 'X'
+            ylabel = 'Y'
+        elif 'xz':
+            Z = vectorfield_component[:,index,:]
+            X = xposns[:,index,:]
+            Y = zposns[:,index,:]
+            xlabel = 'X'
+            ylabel = 'Z'
+        else:
+            Z = vectorfield_component[index,:,:]
+            X = yposns[index,:,:]
+            Y = zposns[index,:,:]
+            xlabel = 'Y'
+            ylabel = 'Z'
+        img = ax.pcolormesh(X,Y,Z)
+        # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_title(tag+ f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+    plt.show()
+    savename = output_dir + f'subplots_cut_pcolormesh_' + tag + '_vectorfield_visualization.png'
+    plt.savefig(savename)
+    plt.close()
 
 def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir,tag=""):
-    """Plot a cut through the simulated volume, showing the displacement components of the nodes that sat at the center of the initialized system.
+    """Plot a cut through the simulated volume, showing the strain tensor components of the nodes.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
     
@@ -442,6 +565,75 @@ def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir
     plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_'+tag+'strain_visualization.png'
     plt.savefig(savename)
+    plt.close()
+
+def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the symmetric tensor components of some tensor field defined at the nodes.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    if len(np.shape(tensorfield)) != 5:
+        raise ValueError(f'shape of tensor field {np.shape(tensorfield)} must be 5D')
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
+    fig, axs = plt.subplots(2,3)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
+
+    component_dict = {0:'xx',1:'yy',2:'zz',3:'xy',4:'xz',5:'yz'}
+    for i in range(6):
+        row = np.floor_divide(i,3)
+        col = i%3
+        ax = axs[row,col]
+        if i == 0:
+            tensor_component = tensorfield[:,:,:,0,0]
+        elif i == 1:
+            tensor_component = tensorfield[:,:,:,1,1]
+        elif i == 2:
+            tensor_component = tensorfield[:,:,:,2,2]
+        elif i == 3:
+            tensor_component = tensorfield[:,:,:,0,1]
+        elif i == 4:
+            tensor_component = tensorfield[:,:,:,0,2]
+        elif i == 5:
+            tensor_component = tensorfield[:,:,:,1,2]
+        if cut_type == 'xy':
+            Z = tensor_component[:,:,index]
+            X = xposns[:,:,index]
+            Y = yposns[:,:,index]
+            xlabel = 'X'
+            ylabel = 'Y'
+        elif 'xz':
+            Z = tensor_component[:,index,:]
+            X = xposns[:,index,:]
+            Y = zposns[:,index,:]
+            xlabel = 'X'
+            ylabel = 'Z'
+        else:
+            Z = tensor_component[index,:,:]
+            X = yposns[index,:,:]
+            Y = zposns[index,:,:]
+            xlabel = 'Y'
+            ylabel = 'Z'
+        img = ax.pcolormesh(X,Y,Z)
+        # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
+        #don't forget to add a colorbar and limits
+        fig.colorbar(img,ax=ax)
+        ax.axis('equal')
+        ax.set_title(tag+f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+    plt.show()
+    savename = output_dir + f'subplots_cut_pcolormesh_'+tag+'_tensorfield_visualization.png'
+    plt.savefig(savename)
+    plt.close()
 
 def plot_residual_acceleration_hist(a_norms,output_dir):
     """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
@@ -460,6 +652,7 @@ def plot_residual_acceleration_hist(a_norms,output_dir):
     ax.set_ylabel('counts')
     savename = output_dir +'node_residual_acceleration_hist.png'
     plt.savefig(savename)
+    plt.show()
     plt.close()
 
 if __name__ == "__main__":

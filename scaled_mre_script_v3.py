@@ -466,18 +466,18 @@ class SimCriteria:
         fig, axs = plt.subplots(1,3)
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(100)
-        axs[0,0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
-        axs[0,0].set_title('Time Step Taken')
-        axs[0,0].set_xlabel('scaled time')
-        axs[0,0].set_ylabel('time step')
-        axs[0,1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
-        axs[0,1].set_title('Time Step Taken')
-        axs[0,1].set_xlabel('integration number')
-        axs[0,1].set_ylabel('time step')
-        axs[0,2].plot(self.iter_number,self.time,'.')
-        axs[0,2].set_title('Total Time')
-        axs[0,2].set_xlabel('integration number')
-        axs[0,2].set_ylabel('total scaled time')
+        axs[0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
+        axs[0].set_title('Time Step Taken')
+        axs[0].set_xlabel('scaled time')
+        axs[0].set_ylabel('time step')
+        axs[1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
+        axs[1].set_title('Time Step Taken')
+        axs[1].set_xlabel('integration number')
+        axs[1].set_ylabel('time step')
+        axs[2].plot(self.iter_number,self.time,'.')
+        axs[2].set_title('Total Time')
+        axs[2].set_xlabel('integration number')
+        axs[2].set_ylabel('total scaled time')
         savename = output_dir + 'timestep_per_iteration_and_time.png'
         plt.savefig(savename)
         plt.close()
@@ -1243,7 +1243,7 @@ def main2():
     E = 9e3
     nu = 0.499
     max_integrations = 20
-    max_integration_steps = 300
+    max_integration_steps = 400
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
@@ -1300,7 +1300,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-02_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-05_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 

@@ -533,6 +533,7 @@ def read_criteria_file(fn):
     results = {}
     for leaf in f.root._f_walknodes('Leaf'):
         results[leaf.name] = leaf.read()
+    f.close()
     return results
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
