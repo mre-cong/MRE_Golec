@@ -61,7 +61,8 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     def solout(t,y):
         solutions.append([t,*y])
     tolerance = 1e-4
-    # max_iters = 15
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last string in the list returned by split()), and use that to get a substring for the parent directory
+    checkpoint_output_dir = output_dir[:-1*len(output_dir.split('/')[-1])]
     v0 = np.zeros(x0.shape)
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #TODO decide if you want to bother with doing a backtracking if the system diverges. there is a significant memory overhead associated with this approach.
@@ -132,7 +133,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             backstop_solution = sol.copy()
         solutions = []
         r.set_solout(solout)
-        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir)
+        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
