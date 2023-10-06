@@ -1027,55 +1027,6 @@ def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,el
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
 
-def initialize(*args):
-    """Given the parameters defining the system to be simulated, check if the variables have previously been initialized and saved out. If they have been, read them in, if they have not, initialize the variables and save them out an an init file."""
-    #TODO: update and improve implementation of saving out/checking/reading in initialization files
-    #need functionality to check some central directory containing initialization files
-    system_string = f'E_{E}_le_{l_e}_Lx_{Lx}_Ly_{Ly}_Lz_{Lz}'
-    current_dir = os.path.abspath('.')
-    input_dir = current_dir + f'/init_files/{system_string}/'
-    if not (os.path.isdir(input_dir)):#TODO add and statement that checks if the init file also exists?
-        os.mkdir(input_dir)
-        node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-        normalized_posns = mre.initialize.discretize_space(Lx/l_e,Ly/l_e,Lz/l_e,1)
-        elements = springs.get_elements(normalized_posns, dimensions, 1)
-        boundaries = mre.initialize.get_boundaries(normalized_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
-        node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
-        k = np.array(k,dtype=np.float64)
-        max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-        springs_var = np.empty((max_springs,4),dtype=np.float64)
-        num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
-        springs_var = springs_var[:num_springs,:]
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        particles = place_two_particles(radius,l_e,dimensions,separation)
-        mre.initialize.write_init_file(node_posns,springs_var,elements,particles,boundaries,input_dir)
-    elif os.path.isfile(input_dir+'init.h5'):
-        node_posns, springs_var, elements, boundaries = mre.initialize.read_init_file(input_dir+'init.h5')
-        #TODO implement support functions for particle placement to ensure matching to existing grid of points and avoid unnecessary repetition
-        #radius = l_e*0.5
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        particles = place_two_particles(radius,l_e,dimensions,separation)
-        # #TODO do better at placing multiple particles, make the helper functionality to ensure placement makes sense
-    else:
-        node_posns = mre.initialize.discretize_space(Lx,Ly,Lz,l_e)
-        normalized_posns = mre.initialize.discretize_space(Lx,Ly,Lz,1)
-        # normalized_posns = node_posns/l_e
-        elements = springs.get_elements(normalized_posns, dimensions, 1)
-        boundaries = mre.initialize.get_boundaries(normalized_posns)
-        k = mre.initialize.get_spring_constants(E, nu, l_e)
-        node_types = springs.get_node_type(normalized_posns.shape[0],boundaries,dimensions,1)
-        k = np.array(k,dtype=np.float64)
-        max_springs = np.round(Lx/l_e + 1).astype(np.int32)*np.round(Ly/l_e + 1).astype(np.int32)*np.round(Lz/l_e + 1).astype(np.int32)*13
-        springs_var = np.empty((max_springs,4),dtype=np.float64)
-        num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions, 1)
-        springs_var = springs_var[:num_springs,:]
-        separation = 5
-        radius = 0.5*l_e# radius = l_e*(4.5)
-        particles = place_two_particles(radius,l_e,dimensions,separation)
-
 def main():
     E = 1e3
     nu = 0.499
@@ -1300,7 +1251,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-05_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-06_results_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 

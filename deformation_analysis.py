@@ -30,7 +30,7 @@ def main():
     drag = 10
     discretization_order = 1
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-02_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-05_results_order_{discretization_order}_drag_{drag}/'
 
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
@@ -109,10 +109,13 @@ def main():
     strong_resid_accel_nodes = initial_node_posns[top_fifty]
     strong_resid_accel_vals = a_norms[top_fifty]
 
+    for particle in particles:
+        a_var[particle,:] = 0
+
     # plot_residual_acceleration_hist(a_norms[top_fifty],output_dir)
     index = 13
     cut_type = 'xy'
-    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,a_var,index,output_dir,tag="")
+    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,a_var,index,output_dir,tag="residual_accelerations")
 
     displacement = get_displacement_field(initial_node_posns,final_posns)
 

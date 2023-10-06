@@ -538,7 +538,7 @@ def read_criteria_file(fn):
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,output_dir):
-    """Write out the vertex positions, connectivity matrix defined by equilibrium separation, connectivity matrix defined by stiffness constant, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
+    """Write out the vertex positions, boundary conditinos, and simulation wall time (time to complete simulation) as HDF5 file."""
     f = tb.open_file(f'{output_dir}output_{count}.h5','w')
     f.create_array('/','node_posns',posns)
     # f.create_group('/','node_posns','Final Configurations')
@@ -554,17 +554,41 @@ def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,out
     f.close()
 
 def read_output_file(fn):
-    """Read hdf5 format output file. Returns node positions, boundary conditions tuple, first boundary condition tuple entry, and the simulation time to completion"""
+    """Read hdf5 format output file. Returns node positions, applied magnetic field, boundary conditions tuple, and the simulation time to completion"""
     f = tb.open_file(fn,'r')
     node_object = f.get_node('/','node_posns')
     node_posns = node_object.read()
     bc_object = f.get_node('/','boundary_conditions')
-    bc = bc_object.read()
-    boundary_condition = bc[0]
+    boundary_condition = bc_object.read()
+    field_object = f.get_node('/','applied_field')
+    applied_field = field_object.read()
     time_object = f.get_node('/','simulation_time')
     sim_time = time_object.read()
     f.close()
-    return node_posns, bc, boundary_condition, sim_time
+    return node_posns, applied_field, boundary_condition, sim_time
+
+def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir):
+    """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field and boundary conditions."""
+    f = tb.open_file(f'{output_dir}checkpoint_{count}.h5','w')
+    f.create_array('/','solution',sol)
+    f.create_array('/','applied_field',applied_field)
+    dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    f.create_table('/','boundary_conditions',dt)
+    bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
+    f.root.boundary_conditions.append(bc)
+    f.close()
+
+def read_checkpoint_file(fn):
+    """Read hdf5 format checkpoint file. Returns node positions and velocities (aka the solution vector), applied magnetic field, and boundary conditions, for restarting/continuing a simulation."""
+    f = tb.open_file(fn,'r')
+    node_object = f.get_node('/','solution')
+    node_posns = node_object.read()
+    bc_object = f.get_node('/','boundary_conditions')
+    boundary_condition = bc_object.read()
+    field_object = f.get_node('/','applied_field')
+    applied_field = field_object.read()
+    f.close()
+    return node_posns, applied_field, boundary_condition
 
 def test_element_setting():
     import time
