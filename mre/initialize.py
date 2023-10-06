@@ -568,10 +568,11 @@ def read_output_file(fn):
     return node_posns, applied_field, boundary_condition, sim_time
 
 def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir):
-    """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field and boundary conditions."""
-    f = tb.open_file(f'{output_dir}checkpoint_{count}.h5','w')
+    """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field, boundary conditions, and the number of which integration step furnished the solution vector."""
+    f = tb.open_file(f'{output_dir}checkpoint.h5','w')
     f.create_array('/','solution',sol)
     f.create_array('/','applied_field',applied_field)
+    f.create_array('/','count',count)
     dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
@@ -579,16 +580,18 @@ def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir
     f.close()
 
 def read_checkpoint_file(fn):
-    """Read hdf5 format checkpoint file. Returns node positions and velocities (aka the solution vector), applied magnetic field, and boundary conditions, for restarting/continuing a simulation."""
+    """Read hdf5 format checkpoint file. Returns node positions and velocities (aka the solution vector), applied magnetic field, and boundary conditions, and integration number (which integration finished to furnish the solution) for restarting/continuing a simulation."""
     f = tb.open_file(fn,'r')
-    node_object = f.get_node('/','solution')
-    node_posns = node_object.read()
+    solution_object = f.get_node('/','solution')
+    solution = solution_object.read()
     bc_object = f.get_node('/','boundary_conditions')
     boundary_condition = bc_object.read()
     field_object = f.get_node('/','applied_field')
     applied_field = field_object.read()
+    count_object = f.get_node('/','count')
+    count = count_object.read()
     f.close()
-    return node_posns, applied_field, boundary_condition
+    return solution, applied_field, boundary_condition, count
 
 def test_element_setting():
     import time

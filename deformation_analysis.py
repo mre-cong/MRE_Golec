@@ -30,11 +30,12 @@ def main():
     drag = 10
     discretization_order = 1
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-05_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-06_results_order_{discretization_order}_drag_{drag}/'
 
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
-    final_posns, boundary_conditions, _, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
+    final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
     criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
+    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'checkpoint.h5')
 
     # print(f'{params.dtype}')
 
@@ -89,13 +90,10 @@ def main():
 
     dimensions = (np.max(initial_node_posns[:,0]),np.max(initial_node_posns[:,1]),np.max(initial_node_posns[:,2]))
     beta_i = beta/node_mass
-    Hext = series[0]
-    x0 = final_posns
-    v0 = np.zeros(x0.shape)
-    sol = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    Hext = applied_field
     #TODO adjust the read output file function to return a proper boundary conditions variable
     boundary_conditions = (str(boundary_conditions[0][0]),(str(boundary_conditions[0][1]),str(boundary_conditions[0][2])),boundary_conditions[0][3])
-    a_var = simulate.get_accel_scaled(sol,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+    a_var = simulate.get_accel_scaled(checkpoint_solution,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
     a_norms = np.linalg.norm(a_var,axis=1)
 
     # plot_residual_acceleration_hist(a_norms,output_dir)

@@ -132,6 +132,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             backstop_solution = sol.copy()
         solutions = []
         r.set_solout(solout)
+        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir)
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
     mre.initialize.write_criteria_file(criteria,output_dir)
     criteria.plot_criteria_subplot(output_dir)
