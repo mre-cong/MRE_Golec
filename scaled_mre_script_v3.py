@@ -54,7 +54,7 @@ mu0 = 4*np.pi*1e-7
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200):
+def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
@@ -75,18 +75,18 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
     for i in range(max_integrations):
-        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
-        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         # accel_sorted_node_indices = np.argsort(a_norms)[::-1]#returns sorting indices from highest to lowest acceleration norm
         # top_fifty = accel_sorted_node_indices[:50]
         if i == 0:
-            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
             max_accel_norm_avg = np.max(criteria.a_norm_avg)
         else:
-            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
             max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
@@ -181,7 +181,7 @@ def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement
     plt.savefig(output_dir+'displacement.png')
     plt.close()
     
-def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
+def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
@@ -196,18 +196,18 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
     r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=1000,verbosity=1)
     r.set_solout(solout)
     for i in range(max_iters):
-        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
-        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
-        a_var_alt = get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
+        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_var_alt = get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
-            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
         else:
-            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
             criteria.append_criteria(other_criteria)
-        # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+        # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
         final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
         # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir)
         solutions = []
@@ -216,7 +216,7 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
             break
         else:
             y_0 = sol
-    # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms)
+    # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
     criteria.plot_criteria(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     # criteria.plot_criteria_v_time(output_dir)
@@ -636,11 +636,11 @@ def do_other_stuff():
 #function to pass to scipy.integrate.solve_ivp()
 #must be of the form fun(t,y)
 #can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
-def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag):
+def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
-    accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+    accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     N_nodes = int(np.round(N/3))
     accel = np.reshape(accel,(3*N_nodes,))
     v0 = y[N:]
@@ -648,7 +648,7 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
-def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag=10,debug_flag=False):
+def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
@@ -704,8 +704,8 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
     for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_size,l_e)
+    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
     mag_forces *= beta/(particle_mass*(l_e**4))
     for i, particle in enumerate(particles):
         accel[particle] += mag_forces[i]
@@ -719,7 +719,7 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
         inspect_particle = accel[particles[0],:]
     return accel
 
-def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,debug_flag=False):
+def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
@@ -790,8 +790,8 @@ def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
     particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
     for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_size,l_e)
+    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
     mag_forces_alt = mag_forces * scaled_magnetic_force_coefficient
     mag_forces *= beta/(particle_mass*(l_e**4))
 
@@ -920,7 +920,7 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag=10):
+def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag=10):
     for count, strain in enumerate(strains):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('strain',('left','right'),strain)
@@ -937,7 +937,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
             x0[boundaries[surface],pinned_axis] = eq_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,eq_posns,output_dir)
+            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,output_dir)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -961,7 +961,7 @@ def run_strain_sim(output_dir,strains,eq_posns,x0,elements,particles,boundaries,
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
         mre.analyze.post_plot_cut_normalized(eq_posns,x0,springs_var,particles,boundary_conditions,output_dir)
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -972,7 +972,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
             os.mkdir(current_output_dir)
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -998,13 +998,13 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
     return total_delta, return_status
 
-def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
+def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
     for count, Hext in enumerate(Hext_series):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('free',('free','free'),0) 
         try:
             start = time.time()
-            sol = simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,eq_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
+            sol = simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,eq_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1127,7 +1127,7 @@ def main():
     # strains = np.array([0.01])
     strains = np.arange(-.001,-0.05,-0.02)
     Hext = np.array([0,0,0],dtype=np.float64)
-    particle_size = radius
+    particle_radius = radius
     chi = 131
     Ms = 1.9e6
     drag = 20
@@ -1137,7 +1137,7 @@ def main():
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
     N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
-    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size)
+    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
     #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
     k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
@@ -1162,7 +1162,7 @@ def main():
             x0[boundaries[surface],pinned_axis] = normalized_posns[boundaries[surface],pinned_axis] * (1 + boundary_conditions[2])   
         try:
             start = time.time()
-            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_size,particle_mass,chi,Ms,drag,normalized_posns,output_dir)
+            sol = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,normalized_posns,output_dir)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1205,7 +1205,7 @@ def main2():
     separation_meters = 9e-6
     separation_volume_elements = int(separation_meters / l_e)
     separation = separation_volume_elements#20#12#4
-    radius = (discretization_order + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
+    particle_radius = (discretization_order + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
     #l_e = (3/5)*1e-6#3e-6#cubic element side length
     # Lx = 41*l_e#27*l_e#15*l_e
     # Ly = 23*l_e#17*l_e#11*l_e
@@ -1239,8 +1239,7 @@ def main2():
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
 
-    particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
-    particle_size = radius
+    particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
     chi = 131
     Ms = 1.9e6
     #TODO: for distributed computing, I can't depend on looking at existing initialization files to extract variables. I'll have to either instantiate them based on command line arguments or an input file containing similar information, or (and this method seems like it is not th ebest for distributed computing) have separate "jobs" that i run locally or distributed to generate the init files, and use those as transferred input files for the main program (actually running the numerical integration to find equilibrium node configurations)
@@ -1256,7 +1255,6 @@ def main2():
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    # strains = np.array([0.01])
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
     H_mag = 1/mu0
@@ -1276,7 +1274,7 @@ def main2():
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
     N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
-    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size)
+    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
     #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
     k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
@@ -1293,13 +1291,13 @@ def main2():
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_diameter,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
-    field_or_strain_type_string = 'magnetic field'
+    field_or_strain_type_string = 'magnetic_field'
     mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,Hext_series,field_or_strain_type_string,output_dir)
     # read_posns,read_mass,read_springs,read_elements, read_boundaries, read_particles, read_parameters, read_series, read_type = mre.initialize.read_init_file(output_dir+'init.h5')
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
+    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main3():
@@ -1333,7 +1331,7 @@ def main3():
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
     separation = 4
-    radius = 0.5*l_e# radius = l_e*(4.5)
+    particle_radius = 0.5*l_e# radius = l_e*(4.5)
     particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
     kappa = mre.initialize.get_kappa(E, nu)
 
@@ -1356,7 +1354,6 @@ def main3():
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
     Hext_series[:,0] = Hext_series_magnitude
     # Hext = np.array([10000,0,0],dtype=np.float64)
-    particle_size = radius
     chi = 131
     Ms = 1.9e6
     effective_modulus = np.zeros(strains.shape)
@@ -1366,7 +1363,7 @@ def main3():
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
     N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
-    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size)
+    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
     #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
     k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
@@ -1383,7 +1380,7 @@ def main3():
     scaled_springs_var = np.empty((max_springs,4),dtype=np.float64)
     num_springs = springs.get_springs(node_types, scaled_springs_var, max_springs, scaled_k, dimensions_normalized, 1)
     scaled_springs_var = scaled_springs_var[:num_springs,:]
-    run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,normalized_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_size,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
+    run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,normalized_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
 
 if __name__ == "__main__":
     main2()

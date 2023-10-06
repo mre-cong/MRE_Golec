@@ -35,7 +35,7 @@ def main():
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
     criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
-    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'checkpoint.h5')
+    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'field_0_Bext_1.0/checkpoint.h5')
 
     # print(f'{params.dtype}')
 
@@ -55,8 +55,8 @@ def main():
             l_e = params[0][i]
         if params.dtype.descr[i][0] == 'particle_mass':
             particle_mass = params[0][i]
-        if params.dtype.descr[i][0] == 'particle_size':
-            particle_size = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_radius':
+            particle_radius = params[0][i]
         if params.dtype.descr[i][0] == 'particle_Ms':
             Ms = params[0][i]
         if params.dtype.descr[i][0] == 'particle_chi':
@@ -93,7 +93,7 @@ def main():
     Hext = applied_field
     #TODO adjust the read output file function to return a proper boundary conditions variable
     boundary_conditions = (str(boundary_conditions[0][0]),(str(boundary_conditions[0][1]),str(boundary_conditions[0][2])),boundary_conditions[0][3])
-    a_var = simulate.get_accel_scaled(checkpoint_solution,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag)
+    a_var = simulate.get_accel_scaled(checkpoint_solution,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     a_norms = np.linalg.norm(a_var,axis=1)
 
     # plot_residual_acceleration_hist(a_norms,output_dir)
@@ -107,8 +107,8 @@ def main():
     strong_resid_accel_nodes = initial_node_posns[top_fifty]
     strong_resid_accel_vals = a_norms[top_fifty]
 
-    for particle in particles:
-        a_var[particle,:] = 0
+    # for particle in particles:
+    #     a_var[particle,:] = 0
 
     # plot_residual_acceleration_hist(a_norms[top_fifty],output_dir)
     index = 13

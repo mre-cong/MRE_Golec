@@ -291,21 +291,21 @@ def get_kappa(E,nu):
     kappa = E * (4 * nu - 1) / (2 * (1 + nu) * (1 - 2 * nu))
     return kappa
 
-def get_node_mass(N_nodes,dimensions,particles,particle_size):
-    """Return the mass values of the nodes based on the system size, matrix mass density, particle size and particle mass density."""
+def get_node_mass(N_nodes,dimensions,particles,particle_radius):
+    """Return the mass values of the nodes based on the system size, matrix mass density, particle radius and particle mass density."""
     system_volume = dimensions[0]*dimensions[1]*dimensions[2]
     matrix_density = 0.965 #kg/m^3
     matrix_node_mass = matrix_density*system_volume/N_nodes
     m = np.ones((N_nodes,))*matrix_node_mass
     particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     if particles.size != 0:
-        particle_node_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))/particles[0,:].shape[0]
+        particle_node_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))/particles[0,:].shape[0]
         for particle in particles:
             m[particle] = particle_node_mass
     return m
 
-def get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size):
-    """Return the mass values of the nodes, the volume element mass, and the particle mass based on the size of the cubic volume elements, matrix mass density, node type (corner, edge, surface, interior), particle size and particle mass density."""
+def get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius):
+    """Return the mass values of the nodes, the volume element mass, and the particle mass based on the size of the cubic volume elements, matrix mass density, node type (corner, edge, surface, interior), particle radius and particle mass density."""
     matrix_density = 0.965 #kg/m^3
     volume_element_mass = matrix_density*(l_e**3)
     m = np.ones((N_nodes,))*volume_element_mass
@@ -314,7 +314,7 @@ def get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_size):
     m[node_types>=19] = volume_element_mass/8#setting the corner nodes to 1/8 the interior node mass
     particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     if particles.size != 0:
-        particle_mass = particle_mass_density*((4/3)*np.pi*(particle_size**3))
+        particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
         particle_node_mass = particle_mass/particles[0,:].shape[0]
         for particle in particles:
             m[particle] = particle_node_mass
@@ -368,7 +368,7 @@ class Simulation(object):
     Lz : length in z direction of the object [m]
     """
     #TODO flesh out this class based approach to the simulation interface
-    def __init__(self,E=1,nu=0.49,kappa=0,k=np.zeros((3,)),drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4,particle_size=3e-6,particle_mass=-1,particle_Ms=1.9e6,particle_chi=131,scaling_factor=-1,characteristic_mass=-1,characteristic_time=-1,max_integrations=10,max_integration_steps=200):
+    def __init__(self,E=1,nu=0.49,kappa=0,k=np.zeros((3,)),drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4,particle_radius=1.5e-6,particle_mass=-1,particle_Ms=1.9e6,particle_chi=131,scaling_factor=-1,characteristic_mass=-1,characteristic_time=-1,max_integrations=10,max_integration_steps=200):
         """Initializes simulation with default values if they are not passed.
         E: Young's Modulus (Pa)
         nu: Poisson Ratio (unitless)
@@ -401,7 +401,7 @@ class Simulation(object):
         self.stiffness = k
         self.Ms = particle_Ms
         self.chi = particle_chi
-        self.particle_size = particle_size
+        self.particle_radius = particle_radius
         self.particle_mass = particle_mass
         self.max_integrations = max_integrations
         self.max_integration_steps = max_integration_steps
@@ -450,7 +450,7 @@ class SimulationTable(tb.IsDescription):
     num_elements = tb.Float64Col(shape=(3,))#number of volume elements in each direction
     particle_Ms = tb.Float64Col()
     particle_chi = tb.Float64Col()
-    particle_size = tb.Float64Col()
+    particle_radius = tb.Float64Col()
     max_integrations = tb.Int32Col()
     max_integration_steps = tb.Int32Col()
     scaling_factor = tb.Float64Col()
@@ -482,7 +482,7 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationO
     parameters['num_elements'] = simulationObject.N_el
     parameters['particle_Ms'] = simulationObject.Ms
     parameters['particle_chi'] = simulationObject.chi
-    parameters['particle_size'] = simulationObject.particle_size
+    parameters['particle_radius'] = simulationObject.particle_radius
     parameters['particle_mass'] = simulationObject.particle_mass
     parameters['scaling_factor'] = simulationObject.scaling_factor
     parameters['characteristic_mass'] = simulationObject.characteristic_mass

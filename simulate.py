@@ -9,7 +9,7 @@ import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
 import magnetism
 
-def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_size,particle_mass,chi,Ms,drag=10,debug_flag=False):
+def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
@@ -65,8 +65,8 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
     for i, particle in enumerate(particles):
         particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_size,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_size,l_e)
+    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
     mag_forces *= beta/(particle_mass*(l_e**4))
     for i, particle in enumerate(particles):
         accel[particle] += mag_forces[i]

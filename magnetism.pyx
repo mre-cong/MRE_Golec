@@ -97,8 +97,8 @@ cpdef np.ndarray[np.float64_t, ndim=1] get_dipole_field_normalized(double[:] r_i
 #because of the iterative nature of the method, it is best to calculate the necessary and unchanging vectors and vector magnitudes at the start of the computation, so that there is no unnecessary recomputation of these constant values
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):
-    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms):
+    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
     cdef int i
     cdef int j
     cdef int count
@@ -120,7 +120,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hex
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
     for count in range(max_iters):
         for i in range(particle_posns.shape[0]):
@@ -148,8 +148,8 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hex
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):
-    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e):
+    """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
     cdef int i
     cdef int j
     cdef int count
@@ -171,7 +171,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(do
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
     for count in range(max_iters):
         for i in range(particle_posns.shape[0]):
@@ -202,13 +202,13 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(do
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
+cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_radius):
     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
     cdef int N_particles = particle_posns.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
     cdef int i
     cdef int j
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -227,7 +227,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
             r_j[1] = particle_posns[j,1]
             r_j[2] = particle_posns[j,2]
             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
-            wca_force = get_particle_wca_force(r_i,r_j,particle_size)
+            wca_force = get_particle_wca_force(r_i,r_j,particle_radius)
             forces[i,0] += force[0]
             forces[i,1] += force[1]
             forces[i,2] += force[2]
@@ -244,13 +244,13 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, doubl
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):
+cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_radius, double l_e):
     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
     cdef int N_particles = particle_posns.shape[0]
     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
     cdef int i
     cdef int j
-    cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -269,7 +269,7 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::
             r_j[1] = particle_posns[j,1]
             r_j[2] = particle_posns[j,2]
             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
-            wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+            wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)
             forces[i,0] += force[0]
             forces[i,1] += force[1]
             forces[i,2] += force[2]
@@ -287,9 +287,9 @@ cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::
 #should this be for a single particle pair, should i wrap it in a function that goes over all particle pairs? Should this be wrapped into the higher level dipole-dipole force calculation for all particle pairs?
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
+cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_radius):
     cdef double wca_mag
-    cdef double sigma = 1#2*particle_size/(3e-6)
+    cdef double sigma = 1#2*particle_radius/(3e-6)
     cdef double cutoff_length = pow(2,(1/6))*sigma
     cdef double[3] rij
     cdef int i
@@ -306,9 +306,10 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, doub
     
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):
+cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_radius,double l_e):
+    """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
     cdef double wca_mag
-    cdef double sigma = 2*particle_size/l_e
+    cdef double sigma = 2*particle_radius/l_e
     cdef double cutoff_length = pow(2,(1/6))*sigma
     cdef double[3] rij
     cdef int i
