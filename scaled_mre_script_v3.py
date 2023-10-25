@@ -61,8 +61,12 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     def solout(t,y):
         solutions.append([t,*y])
     tolerance = 1e-4
-    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last string in the list returned by split()), and use that to get a substring for the parent directory
-    checkpoint_output_dir = output_dir[:-1*len(output_dir.split('/')[-1])]
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
+    tmp_var = output_dir.split('/')
+    if tmp_var[-1] == '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
+    elif tmp_var[-1] != '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
     v0 = np.zeros(x0.shape)
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
     #TODO decide if you want to bother with doing a backtracking if the system diverges. there is a significant memory overhead associated with this approach.
@@ -81,8 +85,6 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
-        # accel_sorted_node_indices = np.argsort(a_norms)[::-1]#returns sorting indices from highest to lowest acceleration norm
-        # top_fifty = accel_sorted_node_indices[:50]
         if i == 0:
             criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
             max_accel_norm_avg = np.max(criteria.a_norm_avg)
@@ -92,7 +94,12 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
         v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
-        mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
+        #below is a 2D scatter plot of center cuts with the markers colored to give depth information
+        # mre.analyze.center_cut_visualization(initialized_posns,final_posns,springs,particles,output_dir,tag=f'{i}th_configuration')
+        #below is the original 3D scatter plot of center cuts which colored polymer nodes and springs differently than particle nodes and springs
+        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
+        #below is an attempt to change the original 3D scatter plot approach to a 2D approach, with no color information to provide sense of depth
+        mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
         if a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
@@ -139,7 +146,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     criteria.plot_criteria_subplot(output_dir)
     criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     plot_residual_acceleration_hist(a_norms,output_dir)
-    mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
+    # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
 def plot_residual_acceleration_hist(a_norms,output_dir):
@@ -968,7 +975,10 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
     for count, Hext in enumerate(Hext_series):
         #TODO better implementation of boundary conditions
         boundary_conditions = ('free',('free','free'),0) 
-        current_output_dir = output_dir + f'/field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
+        if output_dir[-1] != '/':
+            current_output_dir = output_dir + f'/field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
+        elif output_dir[-1] == '/':
+            current_output_dir = output_dir + f'field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
         if not (os.path.isdir(current_output_dir)):
             os.mkdir(current_output_dir)
         try:
@@ -1195,7 +1205,7 @@ def main2():
     start = time.time()
     E = 9e3
     nu = 0.499
-    max_integrations = 20
+    max_integrations = 50
     max_integration_steps = 400
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
@@ -1252,13 +1262,13 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-06_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-25_plot_testing_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
     strains = np.arange(-.001,-0.01,-0.02)
     mu0 = 4*np.pi*1e-7
-    H_mag = 1/mu0
+    H_mag = 0.01/mu0
     n_field_steps = 1
     H_step = H_mag/n_field_steps
     Hext_angle = (2*np.pi/360)*0#30
@@ -1289,7 +1299,7 @@ def main2():
     scaled_kappa = (l_e**2)*beta_new
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
-    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_diameter,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
     field_or_strain_type_string = 'magnetic_field'

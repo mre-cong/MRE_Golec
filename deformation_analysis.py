@@ -30,12 +30,12 @@ def main():
     drag = 10
     discretization_order = 1
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-06_results_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-06_results_order_{discretization_order}_drag_{drag}_checkpoint_test/'
 
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
     final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(output_dir+'output_0.h5')
-    criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
-    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'field_0_Bext_1.0/checkpoint.h5')
+    # criteria = mre.initialize.read_criteria_file(output_dir+'field_0_Bext_1.0/criteria.h5')
+    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'checkpoint.h5')
 
     # print(f'{params.dtype}')
 
@@ -111,7 +111,7 @@ def main():
     #     a_var[particle,:] = 0
 
     # plot_residual_acceleration_hist(a_norms[top_fifty],output_dir)
-    index = 13
+    index = 11
     cut_type = 'xy'
     subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,a_var,index,output_dir,tag="residual_accelerations")
 
@@ -170,7 +170,7 @@ def main():
 def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
     """stress for homogeneous isotropic material defined by Hooke's law in 3D"""
     stress = np.zeros((np.shape(strain)))
-    print(f'The shape of the result of the trace function on the strain tensor variable is {np.shape(np.trace(strain,axis1=3,axis2=4))}')
+    #print(f'The shape of the result of the trace function on the strain tensor variable is {np.shape(np.trace(strain,axis1=3,axis2=4))}')
     stress[:,:,:,0,0] = 2*shear_modulus*strain[:,:,:,0,0] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
     stress[:,:,:,1,1] = 2*shear_modulus*strain[:,:,:,1,1] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
     stress[:,:,:,2,2] = 2*shear_modulus*strain[:,:,:,2,2] + lame_lambda*np.trace(strain,axis1=3,axis2=4)
@@ -497,7 +497,7 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
         ax.set_title(tag+ f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-    plt.show()
+    # plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_' + tag + '_vectorfield_visualization.png'
     plt.savefig(savename)
     plt.close()

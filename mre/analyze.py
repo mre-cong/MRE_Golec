@@ -374,6 +374,168 @@ def get_accelerations_post_simulation_v3(x0,boundaries,springs,elements,kappa,l_
         a[i] = (spring_force_cy[i] + correction_force_cy_nogil[i])/m[i]
     return a
 
+def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_type,index,springs,particles,output_dir,spring_type=None,tag=""):
+    """Plot the final positions of a set of nodes based on the type of cut (plane of nodes to plot) and the index (layer) they belong to in the initial configuration"""
+    #TODO add spring type to plot_subset_springs, and to function arguments. add argument or somehow get the type of cut, to properly label the axes on the image. use the "depth" (odd node position out) to give a list of numbers to be mapped to colors using cmap and norm (which means selecting or else using the default cmap (and most likly letting norm do it's default), and setting the colorbar)
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    chosen_nodes = np.isclose(np.ones((eq_node_posns.shape[0],))*index,eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if chosen_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        chosen_nodes = np.isclose(np.ones((eq_node_posns.shape[0],))*(index+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    fig = plt.figure()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax = fig.add_subplot()
+    depth_color = final_node_posns[chosen_nodes,cut_type_index]
+    if cut_type_index == 0:
+        xvar = final_node_posns[chosen_nodes,1]
+        yvar = final_node_posns[chosen_nodes,2]
+        xlabel = 'Y (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Ly*1.1)
+        ylim = (-0.1,Lz*1.1)
+    elif cut_type_index == 1:
+        xvar = final_node_posns[chosen_nodes,0]
+        yvar = final_node_posns[chosen_nodes,2]
+        xlabel = 'X (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Lz*1.1)
+    else:
+        xvar = final_node_posns[chosen_nodes,0]
+        yvar = final_node_posns[chosen_nodes,1]
+        xlabel = 'X (l_e)'
+        ylabel = 'Y (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Ly*1.1)
+    #TODO add a colorscheme for springs that reflects the displacement from equilibrium length
+    marker_size = 250.0
+    plot_subset_springs_2D(ax,cut_type,final_node_posns,chosen_nodes,springs,spring_color='b',spring_type=spring_type)
+    sc = ax.scatter(xvar,yvar,s=marker_size,c=depth_color,marker='o',zorder=2.5)
+    plt.colorbar(sc)
+    cut_nodes_set = set(chosen_nodes)
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    if cut_type_index == 0:
+        xvar = final_node_posns[particle_cut_nodes,1]
+        yvar = final_node_posns[particle_cut_nodes,2]
+    elif cut_type_index == 1:
+        xvar = final_node_posns[particle_cut_nodes,0]
+        yvar = final_node_posns[particle_cut_nodes,2]
+    else:
+        xvar = final_node_posns[particle_cut_nodes,0]
+        yvar = final_node_posns[particle_cut_nodes,1]
+    # ax.scatter(xvar,yvar,color='k',marker='o')
+    plot_subset_springs_2D(ax,cut_type,final_node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis('equal')
+    # plt.show()
+    savename = output_dir + f'scatter_color_depth_{cut_type}_layer_{index}_'+ tag + '.png'
+    plt.savefig(savename)
+    plt.close()
+
+def center_cut_visualization(eq_node_posns,final_node_posns,springs,particles,output_dir,tag=""):
+    """Plot node positions of central cuts of the simulated volume using a 2D scatter plot with color representing the depth of node positions."""
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    center = (np.round(np.array([Lx,Ly,Lz]))/2)
+    cut_types = ['xy','xz','yz']
+    spring_type = np.max(springs[:,2])
+    for i in range(3):
+        plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_types[i],center[i],springs,particles,output_dir,spring_type=spring_type,tag=tag)
+
+def plot_center_cuts(eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
+    """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
+    plot_center_cut('xy',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
+    plot_center_cut('xz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
+    plot_center_cut('yz',eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag)
+
+def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary_conditions,output_dir,tag=""):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    center = (np.round(np.array([Lx,Ly,Lz]))/2)
+    fig = plt.figure()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax = fig.add_subplot()
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_type_index == 0:
+        xvar = node_posns[cut_nodes,1]
+        yvar = node_posns[cut_nodes,2]
+        xlabel = 'Y (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Ly*1.1)
+        ylim = (-0.1,Lz*1.1)
+    elif cut_type_index == 1:
+        xvar = node_posns[cut_nodes,0]
+        yvar = node_posns[cut_nodes,2]
+        xlabel = 'X (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Lz*1.1)
+    else:
+        xvar = node_posns[cut_nodes,0]
+        yvar = node_posns[cut_nodes,1]
+        xlabel = 'X (l_e)'
+        ylabel = 'Y (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Ly*1.1)
+    ax.scatter(xvar,yvar,color ='b',marker='o',zorder=2.5)
+    spring_type = np.max(springs[:,2])
+    plot_subset_springs_2D(ax,cut_type,node_posns,cut_nodes,springs,spring_color='b',spring_type=spring_type)
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    if cut_type_index == 0:
+        xvar = node_posns[particle_cut_nodes,1]
+        yvar = node_posns[particle_cut_nodes,2]
+    elif cut_type_index == 1:
+        xvar = node_posns[particle_cut_nodes,0]
+        yvar = node_posns[particle_cut_nodes,2]
+    else:
+        xvar = node_posns[particle_cut_nodes,0]
+        yvar = node_posns[particle_cut_nodes,1]
+    ax.scatter(xvar,yvar,color='k',marker='o',zorder=2.5)
+    plot_subset_springs_2D(ax,cut_type,node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis('equal')
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) + tag +'.png'
+    plt.savefig(savename)
+    plt.close()
+
 def main():
     pass
 
