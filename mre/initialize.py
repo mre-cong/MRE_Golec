@@ -313,8 +313,8 @@ def get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius):
     m[node_types>=7] = volume_element_mass/4#setting the edges and corners to half the surface node values
     m[node_types>=19] = volume_element_mass/8#setting the corner nodes to 1/8 the interior node mass
     particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
     if particles.size != 0:
-        particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
         particle_node_mass = particle_mass/particles[0,:].shape[0]
         for particle in particles:
             m[particle] = particle_node_mass

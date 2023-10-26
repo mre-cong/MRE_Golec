@@ -38,6 +38,7 @@ import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import scipy.integrate as sci
 import time
+from datetime import date
 import os
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
@@ -264,6 +265,7 @@ class SimCriteria:
         self.bottom = np.zeros((iterations,))
         self.front = np.zeros((iterations,))
         self.back = np.zeros((iterations,))
+        particles = args[2]
         for count, row in enumerate(solutions):
             a_var = get_accel_scaled(np.array(row[1:]),*args)
             a_norms = np.linalg.norm(a_var,axis=1)
@@ -271,18 +273,19 @@ class SimCriteria:
             # if self.a_norm_max[count] > 10000:
             #     a_var = get_accel_scaled(np.array(row[1:]),*args)
             self.a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
-            a_particles = a_var[args[2][0],:]
-            self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
             final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
             final_v = np.reshape(row[N_nodes*3+1:],(N_nodes,3))
             v_norms = np.linalg.norm(final_v,axis=1)
             self.v_norm_max[count] = np.max(v_norms)
             self.v_norm_avg[count] = np.sum(v_norms)/np.shape(v_norms)[0]
-            v_particles = final_v[args[2][0],:]
-            self.particle_v_norm[count] = np.linalg.norm(v_particles[0,:])
-            x1 = get_particle_center(args[2][0],final_posns)
-            x2 = get_particle_center(args[2][1],final_posns)
-            self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
+            if particles.shape[0] != 0:
+                a_particles = a_var[particles[0],:]
+                self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
+                v_particles = final_v[particles[0],:]
+                self.particle_v_norm[count] = np.linalg.norm(v_particles[0,:])
+                x1 = get_particle_center(particles[0],final_posns)
+                x2 = get_particle_center(particles[1],final_posns)
+                self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
             self.get_system_extent(final_posns,boundaries,count)
     
     def get_system_extent(self,posns,boundaries,count):
@@ -711,19 +714,20 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0 + bc_forces
     accel = set_fixed_nodes(accel,fixed_nodes)
-    #for each particle, find the position of the center
-    particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-    for i, particle in enumerate(particles):
-        particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
-    mag_forces *= beta/(particle_mass*(l_e**4))
-    for i, particle in enumerate(particles):
-        accel[particle] += mag_forces[i]
-    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
-    for particle in particles:
-        vecsum = np.sum(accel[particle],axis=0)
-        accel[particle] = vecsum/particle.shape[0]
+    if particles.shape[0] != 0:
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for i, particle in enumerate(particles):
+            particle_centers[i,:] = get_particle_center(particle,x0)
+        M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
+        mag_forces *= beta/(particle_mass*(l_e**4))
+        for i, particle in enumerate(particles):
+            accel[particle] += mag_forces[i]
+        #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+        for particle in particles:
+            vecsum = np.sum(accel[particle],axis=0)
+            accel[particle] = vecsum/particle.shape[0]
     if debug_flag:
         inspect_vcf = volume_correction_force[particles[0],:]
         inspect_springWCA = spring_force[particles[0],:]
@@ -936,6 +940,12 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
     eq_posns = x0.copy()
     total_delta = 0
     for count, strain in enumerate(strains):
+        if output_dir[-1] != '/':
+            current_output_dir = output_dir + f'/strain_{count}_{strain_type}_{np.round(strain,decimals=3)}/'
+        elif output_dir[-1] == '/':
+            current_output_dir = output_dir + f'strain_{count}_{strain_type}_{np.round(strain,decimals=3)}/'
+        if not (os.path.isdir(current_output_dir)):
+            os.mkdir(current_output_dir)
         if strain_type == 'tension':
             boundary_conditions = (strain_type,(strain_direction[0],strain_direction[0]),strain)
             if strain_direction[0] == 'x':
@@ -949,7 +959,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
                 raise ValueError('For compressive strains, cannot exceed 100"%" strain')
             if strain > 0:
                 strain *= -1
-            boundary_conditions = (strain_type,(strain_direction,strain_direction),strain)
+            boundary_conditions = (strain_type,(strain_direction[0],strain_direction[0]),strain)
             if strain_direction[0] == 'x':
                 x0[boundaries['right'],0] *= 1 + strain
             elif strain_direction[0] == 'y':
@@ -1012,7 +1022,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
             raise ValueError('Strain type not one of the following accepted types ("tension", "compression", "shearing", "torsion")')
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,output_dir)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations=max_integrations,max_integration_steps=max_integration_steps)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1022,10 +1032,11 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         total_delta += delta
         #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
         # end_result = sol.y[:,-1]
-        #below getting the solution at the final time, is the solution provided from scipy.integrate.ode. no more issue with memory overhead since this way, instead of using solve_ivp(), doesn't record the itnermediate states, just spits out the state at the desired time
+        #below getting the solution at the final time, is the solution provided from scipy.integrate.ode. no more issue with memory overhead since this way, instead of using solve_ivp(), doesn' t record the itnermediate states, just spits out the state at the desired time
         end_result = sol
         x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
         print('took %.2f seconds to simulate' % delta)
+        # TODO
         # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
         # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
         # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
@@ -1325,8 +1336,8 @@ def main2():
     # script_name = lib_programname.get_path_executed_script()
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
-    output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-25_plot_testing_order_{discretization_order}_drag_{drag}/'
+    today = date.today()
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_plot_testing_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1468,7 +1479,7 @@ def main_strain():
     particle_diameter = 3e-6
     #discretization order
     discretization_order = 1
-    # l_e = (particle_diameter/2) / (discretization_order + 1/2)
+    l_e = (particle_diameter/2) / (discretization_order + 1/2)
     # #particle separation
     # separation_meters = 9e-6
     # separation_volume_elements = int(separation_meters / l_e)
@@ -1478,7 +1489,7 @@ def main_strain():
     # Lx = separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
     # Ly = particle_diameter * 7
     # Lz = Ly
-    l_e = 1e-6
+    # l_e = 1e-6
     t_f = 30
     drag = 10
     
@@ -1520,25 +1531,24 @@ def main_strain():
     # script_name = lib_programname.get_path_executed_script()
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
-    output_dir = current_dir + '/results/'
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-26_strain_testing_order_{discretization_order}_drag_{drag}/'
+    today = date.today()
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_compression_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.0/mu0
-    n_field_steps = 1
-    H_step = H_mag/n_field_steps
-    Hext_angle = (2*np.pi/360)*0#30
-    Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
-    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
-    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    Hext_series = np.zeros((len(Hext_series_magnitude),3))
-    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
-    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
-    Hext = Hext_series
-    effective_modulus = np.zeros(strains.shape)
-    boundary_stress_xx_magnitude = np.zeros(strains.shape)
+    # H_mag = 0.0/mu0
+    # n_field_steps = 1
+    # H_step = H_mag/n_field_steps
+    # Hext_angle = (2*np.pi/360)*0#30
+    # Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
+    # #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    # Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    # Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+    # Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+    Hext = np.array([0,0,0],dtype=np.float64)
+    Hext_series = Hext
     x0 = normalized_posns.copy()
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
@@ -1562,6 +1572,8 @@ def main_strain():
     strain_type = 'compression'
     strain_direction = ('x','x')
     strains = np.arange(0.0,0.02,0.01)
+    effective_modulus = np.zeros(strains.shape)
+    boundary_stress_xx_magnitude = np.zeros(strains.shape)
     simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 

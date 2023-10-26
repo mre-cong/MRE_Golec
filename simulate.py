@@ -43,11 +43,14 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
                 force_direction = np.array([0,-1,0])
             # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
             bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
-    elif bc[0] == 'strain':
+    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
         #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
-        fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
-        for surface in bc[1]:
-            pass
+        if bc[1][0] == 'x':
+            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
+        elif bc[1][0] == 'y':
+            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
+        elif bc[1][0] == 'z':
+            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
     else:
         fixed_nodes = np.array([0])
     correction_force_el = np.empty((8,3),dtype=np.float64)
@@ -61,19 +64,20 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0 + bc_forces
     accel = set_fixed_nodes(accel,fixed_nodes)
-    #for each particle, find the position of the center
-    particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-    for i, particle in enumerate(particles):
-        particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
-    mag_forces *= beta/(particle_mass*(l_e**4))
-    for i, particle in enumerate(particles):
-        accel[particle] += mag_forces[i]
-    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
-    for particle in particles:
-        vecsum = np.sum(accel[particle],axis=0)
-        accel[particle] = vecsum/particle.shape[0]
+    if particles.shape[0] != 0:
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for i, particle in enumerate(particles):
+            particle_centers[i,:] = get_particle_center(particle,x0)
+        M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
+        mag_forces *= beta/(particle_mass*(l_e**4))
+        for i, particle in enumerate(particles):
+            accel[particle] += mag_forces[i]
+        #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+        for particle in particles:
+            vecsum = np.sum(accel[particle],axis=0)
+            accel[particle] = vecsum/particle.shape[0]
     if debug_flag:
         inspect_vcf = volume_correction_force[particles[0],:]
         inspect_springWCA = spring_force[particles[0],:]
