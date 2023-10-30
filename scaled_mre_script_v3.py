@@ -49,6 +49,7 @@ import mre.analyze
 import mre.sphere_rasterization
 import springs
 import magnetism
+import simulate
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 #remember, purpose, signature, stub
@@ -661,7 +662,7 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
 
 def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
-    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    #scipy.ode integrator requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
     N_nodes = int(np.round(N/3))
     x0 = np.reshape(y[:N],(N_nodes,3))
@@ -939,6 +940,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
     """Run a simulation applying a series of a particular type of strain to the volume, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     eq_posns = x0.copy()
     total_delta = 0
+    stress = np.zeros(strains.shape,dtype=np.float64)
     for count, strain in enumerate(strains):
         if output_dir[-1] != '/':
             current_output_dir = output_dir + f'/strain_{count}_{strain_type}_{np.round(strain,decimals=3)}/'
@@ -947,13 +949,15 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         if not (os.path.isdir(current_output_dir)):
             os.mkdir(current_output_dir)
         if strain_type == 'tension':
+            if strain < 0:
+                strain *= -1
             boundary_conditions = (strain_type,(strain_direction[0],strain_direction[0]),strain)
             if strain_direction[0] == 'x':
-                x0[boundaries['right'],0] *= 1 + strain
+                x0[boundaries['right'],0] = eq_posns[boundaries['right'],0] * (1 + strain)
             elif strain_direction[0] == 'y':
-                x0[boundaries['back'],1] *= 1 + strain
+                x0[boundaries['back'],1] = eq_posns[boundaries['back'],1] * (1 + strain)
             elif strain_direction[0] == 'z':
-                x0[boundaries['top'],2] *= 1 + strain
+                x0[boundaries['top'],2] = eq_posns[boundaries['top'],2] * (1 + strain)
         elif strain_type == 'compression':
             if strain >= 1 or strain <= -1:
                 raise ValueError('For compressive strains, cannot exceed 100"%" strain')
@@ -961,11 +965,11 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
                 strain *= -1
             boundary_conditions = (strain_type,(strain_direction[0],strain_direction[0]),strain)
             if strain_direction[0] == 'x':
-                x0[boundaries['right'],0] *= 1 + strain
+                x0[boundaries['right'],0] = eq_posns[boundaries['right'],0] * (1 + strain)
             elif strain_direction[0] == 'y':
-                x0[boundaries['back'],1] *= 1 + strain
+                x0[boundaries['back'],1] = eq_posns[boundaries['back'],1] * (1 + strain)
             elif strain_direction[0] == 'z':
-                x0[boundaries['top'],2] *= 1 + strain
+                x0[boundaries['top'],2] = eq_posns[boundaries['top'],2] * (1 + strain)
             else:
                 raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
         elif strain_type == 'shearing':
@@ -974,47 +978,50 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
             if strain_direction[0] == 'x':
                 if strain_direction[1] == 'x':
                     raise ValueError('Cannot have a shear strain applied to a surface with surface normal in x direction and force in x direction')
-                adjacent_length = dimensions[0]
+                adjacent_length = dimensions[0]/l_e
                 opposite_length = np.tan(strain)*adjacent_length
                 if strain_direction[1] == 'y':
-                    x0[boundaries['right'],1] += opposite_length
-                elif strain_direction[2] == 'z':
-                    x0[boundaries['right'],2] += opposite_length
+                    x0[boundaries['right'],1] = eq_posns[boundaries['right'],1] + opposite_length
+                elif strain_direction[1] == 'z':
+                    x0[boundaries['right'],2] = eq_posns[boundaries['right'],2] + opposite_length
                 else:
                     raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
             elif strain_direction[0] == 'y':
                 if strain_direction[1] == 'y':
                     raise ValueError('Cannot have a shear strain applied to a surface with surface normal in y direction and force in y direction')
-                adjacent_length = dimensions[1]
+                adjacent_length = dimensions[1]/l_e
                 opposite_length = np.tan(strain)*adjacent_length
                 if strain_direction[1] == 'x':
-                    x0[boundaries['back'],0] += opposite_length
-                elif strain_direction[2] == 'z':
-                    x0[boundaries['back'],2] += opposite_length
+                    x0[boundaries['back'],0] = eq_posns[boundaries['back'],0] + opposite_length
+                elif strain_direction[1] == 'z':
+                    x0[boundaries['back'],2] = eq_posns[boundaries['back'],2] + opposite_length
                 else:
                     raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
             elif strain_direction[0] == 'z':
                 if strain_direction[1] == 'z':
                     raise ValueError('Cannot have a shear strain applied to a surface with surface normal in z direction and force in z direction')
-                adjacent_length = dimensions[2]
+                adjacent_length = dimensions[2]/l_e
                 opposite_length = np.tan(strain)*adjacent_length
                 if strain_direction[1] == 'x':
-                    x0[boundaries['top'],0] += opposite_length
-                elif strain_direction[2] == 'y':
-                    x0[boundaries['top'],1] += opposite_length
+                    x0[boundaries['top'],0] = eq_posns[boundaries['top'],0] + opposite_length
+                elif strain_direction[1] == 'y':
+                    x0[boundaries['top'],1] = eq_posns[boundaries['top'],1] + opposite_length
                 else:
                     raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
             boundary_conditions = (strain_type,(strain_direction[0],strain_direction[1]),strain)
         elif strain_type == 'torsion':
             #torsion will only be applied to the top surface
+            #because the center of the system isn't at the origin, I need to translate the positions so that they are in a coordinate system where the center of the system in the 2D plane 'xy' is at (0,0), then rotate, then translate back to the original coordinate system
             if strain_direction[1] == 'CW':
-                starting_positions = x0[boundaries['top']].copy()
+                starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
                 x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + starting_positions[:,1]*np.sin(strain)
                 x0[boundaries['top'],1] = -1*starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
+                x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
             elif strain_direction[1] == 'CCW':
-                starting_positions = x0[boundaries['top']].copy()
+                starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
                 x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + -1*starting_positions[:,1]*np.sin(strain)
                 x0[boundaries['top'],1] = starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
+                x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
             else:
                 raise ValueError('strain direction for torsion must be one of ("CW", "CCW") for clockwise or counterclockwise rotation of the top surface of the simulated volume')
             boundary_conditions = (strain_type,(strain_direction[0],strain_direction[1]),strain)
@@ -1036,11 +1043,69 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         end_result = sol
         x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
         print('took %.2f seconds to simulate' % delta)
-        # TODO
-        # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
-        # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
-        # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
+        end_accel = simulate.get_accel_scaled_no_fixed_nodes(sol,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        # need to convert the acceleration variable back to forces acting on each node, at least for the boundaries of interest when doing the effective modulus calculation
+        #need to decide which boundaries are involved, using the strain_type variable and strain_direction variables. can check both boundaries to see how they compare with regards to the forces/stress involved
+        if strain_type == 'tension' or strain_type == 'compression':
+            if strain_direction[0] == 'x':
+                first_bdry_forces = end_accel[boundaries['left']]/beta_i[boundaries['left'],np.newaxis]
+                second_bdry_forces = end_accel[boundaries['right']]/beta_i[boundaries['right'],np.newaxis]
+                first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
+                second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
+                stress[count] = first_bdry_stress[0]
+                print(f'Difference in stress from opposite surfaces is {first_bdry_stress[0]-second_bdry_stress[0]}')
+        #     elif strain_direction[0] == 'y':
+        #         x0[boundaries['back'],1] = eq_posns[boundaries['back'],1] * (1 + strain)
+        #     elif strain_direction[0] == 'z':
+        #         x0[boundaries['top'],2] = eq_posns[boundaries['top'],2] * (1 + strain)
+        # elif strain_type == 'shearing':
+        #     if strain_direction[0] == 'x':
+        #         if strain_direction[1] == 'y':
+        #             x0[boundaries['right'],1] = eq_posns[boundaries['right'],1] + opposite_length
+        #         elif strain_direction[1] == 'z':
+        #             x0[boundaries['right'],2] = eq_posns[boundaries['right'],2] + opposite_length
+        #     elif strain_direction[0] == 'y':
+        #         if strain_direction[1] == 'x':
+        #             x0[boundaries['back'],0] = eq_posns[boundaries['back'],0] + opposite_length
+        #         elif strain_direction[1] == 'z':
+        #             x0[boundaries['back'],2] = eq_posns[boundaries['back'],2] + opposite_length
+        #     elif strain_direction[0] == 'z':
+        #         if strain_direction[1] == 'x':
+        #             x0[boundaries['top'],0] = eq_posns[boundaries['top'],0] + opposite_length
+        #         elif strain_direction[1] == 'y':
+        #             x0[boundaries['top'],1] = eq_posns[boundaries['top'],1] + opposite_length
+        # elif strain_type == 'torsion':
+        #     if strain_direction[1] == 'CW':
+        #         starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
+        #         x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + starting_positions[:,1]*np.sin(strain)
+        #         x0[boundaries['top'],1] = -1*starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
+        #         x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
+        #     elif strain_direction[1] == 'CCW':
+        #         starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
+        #         x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + -1*starting_positions[:,1]*np.sin(strain)
+        #         x0[boundaries['top'],1] = starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
+        #         x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
+    fig = plt.figure()
+    axs = plt.subplots(2)
+    axs[0].plot(strain,stress)
+    axs[0].set_title('Stress versus Strain')
+    axs[0].set_xlabel('strain')
+    axs[0].set_ylabel('stress')
+    force_component = {'x':0,'y':1,'z':2}
+    try:
+        effective_modulus = stress/strain
+    except ZeroDivisionError:
+        for i in range(np.shape(strain)[0]):
+            if strain[i] == 0 and np.isclose(np.linalg.norm(stress[i,:]),0):
+                effective_modulus[i] = 0
+            else:
+                effective_modulus[i] = stress[i,force_component[strain_direction[1]]]/strain[i]
+    axs[1].plot(strain,effective_modulus)
+    axs[0].set_title('Effective Modulus versus strain')
+    axs[0].set_xlabel('strain')
+    axs[0].set_ylabel('Effective Modulus')
+    plt.show()
     return total_delta, return_status
 
 def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
@@ -1493,9 +1558,9 @@ def main_strain():
     t_f = 30
     drag = 10
     
-    Lx = 10e-6
-    Ly = 10e-6
-    Lz = 10e-6
+    Lx = 8e-6
+    Ly = 8e-6
+    Lz = 8e-6
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -1531,10 +1596,6 @@ def main_strain():
     # script_name = lib_programname.get_path_executed_script()
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
-    today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_compression_order_{discretization_order}_drag_{drag}/'
-    if not (os.path.isdir(output_dir)):
-        os.mkdir(output_dir)
 
     mu0 = 4*np.pi*1e-7
     # H_mag = 0.0/mu0
@@ -1563,15 +1624,24 @@ def main_strain():
     beta_i = beta/m
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
+    field_or_strain_type_string = 'tension_strain'
+    strain_type = 'tension'
+    strain_direction = ('x','x')
+    shear_strain_max = np.pi/2/90*20
+    strain_max = 0.2
+    n_strain_steps = 10
+    strains = np.arange(0.0,strain_max+0.01*strain_max,strain_max/n_strain_steps)
+    today = date.today()
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_{strain_type}_order_{discretization_order}_drag_{drag}/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
     my_sim.write_log(output_dir)
-    field_or_strain_type_string = 'compressive_strain'
+    
     mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,Hext_series,field_or_strain_type_string,output_dir)
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    strain_type = 'compression'
-    strain_direction = ('x','x')
-    strains = np.arange(0.0,0.02,0.01)
+    
     effective_modulus = np.zeros(strains.shape)
     boundary_stress_xx_magnitude = np.zeros(strains.shape)
     simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
