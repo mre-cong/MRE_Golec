@@ -532,7 +532,7 @@ def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
-    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + str(np.round(boundary_conditions[2],decimals=2)) + tag +'.png'
+    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
     plt.savefig(savename)
     plt.close()
 

@@ -546,7 +546,7 @@ def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,out
     # f.create_group('/','boundary_conditions','Applied Boundary Conditions')
     # f.create_group('/','applied_field')
     f.create_array('/','applied_field',applied_field)
-    dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    dt = np.dtype([('bc_type','S12'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
