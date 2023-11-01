@@ -56,7 +56,7 @@ mu0 = 4*np.pi*1e-7
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200):
+def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,criteria_flag=True):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
@@ -77,7 +77,8 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     my_nsteps = max_integration_steps
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
     r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1)
-    r.set_solout(solout)
+    if criteria_flag:
+        r.set_solout(solout)
     max_displacement = np.zeros((max_integrations,))
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
@@ -87,12 +88,14 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
-        if i == 0:
-            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-            max_accel_norm_avg = np.max(criteria.a_norm_avg)
-        else:
-            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-            max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
+        max_accel_norm_avg = 0
+        if criteria_flag:
+            if i == 0:
+                criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(criteria.a_norm_avg)
+            else:
+                other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
         v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
@@ -105,7 +108,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         if a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
-            if i != 0:
+            if i != 0 and criteria_flag:
                 criteria.append_criteria(other_criteria)
             return_status = 0
             break
@@ -130,7 +133,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             y_0 = sol.copy()
             last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
-            if i != 0:
+            if i != 0 and criteria_flag:
                 criteria.append_criteria(other_criteria)
             # if i == 0:
             #     #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
@@ -140,13 +143,15 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             #     criteria.append_criteria(other_criteria)
             backstop_solution = sol.copy()
-        solutions = []
-        r.set_solout(solout)
+        if criteria_flag:
+            solutions = []
+            r.set_solout(solout)
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
-    mre.initialize.write_criteria_file(criteria,output_dir)
-    criteria.plot_criteria_subplot(output_dir)
-    criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
+    if criteria_flag:
+        mre.initialize.write_criteria_file(criteria,output_dir)
+        criteria.plot_criteria_subplot(output_dir)
+        criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     plot_residual_acceleration_hist(a_norms,output_dir)
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
@@ -936,7 +941,7 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
+def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True):
     """Run a simulation applying a series of a particular type of strain to the volume, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     eq_posns = x0.copy()
     total_delta = 0
@@ -1029,7 +1034,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
             raise ValueError('Strain type not one of the following accepted types ("tension", "compression", "shearing", "torsion")')
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations=max_integrations,max_integration_steps=max_integration_steps)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1107,7 +1112,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
     # plt.show()
     return total_delta, return_status
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -1121,7 +1126,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
             os.mkdir(current_output_dir)
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1345,7 +1350,7 @@ def main2():
     E = 9e3
     nu = 0.499
     max_integrations = 5
-    max_integration_steps = 10000
+    max_integration_steps = 4000
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
@@ -1447,7 +1452,8 @@ def main2():
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
+    criteria_flag = False
+    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main3():
@@ -1641,7 +1647,7 @@ def main_strain():
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
     
-    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps)
+    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":

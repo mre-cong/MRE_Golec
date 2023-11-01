@@ -309,7 +309,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, doub
 cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_radius,double l_e):
     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
     cdef double wca_mag
-    cdef double sigma = 2*particle_radius/l_e
+    cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted
     cdef double cutoff_length = pow(2,(1/6))*sigma
     cdef double[3] rij
     cdef int i

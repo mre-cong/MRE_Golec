@@ -2495,13 +2495,13 @@ static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
 static const char __pyx_k_stringsource[] = "stringsource";
 static const char __pyx_k_OverflowError[] = "OverflowError";
-static const char __pyx_k_particle_size[] = "particle_size";
 static const char __pyx_k_pyx_getbuffer[] = "__pyx_getbuffer";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
 static const char __pyx_k_particle_posns[] = "particle_posns";
 static const char __pyx_k_View_MemoryView[] = "View.MemoryView";
 static const char __pyx_k_allocate_buffer[] = "allocate_buffer";
 static const char __pyx_k_dtype_is_object[] = "dtype_is_object";
+static const char __pyx_k_particle_radius[] = "particle_radius";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
 static const char __pyx_k_pyx_unpickle_Enum[] = "__pyx_unpickle_Enum";
@@ -2611,7 +2611,7 @@ static PyObject *__pyx_kp_u_numpy_core_umath_failed_to_impor;
 static PyObject *__pyx_n_s_obj;
 static PyObject *__pyx_n_s_pack;
 static PyObject *__pyx_n_s_particle_posns;
-static PyObject *__pyx_n_s_particle_size;
+static PyObject *__pyx_n_s_particle_radius;
 static PyObject *__pyx_n_s_pi;
 static PyObject *__pyx_n_s_pickle;
 static PyObject *__pyx_n_s_pyx_PickleError;
@@ -2649,10 +2649,10 @@ static PyObject *__pyx_n_s_update;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_pf_9magnetism_get_dipole_field(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, __Pyx_memviewslice __pyx_v_m); /* proto */
 static PyObject *__pyx_pf_9magnetism_2get_dipole_field_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, __Pyx_memviewslice __pyx_v_m, double __pyx_v_l_e); /* proto */
-static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms); /* proto */
-static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e); /* proto */
-static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size); /* proto */
-static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e); /* proto */
+static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms); /* proto */
+static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e); /* proto */
+static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius); /* proto */
+static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_l_e); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array___cinit__(struct __pyx_array_obj *__pyx_v_self, PyObject *__pyx_v_shape, Py_ssize_t __pyx_v_itemsize, PyObject *__pyx_v_format, PyObject *__pyx_v_mode, int __pyx_v_allocate_buffer); /* proto */
 static int __pyx_array___pyx_pf_15View_dot_MemoryView_5array_2__getbuffer__(struct __pyx_array_obj *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_array___pyx_pf_15View_dot_MemoryView_5array_4__dealloc__(struct __pyx_array_obj *__pyx_v_self); /* proto */
@@ -4154,13 +4154,13 @@ static PyObject *__pyx_pf_9magnetism_2get_dipole_field_normalized(CYTHON_UNUSED 
 /* "magnetism.pyx":100
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms):             # <<<<<<<<<<<<<<
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
  *     cdef int i
  */
 
 static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_i;
   int __pyx_v_j;
   CYTHON_UNUSED int __pyx_v_count;
@@ -4554,7 +4554,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -4582,7 +4582,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 122, __pyx_L1_error)
@@ -4610,7 +4610,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   /* "magnetism.pyx":123
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)             # <<<<<<<<<<<<<<
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  */
@@ -4625,7 +4625,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_radius, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -4637,7 +4637,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
 
   /* "magnetism.pyx":124
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):
@@ -4665,7 +4665,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
   /* "magnetism.pyx":125
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):             # <<<<<<<<<<<<<<
  *         for i in range(particle_posns.shape[0]):
@@ -5087,8 +5087,8 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
   /* "magnetism.pyx":100
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms):             # <<<<<<<<<<<<<<
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
  *     cdef int i
  */
 
@@ -5129,11 +5129,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative(__Pyx_memvi
 
 /* Python wrapper */
 static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9magnetism_4get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius";
+static char __pyx_doc_9magnetism_4get_magnetization_iterative[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters";
 static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_Hext = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_particle_size;
+  double __pyx_v_particle_radius;
   double __pyx_v_chi;
   double __pyx_v_Ms;
   int __pyx_lineno = 0;
@@ -5143,7 +5143,7 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_magnetization_iterative (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_Hext,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_size,&__pyx_n_s_chi,&__pyx_n_s_Ms,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_Hext,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_radius,&__pyx_n_s_chi,&__pyx_n_s_Ms,0};
     PyObject* values[5] = {0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -5175,7 +5175,7 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_radius)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative", 1, 5, 5, 2); __PYX_ERR(0, 100, __pyx_L3_error)
         }
@@ -5206,7 +5206,7 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
     }
     __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 100, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_particle_radius = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_radius == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
   }
@@ -5218,14 +5218,14 @@ static PyObject *__pyx_pw_9magnetism_5get_magnetization_iterative(PyObject *__py
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_4get_magnetization_iterative(__pyx_self, __pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms);
+  __pyx_r = __pyx_pf_9magnetism_4get_magnetization_iterative(__pyx_self, __pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_chi, __pyx_v_Ms);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms) {
+static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -5236,7 +5236,7 @@ static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED 
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 100, __pyx_L1_error) }
   if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 100, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_chi, __pyx_v_Ms, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5258,13 +5258,13 @@ static PyObject *__pyx_pf_9magnetism_4get_magnetization_iterative(CYTHON_UNUSED 
 /* "magnetism.pyx":151
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
  *     cdef int i
  */
 
 static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(__Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(__Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_i;
   int __pyx_v_j;
   CYTHON_UNUSED int __pyx_v_count;
@@ -5658,7 +5658,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 172, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
@@ -5686,7 +5686,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  */
   __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
@@ -5714,7 +5714,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   /* "magnetism.pyx":174
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)             # <<<<<<<<<<<<<<
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):
  */
@@ -5729,7 +5729,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(pow(__pyx_v_particle_radius, 3.0)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -5741,7 +5741,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
 
   /* "magnetism.pyx":175
  *     cdef double[3] m_j = np.empty((3,),dtype=np.float64)
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     for count in range(max_iters):
  *         for i in range(particle_posns.shape[0]):
@@ -5769,7 +5769,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   memcpy(&(__pyx_v_H_tot[0]), __pyx_t_8, sizeof(__pyx_v_H_tot[0]) * (3));
 
   /* "magnetism.pyx":176
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef double[3] H_tot = np.empty((3,),dtype=np.float64)
  *     for count in range(max_iters):             # <<<<<<<<<<<<<<
  *         for i in range(particle_posns.shape[0]):
@@ -6191,8 +6191,8 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
   /* "magnetism.pyx":151
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_size, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
- *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius"""
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_magnetization_iterative_normalized(double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e):             # <<<<<<<<<<<<<<
+ *     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
  *     cdef int i
  */
 
@@ -6233,11 +6233,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_magnetization_iterative_normalized(
 
 /* Python wrapper */
 static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_9magnetism_6get_magnetization_iterative_normalized[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_size is the radius";
+static char __pyx_doc_9magnetism_6get_magnetization_iterative_normalized[] = "Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters";
 static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_Hext = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_particle_size;
+  double __pyx_v_particle_radius;
   double __pyx_v_chi;
   double __pyx_v_Ms;
   double __pyx_v_l_e;
@@ -6248,7 +6248,7 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_magnetization_iterative_normalized (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_Hext,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_size,&__pyx_n_s_chi,&__pyx_n_s_Ms,&__pyx_n_s_l_e,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_Hext,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_radius,&__pyx_n_s_chi,&__pyx_n_s_Ms,&__pyx_n_s_l_e,0};
     PyObject* values[6] = {0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -6282,7 +6282,7 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_radius)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("get_magnetization_iterative_normalized", 1, 6, 6, 2); __PYX_ERR(0, 151, __pyx_L3_error)
         }
@@ -6320,7 +6320,7 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
     }
     __pyx_v_Hext = __Pyx_PyObject_to_MemoryviewSlice_ds_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_Hext.memview)) __PYX_ERR(0, 151, __pyx_L3_error)
     __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 151, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
+    __pyx_v_particle_radius = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_radius == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
     __pyx_v_chi = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_chi == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
     __pyx_v_Ms = __pyx_PyFloat_AsDouble(values[4]); if (unlikely((__pyx_v_Ms == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
     __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[5]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L3_error)
@@ -6333,14 +6333,14 @@ static PyObject *__pyx_pw_9magnetism_7get_magnetization_iterative_normalized(PyO
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_6get_magnetization_iterative_normalized(__pyx_self, __pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e);
+  __pyx_r = __pyx_pf_9magnetism_6get_magnetization_iterative_normalized(__pyx_self, __pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e) {
+static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_Hext, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_chi, double __pyx_v_Ms, double __pyx_v_l_e) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -6351,7 +6351,7 @@ static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYT
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_v_Hext.memview)) { __Pyx_RaiseUnboundLocalError("Hext"); __PYX_ERR(0, 151, __pyx_L1_error) }
   if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 151, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative_normalized(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_magnetization_iterative_normalized(__pyx_v_Hext, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_chi, __pyx_v_Ms, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6373,13 +6373,13 @@ static PyObject *__pyx_pf_9magnetism_6get_magnetization_iterative_normalized(CYT
 /* "magnetism.pyx":205
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):             # <<<<<<<<<<<<<<
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_radius):             # <<<<<<<<<<<<<<
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  */
 
 static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_N_particles;
   PyArrayObject *__pyx_v_forces = 0;
   int __pyx_v_i;
@@ -6434,7 +6434,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_pybuffernd_moments.rcbuffer = &__pyx_pybuffer_moments;
 
   /* "magnetism.pyx":207
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_radius):
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
@@ -6500,7 +6500,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   /* "magnetism.pyx":211
  *     cdef int i
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
@@ -6515,7 +6515,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_radius, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
@@ -6527,7 +6527,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
 
   /* "magnetism.pyx":212
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -6581,7 +6581,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   __pyx_t_4 = 0;
 
   /* "magnetism.pyx":213
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -6832,7 +6832,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
+ *             wca_force = get_particle_wca_force(r_i,r_j,particle_radius)
  */
       __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
@@ -6842,7 +6842,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)             # <<<<<<<<<<<<<<
- *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
+ *             wca_force = get_particle_wca_force(r_i,r_j,particle_radius)
  *             forces[i,0] += force[0]
  */
       __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
@@ -6918,7 +6918,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       /* "magnetism.pyx":230
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)             # <<<<<<<<<<<<<<
+ *             wca_force = get_particle_wca_force(r_i,r_j,particle_radius)             # <<<<<<<<<<<<<<
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  */
@@ -6944,7 +6944,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force(__pyx_t_24, __pyx_t_23, __pyx_v_particle_radius)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 230, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
@@ -6958,7 +6958,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
 
       /* "magnetism.pyx":231
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
+ *             wca_force = get_particle_wca_force(r_i,r_j,particle_radius)
  *             forces[i,0] += force[0]             # <<<<<<<<<<<<<<
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]
@@ -6968,7 +6968,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[0]);
 
       /* "magnetism.pyx":232
- *             wca_force = get_particle_wca_force(r_i,r_j,particle_size)
+ *             wca_force = get_particle_wca_force(r_i,r_j,particle_radius)
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]             # <<<<<<<<<<<<<<
  *             forces[i,2] += force[2]
@@ -7105,7 +7105,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces(__Pyx_memviewslice _
   /* "magnetism.pyx":205
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_size):             # <<<<<<<<<<<<<<
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces(double[:,::1] M, double[:,::1] particle_posns, double particle_radius):             # <<<<<<<<<<<<<<
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  */
@@ -7149,7 +7149,7 @@ static char __pyx_doc_9magnetism_8get_dip_dip_forces[] = "Get the dipole-dipole 
 static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_M = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_particle_size;
+  double __pyx_v_particle_radius;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -7157,7 +7157,7 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_dip_dip_forces (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_M,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_size,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_M,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_radius,0};
     PyObject* values[3] = {0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -7185,7 +7185,7 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_radius)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces", 1, 3, 3, 2); __PYX_ERR(0, 205, __pyx_L3_error)
         }
@@ -7202,7 +7202,7 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
     }
     __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 205, __pyx_L3_error)
     __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 205, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 205, __pyx_L3_error)
+    __pyx_v_particle_radius = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_radius == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 205, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
@@ -7212,14 +7212,14 @@ static PyObject *__pyx_pw_9magnetism_9get_dip_dip_forces(PyObject *__pyx_self, P
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_8get_dip_dip_forces(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size);
+  __pyx_r = __pyx_pf_9magnetism_8get_dip_dip_forces(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size) {
+static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -7230,7 +7230,7 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 205, __pyx_L1_error) }
   if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 205, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7252,13 +7252,13 @@ static PyObject *__pyx_pf_9magnetism_8get_dip_dip_forces(CYTHON_UNUSED PyObject 
 /* "magnetism.pyx":247
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_radius, double l_e):             # <<<<<<<<<<<<<<
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  */
 
 static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
+static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_N_particles;
   PyArrayObject *__pyx_v_forces = 0;
   int __pyx_v_i;
@@ -7313,7 +7313,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_pybuffernd_moments.rcbuffer = &__pyx_pybuffer_moments;
 
   /* "magnetism.pyx":249
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_radius, double l_e):
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float64)
@@ -7379,7 +7379,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   /* "magnetism.pyx":253
  *     cdef int i
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)             # <<<<<<<<<<<<<<
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  */
@@ -7394,7 +7394,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_size, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(pow(__pyx_v_particle_radius, 3.0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
@@ -7406,7 +7406,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
 
   /* "magnetism.pyx":254
  *     cdef int j
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -7460,7 +7460,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   __pyx_t_4 = 0;
 
   /* "magnetism.pyx":255
- *     cdef double particle_V = (4/3)*np.pi*pow(particle_size,3)
+ *     cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
  *     cdef np.ndarray[np.float64_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float64)
  *     cdef double[3] r_i = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef double[3] r_j = np.empty((3,),dtype=np.float64)
@@ -7711,7 +7711,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]             # <<<<<<<<<<<<<<
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+ *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)
  */
       __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
@@ -7721,7 +7721,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
  *             r_j[1] = particle_posns[j,1]
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)             # <<<<<<<<<<<<<<
- *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+ *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)
  *             forces[i,0] += force[0]
  */
       __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
@@ -7797,7 +7797,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       /* "magnetism.pyx":272
  *             r_j[2] = particle_posns[j,2]
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)             # <<<<<<<<<<<<<<
+ *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)             # <<<<<<<<<<<<<<
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]
  */
@@ -7823,7 +7823,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_23 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_22), PyBUF_WRITABLE); if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_DECREF(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized(__pyx_t_24, __pyx_t_23, __pyx_v_particle_size, __pyx_v_l_e)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized(__pyx_t_24, __pyx_t_23, __pyx_v_particle_radius, __pyx_v_l_e)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&__pyx_t_24, 1);
       __pyx_t_24.memview = NULL;
@@ -7837,7 +7837,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
 
       /* "magnetism.pyx":273
  *             force = get_dip_dip_force(moments[i,:],moments[j,:],r_i,r_j)
- *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+ *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)
  *             forces[i,0] += force[0]             # <<<<<<<<<<<<<<
  *             forces[i,1] += force[1]
  *             forces[i,2] += force[2]
@@ -7847,7 +7847,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[0]);
 
       /* "magnetism.pyx":274
- *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_size,l_e)
+ *             wca_force = get_particle_wca_force_normalized(r_i,r_j,particle_radius,l_e)
  *             forces[i,0] += force[0]
  *             forces[i,1] += force[1]             # <<<<<<<<<<<<<<
  *             forces[i,2] += force[2]
@@ -7984,7 +7984,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized(__Pyx_mem
   /* "magnetism.pyx":247
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_size, double l_e):             # <<<<<<<<<<<<<<
+ * cpdef np.ndarray[np.float64_t, ndim=2] get_dip_dip_forces_normalized(double[:,::1] M, double[:,::1] particle_posns, double particle_radius, double l_e):             # <<<<<<<<<<<<<<
  *     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
  *     cdef int N_particles = particle_posns.shape[0]
  */
@@ -8028,7 +8028,7 @@ static char __pyx_doc_9magnetism_10get_dip_dip_forces_normalized[] = "Get the di
 static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   __Pyx_memviewslice __pyx_v_M = { 0, 0, { 0 }, { 0 }, { 0 } };
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
-  double __pyx_v_particle_size;
+  double __pyx_v_particle_radius;
   double __pyx_v_l_e;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -8037,7 +8037,7 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("get_dip_dip_forces_normalized (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_M,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_size,&__pyx_n_s_l_e,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_M,&__pyx_n_s_particle_posns,&__pyx_n_s_particle_radius,&__pyx_n_s_l_e,0};
     PyObject* values[4] = {0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -8067,7 +8067,7 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_size)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_particle_radius)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("get_dip_dip_forces_normalized", 1, 4, 4, 2); __PYX_ERR(0, 247, __pyx_L3_error)
         }
@@ -8091,7 +8091,7 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
     }
     __pyx_v_M = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[0], PyBUF_WRITABLE); if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 247, __pyx_L3_error)
     __pyx_v_particle_posns = __Pyx_PyObject_to_MemoryviewSlice_d_dc_double(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 247, __pyx_L3_error)
-    __pyx_v_particle_size = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_size == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
+    __pyx_v_particle_radius = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_particle_radius == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
     __pyx_v_l_e = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_l_e == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 247, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
@@ -8102,14 +8102,14 @@ static PyObject *__pyx_pw_9magnetism_11get_dip_dip_forces_normalized(PyObject *_
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_10get_dip_dip_forces_normalized(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e);
+  __pyx_r = __pyx_pf_9magnetism_10get_dip_dip_forces_normalized(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_size, double __pyx_v_l_e) {
+static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, double __pyx_v_particle_radius, double __pyx_v_l_e) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -8120,7 +8120,7 @@ static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUS
   __Pyx_XDECREF(__pyx_r);
   if (unlikely(!__pyx_v_M.memview)) { __Pyx_RaiseUnboundLocalError("M"); __PYX_ERR(0, 247, __pyx_L1_error) }
   if (unlikely(!__pyx_v_particle_posns.memview)) { __Pyx_RaiseUnboundLocalError("particle_posns"); __PYX_ERR(0, 247, __pyx_L1_error) }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_size, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8142,12 +8142,12 @@ static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUS
 /* "magnetism.pyx":290
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
+ * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_radius):             # <<<<<<<<<<<<<<
  *     cdef double wca_mag
- *     cdef double sigma = 1#2*particle_size/(3e-6)
+ *     cdef double sigma = 1#2*particle_radius/(3e-6)
  */
 
-static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, CYTHON_UNUSED double __pyx_v_particle_size) {
+static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, CYTHON_UNUSED double __pyx_v_particle_radius) {
   double __pyx_v_wca_mag;
   double __pyx_v_sigma;
   double __pyx_v_cutoff_length;
@@ -8183,9 +8183,9 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   __pyx_pybuffernd_force.rcbuffer = &__pyx_pybuffer_force;
 
   /* "magnetism.pyx":292
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):
+ * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_radius):
  *     cdef double wca_mag
- *     cdef double sigma = 1#2*particle_size/(3e-6)             # <<<<<<<<<<<<<<
+ *     cdef double sigma = 1#2*particle_radius/(3e-6)             # <<<<<<<<<<<<<<
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     cdef double[3] rij
  */
@@ -8193,7 +8193,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
 
   /* "magnetism.pyx":293
  *     cdef double wca_mag
- *     cdef double sigma = 1#2*particle_size/(3e-6)
+ *     cdef double sigma = 1#2*particle_radius/(3e-6)
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
  *     cdef double[3] rij
  *     cdef int i
@@ -8387,9 +8387,9 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
   /* "magnetism.pyx":290
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_size):             # <<<<<<<<<<<<<<
+ * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, double[:] r_j, double particle_radius):             # <<<<<<<<<<<<<<
  *     cdef double wca_mag
- *     cdef double sigma = 1#2*particle_size/(3e-6)
+ *     cdef double sigma = 1#2*particle_radius/(3e-6)
  */
 
   /* function exit code */
@@ -8423,12 +8423,12 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force(__Pyx_memviewsli
 /* "magnetism.pyx":309
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
+ * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_radius,double l_e):             # <<<<<<<<<<<<<<
+ *     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
  */
 
-static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, double __pyx_v_particle_size, double __pyx_v_l_e) {
+static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, double __pyx_v_particle_radius, double __pyx_v_l_e) {
   double __pyx_v_wca_mag;
   double __pyx_v_sigma;
   double __pyx_v_cutoff_length;
@@ -8463,30 +8463,30 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_pybuffernd_force.data = NULL;
   __pyx_pybuffernd_force.rcbuffer = &__pyx_pybuffer_force;
 
-  /* "magnetism.pyx":311
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):
+  /* "magnetism.pyx":312
+ *     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e             # <<<<<<<<<<<<<<
+ *     cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted             # <<<<<<<<<<<<<<
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     cdef double[3] rij
  */
-  __pyx_t_1 = (2.0 * __pyx_v_particle_size);
+  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) * 1.1);
   if (unlikely(__pyx_v_l_e == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 311, __pyx_L1_error)
+    __PYX_ERR(0, 312, __pyx_L1_error)
   }
   __pyx_v_sigma = (__pyx_t_1 / __pyx_v_l_e);
 
-  /* "magnetism.pyx":312
+  /* "magnetism.pyx":313
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
+ *     cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
  *     cdef double[3] rij
  *     cdef int i
  */
   __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
 
-  /* "magnetism.pyx":315
+  /* "magnetism.pyx":316
  *     cdef double[3] rij
  *     cdef int i
  *     for i in range(3):             # <<<<<<<<<<<<<<
@@ -8496,7 +8496,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
     __pyx_v_i = __pyx_t_2;
 
-    /* "magnetism.pyx":316
+    /* "magnetism.pyx":317
  *     cdef int i
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]             # <<<<<<<<<<<<<<
@@ -8508,34 +8508,34 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
     (__pyx_v_rij[__pyx_v_i]) = ((*((double *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_3 * __pyx_v_r_i.strides[0]) ))) - (*((double *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_4 * __pyx_v_r_j.strides[0]) ))));
   }
 
-  /* "magnetism.pyx":317
+  /* "magnetism.pyx":318
  *     for i in range(3):
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  */
-  __pyx_t_7 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_7 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_5 = __pyx_array_new(__pyx_t_6, sizeof(double), PyBytes_AS_STRING(__pyx_t_7), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 317, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_6 = __pyx_format_from_typeinfo(&__Pyx_TypeInfo_double); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_t_5 = __pyx_array_new(__pyx_t_7, sizeof(double), PyBytes_AS_STRING(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 317, __pyx_L1_error)
+  if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 317, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_to_MemoryviewSlice_ds_double(((PyObject *)__pyx_t_5), PyBUF_WRITABLE); if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 318, __pyx_L1_error)
   __Pyx_DECREF(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
   __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod(__pyx_t_8, __pyx_t_9));
   __PYX_XDEC_MEMVIEW(&__pyx_t_8, 1);
@@ -8545,38 +8545,38 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_t_9.memview = NULL;
   __pyx_t_9.data = NULL;
 
-  /* "magnetism.pyx":318
+  /* "magnetism.pyx":319
  *         rij[i] = r_i[i] - r_j[i]
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_np); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_empty); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_np); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_float64); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_float64); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) < 0) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) < 0) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 318, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_tuple__2, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 319, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 318, __pyx_L1_error)
+  if (!(likely(((__pyx_t_11) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 319, __pyx_L1_error)
   __pyx_t_12 = ((PyArrayObject *)__pyx_t_11);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_force.rcbuffer->pybuffer, (PyObject*)__pyx_t_12, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_force.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 318, __pyx_L1_error)
+      __PYX_ERR(0, 319, __pyx_L1_error)
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -8584,26 +8584,26 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_v_force = ((PyArrayObject *)__pyx_t_11);
   __pyx_t_11 = 0;
 
-  /* "magnetism.pyx":319
+  /* "magnetism.pyx":320
  *     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72             # <<<<<<<<<<<<<<
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_n_s_np); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 320, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_pi); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 320, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 320, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 319, __pyx_L1_error)
+  __pyx_t_6 = PyFloat_FromDouble((((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 320, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_v_eps_constant = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "magnetism.pyx":320
+  /* "magnetism.pyx":321
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
@@ -8613,17 +8613,17 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   __pyx_t_13 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 
-    /* "magnetism.pyx":321
+    /* "magnetism.pyx":322
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)             # <<<<<<<<<<<<<<
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  */
-    __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 321, __pyx_L1_error)
+    __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_eps_constant); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 322, __pyx_L1_error)
     __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force(__pyx_t_1, __pyx_v_rij_mag, __pyx_v_sigma);
 
-    /* "magnetism.pyx":322
+    /* "magnetism.pyx":323
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):             # <<<<<<<<<<<<<<
@@ -8633,7 +8633,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
     for (__pyx_t_2 = 0; __pyx_t_2 < 3; __pyx_t_2+=1) {
       __pyx_v_i = __pyx_t_2;
 
-      /* "magnetism.pyx":323
+      /* "magnetism.pyx":324
  *         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
@@ -8643,13 +8643,13 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
       __pyx_t_1 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        __PYX_ERR(0, 323, __pyx_L1_error)
+        __PYX_ERR(0, 324, __pyx_L1_error)
       }
       __pyx_t_4 = __pyx_v_i;
       *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_force.rcbuffer->pybuffer.buf, __pyx_t_4, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_1 / __pyx_v_rij_mag);
     }
 
-    /* "magnetism.pyx":320
+    /* "magnetism.pyx":321
  *     cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
  *     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
  *     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another             # <<<<<<<<<<<<<<
@@ -8658,7 +8658,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
  */
   }
 
-  /* "magnetism.pyx":324
+  /* "magnetism.pyx":325
  *         for i in range(3):
  *             force[i] += wca_mag * rij[i] / rij_mag
  *     return force             # <<<<<<<<<<<<<<
@@ -8673,9 +8673,9 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   /* "magnetism.pyx":309
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
- * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_size,double l_e):             # <<<<<<<<<<<<<<
+ * cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:] r_i, double[:] r_j, double particle_radius,double l_e):             # <<<<<<<<<<<<<<
+ *     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_size/l_e
  */
 
   /* function exit code */
@@ -8706,7 +8706,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   return __pyx_r;
 }
 
-/* "magnetism.pyx":328
+/* "magnetism.pyx":329
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
@@ -8724,7 +8724,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "magnetism.pyx":329
+  /* "magnetism.pyx":330
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:
  *     cdef double sigma_over_separation = sigma/r             # <<<<<<<<<<<<<<
@@ -8739,11 +8739,11 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 329, __pyx_L1_error)
+    __PYX_ERR(0, 330, __pyx_L1_error)
   }
   __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
 
-  /* "magnetism.pyx":331
+  /* "magnetism.pyx":332
  *     cdef double sigma_over_separation = sigma/r
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)             # <<<<<<<<<<<<<<
@@ -8758,7 +8758,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 331, __pyx_L1_error)
+    __PYX_ERR(0, 332, __pyx_L1_error)
   }
   __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -8769,11 +8769,11 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
     #ifdef WITH_THREAD
     __Pyx_PyGILState_Release(__pyx_gilstate_save);
     #endif
-    __PYX_ERR(0, 331, __pyx_L1_error)
+    __PYX_ERR(0, 332, __pyx_L1_error)
   }
   __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / __pyx_v_sigma) - (__pyx_t_2 / __pyx_v_sigma)));
 
-  /* "magnetism.pyx":332
+  /* "magnetism.pyx":333
  *     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
  *     cdef double force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
  *     return force_mag             # <<<<<<<<<<<<<<
@@ -8781,7 +8781,7 @@ static double __pyx_f_9magnetism_get_wca_force(double __pyx_v_eps_constant, doub
   __pyx_r = __pyx_v_force_mag;
   goto __pyx_L0;
 
-  /* "magnetism.pyx":328
+  /* "magnetism.pyx":329
  * @cython.boundscheck(False)
  * @cython.wraparound(False)
  * cdef double get_wca_force(double eps_constant, double r, double sigma) nogil:             # <<<<<<<<<<<<<<
@@ -24397,7 +24397,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_obj, __pyx_k_obj, sizeof(__pyx_k_obj), 0, 0, 1, 1},
   {&__pyx_n_s_pack, __pyx_k_pack, sizeof(__pyx_k_pack), 0, 0, 1, 1},
   {&__pyx_n_s_particle_posns, __pyx_k_particle_posns, sizeof(__pyx_k_particle_posns), 0, 0, 1, 1},
-  {&__pyx_n_s_particle_size, __pyx_k_particle_size, sizeof(__pyx_k_particle_size), 0, 0, 1, 1},
+  {&__pyx_n_s_particle_radius, __pyx_k_particle_radius, sizeof(__pyx_k_particle_radius), 0, 0, 1, 1},
   {&__pyx_n_s_pi, __pyx_k_pi, sizeof(__pyx_k_pi), 0, 0, 1, 1},
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
