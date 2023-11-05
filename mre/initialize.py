@@ -567,9 +567,9 @@ def read_output_file(fn):
     f.close()
     return node_posns, applied_field, boundary_condition, sim_time
 
-def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir):
+def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir,tag=""):
     """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field, boundary conditions, and the number of which integration step furnished the solution vector."""
-    f = tb.open_file(f'{output_dir}checkpoint.h5','w')
+    f = tb.open_file(f'{output_dir}checkpoint'+tag+'.h5','w')
     f.create_array('/','solution',sol)
     f.create_array('/','applied_field',applied_field)
     f.create_array('/','count',count)

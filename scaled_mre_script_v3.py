@@ -56,7 +56,7 @@ mu0 = 4*np.pi*1e-7
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
-def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,criteria_flag=True):
+def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
@@ -71,6 +71,8 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
     v0 = np.zeros(x0.shape)
     y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    if plotting_flag:
+        mre.analyze.plot_center_cuts(initialized_posns,x0,springs,particles,boundary_conditions,output_dir,tag='starting_configuration')
     #TODO decide if you want to bother with doing a backtracking if the system diverges. there is a significant memory overhead associated with this approach.
     backstop_solution = y_0.copy()
     N_nodes = int(x0.shape[0])
@@ -84,6 +86,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     return_status = 1
     for i in range(max_integrations):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        print(f'starting integration run {i+1}')
         sol = r.integrate(t_f)
         a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
@@ -98,13 +101,23 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
                 max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
         final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
         final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
-        v_norm_avg = np.sum(np.linalg.norm(final_v,axis=1))/N_nodes
+        v_norms = np.linalg.norm(final_v,axis=1)
+        v_norm_avg = np.sum(v_norms)/N_nodes
         #below is a 2D scatter plot of center cuts with the markers colored to give depth information
         # mre.analyze.center_cut_visualization(initialized_posns,final_posns,springs,particles,output_dir,tag=f'{i}th_configuration')
         #below is the original 3D scatter plot of center cuts which colored polymer nodes and springs differently than particle nodes and springs
         # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
         #below is an attempt to change the original 3D scatter plot approach to a 2D approach, with no color information to provide sense of depth
-        mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
+        if i == 0:
+            tag = '1st_configuration'
+        elif i == 1:
+            tag = '2nd_configuration'
+        elif i == 2:
+            tag = '3rd_configuration'
+        else:
+            tag = f'{i+1}th_configuration'
+        if plotting_flag:
+            mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag)
         if a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
@@ -113,7 +126,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             return_status = 0
             break
         elif max_accel_norm_avg > 1e3:
-            print(f'strong accelerations detected during integration run {i}')
+            print(f'strong accelerations detected during integration run {i+1}')
             my_nsteps = int(my_nsteps/2)
             if my_nsteps < 10:
                 print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
@@ -130,6 +143,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
             drag *= 10
             y_0 = backstop_solution.copy()
         else:
+            print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
             y_0 = sol.copy()
             last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
@@ -146,32 +160,35 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         if criteria_flag:
             solutions = []
             r.set_solout(solout)
+        if persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
     if criteria_flag:
         mre.initialize.write_criteria_file(criteria,output_dir)
         criteria.plot_criteria_subplot(output_dir)
         criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
-    plot_residual_acceleration_hist(a_norms,output_dir)
+    plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
+    plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
-def plot_residual_acceleration_hist(a_norms,output_dir):
+def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
     max_accel = np.max(a_norms)
     mean_accel = np.mean(a_norms)
     rms_accel = np.sqrt(np.sum(np.power(a_norms,2))/np.shape(a_norms)[0])
-    counts, bins = np.histogram(a_norms, bins=20)
+    counts, bins = np.histogram(a_norms, bins=30)
     fig,ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     ax.hist(bins[:-1], bins, weights=counts)
     sigma = np.std(a_norms)
     mu = mean_accel
-    ax.set_title(f'Residual Acceleration Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
-    ax.set_xlabel('acceleration norm')
+    ax.set_title(f'Residual '+tag+f' Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
+    ax.set_xlabel(tag + ' norm')
     ax.set_ylabel('counts')
-    savename = output_dir +'node_residual_acceleration_hist.png'
+    savename = output_dir +'node_residual_'+tag+'_hist.png'
     plt.savefig(savename)
     plt.close()
 
@@ -1125,6 +1142,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         if not (os.path.isdir(current_output_dir)):
             os.mkdir(current_output_dir)
         try:
+            print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
             start = time.time()
             sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag)
         except Exception as inst:
@@ -1349,8 +1367,8 @@ def main2():
     start = time.time()
     E = 9e3
     nu = 0.499
-    max_integrations = 5
-    max_integration_steps = 4000
+    max_integrations = 20
+    max_integration_steps = 1000
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
@@ -1406,24 +1424,30 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_hysteresis_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
+    #determine if doing hysteresis loop (up and down legs) or not and choose the maximum field, number of field steps, and field angle
+    hysteresis_loop_flag = False
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.25/mu0
-    n_field_steps = 6
+    H_mag = 0.15/mu0
+    n_field_steps = 4
     if n_field_steps != 1:
         H_step = H_mag/(n_field_steps-1)
     else:
         H_step = H_mag/(n_field_steps)
-    Hext_angle = (2*np.pi/360)*0#30
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Hext_phi_angle = (2*np.pi/360)*0#30
     Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
-    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    if hysteresis_loop_flag:
+        Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
-    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
-    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
 
     x0 = normalized_posns.copy()
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
@@ -1452,7 +1476,8 @@ def main2():
     end = time.time()
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
-    criteria_flag = False
+    print(f'Running simulation with dimensions: Lx = {Lx}, Ly = {Ly}, Lz = {Lz}\ndiscretization order = {discretization_order}, l_e = {l_e}')
+    criteria_flag = True
     simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 

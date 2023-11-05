@@ -4360,8 +4360,8 @@ static PyObject *__pyx_pf_9magnetism_10get_dip_dip_forces_normalized(CYTHON_UNUS
 }
 </pre><pre class="cython line score-0">&#xA0;<span class="">310</span>:     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""</pre>
 <pre class="cython line score-0">&#xA0;<span class="">311</span>:     cdef double wca_mag</pre>
-<pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">312</span>:     cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted</pre>
-<pre class='cython code score-5 '>  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) * 1.1);
+<pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">312</span>:     cdef double sigma = (2*particle_radius+1e-6)/l_e#want there to be some volume/space between the particles even if they are strongly attracted</pre>
+<pre class='cython code score-5 '>  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) + 1e-6);
   if (unlikely(__pyx_v_l_e == 0)) {
     <span class='py_c_api'>PyErr_SetString</span>(PyExc_ZeroDivisionError, "float division");
     <span class='error_goto'>__PYX_ERR(0, 312, __pyx_L1_error)</span>

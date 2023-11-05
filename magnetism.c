@@ -8466,11 +8466,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
   /* "magnetism.pyx":312
  *     """Get a repuslive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted             # <<<<<<<<<<<<<<
+ *     cdef double sigma = (2*particle_radius+1e-6)/l_e#want there to be some volume/space between the particles even if they are strongly attracted             # <<<<<<<<<<<<<<
  *     cdef double cutoff_length = pow(2,(1/6))*sigma
  *     cdef double[3] rij
  */
-  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) * 1.1);
+  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) + 1e-6);
   if (unlikely(__pyx_v_l_e == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
     __PYX_ERR(0, 312, __pyx_L1_error)
@@ -8479,7 +8479,7 @@ static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized(__Pyx
 
   /* "magnetism.pyx":313
  *     cdef double wca_mag
- *     cdef double sigma = 2*particle_radius*1.1/l_e#want there to be some volume/space between the particles even if they are strongly attracted
+ *     cdef double sigma = (2*particle_radius+1e-6)/l_e#want there to be some volume/space between the particles even if they are strongly attracted
  *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
  *     cdef double[3] rij
  *     cdef int i
