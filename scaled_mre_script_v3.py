@@ -88,7 +88,7 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         print(f'starting integration run {i+1}')
         sol = r.integrate(t_f)
-        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_var = simulate.get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         max_accel_norm_avg = 0
@@ -230,8 +230,8 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
     for i in range(max_iters):
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         sol = r.integrate(t_f)
-        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-        a_var_alt = get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
+        a_var = simulate.get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_var_alt = simulate.get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         if i == 0:
@@ -290,7 +290,7 @@ class SimCriteria:
         self.back = np.zeros((iterations,))
         particles = args[2]
         for count, row in enumerate(solutions):
-            a_var = get_accel_scaled(np.array(row[1:]),*args)
+            a_var = simulate.get_accel_scaled(np.array(row[1:]),*args)
             a_norms = np.linalg.norm(a_var,axis=1)
             self.a_norm_max[count] = np.max(a_norms)
             # if self.a_norm_max[count] > 10000:
@@ -573,17 +573,17 @@ def plot_criteria_v_iteration_scaled(solutions,N_nodes,integration_iteration,*ar
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     for count, row in enumerate(solutions):
-        a_var = get_accel_scaled(np.array(row[1:]),*args)
+        a_var = simulate.get_accel_scaled(np.array(row[1:]),*args)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_max[count] = np.max(a_norms)
         max_accel_node_ids = np.argmax(a_norms)
-        check = max_accel_node_ids in args[2]
+        # check = max_accel_node_ids in args[2]
         a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
         a_particles = a_var[args[2][0],:]
         a_particle_norm[count] = np.linalg.norm(a_particles[0,:])
         final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
-        x1 = get_particle_center(args[2][0],final_posns)
-        x2 = get_particle_center(args[2][1],final_posns)
+        x1 = simulate.get_particle_center(args[2][0],final_posns)
+        x2 = simulate.get_particle_center(args[2][1],final_posns)
         particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
         # if count > 0:
         #     delta_a_particle = a_particle_norm[count] - a_particle_norm[count-1]
@@ -657,14 +657,6 @@ def plot_criteria_v_iteration_scaled(solutions,N_nodes,integration_iteration,*ar
     plt.savefig(savename)
     plt.show()
     plt.close('all')
-
-# placeholder functions for doing purpose, signature, stub when doing planning/design and wishlisting
-def do_stuff():
-    return 0
-
-def do_other_stuff():
-    return 0
-
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
 #function to pass to scipy.integrate.solve_ivp()
@@ -674,242 +666,13 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
-    accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    accel = simulate.get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     N_nodes = int(np.round(N/3))
     accel = np.reshape(accel,(3*N_nodes,))
     v0 = y[N:]
     result = np.concatenate((v0,accel))
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
-
-def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
-    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
-    #scipy.ode integrator requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
-    N = int(np.round(y.shape[0]/2))
-    N_nodes = int(np.round(N/3))
-    x0 = np.reshape(y[:N],(N_nodes,3))
-    v0 = np.reshape(y[N:],(N_nodes,3))
-    # drag = 20
-    bc_forces = np.zeros(x0.shape,dtype=float)
-    if bc[0] == 'stress':
-        for surface in bc[1]:
-            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
-            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
-            if surface == 'left' or surface == 'right':
-                surface_area = dimensions[0]*dimensions[2]
-            elif surface == 'top' or surface == 'bottom':
-                surface_area = dimensions[0]*dimensions[1]
-            else:
-                surface_area = dimensions[1]*dimensions[2]
-            # assuming tension force only, no compression
-            if surface == 'right':
-                force_direction = np.array([1,0,0])
-            elif surface == 'left':
-                force_direction = np.array([-1,0,0])
-            elif surface == 'top':
-                force_direction = np.array([0,0,1])
-            elif surface == 'bottom':
-                force_direction = np.array([0,0,-1])
-            elif surface == 'front':
-                force_direction = np.array([0,1,0])
-            elif surface == 'back':
-                force_direction = np.array([0,-1,0])
-            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
-            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
-    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
-        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
-        if bc[1][0] == 'x':
-            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
-        elif bc[1][0] == 'y':
-            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
-        elif bc[1][0] == 'z':
-            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
-    else:
-        fixed_nodes = np.array([0])
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized(x0,elements,kappa,correction_force_el,vectors,avg_vectors, volume_correction_force)
-    spring_force = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
-    volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
-    spring_force *= l_e*beta_i[:,np.newaxis]
-    accel = spring_force + volume_correction_force - drag * v0 + bc_forces
-    accel = set_fixed_nodes(accel,fixed_nodes)
-    if particles.shape[0] != 0:
-        #for each particle, find the position of the center
-        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-        for i, particle in enumerate(particles):
-            particle_centers[i,:] = get_particle_center(particle,x0)
-        M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-        mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
-        mag_forces *= beta/(particle_mass*(l_e**4))
-        for i, particle in enumerate(particles):
-            accel[particle] += mag_forces[i]
-        #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
-        for particle in particles:
-            vecsum = np.sum(accel[particle],axis=0)
-            accel[particle] = vecsum/particle.shape[0]
-    if debug_flag:
-        inspect_vcf = volume_correction_force[particles[0],:]
-        inspect_springWCA = spring_force[particles[0],:]
-        inspect_particle = accel[particles[0],:]
-    return accel
-
-def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,debug_flag=False):
-    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
-    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
-    N = int(np.round(y.shape[0]/2))
-    N_nodes = int(np.round(N/3))
-    x0 = np.reshape(y[:N],(N_nodes,3))
-    v0 = np.reshape(y[N:],(N_nodes,3))
-    drag = 20
-    bc_forces = np.zeros(x0.shape,dtype=float)
-    if bc[0] == 'stress':
-        for surface in bc[1]:
-            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
-            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
-            if surface == 'left' or surface == 'right':
-                surface_area = dimensions[0]*dimensions[2]
-            elif surface == 'top' or surface == 'bottom':
-                surface_area = dimensions[0]*dimensions[1]
-            else:
-                surface_area = dimensions[1]*dimensions[2]
-            # assuming tension force only, no compression
-            if surface == 'right':
-                force_direction = np.array([1,0,0])
-            elif surface == 'left':
-                force_direction = np.array([-1,0,0])
-            elif surface == 'top':
-                force_direction = np.array([0,0,1])
-            elif surface == 'bottom':
-                force_direction = np.array([0,0,-1])
-            elif surface == 'front':
-                force_direction = np.array([0,1,0])
-            elif surface == 'back':
-                force_direction = np.array([0,-1,0])
-            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
-            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
-    elif bc[0] == 'strain':
-        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
-        fixed_nodes = np.concatenate((boundaries[bc[1][0]],boundaries[bc[1][1]]))
-        for surface in bc[1]:
-            do_stuff()
-    else:
-        fixed_nodes = np.array([0])
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized(x0,elements,kappa,correction_force_el,vectors,avg_vectors, volume_correction_force)
-    spring_force = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
-
-    volume_correction_force_alt = np.zeros((N_nodes,3),dtype=np.float64)
-    get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized(x0,elements,scaled_kappa,correction_force_el,vectors,avg_vectors, volume_correction_force_alt)
-    spring_force_alt = np.empty(x0.shape,dtype=np.float64)
-    get_spring_force_cy.get_spring_forces_WCA(x0, scaled_springs_var, spring_force_alt)
-
-    volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
-    spring_force *= l_e*beta_i[:,np.newaxis]
-
-    volume_correction_force_alt *= m_ratio[:,np.newaxis]
-    spring_force_alt *= m_ratio[:,np.newaxis]
-
-    vcf_correctness = np.allclose(volume_correction_force,volume_correction_force_alt)
-    springs_correctness = np.allclose(spring_force,spring_force_alt)
-    print(f'Volume Correction Forces agreeing:{vcf_correctness}')
-    print(f'Spring Forces Agreeing:{springs_correctness}')
-
-    accel = spring_force + volume_correction_force - drag * v0 + bc_forces
-    accel = set_fixed_nodes(accel,fixed_nodes)
-    #for each particle, find the position of the center
-    particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-    for i, particle in enumerate(particles):
-        particle_centers[i,:] = get_particle_center(particle,x0)
-    M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-    mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
-    mag_forces_alt = mag_forces * scaled_magnetic_force_coefficient
-    mag_forces *= beta/(particle_mass*(l_e**4))
-
-    mag_correctness = np.allclose(mag_forces,mag_forces_alt)
-    print(f'magnetic forces agreeing:{mag_correctness}')
-
-    if not vcf_correctness or not springs_correctness or not mag_correctness:
-        indices_of_interest = np.nonzero(np.logical_not(np.isclose(spring_force,spring_force_alt)))
-        for i in range(len(indices_of_interest[0])):
-            index = indices_of_interest[0][i]
-            print(f'for index {index}')
-            for j in range(3):
-                print(f'original force:{spring_force[index,j]}')
-            for j in range(3):
-                print(f'alternative force:{spring_force_alt[index,j]}')
-        possible_springs_connection = np.nonzero(np.isclose(springs[:,0],indices_of_interest[0][0]))
-        possible_springs_connection2 = np.nonzero(np.isclose(springs[:,1],indices_of_interest[0][0]))
-        possible_springs_connection_alt = np.nonzero(np.isclose(scaled_springs_var[:,0],indices_of_interest[0][0]))
-        possible_springs_connection_alt2 = np.nonzero(np.isclose(scaled_springs_var[:,1],indices_of_interest[0][0]))
-        posn1 = x0[indices_of_interest[0][0]]
-        posn2 = x0[indices_of_interest[0][3]]
-        inspecting_springs = springs[possible_springs_connection,:]
-        inspecting_springs2 = springs[possible_springs_connection2,:]
-        inspecting_springs_alt = scaled_springs_var[possible_springs_connection_alt,:]
-        inspecting_springs_alt2 = scaled_springs_var[possible_springs_connection_alt2,:]
-        original_vector_sum = np.zeros((3,))
-        original_force_vecsum = np.zeros((3,))
-        alt_vector_sum = np.zeros((3,))
-        alt_force_vecsum = np.zeros((3,))
-        for count in range(inspecting_springs.shape[0]):
-            i = np.squeeze(inspecting_springs)[count]
-            posn1 = x0[int(i[0])]
-            posn2 = x0[int(i[1])]
-            force_magnitude = i[2]*(np.linalg.norm(posn1 - posn2) - i[3])
-            force_i = -1*force_magnitude*(posn1 - posn2)/np.linalg.norm(posn1 - posn2)
-            accel_i = force_i*l_e*beta_i[int(i[0])]
-            original_vector_sum += accel_i
-            original_force_vecsum += force_i
-            i_alt = np.squeeze(inspecting_springs_alt)[count]
-            force_magnitude_alt = i_alt[2]*(np.linalg.norm(posn1 - posn2) - i_alt[3])
-            force_i_alt = -1*force_magnitude_alt*(posn1 - posn2)/np.linalg.norm(posn1 - posn2)
-            accel_i_alt = force_i_alt*m_ratio[int(i[0])]
-            alt_vector_sum += accel_i_alt
-            alt_force_vecsum += force_i_alt
-            if not np.allclose(accel_i,accel_i_alt):
-                print(f'disagreement for spring force scaled accelerations')
-        for count in range(inspecting_springs2.shape[0]):
-            i = np.squeeze(inspecting_springs2)[count]
-            posn1 = x0[int(i[0])]
-            posn2 = x0[int(i[1])]
-            force_magnitude = i[2]*(np.linalg.norm(posn1 - posn2) - i[3])
-            force_i = -1*force_magnitude*(posn1 - posn2)/np.linalg.norm(posn1 - posn2)
-            accel_i = force_i*l_e*beta_i[int(i[1])]
-            original_vector_sum += -1*accel_i
-            original_force_vecsum += -1*force_i
-            i_alt = np.squeeze(inspecting_springs_alt2)[count]
-            force_magnitude_alt = i_alt[2]*(np.linalg.norm(posn1 - posn2) - i_alt[3])
-            force_i_alt = -1*force_magnitude_alt*(posn1 - posn2)/np.linalg.norm(posn1 - posn2)
-            accel_i_alt = force_i_alt*m_ratio[int(i[1])]
-            alt_vector_sum += -1*accel_i_alt
-            alt_force_vecsum += -1*force_i_alt
-            if not np.allclose(accel_i,accel_i_alt):
-                print(f'disagreement for spring force scaled accelerations')
-        if not np.allclose(original_vector_sum,alt_vector_sum):
-            print("vector sums of scaled accelerations due to spring forces don't agree")
-        if not np.allclose(original_force_vecsum*l_e*beta_i[int(i[1])],alt_force_vecsum*m_ratio[int(i[1])]):
-            print("vector sums of scaled accelerations due to spring forces don't agree when summing forces before finishing scaling")
-        pass
-
-    for i, particle in enumerate(particles):
-        accel[particle] += mag_forces[i]
-    #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
-    for particle in particles:
-        vecsum = np.sum(accel[particle],axis=0)
-        accel[particle] = vecsum/particle.shape[0]
-    if debug_flag:
-        inspect_vcf = volume_correction_force[particles[0],:]
-        inspect_springWCA = spring_force[particles[0],:]
-        inspect_particle = accel[particles[0],:]
-    return accel
 
 def get_particle_center(particle_nodes,node_posns):
     particle_node_posns = node_posns[particle_nodes,:]
@@ -921,13 +684,6 @@ def get_particle_center(particle_nodes,node_posns):
     z_min = np.min(particle_node_posns[:,2])
     particle_center = np.array([(x_max+x_min)/2,(y_max+y_min)/2,(z_max+z_min)/2],dtype=np.float64)
     return particle_center
-
-def set_fixed_nodes(accel,fixed_nodes):
-    for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
-        #TODO almost certainly faster to remove the inner loop and just set each value to 0 in order, or using python semantics, just set the row to zero?
-        for j in range(3):
-            accel[fixed_nodes[i],j] = 0
-    return accel
 
 def place_two_particles_normalized(radius,l_e,dimensions,separation):
     """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
@@ -958,7 +714,7 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True):
+def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
     """Run a simulation applying a series of a particular type of strain to the volume, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     eq_posns = x0.copy()
     total_delta = 0
@@ -1051,7 +807,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
             raise ValueError('Strain type not one of the following accepted types ("tension", "compression", "shearing", "torsion")')
         try:
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag,plotting_flag,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1129,7 +885,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
     # plt.show()
     return total_delta, return_status
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -1144,7 +900,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         try:
             print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
             start = time.time()
-            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag)
+            sol, return_status = simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,criteria_flag,plotting_flag,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1391,6 +1147,7 @@ def main2():
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
+    input('')
     N_el_x = N_nodes_x - 1
     N_el_y = N_nodes_y - 1
     N_el_z = N_nodes_z - 1
@@ -1477,8 +1234,8 @@ def main2():
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
     print(f'Running simulation with dimensions: Lx = {Lx}, Ly = {Ly}, Lz = {Lz}\ndiscretization order = {discretization_order}, l_e = {l_e}')
-    criteria_flag = True
-    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag)
+    # criteria_flag = False
+    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main3():
@@ -1513,7 +1270,7 @@ def main3():
     springs_var = springs_var[:num_springs,:]
     separation = 4
     particle_radius = 0.5*l_e# radius = l_e*(4.5)
-    particles = place_two_particles_normalized(radius,l_e,normalized_dimensions,separation)
+    particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
     kappa = mre.initialize.get_kappa(E, nu)
 
     script_name = lib_programname.get_path_executed_script()

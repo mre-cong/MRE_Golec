@@ -573,7 +573,7 @@ def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir
     f.create_array('/','solution',sol)
     f.create_array('/','applied_field',applied_field)
     f.create_array('/','count',count)
-    dt = np.dtype([('bc_type','S6'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    dt = np.dtype([('bc_type','S12'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
