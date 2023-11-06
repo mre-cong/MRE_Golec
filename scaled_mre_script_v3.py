@@ -42,13 +42,13 @@ from datetime import date
 import os
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
-import get_volume_correction_force_cy_nogil
-import get_spring_force_cy
+# import get_volume_correction_force_cy_nogil
+# import get_spring_force_cy
 import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
 import springs
-import magnetism
+# import magnetism
 import simulate
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
@@ -1124,7 +1124,7 @@ def main2():
     E = 9e3
     nu = 0.499
     max_integrations = 20
-    max_integration_steps = 1000
+    max_integration_steps = 2000
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
@@ -1143,11 +1143,10 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
-    drag = 10
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
-    input('')
+    print(f'Current node setup of ({N_nodes_x},{N_nodes_y},{N_nodes_z})')
     N_el_x = N_nodes_x - 1
     N_el_y = N_nodes_y - 1
     N_el_z = N_nodes_z - 1
@@ -1181,7 +1180,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -1197,7 +1196,7 @@ def main2():
     #polar angle, aka angle wrt the z axis, range 0 to pi
     Hext_theta_angle = np.pi/2
     Hext_phi_angle = (2*np.pi/360)*0#30
-    Hext_series_magnitude = np.arange(0,H_mag + 1,H_step)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     if hysteresis_loop_flag:
         Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
@@ -1224,6 +1223,10 @@ def main2():
     scaled_kappa = (l_e**2)*beta_new
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
+    #using simple harmonic oscillator to calculate a critical drag coefficient, though the actual value likely differs from this one (if i restrict my view to assume, in each cartesian direction, only two springs, resulting in an effective stiffness twice that of a single spring, then the drag coefficient would be \sqrt(2) larger. taking into account the impact of 8 center diagonal springs, and again considering motion in one cartesian direction, the length change is only due to one component (and so we have 8 springs, but the 45 degree angle between the cartesian axis and the axis of the springs reduces the contribution by 1/\sqrt(2))). we also have 8 face diagonal springs, ignoring the 4 that lie in the plane whose normal is parallel to the direction of the displacement of the node, and again a 45 degree angle)
+    drag = beta_new*2*np.sqrt(characteristic_mass*k_e)
+    alt_drag = beta_new*2*np.sqrt(characteristic_mass*(2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)))
+    #TODO functionalize the calculation of the scaled drag coefficient, and test different effective stiffness values. what sort of drag values come out before scaling by beta_new (which is really beta/characteristic_mass) and after (where we want the value to be close to unity)
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
