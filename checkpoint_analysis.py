@@ -9,9 +9,9 @@ import os
 import tables as tb#pytables, for HDF5 interface
 import mre.initialize
 import mre.analyze
-import mre.sphere_rasterization
 import get_volume_correction_force_cy_nogil
 import simulate
+import re
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -22,9 +22,11 @@ def main():
     drag = 10
     discretization_order = 3
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
+    sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
 
-    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
+    extend_from_checkpoint(sim_dir,max_integrations=20,max_integration_steps=2000)
+
+    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
 
     # print(f'{params.dtype}')
 
@@ -50,8 +52,6 @@ def main():
             Ms = params[0][i]
         if params.dtype.descr[i][0] == 'particle_chi':
             chi = params[0][i]
-        if params.dtype.descr[i][0] == 'young_modulus':
-            E = params[0][i]
         if params.dtype.descr[i][0] == 'drag':
             drag = params[0][i]
         if params.dtype.descr[i][0] == 'characteristic_time':
@@ -91,12 +91,78 @@ def main():
             # mre.analyze.plot_center_cuts(initial_node_posns,current_posns,springs_var,particles,boundary_conditions,subfolder+'/',tag)
 
 def continue_from_checkpoint(sim_dir,max_integrations,max_integration_steps):
-    """Continue from the most recent checkpoint, with the possibility to extend a simulation past the originally intended number of allowed integrations"""
-    read_in_simulation_parameters()
+    """Continue from the most recent checkpoint of some interrupted simulation, with the possibility to extend a simulation past the originally intended number of allowed integrations"""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor = read_in_simulation_parameters(sim_dir)
     determine_current_field_and_boundary_conditions()
     pickup_looping_from_current_point()
     simulate_scaled()
     print_relevant_information_on_status_and_on_completion()
+
+def extend_from_checkpoint(sim_dir,max_integrations,max_integration_steps):
+    """Extend a simulation from the most recent checkpoint of some simulation or simulation step (applied strain or field)"""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor = read_in_simulation_parameters(sim_dir)
+    checkpoint_number = np.empty((0,),dtype=np.int64)
+    with os.scandir(sim_dir) as dirIterator:
+        subfolders = [f.path for f in dirIterator if f.is_dir()]
+    for subfolder in subfolders:
+        with os.scandir(subfolder+'/') as dirIterator:
+            checkpoint_files = [f.path for f in dirIterator if f.is_file() and f.name.startswith('checkpoint')]
+        for checkpoint_file in checkpoint_files:
+            fn_w_type = checkpoint_file.split('/')[-1]
+            fn = fn_w_type.split('.')[0]
+            checkpoint_number = np.append(checkpoint_number,np.array([int(count) for count in re.findall(r'\d+',fn)]))
+        sort_indices = np.argsort(checkpoint_number)
+        checkpoint_file = checkpoint_files[sort_indices[-1]]
+        solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        print(boundary_conditions)
+    # determine_current_field_and_boundary_conditions()
+    # pickup_looping_from_current_point()
+    # simulate_scaled()
+    # print_relevant_information_on_status_and_on_completion()
+    
+def format_boundary_conditions(boundary_conditions):
+    boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
+    boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
+    return boundary_conditions
+
+def read_in_simulation_parameters(sim_dir):
+    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
+
+    for i in range(len(params[0])):
+        if params.dtype.descr[i][0] == 'num_elements':
+            num_elements = params[0][i]
+            num_nodes = num_elements + 1
+        if params.dtype.descr[i][0] == 'poisson_ratio':
+            nu = params[0][i]
+        if params.dtype.descr[i][0] == 'young_modulus':
+            E = params[0][i]
+        if params.dtype.descr[i][0] == 'kappa':
+            kappa = params[0][i]
+        if params.dtype.descr[i][0] == 'scaling_factor':
+            beta = params[0][i]
+        if params.dtype.descr[i][0] == 'element_length':
+            l_e = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_mass':
+            particle_mass = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_radius':
+            particle_radius = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_Ms':
+            Ms = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_chi':
+            chi = params[0][i]
+        if params.dtype.descr[i][0] == 'drag':
+            drag = params[0][i]
+        if params.dtype.descr[i][0] == 'characteristic_time':
+            characteristic_time = params[0][i]
+
+    dimensions = (l_e*np.max(initial_node_posns[:,0]),l_e*np.max(initial_node_posns[:,1]),l_e*np.max(initial_node_posns[:,2]))
+    beta_i = beta/node_mass
+    N_nodes = int(num_nodes[0]*num_nodes[1]*num_nodes[2])
+    k = mre.initialize.get_spring_constants(E, l_e)
+    k = np.array(k)
+
+    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor
 
 if __name__ == "__main__":
     main()

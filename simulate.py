@@ -4,10 +4,633 @@ Created on Tues October 3 10:20:19 2023
 @author: David Marchfield
 """
 import numpy as np
+import scipy.integrate as sci
 import matplotlib.pyplot as plt
+import os
 import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
 import magnetism
+import mre.initialize
+
+#given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
+#if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
+def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
+    """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
+    tolerance = 1e-4
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
+    tmp_var = output_dir.split('/')
+    if tmp_var[-1] == '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
+    elif tmp_var[-1] != '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
+    v0 = np.zeros(x0.shape)
+    y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    if plotting_flag:
+        mre.analyze.plot_center_cuts(initialized_posns,x0,springs,particles,boundary_conditions,output_dir,tag='starting_configuration')
+    #TODO decide if you want to bother with doing a backtracking if the system diverges. there is a significant memory overhead associated with this approach.
+    backstop_solution = y_0.copy()
+    N_nodes = int(x0.shape[0])
+    my_nsteps = max_integration_steps
+    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
+    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1)
+    if criteria_flag:
+        r.set_solout(solout)
+    max_displacement = np.zeros((max_integrations,))
+    mean_displacement = np.zeros((max_integrations,))
+    return_status = 1
+    for i in range(max_integrations):
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        print(f'starting integration run {i+1}')
+        sol = r.integrate(t_f)
+        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        max_accel_norm_avg = 0
+        if criteria_flag:
+            if i == 0:
+                criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(criteria.a_norm_avg)
+            else:
+                other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
+        final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
+        final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
+        v_norms = np.linalg.norm(final_v,axis=1)
+        v_norm_avg = np.sum(v_norms)/N_nodes
+        #below is a 2D scatter plot of center cuts with the markers colored to give depth information
+        # mre.analyze.center_cut_visualization(initialized_posns,final_posns,springs,particles,output_dir,tag=f'{i}th_configuration')
+        #below is the original 3D scatter plot of center cuts which colored polymer nodes and springs differently than particle nodes and springs
+        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
+        #below is an attempt to change the original 3D scatter plot approach to a 2D approach, with no color information to provide sense of depth
+        if i == 0:
+            tag = '1st_configuration'
+        elif i == 1:
+            tag = '2nd_configuration'
+        elif i == 2:
+            tag = '3rd_configuration'
+        else:
+            tag = f'{i+1}th_configuration'
+        if plotting_flag:
+            mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag)
+        if a_norm_avg < tolerance and v_norm_avg < tolerance:
+            print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
+            if i != 0 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            return_status = 0
+            break
+        elif max_accel_norm_avg > 1e3:
+            print(f'strong accelerations detected during integration run {i+1}')
+            my_nsteps = int(my_nsteps/2)
+            if my_nsteps < 10:
+                print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
+                sol = backstop_solution.copy()
+                del backstop_solution
+                del y_0
+                del solutions
+                return_status = -1
+                break
+            print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
+            print(f'running with halved maximum number of steps: {my_nsteps}')
+            r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
+            print(f'Increasing drag coefficient from {drag} to {10*drag}')
+            drag *= 10
+            y_0 = backstop_solution.copy()
+        else:
+            print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
+            y_0 = sol.copy()
+            last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            if i != 0 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            # if i == 0:
+            #     #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
+            # else:
+            #     last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            #     criteria.append_criteria(other_criteria)
+            backstop_solution = sol.copy()
+        if criteria_flag:
+            solutions = []
+            r.set_solout(solout)
+        if persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
+        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+    plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
+    if criteria_flag:
+        mre.initialize.write_criteria_file(criteria,output_dir)
+        criteria.plot_criteria_subplot(output_dir)
+        criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
+    plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
+    plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
+    # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
+    return sol, return_status#returning a solution object, that can then have it's attributes inspected
+
+def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
+    """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
+    max_accel = np.max(a_norms)
+    mean_accel = np.mean(a_norms)
+    rms_accel = np.sqrt(np.sum(np.power(a_norms,2))/np.shape(a_norms)[0])
+    counts, bins = np.histogram(a_norms, bins=30)
+    fig,ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    ax.hist(bins[:-1], bins, weights=counts)
+    sigma = np.std(a_norms)
+    mu = mean_accel
+    ax.set_title(f'Residual '+tag+f' Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
+    ax.set_xlabel(tag + ' norm')
+    ax.set_ylabel('counts')
+    savename = output_dir +'node_residual_'+tag+'_hist.png'
+    plt.savefig(savename)
+    plt.close()
+
+def get_displacement_norms(final_posns,start_posns):
+    displacement = final_posns-start_posns
+    displacement_norms = np.linalg.norm(displacement,axis=1)
+    max_displacement = np.max(displacement_norms)
+    mean_displacement = np.mean(displacement_norms)
+    return mean_displacement,max_displacement
+
+def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement,output_dir):
+    fig, axs = plt.subplots(2)
+    axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
+    axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
+    axs[0].set_title('displacement between integration iterations')
+    axs[0].set_ylabel('displacement mean (units of l_e)')
+    axs[1].set_ylabel('displacement max (units of l_e)')
+    axs[1].set_xlabel('iteration number')
+    # Hide x labels and tick labels for top plots and y ticks for right plots
+    for ax in axs.flat:
+        ax.label_outer()
+    plt.savefig(output_dir+'displacement.png')
+    plt.close()
+    
+def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
+    """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
+    tolerance = 1e-4
+    max_iters = 8
+    v0 = np.zeros(x0.shape)
+    y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    N_nodes = int(x0.shape[0])
+    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
+    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=1000,verbosity=1)
+    r.set_solout(solout)
+    for i in range(max_iters):
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        sol = r.integrate(t_f)
+        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_var_alt = get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        if i == 0:
+            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
+        else:
+            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
+            criteria.append_criteria(other_criteria)
+        # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
+        final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
+        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir)
+        solutions = []
+        r.set_solout(solout)
+        if a_norm_avg < tolerance:
+            break
+        else:
+            y_0 = sol
+    # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
+    criteria.plot_criteria(output_dir)
+    criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
+    # criteria.plot_criteria_v_time(output_dir)
+    return sol#returning a solution object, that can then have it's attributes inspected
+
+class SimCriteria:
+    def __init__(self,solutions,*args):
+        self.get_criteria_per_iteration(solutions,*args)
+        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+        self.timestep = self.time[1:] - self.time[:-1]
+
+    def get_criteria_per_iteration(self,solutions,*args):
+        iterations = np.array(solutions).shape[0]
+        self.iter_number = np.arange(iterations)
+        N_nodes = int((np.array(solutions).shape[1] - 1)/2/3)
+        self.a_norm_avg = np.zeros((iterations,))
+        self.a_norm_max = np.zeros((iterations,))
+        self.particle_a_norm = np.zeros((iterations,))
+        self.particle_separation = np.zeros((iterations,))
+        self.v_norm_avg = np.zeros((iterations,))
+        self.v_norm_max = np.zeros((iterations,))
+        self.particle_v_norm = np.zeros((iterations,))
+        self.time = np.array(solutions)[:,0]
+        self.max_x = np.zeros((iterations,))
+        self.max_y = np.zeros((iterations,))
+        self.max_z = np.zeros((iterations,))
+        self.min_x = np.zeros((iterations,))
+        self.min_y = np.zeros((iterations,))
+        self.min_z = np.zeros((iterations,))
+        self.length_x = np.zeros((iterations,))
+        self.length_y = np.zeros((iterations,))
+        self.length_z = np.zeros((iterations,))
+        boundaries = args[8]
+        self.left = np.zeros((iterations,))
+        self.right = np.zeros((iterations,))
+        self.top = np.zeros((iterations,))
+        self.bottom = np.zeros((iterations,))
+        self.front = np.zeros((iterations,))
+        self.back = np.zeros((iterations,))
+        particles = args[2]
+        for count, row in enumerate(solutions):
+            a_var = get_accel_scaled(np.array(row[1:]),*args)
+            a_norms = np.linalg.norm(a_var,axis=1)
+            self.a_norm_max[count] = np.max(a_norms)
+            # if self.a_norm_max[count] > 10000:
+            #     a_var = get_accel_scaled(np.array(row[1:]),*args)
+            self.a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
+            final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
+            final_v = np.reshape(row[N_nodes*3+1:],(N_nodes,3))
+            v_norms = np.linalg.norm(final_v,axis=1)
+            self.v_norm_max[count] = np.max(v_norms)
+            self.v_norm_avg[count] = np.sum(v_norms)/np.shape(v_norms)[0]
+            if particles.shape[0] != 0:
+                a_particles = a_var[particles[0],:]
+                self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
+                v_particles = final_v[particles[0],:]
+                self.particle_v_norm[count] = np.linalg.norm(v_particles[0,:])
+                x1 = get_particle_center(particles[0],final_posns)
+                x2 = get_particle_center(particles[1],final_posns)
+                self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
+            self.get_system_extent(final_posns,boundaries,count)
+    
+    def get_system_extent(self,posns,boundaries,count):
+        """Assign values to the objects instance variables that give some sense of the physical extent/dimensions/size of the simulated system as the simulation progresses"""
+        self.max_x[count] = np.max(posns[:,0])
+        self.max_y[count] = np.max(posns[:,1])
+        self.max_z[count] = np.max(posns[:,2])
+        self.min_x[count] = np.min(posns[:,0])
+        self.min_y[count] = np.min(posns[:,1])
+        self.min_z[count] = np.min(posns[:,2])
+        self.length_x[count] = self.max_x[count] - self.min_x[count]
+        self.length_y[count] = self.max_y[count] - self.min_y[count]
+        self.length_z[count] = self.max_z[count] - self.min_z[count]
+        self.left[count] = np.mean(posns[boundaries['left'],0])
+        self.right[count] = np.mean(posns[boundaries['right'],0])
+        self.top[count] = np.mean(posns[boundaries['top'],2])
+        self.bottom[count] = np.mean(posns[boundaries['bot'],2])
+        self.front[count] = np.mean(posns[boundaries['front'],1])
+        self.back[count] = np.mean(posns[boundaries['back'],1])
+
+    def plot_displacement_hist(self,final_posns,initialized_posns,output_dir):
+        displacement = final_posns-initialized_posns
+        displacement_norms = np.linalg.norm(displacement,axis=1)
+        max_displacement = np.max(displacement_norms)
+        mean_displacement = np.mean(displacement_norms)
+        rms_displacement = np.sqrt(np.sum(np.power(displacement_norms,2))/np.shape(displacement_norms)[0])
+        counts, bins = np.histogram(displacement_norms, bins=20)
+        fig,ax = plt.subplots()
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        ax.hist(bins[:-1], bins, weights=counts)
+        sigma = np.std(displacement_norms)
+        mu = mean_displacement
+        # y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)))**2)
+        # ax.plot(bins,y,'--')
+        ax.set_title(f'Displacement Histogram\nMaximum {max_displacement}\nMean {mean_displacement}\n$\sigma={sigma}$\nRMS {rms_displacement}')
+        ax.set_xlabel('displacement (units of l_e)')
+        ax.set_ylabel('counts')
+        savename = output_dir +'node_displacement_hist.png'
+        plt.savefig(savename)
+        # plt.show()
+        plt.close()
+
+    def old_append_criteria(self,other):
+        self.a_norm_avg = np.append(self.a_norm_avg,other.a_norm_avg)
+        self.delta_a_norm = np.append(self.delta_a_norm,other.delta_a_norm)
+        self.a_norm_max = np.append(self.a_norm_max,other.a_norm_max)
+        self.particle_a_norm = np.append(self.particle_a_norm,other.particle_a_norm)
+        self.particle_separation = np.append(self.particle_separation,other.particle_separation)
+        self.iter_number = np.append(self.iter_number,np.max(self.iter_number)+other.iter_number + 1)
+        self.time = np.append(self.time,np.max(self.time)+other.time)
+    
+    def append_criteria(self,other):
+        """Append data from one SimCriteria object to another, by appending each member variable. Special cases (like time, iteration number) are appended in a manner to reflect the existence of prior integration iterations of the simulation"""
+        #vars(self) returns a dictionary containing the member variables names and values as key-value pairs, allowing for this dynamic sort of access, meaning that extendingh the class with more member variables will allow this method to be used without changes (unless a new special case arises)
+        my_keys = list(vars(self).keys())
+        for key in my_keys:
+            if key != 'iter_number' and key != 'time':
+                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],vars(other)[f'{key}'])
+            elif key == 'iter_number':
+                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}']+1)
+            elif key == 'time':
+                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}'])
+
+    def plot_criteria(self,output_dir):
+        #TODO Unfinished. use the member variable names to generate save names and figure labels automatically. have a separate variable passed to choose which variable to plot against (time, iteration, anything else?)
+        """Generating plots of simulation criteria using matplotlib and using built-in python features to iterate over the instance variables of the object"""
+        if not (os.path.isdir(output_dir)):
+            os.mkdir(output_dir)
+        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+        my_keys = list(vars(self).keys())
+        for key in my_keys:
+            if key != 'iter_number' and key != 'time':
+                fig = plt.figure()
+                if key != 'delta_a_norm':
+                    plt.plot(self.time,vars(self)[f'{key}'])
+                else:
+                    plt.plot(self.time[:self.delta_a_norm.shape[0]],vars(self)[f'{key}'])
+                ax = plt.gca()
+                ax.set_xlabel('scaled time')
+                ax.set_ylabel(f'{key}')
+                savename = output_dir + f'{key}_v_time.png'
+                plt.savefig(savename)
+                plt.close()
+        # plt.show()
+        # plt.close('all')
+    
+    def plot_criteria_subplot(self,output_dir):
+        """Generate subplots of simulation criteria using matplotlib"""
+        if not (os.path.isdir(output_dir)):
+            os.mkdir(output_dir)
+        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+        # first plotting the system extent (to get a sense of the change in the system size
+        fig, axs = plt.subplots(3,3)
+        default_width, default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.min_x)
+        axs[0,0].set_title('x')
+        axs[0,0].set_ylabel('minimum x position (l_e)')
+        axs[1,0].plot(self.time,self.max_x)
+        axs[1,0].set_ylabel('maximum x position (l_e)')
+        axs[2,0].plot(self.time,self.length_x)
+        axs[2,0].set_ylabel('length (max - min) in x direction (l_e)')
+        axs[2,0].set_xlabel('scaled time')
+
+        axs[0,1].plot(self.time,self.min_y)
+        axs[0,1].set_title('y')
+        axs[0,1].set_ylabel('minimum y position (l_e)')
+        axs[1,1].plot(self.time,self.max_y)
+        axs[1,1].set_ylabel('maximum y position (l_e)')
+        axs[2,1].plot(self.time,self.length_y)
+        axs[2,1].set_ylabel('length (max - min) in y direction (l_e)')
+        axs[2,1].set_xlabel('scaled time')
+
+        axs[0,2].plot(self.time,self.min_z)
+        axs[0,2].set_title('z')
+        axs[0,2].set_ylabel('minimum z position (l_e)')
+        axs[1,2].plot(self.time,self.max_z)
+        axs[1,2].set_ylabel('maximum z position (l_e)')
+        axs[2,2].plot(self.time,self.length_z)
+        axs[2,2].set_ylabel('length (max - min) in z direction (l_e)')
+        axs[2,2].set_xlabel('scaled time')
+
+        savename = output_dir + 'systemextent_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+        
+        # plot the acceleration and velocity norms
+        fig, axs = plt.subplots(2,2)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.a_norm_avg)
+        axs[0,0].set_title('node acceleration')
+        axs[0,0].set_ylabel('node acceleration norm mean (unitless)')
+        axs[1,0].plot(self.time,self.a_norm_max)
+        axs[1,0].set_ylabel('node acceleration norm max (unitless)')
+        axs[1,0].set_xlabel('scaled time')
+        axs[0,1].plot(self.time,self.v_norm_avg)
+        axs[0,1].set_title('node velocity')
+        axs[0,1].set_ylabel('node velocity norm mean (unitless)')    
+        axs[1,1].plot(self.time,self.v_norm_max)
+        axs[1,1].set_ylabel('node velocity norm max (unitless)')
+        axs[1,0].set_xlabel('scaled time')
+
+        savename = output_dir + 'node_behavior_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+
+        # plot the particle acceleration, velocity, and separation
+        fig, axs = plt.subplots(3)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0].plot(self.time,self.particle_separation)
+        axs[0].set_ylabel('particle separation (l_e)')
+        axs[0].set_title('particle position, velcoity, and acceleration')
+        axs[1].plot(self.time,self.particle_v_norm)
+        axs[1].set_ylabel('particle velocity norm (unitless)')
+        axs[2].plot(self.time,self.particle_a_norm)
+        axs[2].set_ylabel('particle acceleration norm (unitless)')
+        axs[2].set_xlabel('scaled time')
+
+        savename = output_dir + 'particle_behavior_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+
+        fig, axs = plt.subplots(3,2)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0,0].plot(self.time,self.left)
+        axs[0,0].set_ylabel('mean node position: left bdry (l_e)')
+        axs[0,0].set_title('Mean Boundary Node Positions')
+        axs[0,1].plot(self.time,self.right)
+        axs[0,1].set_ylabel('mean node position: right bdry (l_e)')
+        axs[1,0].plot(self.time,self.front)
+        axs[1,0].set_ylabel('mean node position: front bdry (l_e)')
+        axs[1,1].plot(self.time,self.back)
+        axs[1,1].set_ylabel('mean node position: back bdry (l_e)')
+        axs[2,0].plot(self.time,self.top)
+        axs[2,0].set_ylabel('mean node position: top bdry (l_e)')
+        axs[2,1].plot(self.time,self.bottom)
+        axs[2,1].set_ylabel('mean node position: bottom bdry (l_e)')
+        axs[2,0].set_xlabel('scaled time')
+        savename = output_dir + 'mean_boundaries_v_time.png'
+        plt.savefig(savename)
+        plt.close()
+        # plt.show()
+        # plt.close('all')
+
+        fig, axs = plt.subplots(1,3)
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(100)
+        axs[0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
+        axs[0].set_title('Time Step Taken')
+        axs[0].set_xlabel('scaled time')
+        axs[0].set_ylabel('time step')
+        axs[1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
+        axs[1].set_title('Time Step Taken')
+        axs[1].set_xlabel('integration number')
+        axs[1].set_ylabel('time step')
+        axs[2].plot(self.iter_number,self.time,'.')
+        axs[2].set_title('Total Time')
+        axs[2].set_xlabel('integration number')
+        axs[2].set_ylabel('total scaled time')
+        savename = output_dir + 'timestep_per_iteration_and_time.png'
+        plt.savefig(savename)
+        plt.close()
+
+    def plot_criteria_v_time(self,output_dir):
+        if not (os.path.isdir(output_dir)):
+            os.mkdir(output_dir)
+        fig1 = plt.figure()
+        plt.plot(self.time,self.a_norm_avg)
+        ax = plt.gca()
+        ax.set_xlabel('scaled time')
+        ax.set_ylabel('average acceleration norm')
+        savename = output_dir + f'avg_accel_norm_v_time.png'
+        plt.savefig(savename)
+
+        fig2 = plt.figure()
+        plt.plot(self.time,self.a_norm_max)
+        ax = plt.gca()
+        ax.set_xlabel('scaled time')
+        ax.set_ylabel('acceleration norm max')
+        savename = output_dir + f'accel_norm_max_v_time.png'
+        plt.savefig(savename)
+
+        fig3 = plt.figure()
+        plt.plot(self.time[:self.delta_a_norm.shape[0]],self.delta_a_norm)
+        ax = plt.gca()
+        ax.set_xlabel('scaled time')
+        ax.set_ylabel('change in average acceleraton norm')
+        savename = output_dir + f'delta_avg_accel_norm_v_time.png'
+        plt.savefig(savename)
+
+        fig5 = plt.figure()
+        plt.plot(self.time,self.particle_a_norm)
+        ax = plt.gca()
+        ax.set_xlabel('scaled time')
+        ax.set_ylabel('particle acceleration norm')
+        savename = output_dir + f'particle_accel_norm_v_time.png'
+        plt.savefig(savename)
+
+        fig6 = plt.figure()
+        plt.plot(self.time,self.particle_separation)
+        ax = plt.gca()
+        ax.set_xlabel('scaled time')
+        ax.set_ylabel('particle separation (in units of l_e)')
+        savename = output_dir + f'particle_separation_v_time.png'
+        plt.savefig(savename)
+        plt.show()
+        plt.close('all')
+    
+#function for checking out convergence criteria vs iteration, currently showing the mean acceleration vector norm for the system
+def plot_criteria_v_iteration_scaled(solutions,N_nodes,integration_iteration,*args):
+    iterations = np.array(solutions).shape[0]
+    a_norm_avg = np.zeros((iterations,))
+    a_norm_max = np.zeros((iterations,))
+    a_particle_norm = np.zeros((iterations,))
+    particle_separation = np.zeros((iterations,))
+    output_dir = '/mnt/c/Users/bagaw/Desktop/scaled_mre_system_magnetic_particle_debugging/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    for count, row in enumerate(solutions):
+        a_var = get_accel_scaled(np.array(row[1:]),*args)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_max[count] = np.max(a_norms)
+        max_accel_node_ids = np.argmax(a_norms)
+        # check = max_accel_node_ids in args[2]
+        a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
+        a_particles = a_var[args[2][0],:]
+        a_particle_norm[count] = np.linalg.norm(a_particles[0,:])
+        final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
+        x1 = get_particle_center(args[2][0],final_posns)
+        x2 = get_particle_center(args[2][1],final_posns)
+        particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
+        # if count > 0:
+        #     delta_a_particle = a_particle_norm[count] - a_particle_norm[count-1]
+        #     if delta_a_particle > 10:
+        #         get_accel_scaled(np.array(row[1:]),*args,debug_flag=True)
+    delta_a_norm_avg = a_norm_avg[1:]-a_norm_avg[:-1]
+    fig1 = plt.figure()
+    plt.plot(np.arange(iterations),a_norm_avg)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('average acceleration norm')
+    savename = output_dir + f'avg_accel_norm{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig2 = plt.figure()
+    plt.plot(np.arange(iterations),a_norm_max)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('acceleration norm max')
+    savename = output_dir + f'accel_norm_max{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig3 = plt.figure()
+    plt.plot(np.arange(iterations-1),delta_a_norm_avg)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('change in average acceleraton norm')
+    savename = output_dir + f'delta_avg_accel_norm{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig4 = plt.figure()
+    percent_change_a_norm_avg = 100*delta_a_norm_avg/a_norm_avg[:-1]
+    plt.plot(np.arange(iterations-1),percent_change_a_norm_avg)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('percent change in average acceleraton norm')
+    savename = output_dir + f'percent_dekta_avg_accel_norm{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig5 = plt.figure()
+    plt.plot(np.arange(iterations),a_particle_norm)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('particle acceleration norm')
+    savename = output_dir + f'particle_accel_norm{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig6 = plt.figure()
+    plt.plot(np.arange(iterations),particle_separation)
+    ax = plt.gca()
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('particle separation (in units of l_e)')
+    savename = output_dir + f'particle_separation{integration_iteration}.png'
+    plt.savefig(savename)
+
+    fig7 = plt.figure()
+    times_array = np.array(solutions)[:,0]
+    plt.plot(times_array,particle_separation)
+    ax = plt.gca()
+    ax.set_xlabel('scaled time')
+    ax.set_ylabel('particle separation (in units of l_e)')
+    savename = output_dir + f'particle_separation{integration_iteration}_vs_time.png'
+    plt.savefig(savename)
+
+    fig8 = plt.figure()
+    plt.plot(times_array,a_particle_norm)
+    ax = plt.gca()
+    ax.set_xlabel('scaled time')
+    ax.set_ylabel('particle acceleration norm')
+    savename = output_dir + f'particle_accel_norm{integration_iteration}_vs_time.png'
+    plt.savefig(savename)
+    plt.show()
+    plt.close('all')
+#!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
+
+#function to pass to scipy.integrate.solve_ivp()
+#must be of the form fun(t,y)
+#can be more than fun(t,y,additionalargs), and then the additional args are passed to solve_ivp via keyword argument args=(a,b,c,...) where a,b,c are the additional arguments to fun in order of apperance in the function definition
+def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
+    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    N = int(np.round(y.shape[0]/2))
+    accel = get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    N_nodes = int(np.round(N/3))
+    accel = np.reshape(accel,(3*N_nodes,))
+    v0 = y[N:]
+    result = np.concatenate((v0,accel))
+    #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
+    return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
 def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
