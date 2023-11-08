@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from numba.experimental import jitclass
 from numba import types, njit, prange
-import mre.initialize
+import initialize
 #this code was taken from https://stackoverflow.com/questions/41656006/how-to-rasterize-a-sphere
 #originally written by Mitchell Walls on july 16 2021, adapted from a method written by Matt Timmerman in the same thread
 #i will/have made changes to comment out how the code works and changes to adapt for my purposes in simulating MREs, since i need to rasterize spherical particles that will be treated as rigid objects
@@ -116,7 +116,7 @@ def parallel_spheres(grid):
 #______________________________
 #below this line is all my code, above it is mostly code from the authors credited above
 def get_sphere_on_grid(radius):
-    """given a sphere radius in voxels (half integer), return a 3D array defining which grid points are voxels belonging to the sphere"""
+    """given a sphere radius in voxels (half integer), return a 2D array whose row entries define which grid points are voxels belonging to the sphere"""
     #TODO better use of assert statement to ensure appropriate sphere size
     assert radius > 0,f'particle radius in voxels must be a positive half integer value, you used {radius}'
     max = np.int64(np.ceil(radius**2))
@@ -125,7 +125,20 @@ def get_sphere_on_grid(radius):
     grid = np.zeros((max,max,max),dtype=bool)
     rs = RasterizeSphere(svoxel, radius, grid)
     grid_points = np.transpose(np.where(rs.grid))
+    print(rs.grid)
+    print(grid_points)
     return np.array([*grid_points])
+
+def get_sphere_on_grid_for_voxel_plotting(radius):
+    """given a sphere radius in voxels (half integer), return a 3D boolean array where True values define which grid points are voxels belonging to the sphere"""
+    #TODO better use of assert statement to ensure appropriate sphere size
+    assert radius > 0,f'particle radius in voxels must be a positive half integer value, you used {radius}'
+    max = np.int64(np.ceil(radius**2))
+    center = np.int64(np.ceil(radius)) - 1 #zero based indexing... need the offset
+    svoxel = np.array([center,center,center])
+    grid = np.zeros((max,max,max),dtype=bool)
+    rs = RasterizeSphere(svoxel, radius, grid)
+    return rs.grid
 
 def get_nodes_from_grid_voxels(grid_points,l_e,translation):
     """given the grid coordinates of the voxels and the voxel size, get the nodes/vertices of the voxels"""
@@ -263,6 +276,15 @@ def plotter(node_posns,springs,radius):
     save_string = f'./rasterized_sphere_R_{radius}.png'
     plt.savefig(save_string)
 
+def plot_sphere_voxels(grid_points,radius,output_dir):
+    fig, ax = plt.subplots(subplot_kw={"projection":"3d"})
+    ax.voxels(grid_points,edgecolor='k')
+    ax.set_xlim((0,2*radius+1))
+    ax.set_ylim((0,2*radius+1))
+    ax.set_zlim((0,2*radius+1))
+    save_name = f'voxel_sphere_R_{radius}.png'
+    plt.savefig(output_dir+save_name)
+
 def place_sphere(radius,l_e,center,dim):
     grid_points = get_sphere_on_grid(radius)
     node_posns = get_nodes_from_grid_voxels(grid_points,l_e,center)
@@ -291,17 +313,22 @@ def place_spheres(radius,l_e,centers,dim):
     return row_indices
 
 def main():
-    radius = 4.5
-    l_e = 0.1
-    grid_points = get_sphere_on_grid(radius)
-    particle_center = np.array([3 + l_e/2,3 + l_e/2,3 + l_e/2],dtype=np.float64)
-    node_posns = get_nodes_from_grid_voxels(grid_points,l_e,particle_center)
-    dim = [32,32,32]
-    Lx,Ly,Lz = dim
-    row_indices = get_row_indices(node_posns,l_e,dim)
-    k = [1,0,0]
-    springs = mre.initialize.create_springs(node_posns,k,l_e,dim)
-    plotter(node_posns,springs,radius)
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
+    radius = 3.5
+    # l_e = 0.1
+    # grid_points = get_sphere_on_grid(radius)
+    for i in range(11):
+        radius = i + 0.5
+        grid_points_3D = get_sphere_on_grid_for_voxel_plotting(radius)
+        plot_sphere_voxels(grid_points_3D,radius,output_dir)
+    # particle_center = np.array([3 + l_e/2,3 + l_e/2,3 + l_e/2],dtype=np.float64)
+    # node_posns = get_nodes_from_grid_voxels(grid_points,l_e,particle_center)
+    # dim = [32,32,32]
+    # Lx,Ly,Lz = dim
+    # row_indices = get_row_indices(node_posns,l_e,dim)
+    # k = [1,0,0]
+    # springs = mre.initialize.create_springs(node_posns,k,l_e,dim)
+    # plotter(node_posns,springs,radius)
     # fig = plt.figure
     # ax = plt.axes(projection='3d')
     # ax.scatter3D(node_posns[:,0],node_posns[:,1],node_posns[:,2])

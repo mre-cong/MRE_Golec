@@ -82,7 +82,11 @@ def main():
                 tag = '3rd_configuration'
             else:
                 tag = f'{i+1}th_configuration'
-            mre.analyze.plot_center_cuts_contour(initial_node_posns,current_posns,springs_var,particles,boundary_conditions,subfolder+'/',tag)
+            # overlayed wirecuts are a bad idea, it is too busy, and i can't see anything useful. it is possible that htere are ways, like downsampling appropriately, that would make it a useful visualization, but i'm not convinced right now that it is the correct way to move forward
+            # mre.analyze.plot_overlayed_center_cuts_wireframe(initial_node_posns,current_posns,particles,boundary_conditions,subfolder+'/',tag)
+            mre.analyze.plot_center_cuts_surf(initial_node_posns,current_posns,particles,boundary_conditions,subfolder+'/',tag)
+            mre.analyze.plot_center_cuts_wireframe(initial_node_posns,current_posns,particles,boundary_conditions,subfolder+'/',tag)
+            mre.analyze.plot_center_cuts_contour(initial_node_posns,current_posns,particles,boundary_conditions,subfolder+'/',tag)
             # The original center cut plotting using scatter and only plotting edge springs was taking a significant amount of time to run, for reasons i am unsure of. maybe the selectivity of spring plotting, or maybe the way i am trying to get the nodes and node coordinates for particular cuts. the use of tricontourf was an attempt to get useful visualizations without waiting hours for basic visualizations.
             # mre.analyze.plot_center_cuts(initial_node_posns,current_posns,springs_var,particles,boundary_conditions,subfolder+'/',tag)
 
