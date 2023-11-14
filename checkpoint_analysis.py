@@ -24,7 +24,7 @@ def main():
 
     sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
 
-    extend_from_checkpoint(sim_dir,max_integrations=20,max_integration_steps=2000)
+    extend_from_checkpoints(sim_dir,max_integrations=20,max_integration_steps=2000)
 
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
 
@@ -65,7 +65,7 @@ def main():
     beta_i = beta/node_mass
     N_nodes = int(num_nodes[0]*num_nodes[1]*num_nodes[2])
 
-    with os.scandir(output_dir) as dirIterator:
+    with os.scandir(sim_dir) as dirIterator:
         subfolders = [f.path for f in dirIterator if f.is_dir()]
     for subfolder in subfolders:
         with os.scandir(subfolder+'/') as dirIterator:
@@ -92,15 +92,15 @@ def main():
 
 def continue_from_checkpoint(sim_dir,max_integrations,max_integration_steps):
     """Continue from the most recent checkpoint of some interrupted simulation, with the possibility to extend a simulation past the originally intended number of allowed integrations"""
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
     determine_current_field_and_boundary_conditions()
     pickup_looping_from_current_point()
     simulate_scaled()
     print_relevant_information_on_status_and_on_completion()
 
-def extend_from_checkpoint(sim_dir,max_integrations,max_integration_steps):
+def extend_from_checkpoints(sim_dir,max_integrations,max_integration_steps):
     """Extend a simulation from the most recent checkpoint of some simulation or simulation step (applied strain or field)"""
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
     checkpoint_number = np.empty((0,),dtype=np.int64)
     with os.scandir(sim_dir) as dirIterator:
         subfolders = [f.path for f in dirIterator if f.is_dir()]
@@ -115,12 +115,42 @@ def extend_from_checkpoint(sim_dir,max_integrations,max_integration_steps):
         checkpoint_file = checkpoint_files[sort_indices[-1]]
         solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        print(boundary_conditions)
+    # TODO: What if I directly provided the checkpoint file to start from? That is the correct way to approach this, as a function structured that way will be reusable for other cases, including needing to go through each subfolder in the simulation directory, or some subset of them    
     # determine_current_field_and_boundary_conditions()
     # pickup_looping_from_current_point()
     # simulate_scaled()
     # print_relevant_information_on_status_and_on_completion()
-    
+
+def extend_from_checkpoint(checkpoint_file,max_integrations,max_integration_steps,subfolder_flag=True):
+    """Extend a simulation from a checkpoint file"""
+    tmp_var = checkpoint_file.split('/')
+    if subfolder_flag:
+        if tmp_var[-1] == '':
+            sim_dir = checkpoint_file[:-1*(len(tmp_var[-2])+len(tmp_var[-3]))-1]
+        elif tmp_var[-1] != '':
+            sim_dir = checkpoint_file[:-1*(len(tmp_var[-1])+len(tmp_var[-2]))-1]
+        if tmp_var[-1] == '':
+            output_dir = checkpoint_file[:-1*(len(tmp_var[-2]))-1]
+        elif tmp_var[-1] != '':
+            output_dir = checkpoint_file[:-1*(len(tmp_var[-1]))-1]
+    else:
+        if tmp_var[-1] == '':
+            sim_dir = checkpoint_file[:-1*(len(tmp_var[-2]))-1]
+        elif tmp_var[-1] != '':
+            sim_dir = checkpoint_file[:-1*(len(tmp_var[-1]))-1]
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    t_f = 30
+    start = time.time()
+    sol, return_status = simulate.extend_simulate_scaled(solution,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,applied_field,particle_radius,particle_mass,chi,Ms,drag,initial_node_posns,output_dir,i,max_integrations,max_integration_steps,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
+    end = time.time()
+    delta = end - start
+    x0 = np.reshape(sol[:initial_node_posns.shape[0]*initial_node_posns.shape[1]],initial_node_posns.shape)
+    print('took %.2f seconds to simulate' % delta)
+    # TODO: get the output file numbering from the series variable and the applied field (or boundary conditions, depending on the series_descriptor). couild overwrite the old outut file if it exists, by trying to read it in and adding the time to simulate from that output file to the time to simulate the extension/continuation
+    mre.initialize.write_output_file(str(i)+'extended',x0,applied_field,boundary_conditions,np.array([delta]),output_dir)
+
 def format_boundary_conditions(boundary_conditions):
     boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
     boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
@@ -162,7 +192,9 @@ def read_in_simulation_parameters(sim_dir):
     k = mre.initialize.get_spring_constants(E, l_e)
     k = np.array(k)
 
-    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor
+    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions
 
 if __name__ == "__main__":
-    main()
+    sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_3_drag_10/'
+    extend_from_checkpoint(sim_dir+'field_2_Bext_0.15/checkpoint18.h5',1,2000)
+    # main()

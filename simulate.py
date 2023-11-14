@@ -131,6 +131,108 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
+def extend_simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,starting_checkpoint_count=0,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
+    """Extend a simulation of a hybrid mass spring system from a checkpoint file using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
+    tolerance = 1e-4
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
+    tmp_var = output_dir.split('/')
+    if tmp_var[-1] == '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
+    elif tmp_var[-1] != '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
+    y_0 = x0
+    # y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    backstop_solution = y_0.copy()
+    N_nodes = int(initialized_posns.shape[0])
+    my_nsteps = max_integration_steps
+    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
+    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1)
+    if criteria_flag:
+        r.set_solout(solout)
+    max_displacement = np.zeros((max_integrations,))
+    mean_displacement = np.zeros((max_integrations,))
+    return_status = 1
+    for i in range(starting_checkpoint_count+1,max_integrations+starting_checkpoint_count+1):
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        print(f'starting integration run {i+1}')
+        sol = r.integrate(t_f)
+        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        max_accel_norm_avg = 0
+        if criteria_flag:
+            if i == starting_checkpoint_count+1:#TODO if extending simulation and deciding i want to calculate criteria (Which maybe i shouldn't even allow at all, maybe that has to happen post simulation) I need to reflect the fact that i am starting from a non-zero i, but won't have an initial SimCriteria object until after the first extension run
+                criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(criteria.a_norm_avg)
+            else:
+                other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
+        final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
+        final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
+        v_norms = np.linalg.norm(final_v,axis=1)
+        v_norm_avg = np.sum(v_norms)/N_nodes
+        if i == 0:
+            tag = '1st_configuration'
+        elif i == 1:
+            tag = '2nd_configuration'
+        elif i == 2:
+            tag = '3rd_configuration'
+        else:
+            tag = f'{i+1}th_configuration'
+        if plotting_flag:
+            mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag)
+        if a_norm_avg < tolerance and v_norm_avg < tolerance:
+            print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
+            if i != starting_checkpoint_count+1 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            return_status = 0
+            break
+        elif max_accel_norm_avg > 1e3:
+            print(f'strong accelerations detected during integration run {i+1}')
+            my_nsteps = int(my_nsteps/2)
+            if my_nsteps < 10:
+                print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
+                sol = backstop_solution.copy()
+                del backstop_solution
+                del y_0
+                del solutions
+                return_status = -1
+                break
+            print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
+            print(f'running with halved maximum number of steps: {my_nsteps}')
+            r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
+            print(f'Increasing drag coefficient from {drag} to {10*drag}')
+            drag *= 10
+            y_0 = backstop_solution.copy()
+        else:
+            print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
+            y_0 = sol.copy()
+            last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            mean_displacement[i-(starting_checkpoint_count+1)], max_displacement[i-(starting_checkpoint_count+1)] = get_displacement_norms(final_posns,last_posns)
+            if i != starting_checkpoint_count+1 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            backstop_solution = sol.copy()
+        if criteria_flag:
+            solutions = []
+            r.set_solout(solout)
+        if persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
+        if not persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+    plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
+    if criteria_flag:
+        criteria.plot_criteria_subplot(output_dir+'extended_folder/')
+        criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir+'extended_folder/')
+        mre.initialize.write_criteria_file(criteria,output_dir+'extended_folder/') 
+    plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
+    plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
+    return sol, return_status#returning a solution object, that can then have it's attributes inspected
+
 def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     """Plot a histogram of the acceleration of the nodes. Intended for analyzing the behavior at the end of simulations that are ended before convergence criteria are met."""
     max_accel = np.max(a_norms)
@@ -422,7 +524,7 @@ class SimCriteria:
         fig.set_dpi(100)
         axs[0].plot(self.time,self.particle_separation)
         axs[0].set_ylabel('particle separation (l_e)')
-        axs[0].set_title('particle position, velcoity, and acceleration')
+        axs[0].set_title('particle position, velocity, and acceleration')
         axs[1].plot(self.time,self.particle_v_norm)
         axs[1].set_ylabel('particle velocity norm (unitless)')
         axs[2].plot(self.time,self.particle_a_norm)
@@ -768,6 +870,8 @@ def get_accel_scaled_no_fixed_nodes(y,elements,springs,particles,kappa,l_e,beta,
             total_torque[i,:] = get_torque_on_particle(particle,accel,x0)
             vecsum = np.sum(accel[particle],axis=0)
             accel[particle] = vecsum/particle.shape[0]
+    else:
+        total_torque = None
     return accel, total_torque
 
 def get_torque_on_particle(particle,accel,node_posns):

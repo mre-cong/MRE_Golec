@@ -243,25 +243,6 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         #         x0[boundaries['top'],1] = starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
         #         x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
-    # fig, axs = plt.subplots(2)
-    # axs[0].plot(strain,stress)
-    # axs[0].set_title('Stress versus Strain')
-    # axs[0].set_xlabel('strain')
-    # axs[0].set_ylabel('stress')
-    # force_component = {'x':0,'y':1,'z':2}
-    # try:
-    #     effective_modulus = stress/strain
-    # except ZeroDivisionError:
-    #     for i in range(np.shape(strain)[0]):
-    #         if strain[i] == 0 and np.isclose(np.linalg.norm(stress[i,:]),0):
-    #             effective_modulus[i] = 0
-    #         else:
-    #             effective_modulus[i] = stress[i,force_component[strain_direction[1]]]/strain[i]
-    # axs[1].plot(strain,effective_modulus)
-    # axs[0].set_title('Effective Modulus versus strain')
-    # axs[0].set_xlabel('strain')
-    # axs[0].set_ylabel('Effective Modulus')
-    # plt.show()
     return total_delta, return_status
 
 def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
@@ -522,6 +503,7 @@ def main2():
     Ly = particle_diameter * 7
     Lz = Ly
     t_f = 30
+    drag = 20
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -559,7 +541,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}_drag{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -603,8 +585,8 @@ def main2():
     example_scaled_k = k[0]*beta_new*l_e
     scaled_magnetic_force_coefficient = beta/(particle_mass*(l_e**4))
     #using simple harmonic oscillator to calculate a critical drag coefficient, though the actual value likely differs from this one (if i restrict my view to assume, in each cartesian direction, only two springs, resulting in an effective stiffness twice that of a single spring, then the drag coefficient would be \sqrt(2) larger. taking into account the impact of 8 center diagonal springs, and again considering motion in one cartesian direction, the length change is only due to one component (and so we have 8 springs, but the 45 degree angle between the cartesian axis and the axis of the springs reduces the contribution by 1/\sqrt(2))). we also have 8 face diagonal springs, ignoring the 4 that lie in the plane whose normal is parallel to the direction of the displacement of the node, and again a 45 degree angle)
-    drag = beta_new*2*np.sqrt(characteristic_mass*k_e)
-    alt_drag = beta_new*2*np.sqrt(characteristic_mass*(2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)))
+    # drag = beta_new*2*np.sqrt(characteristic_mass*k_e)
+    # alt_drag = beta_new*2*np.sqrt(characteristic_mass*(2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)))
     #TODO functionalize the calculation of the scaled drag coefficient, and test different effective stiffness values. what sort of drag values come out before scaling by beta_new (which is really beta/characteristic_mass) and after (where we want the value to be close to unity)
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
@@ -707,7 +689,7 @@ def main_strain():
     start = time.time()
     E = 9e3
     nu = 0.499
-    max_integrations = 5
+    max_integrations = 1
     max_integration_steps = 5000
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
@@ -725,7 +707,6 @@ def main_strain():
     # Lz = Ly
     # l_e = 1e-6
     t_f = 30
-    drag = 10
     
     Lx = 8e-6
     Ly = 8e-6
@@ -791,15 +772,25 @@ def main_strain():
     beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
     #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
     beta_i = beta/m
+    #new beta coefficient without characteristic mass
+    beta_new = 4*(np.pi**2)/(k_e*l_e)
+    #using simple harmonic oscillator to calculate a critical drag coefficient, though the actual value likely differs from this one (if i restrict my view to assume, in each cartesian direction, only two springs, resulting in an effective stiffness twice that of a single spring, then the drag coefficient would be \sqrt(2) larger. taking into account the impact of 8 center diagonal springs, and again considering motion in one cartesian direction, the length change is only due to one component (and so we have 8 springs, but the 45 degree angle between the cartesian axis and the axis of the springs reduces the contribution by 1/\sqrt(2))). we also have 8 face diagonal springs, ignoring the 4 that lie in the plane whose normal is parallel to the direction of the displacement of the node, and again a 45 degree angle)
+    # drag = beta_new*2*np.sqrt(characteristic_mass*k_e)
+    # alt_drag = beta_new*2*np.sqrt(characteristic_mass*(2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)))
+    drag = 20
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
-    field_or_strain_type_string = 'tension_strain'
-    strain_type = 'tension'
+    field_or_strain_type_string = 'compression_strain'
+    strain_type = 'compression'
     strain_direction = ('x','x')
     shear_strain_max = np.pi/2/90*20
-    strain_max = 0.04
-    n_strain_steps = 3
-    strains = np.arange(0.0,strain_max+0.01*strain_max,strain_max/(n_strain_steps-1))
+    strain_max = 0.20
+    n_strain_steps = 21
+    if n_strain_steps == 1:
+        strain_step_size = strain_max
+    else:  
+        strain_step_size = strain_max/(n_strain_steps-1)
+    strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     today = date.today()
     output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_{strain_type}_order_{discretization_order}_drag_{drag}/'
     if not (os.path.isdir(output_dir)):
@@ -811,9 +802,9 @@ def main_strain():
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
     
-    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag=True)
+    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    # main_strain()
-    main2()
+    main_strain()
+    # main2()

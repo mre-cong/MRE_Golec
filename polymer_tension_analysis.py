@@ -16,6 +16,7 @@ import mre.analyze
 import mre.sphere_rasterization
 import get_volume_correction_force_cy_nogil
 import simulate
+import re
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -26,6 +27,17 @@ def plot_element(node_posns,element,springs):
     mre.analyze.plot_subset_springs(ax,node_posns,element,springs,spring_color='b')
     plt.show()
 
+
+#grab function from checkpoint_analysis for getting simulation parameters.
+#write separate functions for effective modulus calculation for shearing, rotation, and tension/compression
+#write function that calls the separate effective modulus calculation functions based on the series_descriptor
+#use series variable in the for i in range() loops
+#visualize surfaces and center cuts
+#plot linear and nonlinear strain tensors for surfaces and center cuts
+#plot stress tensor for surfaces and center cuts
+#will need to introduce some form of visualization through the whole volume (all cuts),
+# and some form of visualziaiton of the same cut at different strains/fields/timesteps
+
 def main():
     """Read in and perform analysis and visualization workflow on the polymer only (no particle) tension simulation."""
     #First, read in the init file and get the necessary variables from the params "struct"
@@ -33,13 +45,9 @@ def main():
     drag = 10
     discretization_order = 1
 
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-10-27_strain_testing_tension_order_{discretization_order}_drag_{drag}/'
-
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-08_strain_testing_tension_order_1_drag_20/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-08_strain_testing_compression_order_1_drag_20/'
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(output_dir+'init.h5')
-
-    checkpoint_solution, _, _, integration_number = mre.initialize.read_checkpoint_file(output_dir+'checkpoint.h5')
-
-    # print(f'{params.dtype}')
 
     for i in range(len(params[0])):
         if params.dtype.descr[i][0] == 'num_elements':
@@ -63,8 +71,6 @@ def main():
             Ms = params[0][i]
         if params.dtype.descr[i][0] == 'particle_chi':
             chi = params[0][i]
-        if params.dtype.descr[i][0] == 'young_modulus':
-            E = params[0][i]
         if params.dtype.descr[i][0] == 'drag':
             drag = params[0][i]
         if params.dtype.descr[i][0] == 'characteristic_time':
@@ -76,13 +82,19 @@ def main():
 
     dimensions = (l_e*np.max(initial_node_posns[:,0]),l_e*np.max(initial_node_posns[:,1]),l_e*np.max(initial_node_posns[:,2]))
     beta_i = beta/node_mass
-    stress = np.zeros((11,3))#np.zeros((len(series),))
-    secondary_stress = np.zeros((11,3))
-    strain = np.arange(0.0,0.201,0.02)
+    strain_max = 0.20
+    n_strain_steps = 21
+    if n_strain_steps == 1:
+        strain_step_size = strain_max
+    else:  
+        strain_step_size = strain_max/(n_strain_steps-1)
+    strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     strain_direction = ('x','x')
-    effective_modulus = np.zeros((11,))
+    stress = np.zeros((n_strain_steps,3))#np.zeros((len(series),))
+    secondary_stress = np.zeros((n_strain_steps,3))
+    effective_modulus = np.zeros((n_strain_steps,))
     # loop over and read in the output files to do analysis and visualization
-    for i in range(11):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+    for i in range(n_strain_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
         Hext = applied_field
         
@@ -95,17 +107,11 @@ def main():
         N_nodes = int(num_nodes[0]*num_nodes[1]*num_nodes[2])
         y = np.zeros((6*N_nodes,))
         y[:3*N_nodes] = np.reshape(final_posns,(3*N_nodes,))
-        end_accel = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag=10)
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag=10)
         # need to convert the acceleration variable back to forces acting on each node, at least for the boundaries of interest when doing the effective modulus calculation
         #need to decide which boundaries are involved, using the strain_type variable and strain_direction variables. can check both boundaries to see how they compare with regards to the forces/stress involved
         # if strain_type == 'tension' or strain_type == 'compression':
         #     if strain_direction[0] == 'x':
-        #         first_bdry_forces = end_accel[boundaries['left']]/beta_i[boundaries['left'],np.newaxis]
-        #         second_bdry_forces = end_accel[boundaries['right']]/beta_i[boundaries['right'],np.newaxis]
-        #         first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
-        #         second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
-        #         stress[count] = first_bdry_stress[0]
-        #         print(f'Difference in stress from opposite surfaces is {first_bdry_stress[0]-second_bdry_stress[0]}')
 
         #forces that must act on the boundaries for them to be in this position
         first_bdry_forces = -1*end_accel[boundaries['left']]/beta_i[boundaries['left'],np.newaxis]
@@ -118,33 +124,33 @@ def main():
 
     force_component = {'x':0,'y':1,'z':2}
     fig, axs = plt.subplots(2)
-    axs[0].plot(strain,stress[:,force_component[strain_direction[1]]],'o')
+    axs[0].plot(strains,np.abs(stress[:,force_component[strain_direction[1]]]),'-o')
     axs[0].set_title('Stress versus Strain')
     axs[0].set_xlabel('strain')
     axs[0].set_ylabel('stress')
-    for i in range(np.shape(strain)[0]):
-        if strain[i] == 0 and np.isclose(np.linalg.norm(stress[i,:]),0):
+    for i in range(np.shape(strains)[0]):
+        if strains[i] == 0 and np.isclose(np.linalg.norm(stress[i,:]),0):
             effective_modulus[i] = E
         else:
-            effective_modulus[i] = np.abs(stress[i,force_component[strain_direction[1]]]/strain[i])
-    axs[1].plot(strain,effective_modulus)
+            effective_modulus[i] = np.abs(stress[i,force_component[strain_direction[1]]]/strains[i])
+    axs[1].plot(strains,effective_modulus,'-o')
     axs[1].set_title('Effective Modulus versus strain')
     axs[1].set_xlabel('strain')
     axs[1].set_ylabel('Effective Modulus')
     plt.show()
 
     fig, axs = plt.subplots(2)
-    axs[0].plot(strain,secondary_stress[:,force_component[strain_direction[1]]],'o')
+    axs[0].plot(strains,secondary_stress[:,force_component[strain_direction[1]]],'-o')
     axs[0].set_title('Stress versus Strain')
     axs[0].set_xlabel('strain')
     axs[0].set_ylabel('second surface stress')
     force_component = {'x':0,'y':1,'z':2}
-    for i in range(np.shape(strain)[0]):
-        if strain[i] == 0 and np.isclose(np.linalg.norm(secondary_stress[i,:]),0):
+    for i in range(np.shape(strains)[0]):
+        if strains[i] == 0 and np.isclose(np.linalg.norm(secondary_stress[i,:]),0):
             effective_modulus[i] = E
         else:
-            effective_modulus[i] = np.abs(secondary_stress[i,force_component[strain_direction[1]]]/strain[i])
-    axs[1].plot(strain,effective_modulus)
+            effective_modulus[i] = np.abs(secondary_stress[i,force_component[strain_direction[1]]]/strains[i])
+    axs[1].plot(strains,effective_modulus,'-o')
     axs[1].set_title('Effective Modulus versus strain')
     axs[1].set_xlabel('strain')
     axs[1].set_ylabel('Effective Modulus')
@@ -194,6 +200,151 @@ def main():
         # #i suppose the next step would be some visualization of the displacement field as a quiver plot and as a color plot (pmeshcolor, pcolormesh?). then I think i need to try and get a stress tensor
 
         # #I can run strain simulations to try and get effective moduli. to get moduli as a function of position I need to be more thoughtful. the stiffness is a fourth rank tensor, with symmetry arguments, and for isotropic homogeneous media, there are only 2 independent elements. I still need to better understand the symmetry arguments, and see if i can go from the strain functions to stress using the stiffness tensor. or if i can use the forces on the nodes, can i get the stress tensor directly? I need to review my notes from days in the prior few weeks. I can draw imaginary planes through the node positions and then calculate force per (undeformed) area. is that appropriate? the normal example is an infinitessimal cube volume, where the direction and magnitude of forces on opposite faces have to balance to avoid a rotation (angular momentum balance, same for linear momentum (or torque/force))
+
+def get_effective_modulus(sim_dir):
+    """Given a simulation directory, calculate and plot the stress-strain curve and effective modulus versus strain."""
+    _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
+    #below is a way of getting the subfolders in the simulationd directory, and then a way to traverse/grab the checkpoint files in order. probably don't need the checkpoint stuff, but if i need to traverse the subfolders...
+    # with os.scandir(sim_dir) as dirIterator:
+    #     subfolders = [f.path for f in dirIterator if f.is_dir()]
+    # for subfolder in subfolders:
+    #     with os.scandir(subfolder+'/') as dirIterator:
+    #         checkpoint_files = [f.path for f in dirIterator if f.is_file() and f.name.startswith('checkpoint')]
+    #     for checkpoint_file in checkpoint_files:
+    #         fn_w_type = checkpoint_file.split('/')[-1]
+    #         fn = fn_w_type.split('.')[0]
+    #         checkpoint_number = np.append(checkpoint_number,np.array([int(count) for count in re.findall(r'\d+',fn)]))
+    #     sort_indices = np.argsort(checkpoint_number)
+    #     checkpoint_file = checkpoint_files[sort_indices[-1]]
+    #     solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
+    #     boundary_conditions = format_boundary_conditions(boundary_conditions)
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    strain_type = boundary_conditions[0]
+    strain_direction = boundary_conditions[1]
+    if strain_type == 'tension' or strain_type == 'compression':
+        get_tension_compression_modulus(sim_dir,strain_direction)
+    elif strain_type == 'shearing':
+        get_shearing_modulus(sim_dir,strain_direction)
+    elif strain_type == 'torsion':
+        get_torsion_modulus(sim_dir,strain_direction)
+
+
+def get_tension_compression_modulus(sim_dir,strain_direction):
+    """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied."""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = series
+    n_strain_steps = len(series)
+    stress = np.zeros(n_strain_steps,3)
+    secondary_stress = np.zeros((n_strain_steps,3))
+    effective_modulus = np.zeros((n_strain_steps,))
+    force_component = {'x':0,'y':1,'z':2}
+    N_nodes = int(num_nodes[0]*num_nodes[1]*num_nodes[2])
+    y = np.zeros((6*N_nodes,))
+    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+        final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        Hext = applied_field
+        y[:3*N_nodes] = np.reshape(final_posns,(3*N_nodes,))
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag=10)
+        if strain_direction[0] == 'x':
+            #forces that must act on the boundaries for them to be in this position
+            first_bdry_forces = -1*end_accel[boundaries['left']]/beta_i[boundaries['left'],np.newaxis]
+            second_bdry_forces = -1*end_accel[boundaries['right']]/beta_i[boundaries['right'],np.newaxis]
+            first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
+            second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
+            print(f'Difference in stress from opposite surfaces is {np.abs(first_bdry_stress[0])-np.abs(second_bdry_stress[0])}')
+            stress[i] = first_bdry_stress
+            secondary_stress[i] = second_bdry_stress
+        elif strain_direction[0] == 'y':
+            first_bdry_forces = -1*end_accel[boundaries['front']]/beta_i[boundaries['front'],np.newaxis]
+            second_bdry_forces = -1*end_accel[boundaries['back']]/beta_i[boundaries['back'],np.newaxis]
+            first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[0]*dimensions[2])
+            second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[0]*dimensions[2])
+            print(f'Difference in stress from opposite surfaces is {np.abs(first_bdry_stress[1])-np.abs(second_bdry_stress[1])}')
+            stress[i] = first_bdry_stress
+            secondary_stress[i] = second_bdry_stress
+        elif strain_direction[0] == 'z':
+            first_bdry_forces = -1*end_accel[boundaries['top']]/beta_i[boundaries['top'],np.newaxis]
+            second_bdry_forces = -1*end_accel[boundaries['bot']]/beta_i[boundaries['bot'],np.newaxis]
+            first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[0]*dimensions[1])
+            second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[0]*dimensions[1])
+            print(f'Difference in stress from opposite surfaces is {np.abs(first_bdry_stress[2])-np.abs(second_bdry_stress[2])}')
+            stress[i] = first_bdry_stress
+            secondary_stress[i] = second_bdry_stress
+    for i in range(np.shape(strains)[0]):
+        if strains[i] == 0 and np.isclose(np.linalg.norm(stress[i,:]),0):
+            effective_modulus[i] = E
+        else:
+            effective_modulus[i] = np.abs(stress[i,force_component[strain_direction[1]]]/strains[i])
+
+def get_shearing_modulus(sim_dir,strain_direction):
+    """Calculate a shear modulus, using the shear strain (shearing angle) and the force applied to the sheared surface in the shearing direction to get a shear stress."""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    if strain_direction[0] == 'x':
+        if strain_direction[1] == 'y':
+            pass
+        elif strain_direction[1] == 'z':
+            pass
+    elif strain_direction[0] == 'y':
+        if strain_direction[1] == 'x':
+            pass
+        elif strain_direction[1] == 'z':
+            pass
+    elif strain_direction[0] == 'z':
+        if strain_direction[1] == 'x':
+            pass
+        elif strain_direction[1] == 'y':
+            pass
+
+def get_torsion_modulus(sim_dir,strain_direction):
+    """Calculate a torsion modulus, in analogy to the shearing modulus, where strain is defined by the twist angle. torsion forces don't quite make sense, so instead the correct calculation is the torque applied to the surface divided by the twist angle (or the derivative of torque wrt the twist angle)"""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    if strain_direction[1] == 'CW':
+        pass
+    elif strain_direction[1] == 'CCW':
+        pass
+
+def format_boundary_conditions(boundary_conditions):
+    boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
+    boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
+    return boundary_conditions
+
+def read_in_simulation_parameters(sim_dir):
+    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
+
+    for i in range(len(params[0])):
+        if params.dtype.descr[i][0] == 'num_elements':
+            num_elements = params[0][i]
+            num_nodes = num_elements + 1
+        if params.dtype.descr[i][0] == 'poisson_ratio':
+            nu = params[0][i]
+        if params.dtype.descr[i][0] == 'young_modulus':
+            E = params[0][i]
+        if params.dtype.descr[i][0] == 'kappa':
+            kappa = params[0][i]
+        if params.dtype.descr[i][0] == 'scaling_factor':
+            beta = params[0][i]
+        if params.dtype.descr[i][0] == 'element_length':
+            l_e = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_mass':
+            particle_mass = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_radius':
+            particle_radius = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_Ms':
+            Ms = params[0][i]
+        if params.dtype.descr[i][0] == 'particle_chi':
+            chi = params[0][i]
+        if params.dtype.descr[i][0] == 'drag':
+            drag = params[0][i]
+        if params.dtype.descr[i][0] == 'characteristic_time':
+            characteristic_time = params[0][i]
+
+    dimensions = (l_e*np.max(initial_node_posns[:,0]),l_e*np.max(initial_node_posns[:,1]),l_e*np.max(initial_node_posns[:,2]))
+    beta_i = beta/node_mass
+    N_nodes = int(num_nodes[0]*num_nodes[1]*num_nodes[2])
+    k = mre.initialize.get_spring_constants(E, l_e)
+    k = np.array(k)
+
+    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions
 
 def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
     """stress for homogeneous isotropic material defined by Hooke's law in 3D"""

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from numba.experimental import jitclass
 from numba import types, njit, prange
-import initialize
+import mre.initialize
 #this code was taken from https://stackoverflow.com/questions/41656006/how-to-rasterize-a-sphere
 #originally written by Mitchell Walls on july 16 2021, adapted from a method written by Matt Timmerman in the same thread
 #i will/have made changes to comment out how the code works and changes to adapt for my purposes in simulating MREs, since i need to rasterize spherical particles that will be treated as rigid objects
@@ -334,6 +334,13 @@ def main():
     # ax.scatter3D(node_posns[:,0],node_posns[:,1],node_posns[:,2])
     # save_string = f'./rasterized_sphere_R_{radius}.png'
     # plt.savefig(save_string)
+
+def thesis_plot_voxel_spheres():
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
+    for i in range(11):
+        radius = i + 0.5
+        grid_points_3D = get_sphere_on_grid_for_voxel_plotting(radius)
+        plot_sphere_voxels(grid_points_3D,radius,output_dir)
 
 if __name__ == '__main__':
     # test_get_row_indices_new()
