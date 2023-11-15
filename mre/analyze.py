@@ -465,6 +465,12 @@ def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,bounda
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
+    xlabel = 'X (l_e)'
+    ylabel = 'Y (l_e)'
+    zlabel = 'Z (l_e)'
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
     center = np.round(np.array([Lx,Ly,Lz]))/2
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
@@ -479,22 +485,19 @@ def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,bounda
         xvar = xposn_3D[idx,:,:]
         yvar = yposn_3D[idx,:,:]
         zvar = zposn_3D[idx,:,:]
+        xlim = (xvar.min(),xvar.max())
     elif cut_type_index == 1:
         idx = int(center[1])
         xvar = xposn_3D[:,idx,:]
         yvar = yposn_3D[:,idx,:]
         zvar = zposn_3D[:,idx,:]
+        ylim = (yvar.min(),yvar.max())
     else:
         idx = int(center[2])
         xvar = xposn_3D[:,:,idx]
         yvar = yposn_3D[:,:,idx]
         zvar = zposn_3D[:,:,idx]
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
+        zlim = (zvar.min(),zvar.max())
     # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
     # if cut_type_index == 0:
     #     idx = int(center[0])
@@ -566,6 +569,245 @@ def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,bounda
         ax.set_title(tag)
         tag = "_" + tag
     savename = output_dir + f'wireframe_cut_{cut_type}_{center[cut_type_index]}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
+    """Plot a cut through the simulated volume, showing the configuration of the nodes that sat at the specified layer of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    if cut_type_index == 0:
+        assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
+    elif cut_type_index == 1:
+        assert layer <= Ly and layer >= 0, f'Layer choice not within bounds of available layers [0,{Ly}]'
+    elif cut_type_index == 2:
+        assert layer <= Lz and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lz}]'
+    xlabel = 'X (l_e)'
+    ylabel = 'Y (l_e)'
+    zlabel = 'Z (l_e)'
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(layer),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    idx = int(layer)
+    if cut_type_index == 0:
+        xvar = xposn_3D[idx,:,:]
+        yvar = yposn_3D[idx,:,:]
+        zvar = zposn_3D[idx,:,:]
+        xlim = (xvar.min(),xvar.max())
+    elif cut_type_index == 1:
+        xvar = xposn_3D[:,idx,:]
+        yvar = yposn_3D[:,idx,:]
+        zvar = zposn_3D[:,idx,:]
+        ylim = (yvar.min(),yvar.max())
+    else:
+        xvar = xposn_3D[:,:,idx]
+        yvar = yposn_3D[:,:,idx]
+        zvar = zposn_3D[:,:,idx]
+        zlim = (zvar.min(),zvar.max())
+    # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
+    # if cut_type_index == 0:
+    #     xvar = yposn_3D[idx,:,:]
+    #     yvar = zposn_3D[idx,:,:]
+    #     zvar = xposn_3D[idx,:,:]
+    #     xlabel = 'Y (l_e)'
+    #     ylabel = 'Z (l_e)'
+    #     zlabel = 'X (l_e)'
+    #     xlim = (-0.1,Ly*1.1)
+    #     ylim = (-0.1,Lz*1.1)
+    #     zlim = (-0.1,Lx*1.1)
+    # elif cut_type_index == 1:
+    #     xvar = xposn_3D[:,idx,:]
+    #     yvar = zposn_3D[:,idx,:]
+    #     zvar = yposn_3D[:,idx,:]
+    #     xlabel = 'X (l_e)'
+    #     ylabel = 'Z (l_e)'
+    #     zlabel = 'Y (l_e)'
+    #     xlim = (-0.1,Lx*1.1)
+    #     ylim = (-0.1,Lz*1.1)
+    #     zlim = (-0.1,Ly*1.1)
+    # else:
+    #     xvar = xposn_3D[:,:,idx]
+    #     yvar = yposn_3D[:,:,idx]
+    #     zvar = zposn_3D[:,:,idx]
+    #     xlabel = 'X (l_e)'
+    #     ylabel = 'Y (l_e)'
+    #     zlabel = 'Z (l_e)'
+    #     xlim = (-0.1,Lx*1.1)
+    #     ylim = (-0.1,Ly*1.1)
+    #     zlim = (-0.1,Lz*1.1)
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    #alternative to below, use set unpacking
+    #*particle_cut_nodes, = particle_cut_nodes_set
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    #similar to the above for the wiremesh... letting the positions be the positions variables(x,y,z), instead of trying to have everything lie in the same plane visually when plotting (which is appropriate when i am 2D plotting, but removes a great deal of the benefit of trying the 3D plotting)
+    # if cut_type_index == 0:
+    #     xvar = node_posns[particle_cut_nodes,1]
+    #     yvar = node_posns[particle_cut_nodes,2]
+    #     zvar = node_posns[particle_cut_nodes,0]
+    # elif cut_type_index == 1:
+    #     xvar = node_posns[particle_cut_nodes,0]
+    #     yvar = node_posns[particle_cut_nodes,2]
+    #     zvar = node_posns[particle_cut_nodes,1]
+    # else:
+    #     xvar = node_posns[particle_cut_nodes,0]
+    #     yvar = node_posns[particle_cut_nodes,1]
+    #     zvar = node_posns[particle_cut_nodes,2]
+    xvar = node_posns[particle_cut_nodes,0]
+    yvar = node_posns[particle_cut_nodes,1]
+    zvar = node_posns[particle_cut_nodes,2]
+    ax.scatter(xvar,yvar,zvar,'o',color='r')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'wireframe_cut_{cut_type}_{layer}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag=""):
+    """plot the outer surfaces of the simulated volume in a tile plot, using contours (tricontourf())"""
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    fig, axs = plt.subplots(2,3)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    layers = (0,Lx,0,Ly,0,Lz)
+    for cut_type_index in range(3):
+        if cut_type_index == 0:
+            xlabel = 'Y (l_e)'
+            ylabel = 'Z (l_e)'
+            xlim = (-0.1,Ly*1.1)
+            ylim = (-0.1,Lz*1.1)
+        elif cut_type_index == 1:
+            xlabel = 'X (l_e)'
+            ylabel = 'Z (l_e)'
+            xlim = (-0.1,Lx*1.1)
+            ylim = (-0.1,Lz*1.1)
+        else:
+            xlabel = 'X (l_e)'
+            ylabel = 'Y (l_e)'
+            xlim = (-0.1,Lx*1.1)
+            ylim = (-0.1,Ly*1.1)
+        for i in range(2):
+            idx = int(layers[2*cut_type_index+i])
+            if cut_type_index == 0:
+                xvar2D = xposn_3D[idx,:,:]
+                yvar2D = yposn_3D[idx,:,:]
+                zvar2D = zposn_3D[idx,:,:]
+                # xlim = (xvar.min(),xvar.max())
+                xvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+                yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+                zvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+            elif cut_type_index == 1:
+                xvar2D = xposn_3D[:,idx,:]
+                yvar2D = yposn_3D[:,idx,:]
+                zvar2D = zposn_3D[:,idx,:]
+                # ylim = (yvar.min(),yvar.max())
+                xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+                yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+                zvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+            else:
+                xvar2D = xposn_3D[:,:,idx]
+                yvar2D = yposn_3D[:,:,idx]
+                zvar2D = zposn_3D[:,:,idx]
+                # zlim = (zvar.min(),zvar.max())
+                xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+                yvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+                zvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+            ax = axs[i,cut_type_index]
+            # ax.scatter(xvar,yvar,color ='b',marker='o',zorder=2.5)
+            levels = np.linspace(zvar.min(),zvar.max(),20)
+            ax.scatter(xvar,yvar,marker='o',color='b',s=2.0,zorder=2.5)
+            sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.axis('equal')
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            plt.colorbar(sc,ax=ax)
+            #don't forget to add a colorbar and limits
+    fig.tight_layout()
+    savename = output_dir + f'outersurfaces_tricontourf_tile_visualization' + tag + '.png'
+    plt.savefig(savename)
+    return 0
+
+def plot_outer_surfaces_wireframe(eq_node_posns,node_posns,boundary_conditions,output_dir,tag=""):
+    """Plot the outer surfaces of the simulated volume.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    xlabel = 'X (l_e)'
+    ylabel = 'Y (l_e)'
+    zlabel = 'Z (l_e)'
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    # cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(layer),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    layers = (0,Lx,0,Ly,0,Lz)
+    for cut_type_index in range(3):
+        for i in range(2):
+            idx = int(layers[2*cut_type_index+i])
+            if cut_type_index == 0:
+                xvar = xposn_3D[idx,:,:]
+                yvar = yposn_3D[idx,:,:]
+                zvar = zposn_3D[idx,:,:]
+                # xlim = (xvar.min(),xvar.max())
+            elif cut_type_index == 1:
+                xvar = xposn_3D[:,idx,:]
+                yvar = yposn_3D[:,idx,:]
+                zvar = zposn_3D[:,idx,:]
+                # ylim = (yvar.min(),yvar.max())
+            else:
+                xvar = xposn_3D[:,:,idx]
+                yvar = yposn_3D[:,:,idx]
+                zvar = zposn_3D[:,:,idx]
+                # zlim = (zvar.min(),zvar.max())
+            ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'wireframe_outer_surfaces_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
     plt.savefig(savename)
     plt.close()
 

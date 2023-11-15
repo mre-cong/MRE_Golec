@@ -24,10 +24,16 @@ def main():
 
     sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_{discretization_order}_drag_{drag}/'
 
-    extend_from_checkpoints(sim_dir,max_integrations=20,max_integration_steps=2000)
+    # extend_from_checkpoints(sim_dir,max_integrations=20,max_integration_steps=2000)
 
     initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
-
+    with os.scandir(sim_dir) as dirIterator:
+        subfolders = [f.path for f in dirIterator if f.is_dir()]
+    for i in range(len(subfolders)):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_outer_surfaces_wireframe(initial_node_posns,final_posns,boundary_conditions,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
+        mre.analyze.plot_tiled_outer_surfaces_contours(initial_node_posns,final_posns,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
     # print(f'{params.dtype}')
 
     for i in range(len(params[0])):
@@ -121,7 +127,7 @@ def extend_from_checkpoints(sim_dir,max_integrations,max_integration_steps):
     # simulate_scaled()
     # print_relevant_information_on_status_and_on_completion()
 
-def extend_from_checkpoint(checkpoint_file,max_integrations,max_integration_steps,subfolder_flag=True):
+def extend_from_checkpoint(checkpoint_file,max_integrations,max_integration_steps,tolerance,subfolder_flag=True):
     """Extend a simulation from a checkpoint file"""
     tmp_var = checkpoint_file.split('/')
     if subfolder_flag:
@@ -138,12 +144,15 @@ def extend_from_checkpoint(checkpoint_file,max_integrations,max_integration_step
             sim_dir = checkpoint_file[:-1*(len(tmp_var[-2]))-1]
         elif tmp_var[-1] != '':
             sim_dir = checkpoint_file[:-1*(len(tmp_var[-1]))-1]
+        output_dir = sim_dir
+    if output_dir[-1] != '/':
+        output_dir += '/'
     initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
     solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     t_f = 30
     start = time.time()
-    sol, return_status = simulate.extend_simulate_scaled(solution,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,applied_field,particle_radius,particle_mass,chi,Ms,drag,initial_node_posns,output_dir,i,max_integrations,max_integration_steps,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
+    sol, return_status = simulate.extend_simulate_scaled(solution,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,applied_field,particle_radius,particle_mass,chi,Ms,drag,initial_node_posns,output_dir,i,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
     end = time.time()
     delta = end - start
     x0 = np.reshape(sol[:initial_node_posns.shape[0]*initial_node_posns.shape[1]],initial_node_posns.shape)
@@ -195,6 +204,6 @@ def read_in_simulation_parameters(sim_dir):
     return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions
 
 if __name__ == "__main__":
-    sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_3_drag_10/'
-    extend_from_checkpoint(sim_dir+'field_2_Bext_0.15/checkpoint18.h5',1,2000)
-    # main()
+    # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-05_2particle_larger_WCA_cutoff_order_3_drag_10/'
+    # extend_from_checkpoint(sim_dir+'field_2_Bext_0.15/checkpoint19.h5',max_integrations=20,max_integration_steps=2500,tolerance=1e-4)
+    main()
