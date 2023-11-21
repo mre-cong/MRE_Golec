@@ -125,8 +125,8 @@ def get_sphere_on_grid(radius):
     grid = np.zeros((max,max,max),dtype=bool)
     rs = RasterizeSphere(svoxel, radius, grid)
     grid_points = np.transpose(np.where(rs.grid))
-    print(rs.grid)
-    print(grid_points)
+    # print(rs.grid)
+    # print(grid_points)
     return np.array([*grid_points])
 
 def get_sphere_on_grid_for_voxel_plotting(radius):

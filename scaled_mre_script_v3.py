@@ -815,8 +815,8 @@ def main_strain():
 def main_series_simulations():
     """A series of simulations to run during the Thanksgiving break while I'm away, with a focus on getting results that can be used for calculating effective moduli dependence on the applied field"""
     mu0 = 4*np.pi*1e-7
-    H_mag = 1.0/mu0
-    n_field_steps = 1
+    H_mag = 0.25/mu0
+    n_field_steps = 5
     H_step = H_mag/n_field_steps
     Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
@@ -834,7 +834,7 @@ def main_series_simulations():
                 Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                 for Hext in Hext_series:
                     print(f'field_or_strain_type_string={field_or_strain_type_string}\nstrain_type={strain_type}\nstrain_direction={strain_direction}\nHext={Hext}\n')
-                    # main_field_dependent_modulus(discretization_order=3,separation_meters=9e-6,E=9e3,nu=0.499,Hext=Hext,field_or_strain_type_string='shear_strain',strain_type='shearing',strain_direction=('z','x'),max_integrations=40,max_integration_steps=5000,tolerance=1e-6)    
+                    main_field_dependent_modulus(discretization_order=2,separation_meters=9e-6,E=9e3,nu=0.499,Hext=Hext,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=40,max_integration_steps=5000,tolerance=1e-6)    
 
 
 def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext=np.array([0,0,0],dtype=np.float64),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-6):
@@ -887,7 +887,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
     
-    particles = np.array([],dtype=np.int32)
+    # particles = np.array([],dtype=np.int32)
     particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
     chi = 131
     Ms = 1.9e6
@@ -935,7 +935,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     # strain_type = 'shearing'
     # strain_direction = ('z','x')
     #shear strain (nonlinear definition) is defined as tangent of the angle opened up. the linear shear strain is simply the angle (which makes sense, the small angle approximation for tangent theta is theta)
-    shear_strain_max = np.pi/2/90*20
+    # shear_strain_max = np.pi/2/90*20
     strain_max = 0.01
     if strain_type =='shearing':
         strain_max = np.arctan(0.01)
@@ -947,7 +947,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
         strain_step_size = strain_max/(n_strain_steps-1)
     strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_{strain_type}_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_drag_{drag}_Bext_{np.round(Hext*mu0,decimals=3)}'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
