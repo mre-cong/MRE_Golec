@@ -32,8 +32,10 @@ def main():
     for i in range(len(subfolders)):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_outer_surfaces_wireframe(initial_node_posns,final_posns,boundary_conditions,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
-        mre.analyze.plot_tiled_outer_surfaces_contours(initial_node_posns,final_posns,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
+        mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,boundary_conditions,sim_dir,tag="")
+        # mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,sim_dir,tag="")
+        # mre.analyze.plot_outer_surfaces(initial_node_posns,final_posns,boundary_conditions,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
+        # mre.analyze.plot_tiled_outer_surfaces_contours(initial_node_posns,final_posns,sim_dir,tag=f'field_{i}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}')
     # print(f'{params.dtype}')
 
     for i in range(len(params[0])):

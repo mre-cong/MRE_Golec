@@ -56,7 +56,7 @@ def main():
         final_posns, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         # mre.analyze.plot_outer_surfaces_wireframe(initial_node_posns,final_posns,boundary_conditions,output_dir,tag=f"")
-        mre.analyze.plot_tiled_outer_surfaces_contours(initial_node_posns,final_posns,output_dir)
+        mre.analyze.plot_outer_surfaces(initial_node_posns,final_posns,boundary_conditions,sim_dir,tag=f'{i}')
     
     effective_modulus, stress, strains, secondary_stress = get_effective_modulus(sim_dir)
 

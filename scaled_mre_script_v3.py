@@ -812,6 +812,155 @@ def main_strain():
     simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
+def main_series_simulations():
+    """A series of simulations to run during the Thanksgiving break while I'm away, with a focus on getting results that can be used for calculating effective moduli dependence on the applied field"""
+    mu0 = 4*np.pi*1e-7
+    H_mag = 1.0/mu0
+    n_field_steps = 1
+    H_step = H_mag/n_field_steps
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    strain_types = ('tension','compression','shearing')
+    strain_type_strings = ('tension_strain','compressive_strain','shear_strain')
+    strain_directions = ((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
+    Hext_angles = (0,np.pi/2)
+    for i, strain_type in enumerate(strain_types):
+        for strain_direction in strain_directions[i]:
+            field_or_strain_type_string = strain_type_strings[i]
+            for Hext_angle in Hext_angles:
+                Hext_series = np.zeros((len(Hext_series_magnitude),3))
+                Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+                Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+                for Hext in Hext_series:
+                    print(f'field_or_strain_type_string={field_or_strain_type_string}\nstrain_type={strain_type}\nstrain_direction={strain_direction}\nHext={Hext}\n')
+                    # main_field_dependent_modulus(discretization_order=3,separation_meters=9e-6,E=9e3,nu=0.499,Hext=Hext,field_or_strain_type_string='shear_strain',strain_type='shearing',strain_direction=('z','x'),max_integrations=40,max_integration_steps=5000,tolerance=1e-6)    
+
+
+def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext=np.array([0,0,0],dtype=np.float64),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-6):
+    """Running a two particle simulation whose output can be used to calculate an effective modulus, with the end goal being calculation of the dependence of the effective modulus on the applied magnetic field."""
+    start = time.time()
+    # E = 9e3
+    # nu = 0.499
+    # max_integrations = 5
+    # max_integration_steps = 5000
+    # tolerance = 1e-6
+    #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
+    particle_diameter = 3e-6
+    #discretization order
+    # discretization_order = 1
+    l_e = (particle_diameter/2) / (discretization_order + 1/2)
+    # #particle separation
+    # separation_meters = 9e-6
+    separation_volume_elements = int(separation_meters / l_e)
+    separation = separation_volume_elements#20#12#4
+    particle_radius = (discretization_order + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
+
+    Lx = separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
+    Ly = particle_diameter * 7
+    Lz = Ly
+    # l_e = 1e-6
+    t_f = 30
+    
+    N_nodes_x = np.round(Lx/l_e + 1)
+    N_nodes_y = np.round(Ly/l_e + 1)
+    N_nodes_z = np.round(Lz/l_e + 1)
+    N_el_x = N_nodes_x - 1
+    N_el_y = N_nodes_y - 1
+    N_el_z = N_nodes_z - 1
+    
+    normalized_dimensions = np.array([N_el_x,N_el_y,N_el_z],dtype=np.int32)
+    normalized_posns = mre.initialize.discretize_space_normalized(N_nodes_x,N_nodes_y,N_nodes_z)
+    Lx = N_el_x*l_e
+    Ly = N_el_y*l_e
+    Lz = N_el_z*l_e
+    dimensions = np.array([Lx,Ly,Lz])
+    elements = springs.get_elements_v2_normalized(N_nodes_x, N_nodes_y, N_nodes_z)
+    boundaries = mre.initialize.get_boundaries(normalized_posns)
+    k = mre.initialize.get_spring_constants(E, l_e)
+    kappa = mre.initialize.get_kappa(E, nu)
+    dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
+    node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
+    k = np.array(k,dtype=np.float64)
+    max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
+    springs_var = np.empty((max_springs,4),dtype=np.float64)
+    num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
+    springs_var = springs_var[:num_springs,:]
+    
+    particles = np.array([],dtype=np.int32)
+    particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
+    chi = 131
+    Ms = 1.9e6
+
+    # check if the directory for output exists, if not make the directory
+    current_dir = os.path.abspath('.')
+
+    mu0 = 4*np.pi*1e-7
+    # H_mag = 0.0/mu0
+    # n_field_steps = 1
+    # H_step = H_mag/n_field_steps
+    # Hext_angle = (2*np.pi/360)*0#30
+    # Hext_series_magnitude = np.arange(H_mag,H_mag + 1,H_step)
+    # #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    # Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    # Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+    # Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+    # Hext = np.array([0,0,0],dtype=np.float64)
+    # Hext_series = Hext
+    x0 = normalized_posns.copy()
+    #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
+    #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
+    N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
+    m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
+    #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
+    k_e = k[0]
+    characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
+    #we will call the scaling coefficient beta
+    beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+    #if i wanted to try and estimate the effective stiffness for small deviations from initial positions of an internal node, i could then calculate a different characteristic time and scaling constant
+    effective_stiffness_guess = 2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)
+    other_universe_beta = 4*(np.pi**2)*characteristic_mass/(effective_stiffness_guess*l_e)
+    #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
+    beta_i = beta/m
+    #new beta coefficient without characteristic mass
+    beta_new = 4*(np.pi**2)/(k_e*l_e)
+    #using simple harmonic oscillator to calculate a critical drag coefficient, though the actual value likely differs from this one (if i restrict my view to assume, in each cartesian direction, only two springs, resulting in an effective stiffness twice that of a single spring, then the drag coefficient would be \sqrt(2) larger. taking into account the impact of 8 center diagonal springs, and again considering motion in one cartesian direction, the length change is only due to one component (and so we have 8 springs, but the 45 degree angle between the cartesian axis and the axis of the springs reduces the contribution by 1/\sqrt(2))). we also have 8 face diagonal springs, ignoring the 4 that lie in the plane whose normal is parallel to the direction of the displacement of the node, and again a 45 degree angle)
+    # drag = beta_new*2*np.sqrt(characteristic_mass*k_e)
+    # alt_drag = beta_new*2*np.sqrt(characteristic_mass*(2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)))
+    drag = 20
+    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
+    my_sim.set_time(t_f)
+    # field_or_strain_type_string = 'shear_strain'
+    # strain_type = 'shearing'
+    # strain_direction = ('z','x')
+    #shear strain (nonlinear definition) is defined as tangent of the angle opened up. the linear shear strain is simply the angle (which makes sense, the small angle approximation for tangent theta is theta)
+    shear_strain_max = np.pi/2/90*20
+    strain_max = 0.01
+    if strain_type =='shearing':
+        strain_max = np.arctan(0.01)
+    # strain_max = 0.20
+    n_strain_steps = 1
+    if n_strain_steps == 1:
+        strain_step_size = strain_max
+    else:  
+        strain_step_size = strain_max/(n_strain_steps-1)
+    strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
+    today = date.today()
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_strain_testing_{strain_type}_order_{discretization_order}_drag_{drag}/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    my_sim.write_log(output_dir)
+    
+    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,strains,field_or_strain_type_string,output_dir)
+    end = time.time()
+    delta = end - start
+    print(f'Time to initialize:{delta} seconds\n')
+    
+    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=True)
+    my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
+
 if __name__ == "__main__":
-    main_strain()
+    main_series_simulations()
+    # main_strain()
     # main2()

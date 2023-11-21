@@ -809,6 +809,7 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     return accel
 
 def get_particle_center(particle_nodes,node_posns):
+    """Given the indices of the nodes making up the particle, and the node positions variable describing the system, find the center of the spherical particle."""
     particle_node_posns = node_posns[particle_nodes,:]
     x_max = np.max(particle_node_posns[:,0])
     y_max = np.max(particle_node_posns[:,1])
@@ -820,6 +821,7 @@ def get_particle_center(particle_nodes,node_posns):
     return particle_center
 
 def set_fixed_nodes(accel,fixed_nodes):
+    """Given the acceleration variable and the indices of the nodes that should be held fixed in the simulation, set the acceleration variable entries to zero for all components of acceleration for the passed nodes"""
     for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
         #TODO almost certainly faster to remove the inner loop and just set each value to 0 in order, or using python semantics, just set the row to zero?
         for j in range(3):
