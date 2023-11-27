@@ -252,6 +252,7 @@ def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     plt.close()
 
 def get_displacement_norms(final_posns,start_posns):
+    """Given the final and starting positions, return the mean and maximum node displacement."""
     displacement = final_posns-start_posns
     displacement_norms = np.linalg.norm(displacement,axis=1)
     max_displacement = np.max(displacement_norms)
@@ -259,6 +260,7 @@ def get_displacement_norms(final_posns,start_posns):
     return mean_displacement,max_displacement
 
 def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement,output_dir):
+    """Given the number of integrations,array of mean and maximum displacements, and a directory to save to, generate and save a figure with two plots of mean and maximum node displacement versus integration."""
     fig, axs = plt.subplots(2)
     axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
     axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
@@ -314,6 +316,7 @@ def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kapp
     return sol#returning a solution object, that can then have it's attributes inspected
 
 class SimCriteria:
+    """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
     def __init__(self,solutions,*args):
         self.get_criteria_per_iteration(solutions,*args)
         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
@@ -410,15 +413,6 @@ class SimCriteria:
         plt.savefig(savename)
         # plt.show()
         plt.close()
-
-    def old_append_criteria(self,other):
-        self.a_norm_avg = np.append(self.a_norm_avg,other.a_norm_avg)
-        self.delta_a_norm = np.append(self.delta_a_norm,other.delta_a_norm)
-        self.a_norm_max = np.append(self.a_norm_max,other.a_norm_max)
-        self.particle_a_norm = np.append(self.particle_a_norm,other.particle_a_norm)
-        self.particle_separation = np.append(self.particle_separation,other.particle_separation)
-        self.iter_number = np.append(self.iter_number,np.max(self.iter_number)+other.iter_number + 1)
-        self.time = np.append(self.time,np.max(self.time)+other.time)
     
     def append_criteria(self,other):
         """Append data from one SimCriteria object to another, by appending each member variable. Special cases (like time, iteration number) are appended in a manner to reflect the existence of prior integration iterations of the simulation"""
@@ -575,147 +569,7 @@ class SimCriteria:
         savename = output_dir + 'timestep_per_iteration_and_time.png'
         plt.savefig(savename)
         plt.close()
-
-    def plot_criteria_v_time(self,output_dir):
-        if not (os.path.isdir(output_dir)):
-            os.mkdir(output_dir)
-        fig1 = plt.figure()
-        plt.plot(self.time,self.a_norm_avg)
-        ax = plt.gca()
-        ax.set_xlabel('scaled time')
-        ax.set_ylabel('average acceleration norm')
-        savename = output_dir + f'avg_accel_norm_v_time.png'
-        plt.savefig(savename)
-
-        fig2 = plt.figure()
-        plt.plot(self.time,self.a_norm_max)
-        ax = plt.gca()
-        ax.set_xlabel('scaled time')
-        ax.set_ylabel('acceleration norm max')
-        savename = output_dir + f'accel_norm_max_v_time.png'
-        plt.savefig(savename)
-
-        fig3 = plt.figure()
-        plt.plot(self.time[:self.delta_a_norm.shape[0]],self.delta_a_norm)
-        ax = plt.gca()
-        ax.set_xlabel('scaled time')
-        ax.set_ylabel('change in average acceleraton norm')
-        savename = output_dir + f'delta_avg_accel_norm_v_time.png'
-        plt.savefig(savename)
-
-        fig5 = plt.figure()
-        plt.plot(self.time,self.particle_a_norm)
-        ax = plt.gca()
-        ax.set_xlabel('scaled time')
-        ax.set_ylabel('particle acceleration norm')
-        savename = output_dir + f'particle_accel_norm_v_time.png'
-        plt.savefig(savename)
-
-        fig6 = plt.figure()
-        plt.plot(self.time,self.particle_separation)
-        ax = plt.gca()
-        ax.set_xlabel('scaled time')
-        ax.set_ylabel('particle separation (in units of l_e)')
-        savename = output_dir + f'particle_separation_v_time.png'
-        plt.savefig(savename)
-        plt.show()
-        plt.close('all')
     
-#function for checking out convergence criteria vs iteration, currently showing the mean acceleration vector norm for the system
-def plot_criteria_v_iteration_scaled(solutions,N_nodes,integration_iteration,*args):
-    iterations = np.array(solutions).shape[0]
-    a_norm_avg = np.zeros((iterations,))
-    a_norm_max = np.zeros((iterations,))
-    a_particle_norm = np.zeros((iterations,))
-    particle_separation = np.zeros((iterations,))
-    output_dir = '/mnt/c/Users/bagaw/Desktop/scaled_mre_system_magnetic_particle_debugging/'
-    if not (os.path.isdir(output_dir)):
-        os.mkdir(output_dir)
-    for count, row in enumerate(solutions):
-        a_var = get_accel_scaled(np.array(row[1:]),*args)
-        a_norms = np.linalg.norm(a_var,axis=1)
-        a_norm_max[count] = np.max(a_norms)
-        max_accel_node_ids = np.argmax(a_norms)
-        # check = max_accel_node_ids in args[2]
-        a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
-        a_particles = a_var[args[2][0],:]
-        a_particle_norm[count] = np.linalg.norm(a_particles[0,:])
-        final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
-        x1 = get_particle_center(args[2][0],final_posns)
-        x2 = get_particle_center(args[2][1],final_posns)
-        particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
-        # if count > 0:
-        #     delta_a_particle = a_particle_norm[count] - a_particle_norm[count-1]
-        #     if delta_a_particle > 10:
-        #         get_accel_scaled(np.array(row[1:]),*args,debug_flag=True)
-    delta_a_norm_avg = a_norm_avg[1:]-a_norm_avg[:-1]
-    fig1 = plt.figure()
-    plt.plot(np.arange(iterations),a_norm_avg)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('average acceleration norm')
-    savename = output_dir + f'avg_accel_norm{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig2 = plt.figure()
-    plt.plot(np.arange(iterations),a_norm_max)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('acceleration norm max')
-    savename = output_dir + f'accel_norm_max{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig3 = plt.figure()
-    plt.plot(np.arange(iterations-1),delta_a_norm_avg)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('change in average acceleraton norm')
-    savename = output_dir + f'delta_avg_accel_norm{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig4 = plt.figure()
-    percent_change_a_norm_avg = 100*delta_a_norm_avg/a_norm_avg[:-1]
-    plt.plot(np.arange(iterations-1),percent_change_a_norm_avg)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('percent change in average acceleraton norm')
-    savename = output_dir + f'percent_dekta_avg_accel_norm{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig5 = plt.figure()
-    plt.plot(np.arange(iterations),a_particle_norm)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('particle acceleration norm')
-    savename = output_dir + f'particle_accel_norm{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig6 = plt.figure()
-    plt.plot(np.arange(iterations),particle_separation)
-    ax = plt.gca()
-    ax.set_xlabel('iteration number')
-    ax.set_ylabel('particle separation (in units of l_e)')
-    savename = output_dir + f'particle_separation{integration_iteration}.png'
-    plt.savefig(savename)
-
-    fig7 = plt.figure()
-    times_array = np.array(solutions)[:,0]
-    plt.plot(times_array,particle_separation)
-    ax = plt.gca()
-    ax.set_xlabel('scaled time')
-    ax.set_ylabel('particle separation (in units of l_e)')
-    savename = output_dir + f'particle_separation{integration_iteration}_vs_time.png'
-    plt.savefig(savename)
-
-    fig8 = plt.figure()
-    plt.plot(times_array,a_particle_norm)
-    ax = plt.gca()
-    ax.set_xlabel('scaled time')
-    ax.set_ylabel('particle acceleration norm')
-    savename = output_dir + f'particle_accel_norm{integration_iteration}_vs_time.png'
-    plt.savefig(savename)
-    plt.show()
-    plt.close('all')
 #!!! generate traction forces or displacements based on some other criteria (choice of experimental setup with a switch statement? stress applied on boundary and then appropriately split onto the correct nodes in the correct directions in the correct amounts based on surface area?)
 
 #function to pass to scipy.integrate.solve_ivp()

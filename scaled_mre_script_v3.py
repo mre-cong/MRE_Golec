@@ -818,7 +818,7 @@ def main_series_simulations():
     H_mag = 0.25/mu0
     n_field_steps = 5
     H_step = H_mag/n_field_steps
-    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     strain_types = ('tension','compression','shearing')
@@ -947,7 +947,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
         strain_step_size = strain_max/(n_strain_steps-1)
     strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_drag_{drag}_Bext_{np.round(Hext*mu0,decimals=3)}'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_drag_{drag}_Bext_{np.round(Hext*mu0,decimals=3)}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
@@ -957,7 +957,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
     
-    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=True)
+    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
