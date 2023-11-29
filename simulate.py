@@ -738,7 +738,7 @@ def get_torque_on_particle(particle,accel,node_posns):
     return total_torque
 
 def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,debug_flag=False):
-    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node. alternative method using coefficients for forces that are already scaled."""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
     N_nodes = int(np.round(N/3))

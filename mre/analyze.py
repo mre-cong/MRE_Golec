@@ -68,57 +68,6 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     plt.savefig(savename)
     plt.close()
 
-def post_plot_cut_normalized_hyst(eq_node_posns,node_posns,springs,particles,Hext,output_dir):
-    plot_cut_normalized_hyst('xy',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
-    plot_cut_normalized_hyst('xz',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
-    plot_cut_normalized_hyst('yz',eq_node_posns,node_posns,springs,particles,Hext,output_dir)
-
-def plot_cut_normalized_hyst(cut_type,eq_node_posns,node_posns,springs,particles,Hext,output_dir):
-    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
-    
-    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut."""
-    cut_type_dict = {'xy':0, 'xz':1, 'yz':2}
-    cut_type_index = cut_type_dict[cut_type]
-    Lx = eq_node_posns[:,0].max()
-    Ly = eq_node_posns[:,1].max()
-    Lz = eq_node_posns[:,2].max()
-    center = (np.round(np.array([Lx,Ly,Lz]))/2)
-    fig = plt.figure()
-    ax = fig.add_subplot(projection= '3d')
-    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
-        cut_nodes1 = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
-        cut_nodes2 =np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]-1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
-        cut_nodes = np.concatenate((cut_nodes1,cut_nodes2))
-    ax.scatter(node_posns[cut_nodes,0],node_posns[cut_nodes,1],node_posns[cut_nodes,2],color ='b',marker='o')
-    plot_subset_springs(ax,node_posns,cut_nodes,springs,spring_color='b')
-    #now identify which of those nodes belong to the particle and the cut. set intersection?
-    cut_nodes_set = set(cut_nodes)
-    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
-    particle_nodes_set = set(particles.ravel())
-    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
-    #alternative to below, use set unpacking
-    #*particle_cut_nodes, = particle_cut_nodes_set
-    particle_cut_nodes = [x for x in particle_cut_nodes_set]
-    ax.scatter(node_posns[particle_cut_nodes,0],node_posns[particle_cut_nodes,1],node_posns[particle_cut_nodes,2],color='k',marker='o')
-    plot_subset_springs(ax,node_posns,particle_cut_nodes_set,springs,spring_color='r')
-    ax.set_xlim((-0.3,1.2*Lx))
-    ax.set_ylim((0,1.2*Ly))
-    ax.set_zlim((0,1.2*Lz))
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-    if cut_type_index == 0:
-        ax.view_init(elev=0,azim=0,roll=0)
-    elif cut_type_index == 1:
-        ax.view_init(elev=0,azim=-90,roll=0)
-    else:
-        ax.view_init(elev=90,azim=-90,roll=0)
-    # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
-    savename = output_dir + f'post_plot_cut_{cut_type}_{center[cut_type_index]}' + 'Hext_' + str(np.round(Hext[2],decimals=2)) +'.png'
-    plt.savefig(savename)
-    plt.close()
-
 def plot_subset_springs(ax,node_posns,nodes,springs,spring_color,spring_type=None):
     """Plot a subset of the springs which are connected to the nodes passed to the function"""
     if isinstance(nodes,set):
@@ -1047,72 +996,6 @@ def get_component_3D_arrays(array,dimensions):
     yarray_3D = transform_to_3D_array(array[:,1],dimensions)
     zarray_3D = transform_to_3D_array(array[:,2],dimensions)
     return xarray_3D, yarray_3D, zarray_3D
-
-def plot_overlayed_center_cuts_wireframe(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
-    """Plot a cut through the center of the simulated volume on a single figure/axis, showing the configuration of the nodes that sat at the center of the initialized system.
-    
-    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
-    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
-    Lx = eq_node_posns[:,0].max()
-    Ly = eq_node_posns[:,1].max()
-    Lz = eq_node_posns[:,2].max()
-    center = np.round(np.array([Lx,Ly,Lz]))/2
-    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    for cut_type_index in range(1,3):
-        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
-        # if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
-        #     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
-        xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-        if cut_type_index == 0:
-            idx = int(center[0])
-            xvar = xposn_3D[idx,:,:]
-            yvar = yposn_3D[idx,:,:]
-            zvar = zposn_3D[idx,:,:]
-        elif cut_type_index == 1:
-            idx = int(center[1])
-            xvar = xposn_3D[:,idx,:]
-            yvar = yposn_3D[:,idx,:]
-            zvar = zposn_3D[:,idx,:]
-        else:
-            idx = int(center[2])
-            xvar = xposn_3D[:,:,idx]
-            yvar = yposn_3D[:,:,idx]
-            zvar = zposn_3D[:,:,idx]
-        xlabel = 'X (l_e)'
-        ylabel = 'Y (l_e)'
-        zlabel = 'Z (l_e)'
-        xlim = (-0.1,Lx*1.1)
-        ylim = (-0.1,Ly*1.1)
-        zlim = (-0.1,Lz*1.1)
-        ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
-        #now identify which of those nodes belong to the particle and the cut. set intersection?
-        cut_nodes_set = set(cut_nodes)
-        #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
-        particle_nodes_set = set(particles.ravel())
-        particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
-        #alternative to below, use set unpacking
-        #*particle_cut_nodes, = particle_cut_nodes_set
-        particle_cut_nodes = [x for x in particle_cut_nodes_set]
-        xvar = node_posns[particle_cut_nodes,0]
-        yvar = node_posns[particle_cut_nodes,1]
-        zvar = node_posns[particle_cut_nodes,2]
-        ax.scatter(xvar,yvar,zvar,'o',color='r')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
-    ax.set_zlim(zlim)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'overlayed_wireframe_cuts_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
-    plt.savefig(savename)
-    plt.close()
 
 def plot_center_cuts_surf(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""

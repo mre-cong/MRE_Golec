@@ -286,13 +286,14 @@ def plot_sphere_voxels(grid_points,radius,output_dir):
     plt.savefig(output_dir+save_name)
 
 def place_sphere(radius,l_e,center,dim):
+    """Given the sphere radius in voxels, the position of the center of the spherical particle, and the dimensions of the simulation (number of elements in each direction), return the indices of the nodes that make up the spherical particle."""
     grid_points = get_sphere_on_grid(radius)
     node_posns = get_nodes_from_grid_voxels(grid_points,l_e,center)
     row_indices = get_row_indices(node_posns,l_e,dim)
     return row_indices
 
 def place_sphere_normalized(radius,center,dim):
-    """Given the sphere radius in voxels, the position of the center of the spherical particle in scaled units, and the noramlized dimensions of the simulation (number of elements in each direction), return the indices of the nodes that make up the spherical particle."""
+    """Given the sphere radius in voxels, the position of the center of the spherical particle in scaled units, and the normalized dimensions of the simulation (number of elements in each direction), return the indices of the nodes that make up the spherical particle."""
     grid_points = get_sphere_on_grid(radius)
     node_posns = get_nodes_from_grid_voxels(grid_points,1,center)
     row_indices = get_row_indices_normalized(node_posns,dim)
