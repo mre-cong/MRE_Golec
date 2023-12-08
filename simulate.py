@@ -734,7 +734,7 @@ def get_torque_on_particle(particle,accel,node_posns):
     particle_center = get_particle_center(particle,node_posns)
     nodal_torques = np.zeros((particle.shape[0],3))
     nodal_torques = np.cross(node_posns[particle,:] - particle_center,accel[particle,:])
-    total_torque = np.sum(nodal_torques,axis=1)
+    total_torque = np.sum(nodal_torques,axis=0)
     return total_torque
 
 def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,debug_flag=False):

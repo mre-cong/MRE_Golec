@@ -239,7 +239,7 @@ def main():
         # #I can run strain simulations to try and get effective moduli. to get moduli as a function of position I need to be more thoughtful. the stiffness is a fourth rank tensor, with symmetry arguments, and for isotropic homogeneous media, there are only 2 independent elements. I still need to better understand the symmetry arguments, and see if i can go from the strain functions to stress using the stiffness tensor. or if i can use the forces on the nodes, can i get the stress tensor directly? I need to review my notes from days in the prior few weeks. I can draw imaginary planes through the node positions and then calculate force per (undeformed) area. is that appropriate? the normal example is an infinitessimal cube volume, where the direction and magnitude of forces on opposite faces have to balance to avoid a rotation (angular momentum balance, same for linear momentum (or torque/force))
 
 def get_effective_modulus(sim_dir):
-    """Given a simulation directory, calculate and plot the stress-strain curve and effective modulus versus strain."""
+    """Given a simulation directory, calculate and plot the stress-strain curve and effective modulus versus strain. The returned stress variable is the effective stress applied to the surface equivalent to the "probe" in an indentation experiment. The secondary_stress variable is the effective stress applied to the surface held fixed by a table/wall/platform in an experimental measurement. The effective modulus is calculated using the effective stress applied to the "probed" surface."""
     _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
     #below is a way of getting the subfolders in the simulationd directory, and then a way to traverse/grab the checkpoint files in order. probably don't need the checkpoint stuff, but if i need to traverse the subfolders...
     # with os.scandir(sim_dir) as dirIterator:
@@ -285,10 +285,10 @@ def get_tension_compression_modulus(sim_dir,strain_direction):
         end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
         if strain_direction[0] == 'x':
             #forces that must act on the boundaries for them to be in this position
-            relevant_boundaries = ('left','right')
+            relevant_boundaries = ('right','left')
             dimension_indices = (1,2)
         elif strain_direction[0] == 'y':
-            relevant_boundaries = ('front','back')
+            relevant_boundaries = ('back','front')
             dimension_indices = (0,2)
         elif strain_direction[0] == 'z':
             relevant_boundaries = ('top','bot')
@@ -554,13 +554,13 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type =='xz':
             Z = vectorfield_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type == 'yz':
             Z = vectorfield_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]
@@ -622,13 +622,13 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type == 'xz':
             Z = tensor_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type == 'yz':
             Z = tensor_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]

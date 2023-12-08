@@ -352,11 +352,11 @@ def plot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacement_compone
         Z = displacement_component[:,:,index]
         X = xposns[:,:,index]
         Y = yposns[:,:,index]
-    elif 'xz':
+    elif cut_type =='xz':
         Z = displacement_component[:,index,:]
         X = xposns[:,index,:]
         Y = zposns[:,index,:]
-    else:
+    elif cut_type == 'yz':
         Z = displacement_component[index,:,:]
         X = yposns[index,:,:]
         Y = zposns[index,:,:]
@@ -411,13 +411,13 @@ def subplot_cut_pcolormesh_displacement(cut_type,eq_node_posns,displacements,ind
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type == 'xz':
             Z = displacement_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type =='yz':
             Z = displacement_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]
@@ -477,13 +477,13 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type =='xz':
             Z = vectorfield_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type == 'yz':
             Z = vectorfield_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]
@@ -543,13 +543,13 @@ def subplot_cut_pcolormesh_strain(cut_type,eq_node_posns,strain,index,output_dir
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type == 'xz':
             Z = strain_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type == 'yz':
             Z = strain_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]
@@ -611,13 +611,13 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
             Y = yposns[:,:,index]
             xlabel = 'X'
             ylabel = 'Y'
-        elif 'xz':
+        elif cut_type =='xz':
             Z = tensor_component[:,index,:]
             X = xposns[:,index,:]
             Y = zposns[:,index,:]
             xlabel = 'X'
             ylabel = 'Z'
-        else:
+        elif cut_type =='yz':
             Z = tensor_component[index,:,:]
             X = yposns[index,:,:]
             Y = zposns[index,:,:]
