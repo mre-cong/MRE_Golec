@@ -638,117 +638,14 @@ def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,bounda
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
     
     tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
-    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
-    cut_type_index = cut_type_dict[cut_type]
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
     center = np.round(np.array([Lx,Ly,Lz]))/2
-    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
-        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(int(center[cut_type_index]+1/2)),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-    if cut_type_index == 0:
-        idx = int(center[0])
-        xvar = xposn_3D[idx,:,:]
-        yvar = yposn_3D[idx,:,:]
-        zvar = zposn_3D[idx,:,:]
-        xlim = (xvar.min(),xvar.max())
-    elif cut_type_index == 1:
-        idx = int(center[1])
-        xvar = xposn_3D[:,idx,:]
-        yvar = yposn_3D[:,idx,:]
-        zvar = zposn_3D[:,idx,:]
-        ylim = (yvar.min(),yvar.max())
-    else:
-        idx = int(center[2])
-        xvar = xposn_3D[:,:,idx]
-        yvar = yposn_3D[:,:,idx]
-        zvar = zposn_3D[:,:,idx]
-        zlim = (zvar.min(),zvar.max())
-    # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
-    # if cut_type_index == 0:
-    #     idx = int(center[0])
-    #     xvar = yposn_3D[idx,:,:]
-    #     yvar = zposn_3D[idx,:,:]
-    #     zvar = xposn_3D[idx,:,:]
-    #     xlabel = 'Y (l_e)'
-    #     ylabel = 'Z (l_e)'
-    #     zlabel = 'X (l_e)'
-    #     xlim = (-0.1,Ly*1.1)
-    #     ylim = (-0.1,Lz*1.1)
-    #     zlim = (-0.1,Lx*1.1)
-    # elif cut_type_index == 1:
-    #     idx = int(center[1])
-    #     xvar = xposn_3D[:,idx,:]
-    #     yvar = zposn_3D[:,idx,:]
-    #     zvar = yposn_3D[:,idx,:]
-    #     xlabel = 'X (l_e)'
-    #     ylabel = 'Z (l_e)'
-    #     zlabel = 'Y (l_e)'
-    #     xlim = (-0.1,Lx*1.1)
-    #     ylim = (-0.1,Lz*1.1)
-    #     zlim = (-0.1,Ly*1.1)
-    # else:
-    #     idx = int(center[2])
-    #     xvar = xposn_3D[:,:,idx]
-    #     yvar = yposn_3D[:,:,idx]
-    #     zvar = zposn_3D[:,:,idx]
-    #     xlabel = 'X (l_e)'
-    #     ylabel = 'Y (l_e)'
-    #     zlabel = 'Z (l_e)'
-    #     xlim = (-0.1,Lx*1.1)
-    #     ylim = (-0.1,Ly*1.1)
-    #     zlim = (-0.1,Lz*1.1)
-    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
-    #now identify which of those nodes belong to the particle and the cut. set intersection?
-    cut_nodes_set = set(cut_nodes)
-    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
-    particle_nodes_set = set(particles.ravel())
-    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
-    #alternative to below, use set unpacking
-    #*particle_cut_nodes, = particle_cut_nodes_set
-    particle_cut_nodes = [x for x in particle_cut_nodes_set]
-    #similar to the above for the wiremesh... letting the positions be the positions variables(x,y,z), instead of trying to have everything lie in the same plane visually when plotting (which is appropriate when i am 2D plotting, but removes a great deal of the benefit of trying the 3D plotting)
-    # if cut_type_index == 0:
-    #     xvar = node_posns[particle_cut_nodes,1]
-    #     yvar = node_posns[particle_cut_nodes,2]
-    #     zvar = node_posns[particle_cut_nodes,0]
-    # elif cut_type_index == 1:
-    #     xvar = node_posns[particle_cut_nodes,0]
-    #     yvar = node_posns[particle_cut_nodes,2]
-    #     zvar = node_posns[particle_cut_nodes,1]
-    # else:
-    #     xvar = node_posns[particle_cut_nodes,0]
-    #     yvar = node_posns[particle_cut_nodes,1]
-    #     zvar = node_posns[particle_cut_nodes,2]
-    xvar = node_posns[particle_cut_nodes,0]
-    yvar = node_posns[particle_cut_nodes,1]
-    zvar = node_posns[particle_cut_nodes,2]
-    ax.scatter(xvar,yvar,zvar,'o',color='r')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
-    ax.set_zlim(zlim)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'wireframe_cut_{cut_type}_{center[cut_type_index]}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
-    plt.savefig(savename)
-    plt.close()
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    layer = int(center[cut_type_index])
+    plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="",ax=None)
 
 def plot_center_cuts_surf(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
@@ -1449,6 +1346,62 @@ def setup_figure_and_variables_2D(cut_type,eq_node_posns,node_posns):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     return fig,ax,xvar,yvar
+
+def setup_figure_and_variables_3D(cut_type,eq_node_posns,node_posns):
+    """Perform setup and return figure handle, axis handle, and variables, and set axis labels and limits for 3D plots"""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    xlabel = 'X (l_e)'
+    ylabel = 'Y (l_e)'
+    zlabel = 'Z (l_e)'
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
+    center = np.round(np.array([Lx,Ly,Lz]))/2
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(int(center[cut_type_index]+1/2)),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    if cut_type_index == 0:
+        idx = int(center[0])
+        xvar = xposn_3D[idx,:,:]
+        yvar = yposn_3D[idx,:,:]
+        zvar = zposn_3D[idx,:,:]
+        xlim = (xvar.min(),xvar.max())
+    elif cut_type_index == 1:
+        idx = int(center[1])
+        xvar = xposn_3D[:,idx,:]
+        yvar = yposn_3D[:,idx,:]
+        zvar = zposn_3D[:,idx,:]
+        ylim = (yvar.min(),yvar.max())
+    else:
+        idx = int(center[2])
+        xvar = xposn_3D[:,:,idx]
+        yvar = yposn_3D[:,:,idx]
+        zvar = zposn_3D[:,:,idx]
+        zlim = (zvar.min(),zvar.max())
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    return fig, ax, xvar, yvar, zvar
+
+def format_figure(ax,title_size=30,label_size=30,tick_size=30):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    ax.tick_params(labelsize=tick_size)
+    ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+    ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+    ax.set_title(ax.get_title(),fontsize=title_size)
 
 def main():
     pass
