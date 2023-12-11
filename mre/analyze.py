@@ -538,6 +538,93 @@ def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary
     plt.savefig(savename)
     plt.close()
 
+def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
+    """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the user passed layer of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    idx = layer
+    if cut_type_index == 0:
+        xlabel = 'Y (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Ly*1.1)
+        ylim = (-0.1,Lz*1.1)
+    elif cut_type_index == 1:
+        xlabel = 'X (l_e)'
+        ylabel = 'Z (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Lz*1.1)
+    else:
+        xlabel = 'X (l_e)'
+        ylabel = 'Y (l_e)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Ly*1.1)
+    if cut_type_index == 0:
+        xvar2D = xposn_3D[idx,:,:]
+        yvar2D = yposn_3D[idx,:,:]
+        zvar2D = zposn_3D[idx,:,:]
+        xvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+        yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+        zvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+    elif cut_type_index == 1:
+        xvar2D = xposn_3D[:,idx,:]
+        yvar2D = yposn_3D[:,idx,:]
+        zvar2D = zposn_3D[:,idx,:]
+        xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+        yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+        zvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+    else:
+        xvar2D = xposn_3D[:,:,idx]
+        yvar2D = yposn_3D[:,:,idx]
+        zvar2D = zposn_3D[:,:,idx]
+        xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
+        yvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
+        zvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+    fig, ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*idx,eq_node_posns[:,cut_type_index]).nonzero()[0]
+    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
+        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(idx+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
+    levels = np.linspace(zvar.min(),zvar.max(),10)
+    ax.plot(xvar,yvar,'o',color='b')
+    sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
+    #now identify which of those nodes belong to the particle and the cut. set intersection?
+    cut_nodes_set = set(cut_nodes)
+    particle_nodes_set = set(particles.ravel())
+    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
+    particle_cut_nodes = [x for x in particle_cut_nodes_set]
+    if cut_type_index == 0:
+        xvar = node_posns[particle_cut_nodes,1]
+        yvar = node_posns[particle_cut_nodes,2]
+    elif cut_type_index == 1:
+        xvar = node_posns[particle_cut_nodes,0]
+        yvar = node_posns[particle_cut_nodes,2]
+    else:
+        xvar = node_posns[particle_cut_nodes,0]
+        yvar = node_posns[particle_cut_nodes,1]
+    ax.plot(xvar,yvar,'o',color='r')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    plt.colorbar(sc)
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'tricontourf_cut_{cut_type}_{idx}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
+    plt.savefig(savename)
+    plt.close()
+
 def plot_center_cuts_contour(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
     plot_center_cut_contour('xy',eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag)
@@ -556,75 +643,8 @@ def plot_center_cut_contour(cut_type,eq_node_posns,node_posns,particles,boundary
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
-    fig, ax = plt.subplots()
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
-        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(center[cut_type_index]+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if cut_type_index == 0:
-        xvar = node_posns[cut_nodes,1]
-        yvar = node_posns[cut_nodes,2]
-        zvar = node_posns[cut_nodes,0]
-        xlabel = 'Y (l_e)'
-        ylabel = 'Z (l_e)'
-        xlim = (-0.1,Ly*1.1)
-        ylim = (-0.1,Lz*1.1)
-    elif cut_type_index == 1:
-        xvar = node_posns[cut_nodes,0]
-        yvar = node_posns[cut_nodes,2]
-        zvar = node_posns[cut_nodes,1]
-        xlabel = 'X (l_e)'
-        ylabel = 'Z (l_e)'
-        xlim = (-0.1,Lx*1.1)
-        ylim = (-0.1,Lz*1.1)
-    else:
-        xvar = node_posns[cut_nodes,0]
-        yvar = node_posns[cut_nodes,1]
-        zvar = node_posns[cut_nodes,2]
-        xlabel = 'X (l_e)'
-        ylabel = 'Y (l_e)'
-        xlim = (-0.1,Lx*1.1)
-        ylim = (-0.1,Ly*1.1)
-    # ax.scatter(xvar,yvar,color ='b',marker='o',zorder=2.5)
-    levels = np.linspace(zvar.min(),zvar.max(),10)
-    ax.plot(xvar,yvar,'o',color='b')
-    sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
-    # spring_type = np.max(springs[:,2])
-    # plot_subset_springs_2D(ax,cut_type,node_posns,cut_nodes,springs,spring_color='b',spring_type=spring_type)
-    #now identify which of those nodes belong to the particle and the cut. set intersection?
-    cut_nodes_set = set(cut_nodes)
-    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
-    particle_nodes_set = set(particles.ravel())
-    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
-    #alternative to below, use set unpacking
-    #*particle_cut_nodes, = particle_cut_nodes_set
-    particle_cut_nodes = [x for x in particle_cut_nodes_set]
-    if cut_type_index == 0:
-        xvar = node_posns[particle_cut_nodes,1]
-        yvar = node_posns[particle_cut_nodes,2]
-    elif cut_type_index == 1:
-        xvar = node_posns[particle_cut_nodes,0]
-        yvar = node_posns[particle_cut_nodes,2]
-    else:
-        xvar = node_posns[particle_cut_nodes,0]
-        yvar = node_posns[particle_cut_nodes,1]
-    # ax.scatter(xvar,yvar,color='k',marker='o',zorder=2.5)
-    ax.plot(xvar,yvar,'o',color='r')
-    # plot_subset_springs_2D(ax,cut_type,node_posns,particle_cut_nodes_set,springs,spring_color='r',spring_type=spring_type)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
-    plt.colorbar(sc)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'tricontourf_cut_{cut_type}_{center[cut_type_index]}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
-    plt.savefig(savename)
-    plt.close()
+    layer = int(center[cut_type_index])
+    plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="")
 
 def plot_center_cuts_wireframe(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
