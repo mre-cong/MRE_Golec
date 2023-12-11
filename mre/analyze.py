@@ -229,7 +229,7 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
     plt.savefig(savename)
     plt.close()
 
-def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,boundary_conditions,output_dir,tag="",ax=None):
+def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=None):
     """Plot a cut through the simulated volume, showing the configuration of the nodes that sat at the specified layer of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -324,7 +324,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,boundary_conditions,ou
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
-    savename = output_dir + f'surf_cut_{cut_type}_{layer}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
+    savename = output_dir + f'surf_cut_{cut_type}_{layer}_'+ tag +'.png'
     plt.savefig(savename)
     plt.close()
 
@@ -566,6 +566,11 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         ylabel = 'Y (l_e)'
         xlim = (-0.1,Lx*1.1)
         ylim = (-0.1,Ly*1.1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     if cut_type_index == 0:
         xvar2D = xposn_3D[idx,:,:]
         yvar2D = yposn_3D[idx,:,:]
@@ -612,16 +617,11 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         xvar = node_posns[particle_cut_nodes,0]
         yvar = node_posns[particle_cut_nodes,1]
     ax.plot(xvar,yvar,'o',color='r')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
     plt.colorbar(sc)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
-    savename = output_dir + f'tricontourf_cut_{cut_type}_{idx}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
+    savename = output_dir + f'tricontourf_cut_{cut_type}_{idx}_' + tag +'.png'
     plt.savefig(savename)
     plt.close()
 
@@ -685,118 +685,8 @@ def plot_center_cut_surf(cut_type,eq_node_posns,node_posns,particles,boundary_co
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
     center = np.round(np.array([Lx,Ly,Lz]))/2
-    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
-        cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(int(center[cut_type_index]+1/2)),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-    if cut_type_index == 0:
-        idx = int(center[0])
-        xvar = xposn_3D[idx,:,:]
-        yvar = yposn_3D[idx,:,:]
-        zvar = zposn_3D[idx,:,:]
-        color_dimension = xvar
-    elif cut_type_index == 1:
-        idx = int(center[1])
-        xvar = xposn_3D[:,idx,:]
-        yvar = yposn_3D[:,idx,:]
-        zvar = zposn_3D[:,idx,:]
-        color_dimension = yvar
-    else:
-        idx = int(center[2])
-        xvar = xposn_3D[:,:,idx]
-        yvar = yposn_3D[:,:,idx]
-        zvar = zposn_3D[:,:,idx]
-        color_dimension = zvar
-    color_min, color_max = color_dimension.min(), color_dimension.max()
-    norm = matplotlib.colors.Normalize(color_min,color_max)
-    my_cmap = cm.ScalarMappable(norm=norm,cmap='jet')
-    my_cmap.set_array([])
-    fcolors = my_cmap.to_rgba(color_dimension)
-    surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
-    # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
-    # if cut_type_index == 0:
-    #     idx = int(center[0])
-    #     xvar = yposn_3D[idx,:,:]
-    #     yvar = zposn_3D[idx,:,:]
-    #     zvar = xposn_3D[idx,:,:]
-    #     xlabel = 'Y (l_e)'
-    #     ylabel = 'Z (l_e)'
-    #     zlabel = 'X (l_e)'
-    #     xlim = (-0.1,Ly*1.1)
-    #     ylim = (-0.1,Lz*1.1)
-    #     zlim = (-0.1,Lx*1.1)
-    # elif cut_type_index == 1:
-    #     idx = int(center[1])
-    #     xvar = xposn_3D[:,idx,:]
-    #     yvar = zposn_3D[:,idx,:]
-    #     zvar = yposn_3D[:,idx,:]
-    #     xlabel = 'X (l_e)'
-    #     ylabel = 'Z (l_e)'
-    #     zlabel = 'Y (l_e)'
-    #     xlim = (-0.1,Lx*1.1)
-    #     ylim = (-0.1,Lz*1.1)
-    #     zlim = (-0.1,Ly*1.1)
-    # else:
-    #     idx = int(center[2])
-    #     xvar = xposn_3D[:,:,idx]
-    #     yvar = yposn_3D[:,:,idx]
-    #     zvar = zposn_3D[:,:,idx]
-    #     xlabel = 'X (l_e)'
-    #     ylabel = 'Y (l_e)'
-    #     zlabel = 'Z (l_e)'
-    #     xlim = (-0.1,Lx*1.1)
-    #     ylim = (-0.1,Ly*1.1)
-    #     zlim = (-0.1,Lz*1.1)
-    fig.colorbar(my_cmap)
-    # fig.colorbar(surf,aspect=5)
-    #now identify which of those nodes belong to the particle and the cut. set intersection?
-    cut_nodes_set = set(cut_nodes)
-    #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
-    particle_nodes_set = set(particles.ravel())
-    particle_cut_nodes_set = cut_nodes_set.intersection(particle_nodes_set)
-    #alternative to below, use set unpacking
-    #*particle_cut_nodes, = particle_cut_nodes_set
-    particle_cut_nodes = [x for x in particle_cut_nodes_set]
-    #similar to the above for the wiremesh... letting the positions be the positions variables(x,y,z), instead of trying to have everything lie in the same plane visually when plotting (which is appropriate when i am 2D plotting, but removes a great deal of the benefit of trying the 3D plotting)
-    # if cut_type_index == 0:
-    #     xvar = node_posns[particle_cut_nodes,1]
-    #     yvar = node_posns[particle_cut_nodes,2]
-    #     zvar = node_posns[particle_cut_nodes,0]
-    # elif cut_type_index == 1:
-    #     xvar = node_posns[particle_cut_nodes,0]
-    #     yvar = node_posns[particle_cut_nodes,2]
-    #     zvar = node_posns[particle_cut_nodes,1]
-    # else:
-    #     xvar = node_posns[particle_cut_nodes,0]
-    #     yvar = node_posns[particle_cut_nodes,1]
-    #     zvar = node_posns[particle_cut_nodes,2]
-    xvar = node_posns[particle_cut_nodes,0]
-    yvar = node_posns[particle_cut_nodes,1]
-    zvar = node_posns[particle_cut_nodes,2]
-    ax.scatter(xvar,yvar,zvar,'o',color='r')
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
-    ax.set_zlim(zlim)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'surf_cut_{cut_type}_{center[cut_type_index]}_' + str(np.round(boundary_conditions[2],decimals=2)) + '_' + tag +'.png'
-    plt.savefig(savename)
-    plt.close()
+    layer = int(center[cut_type_index])
+    plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=None)
 
 def plot_center_cuts_surf_si(eq_node_posns,node_posns,l_e,particles,output_dir,plot_3D_flag=True,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
