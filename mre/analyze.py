@@ -831,7 +831,9 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
 def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Given a simulation containing particles, plot wireframe cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
-    layers_visualized = {}
+    xlayers_visualized = {}
+    zlayers_visualized = {}
+    ylayers_visualized = {}
     for i, particle in enumerate(particles):
         centers[i,:] = simulate.get_particle_center(particle,initialized_node_posns)
         particle_node_posns = initialized_node_posns[particle,:]
@@ -841,41 +843,43 @@ def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_pos
         x_min = np.min(particle_node_posns[:,0])
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
-        if int(z_min) not in layers_visualized:
+        if int(z_min) not in zlayers_visualized:
             plot_wireframe_cut('xy',int(z_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(z_min)] = 0
-        if int(z_max) not in layers_visualized:
+            zlayers_visualized[int(z_min)] = 0
+        if int(z_max) not in zlayers_visualized:
             plot_wireframe_cut('xy',int(z_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(z_max)] = 0
-        if int(y_min) not in layers_visualized:
+            zlayers_visualized[int(z_max)] = 0
+        if int(y_min) not in ylayers_visualized:
             plot_wireframe_cut('xz',int(y_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(y_min)] = 0
-        if int(y_max) not in layers_visualized:
+            ylayers_visualized[int(y_min)] = 0
+        if int(y_max) not in ylayers_visualized:
             plot_wireframe_cut('xz',int(y_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(y_max)] = 0
-        if int(x_min) not in layers_visualized:
+            ylayers_visualized[int(y_max)] = 0
+        if int(x_min) not in xlayers_visualized:
             plot_wireframe_cut('yz',int(x_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(x_min)] = 0
-        if int(x_max) not in layers_visualized:
+            xlayers_visualized[int(x_min)] = 0
+        if int(x_max) not in xlayers_visualized:
             plot_wireframe_cut('yz',int(x_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(x_max)] = 0
+            xlayers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
-    if layer not in layers_visualized:
+    if layer not in xlayers_visualized:
         plot_wireframe_cut('yz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        xlayers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
-    if layer not in layers_visualized:
+    if layer not in ylayers_visualized:
         plot_wireframe_cut('xz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        ylayers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
-    if layer not in layers_visualized:
+    if layer not in zlayers_visualized:
         plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        zlayers_visualized[layer] = 0
 
 def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Given a simulation containing particles, plot surf cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
-    layers_visualized = {}
+    xlayers_visualized = {}
+    zlayers_visualized = {}
+    ylayers_visualized = {}
     for i, particle in enumerate(particles):
         centers[i,:] = simulate.get_particle_center(particle,initialized_node_posns)
         particle_node_posns = initialized_node_posns[particle,:]
@@ -885,36 +889,36 @@ def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,pa
         x_min = np.min(particle_node_posns[:,0])
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
-        if int(z_min) not in layers_visualized:
+        if int(z_min) not in zlayers_visualized:
             plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(z_min)] = 0
-        if int(z_max) not in layers_visualized:
+            zlayers_visualized[int(z_min)] = 0
+        if int(z_max) not in zlayers_visualized:
             plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(z_max)] = 0
-        if int(y_min) not in layers_visualized:
+            zlayers_visualized[int(z_max)] = 0
+        if int(y_min) not in ylayers_visualized:
             plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(y_min)] = 0
-        if int(y_max) not in layers_visualized:
+            ylayers_visualized[int(y_min)] = 0
+        if int(y_max) not in ylayers_visualized:
             plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(y_max)] = 0
-        if int(x_min) not in layers_visualized:
+            ylayers_visualized[int(y_max)] = 0
+        if int(x_min) not in xlayers_visualized:
             plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-            layers_visualized[int(x_min)] = 0
-        if int(x_max) not in layers_visualized:
+            xlayers_visualized[int(x_min)] = 0
+        if int(x_max) not in xlayers_visualized:
             plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-            layers_visualized[int(x_max)] = 0
+            xlayers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
-    if layer not in layers_visualized:
+    if layer not in xlayers_visualized:
         plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        xlayers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
-    if layer not in layers_visualized:
+    if layer not in ylayers_visualized:
         plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        ylayers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
-    if layer not in layers_visualized:
+    if layer not in zlayers_visualized:
         plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
-        layers_visualized[layer] = 0
+        zlayers_visualized[layer] = 0
 
 #Outer surface plots
 
