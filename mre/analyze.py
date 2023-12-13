@@ -71,6 +71,7 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     else:
         ax.view_init(elev=90,azim=-90,roll=0)
     ax.axis('equal')
+    format_figure(ax)
     # ax.set_title(boundary_conditions[0] + ' ' +  boundary_conditions[1][0] + boundary_conditions[1][1] + ' ' + str(boundary_conditions[2]))
     if tag != "":
         ax.set_title(tag)
@@ -224,6 +225,7 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.axis('equal')
+    format_figure(ax)
     # plt.show()
     savename = output_dir + f'scatter_color_depth_{cut_type}_layer_{index}_'+ tag + '.png'
     plt.savefig(savename)
@@ -304,6 +306,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     my_cmap.set_array([])
     fcolors = my_cmap.to_rgba(color_dimension)
     surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -311,6 +314,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -418,6 +422,7 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundar
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -511,6 +516,7 @@ def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.axis('equal')
+    format_figure(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -597,6 +603,7 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         xvar = node_posns[particle_cut_nodes,0]
         yvar = node_posns[particle_cut_nodes,1]
     ax.plot(xvar,yvar,'o',color='r')
+    format_figure(ax)
     plt.colorbar(sc)
     if tag != "":
         ax.set_title(tag)
@@ -811,6 +818,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     # if tag != "":
     #     ax.set_title(tag)
     #     tag = "_" + tag
@@ -823,6 +831,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
 def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Given a simulation containing particles, plot wireframe cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
+    layers_visualized = {}
     for i, particle in enumerate(particles):
         centers[i,:] = simulate.get_particle_center(particle,initialized_node_posns)
         particle_node_posns = initialized_node_posns[particle,:]
@@ -832,22 +841,41 @@ def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_pos
         x_min = np.min(particle_node_posns[:,0])
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
-        plot_wireframe_cut('xy',int(z_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_wireframe_cut('xy',int(z_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-        plot_wireframe_cut('xz',int(y_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_wireframe_cut('xz',int(y_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-        plot_wireframe_cut('yz',int(x_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_wireframe_cut('yz',int(x_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+        if int(z_min) not in layers_visualized:
+            plot_wireframe_cut('xy',int(z_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(z_min)] = 0
+        if int(z_max) not in layers_visualized:
+            plot_wireframe_cut('xy',int(z_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(z_max)] = 0
+        if int(y_min) not in layers_visualized:
+            plot_wireframe_cut('xz',int(y_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(y_min)] = 0
+        if int(y_max) not in layers_visualized:
+            plot_wireframe_cut('xz',int(y_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(y_max)] = 0
+        if int(x_min) not in layers_visualized:
+            plot_wireframe_cut('yz',int(x_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(x_min)] = 0
+        if int(x_max) not in layers_visualized:
+            plot_wireframe_cut('yz',int(x_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
-    plot_wireframe_cut('yz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_wireframe_cut('yz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
-    plot_wireframe_cut('xz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_wireframe_cut('xz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
-    plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
 
 def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
     """Given a simulation containing particles, plot surf cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
+    layers_visualized = {}
     for i, particle in enumerate(particles):
         centers[i,:] = simulate.get_particle_center(particle,initialized_node_posns)
         particle_node_posns = initialized_node_posns[particle,:]
@@ -857,18 +885,36 @@ def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,pa
         x_min = np.min(particle_node_posns[:,0])
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
-        plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-        plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
-        plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
-        plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+        if int(z_min) not in layers_visualized:
+            plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(z_min)] = 0
+        if int(z_max) not in layers_visualized:
+            plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(z_max)] = 0
+        if int(y_min) not in layers_visualized:
+            plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(y_min)] = 0
+        if int(y_max) not in layers_visualized:
+            plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(y_max)] = 0
+        if int(x_min) not in layers_visualized:
+            plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            layers_visualized[int(x_min)] = 0
+        if int(x_max) not in layers_visualized:
+            plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            layers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
-    plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
-    plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
-    plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+    if layer not in layers_visualized:
+        plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        layers_visualized[layer] = 0
 
 #Outer surface plots
 
@@ -935,6 +981,7 @@ def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag="
             ax.axis('equal')
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
+            format_figure(ax)
             plt.colorbar(sc,ax=ax)
             #don't forget to add a colorbar and limits
     fig.tight_layout()
@@ -1011,6 +1058,7 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
             ax.axis('equal')
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
+            format_figure(ax)
             plt.colorbar(sc,ax=ax)
             #don't forget to add a colorbar and limits
     fig.tight_layout()
@@ -1050,6 +1098,7 @@ def plot_outer_surfaces_wireframe(eq_node_posns,node_posns,boundary_conditions,o
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -1088,6 +1137,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -1133,6 +1183,7 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    format_figure(ax)
     # if tag != "":
     #     ax.set_title(tag)
     savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'

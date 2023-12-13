@@ -242,18 +242,6 @@ def analysis_case1(sim_dir):
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/',tag=tag+'strain')
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/',tag=tag+'nonlinearstrain')
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/',tag=tag+'stress')
-                # layer = int((centers[0,0]+centers[1,0])/2)
-                # subplot_cut_pcolormesh_tensorfield('yz',initial_node_posns,strain_tensor,layer,output_dir+'strain/',tag=tag+'strain')
-                # subplot_cut_pcolormesh_tensorfield('yz',initial_node_posns,green_strain_tensor,layer,output_dir+'strain/',tag=tag+'nonlinearstrain')
-                # subplot_cut_pcolormesh_tensorfield('yz',initial_node_posns,stress_tensor,layer,output_dir+'stress/',tag=tag+'stress')
-                # layer = int((centers[0,1]+centers[1,1])/2)
-                # subplot_cut_pcolormesh_tensorfield('xz',initial_node_posns,strain_tensor,layer,output_dir+'strain/',tag=tag+'strain')
-                # subplot_cut_pcolormesh_tensorfield('xz',initial_node_posns,green_strain_tensor,layer,output_dir+'strain/',tag=tag+'nonlinearstrain')
-                # subplot_cut_pcolormesh_tensorfield('xz',initial_node_posns,stress_tensor,layer,output_dir+'stress/',tag=tag+'stress')
-                # layer = int((centers[0,2]+centers[1,2])/2)
-                # subplot_cut_pcolormesh_tensorfield('xy',initial_node_posns,strain_tensor,layer,output_dir+'strain/',tag=tag+'strain')
-                # subplot_cut_pcolormesh_tensorfield('xy',initial_node_posns,green_strain_tensor,layer,output_dir+'strain/',tag=tag+'nonlinearstrain')
-                # subplot_cut_pcolormesh_tensorfield('xy',initial_node_posns,stress_tensor,layer,output_dir+'stress/',tag=tag+'stress')
 #   outside the loop:
 #   table or csv file with stress, strain, and effective modulus values are saved out for potential reconstruction or modification of figures
 
