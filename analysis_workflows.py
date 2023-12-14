@@ -4,7 +4,10 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-plt.switch_backend('TkAgg')
+import matplotlib
+from matplotlib import cm
+# plt.switch_backend('TkAgg')
+plt.switch_backend('Agg')
 import time
 import os
 import tables as tb#pytables, for HDF5 interface
@@ -131,9 +134,15 @@ def analysis_case1(sim_dir):
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     figure_types = ['modulus','stress','strain','cuts','outer_surfaces']
+    figure_subtypes = ['center', 'particle', 'outer_surface']
     for figure_type in figure_types:
         if not (os.path.isdir(output_dir+figure_type+'/')):
           os.mkdir(output_dir+figure_type+'/')
+        if figure_type == 'stress' or figure_type =='strain' or figure_type == 'cuts':
+            for figure_subtype in figure_subtypes:
+                if not (figure_type == 'cuts' and figure_subtype == 'outer_surface'):
+                    if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                        os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
     initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
@@ -168,24 +177,24 @@ def analysis_case1(sim_dir):
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"{i}")
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
             except:
                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"{i}")
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
 #       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/',plot_3D_flag=True,tag=f"3D_{i}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/',tag="")
+        mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{series[i]}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/',tag="")
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of cuts through the particle centers and edges are generated and saved out
         if particles.shape[0] != 0:
-            mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/',tag=f"series_{i}")
-            mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/',tag=f"series_{i}")
+            mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/particle/',tag=f"series_{i}")
+            mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,output_dir+'cuts/particle/',tag=f"series_{i}")
 #       node positions are used to calculate nodal displacement
         displacement_field = get_displacement_field(initial_node_posns,final_posns)
 #       nodal displacement is used to calculated displacement gradient
@@ -203,22 +212,22 @@ def analysis_case1(sim_dir):
                 cut_type = 'xz'
             elif surface == 'top' or surface == 'bottom':
                 cut_type = 'xy'
-            tag = surface+'_surface_'
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/',tag=tag+'strain')
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/',tag=tag+'nonlinearstrain')
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/',tag=tag+'stress')
+            tag = surface+'_surface_strain_' + f'{series[i]}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
 #       stress and strain tensors are visualized for cuts through the center of the volume
         for cut_type,center_idx in zip(cut_types,center_indices):
-            tag = 'center_'
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/',tag=tag+'strain')
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/',tag=tag+'nonlinearstrain')
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/',tag=tag+'stress')
+            tag = 'center_'  f'{series[i]}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
 #       if particles present:
 #          stress and strain tensors are visualized for cuts through particle centers and edges if particles present
         if particles.shape[0] != 0:
             centers = np.zeros((particles.shape[0],3))
             for i, particle in enumerate(particles):
-                tag=f"particle{i+1}_edge_"
+                tag=f"particle{i+1}_edge_" + f'strain_{series[i]}_'
                 centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
                 particle_node_posns = initial_node_posns[particle,:]
                 x_max = np.max(particle_node_posns[:,0])
@@ -230,22 +239,23 @@ def analysis_case1(sim_dir):
                 edge_indices = ((z_max,z_min),(y_max,y_min),(x_max,x_min))
                 #TODO switchover to plotting tensorfields from this surf plot, but utilize the appropriate indices, cut types, and generate useful tags
                 for cut_type,layer_indices in zip(cut_types,edge_indices):
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[0]),output_dir+'strain/',tag=tag+'strain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[1]),output_dir+'strain/',tag='second'+tag+'strain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[0]),output_dir+'strain/',tag=tag+'nonlinearstrain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/',tag='second'+tag+'nonlinearstrain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/',tag=tag+'stress')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/',tag='second'+tag+'stress')
-            tag='particle_centers_'
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'strain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'strain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
+            tag='particle_centers_'+ f'strain_{series[i]}_'
             layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
             for cut_type,layer in zip(cut_types,layers):
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/',tag=tag+'strain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/',tag=tag+'nonlinearstrain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/',tag=tag+'stress')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/particle/',tag=tag+'stress')
 #   outside the loop:
 #   table or csv file with stress, strain, and effective modulus values are saved out for potential reconstruction or modification of figures
 
 def analysis_case2():
+
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
     For case (2), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization without an applied strain"""
@@ -599,11 +609,17 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
         img = ax.pcolormesh(X,Y,Z)
         # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
-        fig.colorbar(img,ax=ax)
+        norm = matplotlib.colors.CenteredNorm()
+        my_cmap = cm.ScalarMappable(norm=norm)
+        my_cmap.set_array([])
+        # fig.colorbar(img,ax=ax)
+        fig.colorbar(my_cmap,ax=ax)
+        # fig.colorbar(img,ax=ax)
         ax.axis('equal')
         ax.set_title(tag+ f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
+        format_figure(ax)
     # plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_' + tag + '_vectorfield_visualization.png'
     plt.savefig(savename)
@@ -667,12 +683,18 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
         img = ax.pcolormesh(X,Y,Z)
         # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
-        fig.colorbar(img,ax=ax)
+        norm = matplotlib.colors.CenteredNorm()
+        my_cmap = cm.ScalarMappable(norm=norm)
+        my_cmap.set_array([])
+        # fig.colorbar(img,ax=ax)
+        fig.colorbar(my_cmap,ax=ax)
         ax.axis('equal')
         ax.set_title(tag+f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-    plt.show()
+        format_figure(ax)
+    # plt.show()
+    fig.tight_layout()
     savename = output_dir + f'subplots_{cut_type}_cut_pcolormesh_'+tag+'_tensorfield_visualization.png'
     plt.savefig(savename)
     plt.close()
@@ -692,10 +714,25 @@ def subplot_stress_strain_modulus(stress,strain,strain_direction,effective_modul
     axs[1].set_title('Effective Modulus vs Strain')
     axs[1].set_xlabel('Strain')
     axs[1].set_ylabel('Effective Modulus')
-    plt.show()
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
     savename = output_dir + f'subplots_stress-strain_effective_modulus_'+tag+'.png'
     plt.savefig(savename)
     plt.close()
+
+def format_figure(ax,title_size=30,label_size=30,tick_size=30):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    ax.tick_params(labelsize=tick_size)
+    ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+    ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+    ax.set_title(ax.get_title(),fontsize=title_size)
+
+def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    format_figure(ax,title_size,label_size,tick_size)
+    ax.set_zlabel(ax.get_zlabel(),fontsize=label_size)
 
 if __name__ == "__main__":
     main()

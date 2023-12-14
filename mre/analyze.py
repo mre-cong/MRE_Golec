@@ -301,8 +301,9 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
     color_min, color_max = color_dimension.min(), color_dimension.max()
-    norm = matplotlib.colors.Normalize(color_min,color_max)
-    my_cmap = cm.ScalarMappable(norm=norm,cmap='jet')
+    # norm = matplotlib.colors.Normalize(color_min,color_max)
+    norm = matplotlib.colors.CenteredNorm()
+    my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     fcolors = my_cmap.to_rgba(color_dimension)
     surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
@@ -314,7 +315,8 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    fig.colorbar(my_cmap)
+    format_figure_3D(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -422,7 +424,7 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundar
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    format_figure_3D(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -604,7 +606,11 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         yvar = node_posns[particle_cut_nodes,1]
     ax.plot(xvar,yvar,'o',color='r')
     format_figure(ax)
-    plt.colorbar(sc)
+    norm = matplotlib.colors.CenteredNorm()
+    my_cmap = cm.ScalarMappable(norm=norm)
+    my_cmap.set_array([])
+    fig.colorbar(my_cmap)
+    # plt.colorbar(sc)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -693,6 +699,11 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
     center = np.round(np.array([Lx,Ly,Lz]))/2
+    layer = int(center[cut_type_index])
+    xvar,yvar,zvar = get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
+    zvar *= l_e*1e6
     Lx *= l_e*1e6
     Ly *= l_e*1e6
     Lz *= l_e*1e6
@@ -703,36 +714,38 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
         cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(int(center[cut_type_index]+1/2)),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-    xposn_3D *= l_e*1e6
-    yposn_3D *= l_e*1e6
-    zposn_3D *= l_e*1e6
+    # xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
+    # xposn_3D *= l_e*1e6
+    # yposn_3D *= l_e*1e6
+    # zposn_3D *= l_e*1e6
     if plot_3D_flag:
         if cut_type_index == 0:
-            idx = int(center[0])
-            xvar = xposn_3D[idx,:,:]
-            yvar = yposn_3D[idx,:,:]
-            zvar = zposn_3D[idx,:,:]
+            # idx = int(center[0])
+            # xvar = xposn_3D[idx,:,:]
+            # yvar = yposn_3D[idx,:,:]
+            # zvar = zposn_3D[idx,:,:]
             color_dimension = xvar
         elif cut_type_index == 1:
-            idx = int(center[1])
-            xvar = xposn_3D[:,idx,:]
-            yvar = yposn_3D[:,idx,:]
-            zvar = zposn_3D[:,idx,:]
+            # idx = int(center[1])
+            # xvar = xposn_3D[:,idx,:]
+            # yvar = yposn_3D[:,idx,:]
+            # zvar = zposn_3D[:,idx,:]
             color_dimension = yvar
         else:
-            idx = int(center[2])
-            xvar = xposn_3D[:,:,idx]
-            yvar = yposn_3D[:,:,idx]
-            zvar = zposn_3D[:,:,idx]
+            # idx = int(center[2])
+            # xvar = xposn_3D[:,:,idx]
+            # yvar = yposn_3D[:,:,idx]
+            # zvar = zposn_3D[:,:,idx]
             color_dimension = zvar
         color_min, color_max = color_dimension.min(), color_dimension.max()
-        norm = matplotlib.colors.Normalize(color_min,color_max)
-        my_cmap = cm.ScalarMappable(norm=norm,cmap='jet')
+        # norm = matplotlib.colors.Normalize(color_min,color_max)
+        norm = matplotlib.colors.CenteredNorm()
+        my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
         fcolors = my_cmap.to_rgba(color_dimension)
         surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
         ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+        fig.show()
         xlabel = 'X (um)'
         ylabel = 'Y (um)'
         zlabel = 'Z (um)'
@@ -740,50 +753,51 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
         ylim = (-0.1,Ly*1.1)
         zlim = (-0.1,Lz*1.1)
     # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
-    else:
-        if cut_type_index == 0:
-            idx = int(center[0])
-            xvar = yposn_3D[idx,:,:]
-            yvar = zposn_3D[idx,:,:]
-            zvar = xposn_3D[idx,:,:]
-            color_dimension = xvar
-            xlabel = 'Y (um)'
-            ylabel = 'Z (um)'
-            zlabel = 'X (um)'
-            xlim = (-0.1,Ly*1.1)
-            ylim = (-0.1,Lz*1.1)
-            zlim = (-0.1,Lx*1.1)
-        elif cut_type_index == 1:
-            idx = int(center[1])
-            xvar = xposn_3D[:,idx,:]
-            yvar = zposn_3D[:,idx,:]
-            zvar = yposn_3D[:,idx,:]
-            color_dimension = yvar
-            xlabel = 'X (um)'
-            ylabel = 'Z (um)'
-            zlabel = 'Y (um)'
-            xlim = (-0.1,Lx*1.1)
-            ylim = (-0.1,Lz*1.1)
-            zlim = (-0.1,Ly*1.1)
-        else:
-            idx = int(center[2])
-            xvar = xposn_3D[:,:,idx]
-            yvar = yposn_3D[:,:,idx]
-            zvar = zposn_3D[:,:,idx]
-            color_dimension = zvar
-            xlabel = 'X (um)'
-            ylabel = 'Y (um)'
-            zlabel = 'Z (um)'
-            xlim = (-0.1,Lx*1.1)
-            ylim = (-0.1,Ly*1.1)
-            zlim = (-0.1,Lz*1.1)
-        color_min, color_max = color_dimension.min(), color_dimension.max()
-        norm = matplotlib.colors.Normalize(color_min,color_max)
-        my_cmap = cm.ScalarMappable(norm=norm,cmap='jet')
-        my_cmap.set_array([])
-        fcolors = my_cmap.to_rgba(color_dimension)
-        surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
-        ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+    # else:
+    #     if cut_type_index == 0:
+    #         idx = int(center[0])
+    #         xvar = yposn_3D[idx,:,:]
+    #         yvar = zposn_3D[idx,:,:]
+    #         zvar = xposn_3D[idx,:,:]
+    #         color_dimension = xvar
+    #         xlabel = 'Y (um)'
+    #         ylabel = 'Z (um)'
+    #         zlabel = 'X (um)'
+    #         xlim = (-0.1,Ly*1.1)
+    #         ylim = (-0.1,Lz*1.1)
+    #         zlim = (-0.1,Lx*1.1)
+    #     elif cut_type_index == 1:
+    #         idx = int(center[1])
+    #         xvar = xposn_3D[:,idx,:]
+    #         yvar = zposn_3D[:,idx,:]
+    #         zvar = yposn_3D[:,idx,:]
+    #         color_dimension = yvar
+    #         xlabel = 'X (um)'
+    #         ylabel = 'Z (um)'
+    #         zlabel = 'Y (um)'
+    #         xlim = (-0.1,Lx*1.1)
+    #         ylim = (-0.1,Lz*1.1)
+    #         zlim = (-0.1,Ly*1.1)
+    #     else:
+    #         idx = int(center[2])
+    #         xvar = xposn_3D[:,:,idx]
+    #         yvar = yposn_3D[:,:,idx]
+    #         zvar = zposn_3D[:,:,idx]
+    #         color_dimension = zvar
+    #         xlabel = 'X (um)'
+    #         ylabel = 'Y (um)'
+    #         zlabel = 'Z (um)'
+    #         xlim = (-0.1,Lx*1.1)
+    #         ylim = (-0.1,Ly*1.1)
+    #         zlim = (-0.1,Lz*1.1)
+    #     color_min, color_max = color_dimension.min(), color_dimension.max()
+    #     # norm = matplotlib.colors.Normalize(color_min,color_max)
+    #     norm = matplotlib.colors.CenteredNorm()
+    #     my_cmap = cm.ScalarMappable(norm=norm)
+    #     my_cmap.set_array([])
+    #     fcolors = my_cmap.to_rgba(color_dimension)
+    #     surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
+    #     ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     fig.colorbar(my_cmap)
     #now identify which of those nodes belong to the particle and the cut. set intersection?
     cut_nodes_set = set(cut_nodes)
@@ -794,22 +808,22 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     particle_cut_nodes = [x for x in particle_cut_nodes_set]
     #similar to the above for the wiremesh... letting the positions be the positions variables(x,y,z), instead of trying to have everything lie in the same plane visually when plotting (which is appropriate when i am 2D plotting, but removes a great deal of the benefit of trying the 3D plotting)
     if plot_3D_flag:
-        xvar = node_posns[particle_cut_nodes,0]
-        yvar = node_posns[particle_cut_nodes,1]
-        zvar = node_posns[particle_cut_nodes,2]
+        xvar = node_posns[particle_cut_nodes,0]*l_e*1e6
+        yvar = node_posns[particle_cut_nodes,1]*l_e*1e6
+        zvar = node_posns[particle_cut_nodes,2]*l_e*1e6
     else:
         if cut_type_index == 0:
-            xvar = node_posns[particle_cut_nodes,1]
-            yvar = node_posns[particle_cut_nodes,2]
-            zvar = node_posns[particle_cut_nodes,0]
+            xvar = node_posns[particle_cut_nodes,1]*l_e*1e6
+            yvar = node_posns[particle_cut_nodes,2]*l_e*1e6
+            zvar = node_posns[particle_cut_nodes,0]*l_e*1e6
         elif cut_type_index == 1:
-            xvar = node_posns[particle_cut_nodes,0]
-            yvar = node_posns[particle_cut_nodes,2]
-            zvar = node_posns[particle_cut_nodes,1]
+            xvar = node_posns[particle_cut_nodes,0]*l_e*1e6
+            yvar = node_posns[particle_cut_nodes,2]*l_e*1e6
+            zvar = node_posns[particle_cut_nodes,1]*l_e*1e6
         else:
-            xvar = node_posns[particle_cut_nodes,0]
-            yvar = node_posns[particle_cut_nodes,1]
-            zvar = node_posns[particle_cut_nodes,2]
+            xvar = node_posns[particle_cut_nodes,0]*l_e*1e6
+            yvar = node_posns[particle_cut_nodes,1]*l_e*1e6
+            zvar = node_posns[particle_cut_nodes,2]*l_e*1e6
     ax.scatter(xvar,yvar,zvar,'o',color='r')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -818,7 +832,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    format_figure_3D(ax)
     # if tag != "":
     #     ax.set_title(tag)
     #     tag = "_" + tag
@@ -874,7 +888,7 @@ def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_pos
         plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
         zlayers_visualized[layer] = 0
 
-def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
+def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,output_dir,tag=""):
     """Given a simulation containing particles, plot surf cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
     xlayers_visualized = {}
@@ -890,34 +904,34 @@ def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,pa
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
         if int(z_min) not in zlayers_visualized:
-            plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
             zlayers_visualized[int(z_min)] = 0
         if int(z_max) not in zlayers_visualized:
-            plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
             zlayers_visualized[int(z_max)] = 0
         if int(y_min) not in ylayers_visualized:
-            plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
             ylayers_visualized[int(y_min)] = 0
         if int(y_max) not in ylayers_visualized:
-            plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
             ylayers_visualized[int(y_max)] = 0
         if int(x_min) not in xlayers_visualized:
-            plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
             xlayers_visualized[int(x_min)] = 0
         if int(x_max) not in xlayers_visualized:
-            plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
             xlayers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
     if layer not in xlayers_visualized:
-        plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
         xlayers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
     if layer not in ylayers_visualized:
-        plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
         ylayers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
     if layer not in zlayers_visualized:
-        plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
         zlayers_visualized[layer] = 0
 
 #Outer surface plots
@@ -986,7 +1000,11 @@ def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag="
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
             format_figure(ax)
-            plt.colorbar(sc,ax=ax)
+            norm = matplotlib.colors.CenteredNorm()
+            my_cmap = cm.ScalarMappable(norm=norm)
+            my_cmap.set_array([])
+            fig.colorbar(my_cmap,ax=ax)
+            # plt.colorbar(sc,ax=ax)
             #don't forget to add a colorbar and limits
     fig.tight_layout()
     savename = output_dir + f'outersurfaces_tricontourf_tile_visualization' + tag + '.png'
@@ -1063,7 +1081,11 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
             format_figure(ax)
-            plt.colorbar(sc,ax=ax)
+            norm = matplotlib.colors.CenteredNorm()
+            my_cmap = cm.ScalarMappable(norm=norm)
+            my_cmap.set_array([])
+            fig.colorbar(my_cmap,ax=ax)
+            # plt.colorbar(sc,ax=ax)
             #don't forget to add a colorbar and limits
     fig.tight_layout()
     savename = output_dir + f'outersurfaces_contours_tiled_' + tag + '.png'
@@ -1102,7 +1124,7 @@ def plot_outer_surfaces_wireframe(eq_node_posns,node_posns,boundary_conditions,o
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    format_figure_3D(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -1141,7 +1163,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    format_figure_3D(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
@@ -1187,7 +1209,7 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure(ax)
+    format_figure_3D(ax)
     # if tag != "":
     #     ax.set_title(tag)
     savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'
@@ -1262,6 +1284,11 @@ def format_figure(ax,title_size=30,label_size=30,tick_size=30):
     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
     ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
     ax.set_title(ax.get_title(),fontsize=title_size)
+
+def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    format_figure(ax,title_size,label_size,tick_size)
+    ax.set_zlabel(ax.get_zlabel(),fontsize=label_size)
 
 def get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index):
     """Manipulate node positions variable and return x, y, and z variables for 3D plots (wireframe and surface plots) based on the type of cut and the desired layer"""
