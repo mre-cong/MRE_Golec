@@ -130,6 +130,123 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
+def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
+    """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
+    tmp_var = output_dir.split('/')
+    if tmp_var[-1] == '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
+    elif tmp_var[-1] != '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
+    v0 = np.zeros(x0.shape)
+    y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
+    if plotting_flag:
+        mre.analyze.plot_center_cuts(initialized_posns,x0,springs,particles,boundary_conditions,output_dir,tag='starting_configuration')
+    #TODO decide if you want to bother with doing a backtracking if the system diverges. there is a significant memory overhead associated with this approach.
+    backstop_solution = y_0.copy()
+    N_nodes = int(x0.shape[0])
+    my_nsteps = max_integration_steps
+    particle_moment_of_inertia = (2/5)*particle_mass*np.power(particle_radius,2)
+    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
+    r = sci.ode(scaled_fun_rotation).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1)
+    if criteria_flag:
+        r.set_solout(solout)
+    max_displacement = np.zeros((max_integrations,))
+    mean_displacement = np.zeros((max_integrations,))
+    return_status = 1
+    for i in range(max_integrations):
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        print(f'starting integration run {i+1}')
+        sol = r.integrate(t_f)
+        a_var = get_accel_scaled_rotation(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        a_norms = np.linalg.norm(a_var,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        max_accel_norm_avg = 0
+        if criteria_flag:
+            if i == 0:
+                criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(criteria.a_norm_avg)
+            else:
+                other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+                max_accel_norm_avg = np.max(other_criteria.a_norm_avg)
+        final_posns = np.reshape(sol[:N_nodes*3],(N_nodes,3))
+        final_v = np.reshape(sol[N_nodes*3:],(N_nodes,3))
+        v_norms = np.linalg.norm(final_v,axis=1)
+        v_norm_avg = np.sum(v_norms)/N_nodes
+        #below is a 2D scatter plot of center cuts with the markers colored to give depth information
+        # mre.analyze.center_cut_visualization(initialized_posns,final_posns,springs,particles,output_dir,tag=f'{i}th_configuration')
+        #below is the original 3D scatter plot of center cuts which colored polymer nodes and springs differently than particle nodes and springs
+        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag=f'{i}th_configuration')
+        #below is an attempt to change the original 3D scatter plot approach to a 2D approach, with no color information to provide sense of depth
+        if i == 0:
+            tag = '1st_configuration'
+        elif i == 1:
+            tag = '2nd_configuration'
+        elif i == 2:
+            tag = '3rd_configuration'
+        else:
+            tag = f'{i+1}th_configuration'
+        if plotting_flag:
+            mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag)
+        if a_norm_avg < tolerance and v_norm_avg < tolerance:
+            print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
+            if i != 0 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            return_status = 0
+            break
+        elif max_accel_norm_avg > 1e3:
+            print(f'strong accelerations detected during integration run {i+1}')
+            my_nsteps = int(my_nsteps/2)
+            if my_nsteps < 10:
+                print(f'total steps allowed down to: {my_nsteps}\n breaking out with last acceptable solution')
+                sol = backstop_solution.copy()
+                del backstop_solution
+                del y_0
+                del solutions
+                return_status = -1
+                break
+            print(f'restarting from last acceptable solution with acceleration norm mean of {criteria.a_norm_avg[-1]}')
+            print(f'running with halved maximum number of steps: {my_nsteps}')
+            r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=my_nsteps,verbosity=1)
+            print(f'Increasing drag coefficient from {drag} to {10*drag}')
+            drag *= 10
+            y_0 = backstop_solution.copy()
+        else:
+            print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
+            y_0 = sol.copy()
+            last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            if i != 0 and criteria_flag:
+                criteria.append_criteria(other_criteria)
+            # if i == 0:
+            #     #TODO, update to handle hysteresis/strain sims, where the starting position to compare the final positions to may not be the initiailized positions of the system
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,initialized_posns)
+            # else:
+            #     last_posns = np.reshape(backstop_solution[:N_nodes*3],(N_nodes,3))
+            #     mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            #     criteria.append_criteria(other_criteria)
+            backstop_solution = sol.copy()
+        if criteria_flag:
+            solutions = []
+            r.set_solout(solout)
+        if persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
+        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+    plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
+    if criteria_flag:
+        mre.initialize.write_criteria_file(criteria,output_dir)
+        criteria.plot_criteria_subplot(output_dir)
+        criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
+    plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
+    plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
+    # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
+    return sol, return_status#returning a solution object, that can then have it's attributes inspected
+
 def extend_simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,starting_checkpoint_count=0,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
     """Extend a simulation of a hybrid mass spring system from a checkpoint file using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
@@ -587,6 +704,18 @@ def scaled_fun(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundarie
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
 
+def scaled_fun_rotation(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node"""
+    #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    N = int(np.round(y.shape[0]/2))
+    accel = get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+    N_nodes = int(np.round(N/3))
+    accel = np.reshape(accel,(3*N_nodes,))
+    v0 = y[N:]
+    result = np.concatenate((v0,accel))
+    #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
+    return result#np.transpose(np.column_stack((v0.reshape((3*N,1)),accel)))
+
 def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10,debug_flag=False):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     #scipy.ode integrator requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
@@ -660,6 +789,90 @@ def get_accel_scaled(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
         inspect_vcf = volume_correction_force[particles[0],:]
         inspect_springWCA = spring_force[particles[0],:]
         inspect_particle = accel[particles[0],:]
+    return accel
+
+def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag=10):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
+    #scipy.ode integrator requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
+    N = int(np.round(y.shape[0]/2))
+    N_nodes = int(np.round(N/3))
+    x0 = np.reshape(y[:N],(N_nodes,3))
+    v0 = np.reshape(y[N:],(N_nodes,3))
+    # drag = 20
+    bc_forces = np.zeros(x0.shape,dtype=float)
+    if bc[0] == 'stress':
+        for surface in bc[1]:
+            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
+            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
+            if surface == 'left' or surface == 'right':
+                surface_area = dimensions[0]*dimensions[2]
+            elif surface == 'top' or surface == 'bottom':
+                surface_area = dimensions[0]*dimensions[1]
+            else:
+                surface_area = dimensions[1]*dimensions[2]
+            # assuming tension force only, no compression
+            if surface == 'right':
+                force_direction = np.array([1,0,0])
+            elif surface == 'left':
+                force_direction = np.array([-1,0,0])
+            elif surface == 'top':
+                force_direction = np.array([0,0,1])
+            elif surface == 'bottom':
+                force_direction = np.array([0,0,-1])
+            elif surface == 'front':
+                force_direction = np.array([0,1,0])
+            elif surface == 'back':
+                force_direction = np.array([0,-1,0])
+            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
+            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
+    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        if bc[1][0] == 'x':
+            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
+        elif bc[1][0] == 'y':
+            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
+        elif bc[1][0] == 'z':
+            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
+    else:
+        fixed_nodes = np.array([0])
+    correction_force_el = np.empty((8,3),dtype=np.float64)
+    vectors = np.empty((8,3),dtype=np.float64)
+    avg_vectors = np.empty((3,3),dtype=np.float64)
+    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
+    get_volume_correction_force_cy_nogil.get_volume_correction_force_normalized(x0,elements,kappa,correction_force_el,vectors,avg_vectors, volume_correction_force)
+    spring_force = np.empty(x0.shape,dtype=np.float64)
+    get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
+    volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
+    spring_force *= l_e*beta_i[:,np.newaxis]
+    accel = spring_force + volume_correction_force - drag * v0 + bc_forces
+    accel = set_fixed_nodes(accel,fixed_nodes)
+    if particles.shape[0] != 0:
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for i, particle in enumerate(particles):
+            particle_centers[i,:] = get_particle_center(particle,x0)
+        M = magnetism.get_magnetization_iterative_normalized(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        mag_forces = magnetism.get_dip_dip_forces_normalized(M,particle_centers,particle_radius,l_e)
+        mag_forces *= beta/(particle_mass*(l_e**4))
+        for i, particle in enumerate(particles):
+            accel[particle] += mag_forces[i]
+        #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
+        total_torque = np.zeros((particles.shape[0],3))
+        for particle in particles:
+            total_torque[i,:] = get_torque_on_particle(particle,accel,x0)
+            angular_acceleration = total_torque[i,:]/particle_moment_of_inertia
+            angular_acceleration_magnitude = np.sqrt(np.dot(angular_acceleration,angular_acceleration))
+            torque_unit_vector = total_torque[i,:]/np.linalg.norm(total_torque[i,:])
+            r_perpendicular_to_axis_of_rotation = x0[particle,:] - np.sum(x0[particle,:]*torque_unit_vector,axis=1)*torque_unit_vector
+            r_perp_magnitude = np.sqrt(np.sum(r_perpendicular_to_axis_of_rotation*r_perpendicular_to_axis_of_rotation,axis=1))
+            rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
+            rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
+            np.cross()
+            rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.sqrt(np.sum(rotational_acceleration_nonunit_vector*rotational_acceleration_nonunit_vector,axis=1))
+            rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude
+            vecsum = np.sum(accel[particle],axis=0)
+            accel[particle] = vecsum/particle.shape[0]
+            accel[particle] += rotational_acceleration
     return accel
 
 def get_particle_center(particle_nodes,node_posns):
