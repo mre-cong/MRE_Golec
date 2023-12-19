@@ -300,9 +300,12 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     #     xlim = (-0.1,Lx*1.1)
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
-    color_min, color_max = color_dimension.min(), color_dimension.max()
+    color_min, color_max = layer - color_dimension.min(), color_dimension.max() - layer
+    colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+    colorbar_max = colorbar_limit + layer
+    colorbar_min = -1*colorbar_limit +layer
+    norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
     # norm = matplotlib.colors.Normalize(color_min,color_max)
-    norm = matplotlib.colors.CenteredNorm()
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     fcolors = my_cmap.to_rgba(color_dimension)
@@ -606,7 +609,12 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         yvar = node_posns[particle_cut_nodes,1]
     ax.plot(xvar,yvar,'o',color='r')
     format_figure(ax)
-    norm = matplotlib.colors.CenteredNorm()
+    color_dimension = zvar
+    color_min, color_max = color_dimension.min(), color_dimension.max()
+    colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+    colorbar_max = colorbar_limit
+    colorbar_min = -1*colorbar_limit
+    norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     fig.colorbar(my_cmap)
@@ -714,38 +722,26 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
         cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(int(center[cut_type_index]+1/2)),eq_node_posns[:,cut_type_index]).nonzero()[0]
-    # xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-    # xposn_3D *= l_e*1e6
-    # yposn_3D *= l_e*1e6
-    # zposn_3D *= l_e*1e6
+
     if plot_3D_flag:
         if cut_type_index == 0:
-            # idx = int(center[0])
-            # xvar = xposn_3D[idx,:,:]
-            # yvar = yposn_3D[idx,:,:]
-            # zvar = zposn_3D[idx,:,:]
             color_dimension = xvar
         elif cut_type_index == 1:
-            # idx = int(center[1])
-            # xvar = xposn_3D[:,idx,:]
-            # yvar = yposn_3D[:,idx,:]
-            # zvar = zposn_3D[:,idx,:]
             color_dimension = yvar
         else:
-            # idx = int(center[2])
-            # xvar = xposn_3D[:,:,idx]
-            # yvar = yposn_3D[:,:,idx]
-            # zvar = zposn_3D[:,:,idx]
             color_dimension = zvar
-        color_min, color_max = color_dimension.min(), color_dimension.max()
+        layer_height = layer*l_e*1e6
+        color_min, color_max = layer_height - color_dimension.min(), color_dimension.max() - layer_height
+        colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+        colorbar_max = colorbar_limit + layer_height
+        colorbar_min = -1*colorbar_limit + layer_height
+        norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
         # norm = matplotlib.colors.Normalize(color_min,color_max)
-        norm = matplotlib.colors.CenteredNorm()
         my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
         fcolors = my_cmap.to_rgba(color_dimension)
         surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
         ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
-        fig.show()
         xlabel = 'X (um)'
         ylabel = 'Y (um)'
         zlabel = 'Z (um)'
@@ -1000,7 +996,12 @@ def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag="
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
             format_figure(ax)
-            norm = matplotlib.colors.CenteredNorm()
+            color_dimension = zvar
+            color_min, color_max = color_dimension.min(), color_dimension.max()
+            colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+            colorbar_max = colorbar_limit
+            colorbar_min = -1*colorbar_limit
+            norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
             my_cmap = cm.ScalarMappable(norm=norm)
             my_cmap.set_array([])
             fig.colorbar(my_cmap,ax=ax)
@@ -1081,7 +1082,12 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
             ax.set_xlim(xlim)
             ax.set_ylim(ylim)
             format_figure(ax)
-            norm = matplotlib.colors.CenteredNorm()
+            color_dimension = zvar
+            color_min, color_max = color_dimension.min(), color_dimension.max()
+            colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+            colorbar_max = colorbar_limit
+            colorbar_min = -1*colorbar_limit
+            norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
             my_cmap = cm.ScalarMappable(norm=norm)
             my_cmap.set_array([])
             fig.colorbar(my_cmap,ax=ax)

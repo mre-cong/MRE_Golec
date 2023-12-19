@@ -644,8 +644,36 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
     fig.set_size_inches(3*default_width,3*default_height)
     fig.set_dpi(200)
     xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
-
+    #want to store the colorbar limits used in each image, so that colorbar limits in each row of images are the same
+    colorbar_limits = np.zeros((6,))
     component_dict = {0:'xx',1:'yy',2:'zz',3:'xy',4:'xz',5:'yz'}
+    #go through the 6 types of figures to make, and find out the colorbar limits for each figure, so that the proper limits can be used when the plots are created
+    for i in range(6):
+        row = np.floor_divide(i,3)
+        col = i%3
+        ax = axs[row,col]
+        if i == 0:
+            tensor_component = tensorfield[:,:,:,0,0]
+        elif i == 1:
+            tensor_component = tensorfield[:,:,:,1,1]
+        elif i == 2:
+            tensor_component = tensorfield[:,:,:,2,2]
+        elif i == 3:
+            tensor_component = tensorfield[:,:,:,0,1]
+        elif i == 4:
+            tensor_component = tensorfield[:,:,:,0,2]
+        elif i == 5:
+            tensor_component = tensorfield[:,:,:,1,2]
+        if cut_type == 'xy':
+            Z = tensor_component[:,:,index]
+        elif cut_type == 'xz':
+            Z = tensor_component[:,index,:]
+        elif cut_type == 'yz':
+            Z = tensor_component[index,:,:]
+        color_dimension = Z
+        color_min, color_max = color_dimension.min(), color_dimension.max()
+        colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+        colorbar_limits[i] = colorbar_limit
     for i in range(6):
         row = np.floor_divide(i,3)
         col = i%3
@@ -680,14 +708,20 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
             Y = zposns[index,:,:]
             xlabel = 'Y'
             ylabel = 'Z'
-        img = ax.pcolormesh(X,Y,Z)
         # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
-        norm = matplotlib.colors.CenteredNorm()
+        if i >= 0 and i < 3:
+            colorbar_limit = np.max(colorbar_limits[:3])
+        else:
+            colorbar_limit = np.max(colorbar_limits[3:])
+        colorbar_max = colorbar_limit
+        colorbar_min = -1*colorbar_limit
+        norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
         my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
-        # fig.colorbar(img,ax=ax)
-        fig.colorbar(my_cmap,ax=ax)
+        # fig.colorbar(my_cmap,ax=ax)
+        img = ax.pcolormesh(X,Y,Z,norm=norm)
+        fig.colorbar(img,ax=ax)
         ax.axis('equal')
         ax.set_title(tag+f' {component_dict[i]} ' + f'{cut_type} ' + f'layer {index}')
         ax.set_xlabel(xlabel)
