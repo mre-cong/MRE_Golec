@@ -93,7 +93,40 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
+def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation):
+    """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
+    Nel_x, Nel_y, Nel_z = dimensions
+    # radius = 0.5*l_e# radius = l_e*(4.5)
+    assert radius < np.min(dimensions)/2, f"Particle size greater than the smallest dimension of the simulation"
+    radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
+    #find the center of the simulated system
+    center = (np.array([Nel_x,Nel_y,Nel_z])/2)
+    #if there are an even number of elements in a direction, need to increment the central position by half an edge length so the particle centers match up with the centers of cubic elements
+    if np.mod(Nel_x,2) == 0:
+        center[0] += 1/2
+    if np.mod(Nel_y,2) == 0:
+        center[1] += 1/2
+    if np.mod(Nel_z,2) == 0:
+        center[2] += 1/2
+    #check particle separation to see if it is acceptable or not for the shift in particle placement from the simulation "center" to align with the cubic element centers
+    shift_l = np.round(separation/2)
+    shift_r = separation - shift_l
+    particle_nodes = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center-np.array([shift_l,0,0]),dimensions)
+    particle_nodes2 = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center+np.array([shift_r,0,0]),dimensions)
+    particles = np.vstack((particle_nodes,particle_nodes2))
+    return particles
+
+def placeholder_particle_placement(radius,l_e,dimensions):
+    Nel_x, Nel_y, Nel_z = dimensions
+    radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
+    #if i want to think about the grid of possible "points" where a particle would be entirely within the internal volume (no voxel of the particle existing at the boundaries of the simulated system), then i need to think about the number of potential voxels in each dimension that could be the center voxel of a particle. if i am placing them "randomly" then i need to ensure that the particles neither overlap, or have immediately adjacent voxels. 
+    allowed_elements_x = (Nel_x - 2*radius_voxels).astype(np.int32)
+    allowed_elements_y = (Nel_y - 2*radius_voxels).astype(np.int32)
+    allowed_elements_z = (Nel_z - 2*radius_voxels).astype(np.int32)
+
+    pass
+
+def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):
     """Run a simulation applying a series of a particular type of strain to the volume, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     eq_posns = x0.copy()
     total_delta = 0
@@ -186,7 +219,10 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
             raise ValueError('Strain type not one of the following accepted types ("tension", "compression", "shearing", "torsion")')
         try:
             start = time.time()
-            sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+            if particle_rotation_flag == False:
+                sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+            elif particle_rotation_flag == True:
+                sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -200,52 +236,10 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         end_result = sol
         x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
         print('took %.2f seconds to simulate' % delta)
-        # end_accel = simulate.get_accel_scaled_no_fixed_nodes(sol,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,Hext,particle_radius,particle_mass,chi,Ms,drag)
-        # # need to convert the acceleration variable back to forces acting on each node, at least for the boundaries of interest when doing the effective modulus calculation
-        # #need to decide which boundaries are involved, using the strain_type variable and strain_direction variables. can check both boundaries to see how they compare with regards to the forces/stress involved
-        # if strain_type == 'tension' or strain_type == 'compression':
-        #     if strain_direction[0] == 'x':
-        #         first_bdry_forces = end_accel[boundaries['left']]/beta_i[boundaries['left'],np.newaxis]
-        #         second_bdry_forces = end_accel[boundaries['right']]/beta_i[boundaries['right'],np.newaxis]
-        #         first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
-        #         second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[1]*dimensions[2])
-        #         stress[count] = first_bdry_stress[0]
-        #         print(f'Difference in stress from opposite surfaces is {first_bdry_stress[0]-second_bdry_stress[0]}')
-        #     elif strain_direction[0] == 'y':
-        #         x0[boundaries['back'],1] = eq_posns[boundaries['back'],1] * (1 + strain)
-        #     elif strain_direction[0] == 'z':
-        #         x0[boundaries['top'],2] = eq_posns[boundaries['top'],2] * (1 + strain)
-        # elif strain_type == 'shearing':
-        #     if strain_direction[0] == 'x':
-        #         if strain_direction[1] == 'y':
-        #             x0[boundaries['right'],1] = eq_posns[boundaries['right'],1] + opposite_length
-        #         elif strain_direction[1] == 'z':
-        #             x0[boundaries['right'],2] = eq_posns[boundaries['right'],2] + opposite_length
-        #     elif strain_direction[0] == 'y':
-        #         if strain_direction[1] == 'x':
-        #             x0[boundaries['back'],0] = eq_posns[boundaries['back'],0] + opposite_length
-        #         elif strain_direction[1] == 'z':
-        #             x0[boundaries['back'],2] = eq_posns[boundaries['back'],2] + opposite_length
-        #     elif strain_direction[0] == 'z':
-        #         if strain_direction[1] == 'x':
-        #             x0[boundaries['top'],0] = eq_posns[boundaries['top'],0] + opposite_length
-        #         elif strain_direction[1] == 'y':
-        #             x0[boundaries['top'],1] = eq_posns[boundaries['top'],1] + opposite_length
-        # elif strain_type == 'torsion':
-        #     if strain_direction[1] == 'CW':
-        #         starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
-        #         x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + starting_positions[:,1]*np.sin(strain)
-        #         x0[boundaries['top'],1] = -1*starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
-        #         x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
-        #     elif strain_direction[1] == 'CCW':
-        #         starting_positions = eq_posns[boundaries['top']].copy() - np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
-        #         x0[boundaries['top'],0] = starting_positions[:,0]*np.cos(strain) + -1*starting_positions[:,1]*np.sin(strain)
-        #         x0[boundaries['top'],1] = starting_positions[:,0]*np.sin(strain) + starting_positions[:,1]*np.cos(strain)
-        #         x0[boundaries['top']] += np.array([dimensions[0]/l_e,dimensions[1]/l_e,0])
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
     return total_delta, return_status
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -260,7 +254,10 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         try:
             print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
             start = time.time()
-            sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+            if particle_rotation_flag == False:
+                sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+            elif particle_rotation_flag == True:
+                sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -479,17 +476,17 @@ def main():
         # mre.analyze.post_plot_particle(node_posns,x0,particle_nodes,springs,boundary_conditions,output_dir)
     
 def main2():
-    """Simulating 2 particle hysetersis with particles perfectly aligned"""
+    """Simulating 2 particle hysteresis with particles perfectly aligned"""
     start = time.time()
-    E = 9e3
+    E = 9e5
     nu = 0.499
-    max_integrations = 20
-    max_integration_steps = 2000
+    max_integrations = 4
+    max_integration_steps = 5000
     tolerance = 1e-4
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
-    discretization_order = 1
+    discretization_order = 0
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
     #particle separation
     separation_meters = 9e-6
@@ -542,7 +539,7 @@ def main2():
     # check if the directory for output exists, if not make the directory
     current_dir = os.path.abspath('.')
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_larger_WCA_cutoff_order_{discretization_order}_drag{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_2particle_freeboundaries_order_{discretization_order}_drag{drag}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
@@ -557,7 +554,7 @@ def main2():
         H_step = H_mag/(n_field_steps)
     #polar angle, aka angle wrt the z axis, range 0 to pi
     Hext_theta_angle = np.pi/2
-    Hext_phi_angle = (2*np.pi/360)*0#30
+    Hext_phi_angle = (2*np.pi/360)*15#30
     Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     if hysteresis_loop_flag:
@@ -600,7 +597,7 @@ def main2():
     print(f'Time to initialize:{delta} seconds\n')
     print(f'Running simulation with dimensions: Lx = {Lx}, Ly = {Ly}, Lz = {Lz}\ndiscretization order = {discretization_order}, l_e = {l_e}')
     # criteria_flag = False
-    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True)
+    simulation_time, return_status = run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main3():
@@ -688,31 +685,31 @@ def main3():
 def main_strain():
     """Testing and implementing applied strains with and without particles."""
     start = time.time()
-    E = 9e3
+    E = 9e5
     nu = 0.499
-    max_integrations = 5
+    max_integrations = 1
     max_integration_steps = 5000
-    tolerance = 1e-6
+    tolerance = 1e-4
     #based on the particle diameter, we want the discretization, l_e, to match with the size, such that the radius in terms of volume elements is N + 1/2 elements, where each element is l_e in side length. N is then a sort of "order of discreitzation", where larger N values result in finer discretizations. if N = 0, l_e should equal the particle diameter
     particle_diameter = 3e-6
     #discretization order
-    discretization_order = 1
+    discretization_order = 0
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
     # #particle separation
-    # separation_meters = 9e-6
-    # separation_volume_elements = int(separation_meters / l_e)
-    # separation = separation_volume_elements#20#12#4
+    separation_meters = 9e-6
+    separation_volume_elements = int(separation_meters / l_e)
+    separation = separation_volume_elements#20#12#4
     particle_radius = (discretization_order + 1/2)*l_e#2.5*l_e# 0.5*l_e# radius = l_e*(4.5)
 
-    # Lx = separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
-    # Ly = particle_diameter * 7
-    # Lz = Ly
+    Lx = separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
+    Ly = particle_diameter * 7
+    Lz = Ly
     # l_e = 1e-6
     t_f = 30
     
-    Lx = 8e-6
-    Ly = 8e-6
-    Lz = 8e-6
+    # Lx = 8e-6
+    # Ly = 8e-6
+    # Lz = 8e-6
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
     N_nodes_z = np.round(Lz/l_e + 1)
@@ -739,7 +736,7 @@ def main_strain():
     springs_var = springs_var[:num_springs,:]
     
     particles = np.array([],dtype=np.int32)
-    # particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
+    particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
     chi = 131
     Ms = 1.9e6
     #TODO: for distributed computing, I can't depend on looking at existing initialization files to extract variables. I'll have to either instantiate them based on command line arguments or an input file containing similar information, or (and this method seems like it is not th ebest for distributed computing) have separate "jobs" that i run locally or distributed to generate the init files, and use those as transferred input files for the main program (actually running the numerical integration to find equilibrium node configurations)
@@ -771,7 +768,7 @@ def main_strain():
     k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
     #we will call the scaling coefficient beta
-    beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+    beta = np.power(characteristic_time,2)/l_e
     #if i wanted to try and estimate the effective stiffness for small deviations from initial positions of an internal node, i could then calculate a different characteristic time and scaling constant
     effective_stiffness_guess = 2*k_e + 8 * k[1] / np.sqrt(2) + 8 * k[2]/np.sqrt(3)
     other_universe_beta = 4*(np.pi**2)*characteristic_mass/(effective_stiffness_guess*l_e)
@@ -786,13 +783,13 @@ def main_strain():
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
     my_sim.set_time(t_f)
     field_or_strain_type_string = 'shear_strain'
-    strain_type = 'shearing'
-    strain_direction = ('z','x')
+    strain_type = 'torsion'
+    strain_direction = ('z','CCW')
     #shear strain (nonlinear definition) is defined as tangent of the angle opened up. the linear shear strain is simply the angle (which makes sense, the small angle approximation for tangent theta is theta)
-    shear_strain_max = np.pi/2/90*20
+    shear_strain_max = np.pi/2/90*1
     strain_max = shear_strain_max
     # strain_max = 0.20
-    n_strain_steps = 41
+    n_strain_steps = 1
     if n_strain_steps == 1:
         strain_step_size = strain_max
     else:  
@@ -809,7 +806,7 @@ def main_strain():
     delta = end - start
     print(f'Time to initialize:{delta} seconds\n')
     
-    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=True)
+    simulation_time, return_status = run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 def main_series_simulations():
@@ -837,7 +834,7 @@ def main_series_simulations():
                     main_field_dependent_modulus(discretization_order=2,separation_meters=9e-6,E=9e3,nu=0.499,Hext=Hext,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=40,max_integration_steps=5000,tolerance=1e-6)    
 
 
-def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext=np.array([0,0,0],dtype=np.float64),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-6):
+def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext=np.array([0,0,0],dtype=np.float64),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-4):
     """Running a two particle simulation whose output can be used to calculate an effective modulus, with the end goal being calculation of the dependence of the effective modulus on the applied magnetic field."""
     start = time.time()
     # E = 9e3
@@ -961,6 +958,6 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    main_series_simulations()
+    # main_series_simulations()
     # main_strain()
-    # main2()
+    main2()

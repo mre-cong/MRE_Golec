@@ -161,11 +161,11 @@ def analysis_case1(sim_dir):
 #       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
-    effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
-#   outside the loop:
-#   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
-#   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
-    subplot_stress_strain_modulus(stress,strains,strain_direction,effective_modulus,output_dir+'modulus/',tag="")
+#     effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
+# #   outside the loop:
+# #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
+# #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
+#     subplot_stress_strain_modulus(stress,strains,strain_direction,effective_modulus,output_dir+'modulus/',tag="")
 #   in a loop, output files are read in and manipulated
     for i in range(series.shape[0]):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
@@ -772,4 +772,6 @@ if __name__ == "__main__":
     main()
     # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-15_strain_testing_shearing_order_1_drag_20/'
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-21_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_drag_20_Bext_[0.05 0.   0.  ]/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_strain_testing_torsion_order_0_drag_20/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
     analysis_case1(sim_dir)

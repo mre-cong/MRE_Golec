@@ -6,11 +6,14 @@ Created on Tues October 3 10:20:19 2023
 import numpy as np
 import scipy.integrate as sci
 import matplotlib.pyplot as plt
+import matplotlib
 import os
 import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
 import magnetism
 import mre.initialize
+
+# plt.switch_backend('TkAgg')
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
 #if using numerical integration, at each time step output the nodal positions, velocities, and accelerations, or if using energy minimization, after each succesful energy minimization output the nodal positions
@@ -151,6 +154,11 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
     N_nodes = int(x0.shape[0])
     my_nsteps = max_integration_steps
     particle_moment_of_inertia = (2/5)*particle_mass*np.power(particle_radius,2)
+    #needs to be scaled, but the scaling here includes (inside of beta) the characteristic time, squared, which is necessary for scaling the angular acceleration. the angular acceleration is scaling handled internally in the function get_accel_scaled_rotation(), but we need to account for the term to scale the moment of inertia properly, so we remove the time scaling that was previously involved here. the particle mass and the number of nodes making up the particle is used to go from beta to beta_i
+    # characteristic_time_squared = beta*l_e
+    # scaled_moment_of_inertia = particle_moment_of_inertia*beta/(particle_mass/particles.shape[1])/l_e/characteristic_time_squared
+    # using the fact that we have an analytical expression, I will rewrite the above initialization of the scaled moment of inertia in a way that uses less operations
+    scaled_moment_of_inertia = particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2))
     #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
     r = sci.ode(scaled_fun_rotation).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1)
     if criteria_flag:
@@ -159,10 +167,10 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
     for i in range(max_integrations):
-        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
         print(f'starting integration run {i+1}')
         sol = r.integrate(t_f)
-        a_var = get_accel_scaled_rotation(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        a_var = get_accel_scaled_rotation(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
         a_norms = np.linalg.norm(a_var,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         max_accel_norm_avg = 0
@@ -846,6 +854,8 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0 + bc_forces
     accel = set_fixed_nodes(accel,fixed_nodes)
+    #characteristic time necessary to get the scaled angular acceleration correctly.
+    characteristic_time_squared = beta*l_e
     if particles.shape[0] != 0:
         #for each particle, find the position of the center
         particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
@@ -858,21 +868,80 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
             accel[particle] += mag_forces[i]
         #TODO remove loops as much as possible within python. this function has to be cythonized anyway, but there is serious overhead with any looping, even just dealing with the rigid particles
         total_torque = np.zeros((particles.shape[0],3))
-        for particle in particles:
+        for i, particle in enumerate(particles):
+            #determine the net torque acting on the particle before the net force acting on the particle is calculated and distributed to the particle nodes
             total_torque[i,:] = get_torque_on_particle(particle,accel,x0)
-            angular_acceleration = total_torque[i,:]/particle_moment_of_inertia
-            angular_acceleration_magnitude = np.sqrt(np.dot(angular_acceleration,angular_acceleration))
-            torque_unit_vector = total_torque[i,:]/np.linalg.norm(total_torque[i,:])
-            r_perpendicular_to_axis_of_rotation = x0[particle,:] - np.sum(x0[particle,:]*torque_unit_vector,axis=1)*torque_unit_vector
-            r_perp_magnitude = np.sqrt(np.sum(r_perpendicular_to_axis_of_rotation*r_perpendicular_to_axis_of_rotation,axis=1))
-            rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
-            rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
-            np.cross()
-            rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.sqrt(np.sum(rotational_acceleration_nonunit_vector*rotational_acceleration_nonunit_vector,axis=1))
-            rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude
+            #get the net force acting on the particle and distribute to the particle nodes
             vecsum = np.sum(accel[particle],axis=0)
             accel[particle] = vecsum/particle.shape[0]
-            accel[particle] += rotational_acceleration
+            #find the magnitude of the net torque, and if it is not 0, calculate and distribute the forces necessary to match rigid particle rotation behavior
+            torque_magnitude = np.linalg.norm(total_torque[i,:])
+            if not np.isclose(torque_magnitude,0):
+                angular_acceleration = total_torque[i,:]/particle_moment_of_inertia
+                angular_acceleration_magnitude = np.linalg.norm(angular_acceleration)
+                torque_unit_vector = total_torque[i,:]/torque_magnitude
+                #we are dealing with a coordinate system relative to the center of the particle, so we need to translate all the particle nodes in such a way that the center of the central voxel is at (0,0,0). This is necessary for calculating the vectors pointing from the axis of rotation to the particle nodes, so that we can calculate the correct forces involved
+                translated_particle_nodes = x0[particle,:] - particle_centers[i,:]
+                # print(f'Vectors to particle nodes with particle center at origin:{translated_particle_nodes}\n')
+                # r_magnitude = np.sqrt(np.sum(translated_particle_nodes*translated_particle_nodes,axis=1))
+                # print(f'Magnitude of vectors to particle nodes with particle center at origin:{r_magnitude}\n')
+                r_parallel_to_axis_of_rotation = np.sum(translated_particle_nodes*torque_unit_vector[np.newaxis,:],axis=1)[:,np.newaxis]*torque_unit_vector[np.newaxis,:]
+                # print(f'r_parallel_to_axis_of_rotation:{r_parallel_to_axis_of_rotation}\n')
+                # magnitude_r_parallel_to_axis_of_rotation = np.linalg.norm(r_parallel_to_axis_of_rotation,axis=1)
+                # print(f'Magnitude of r_parallel_to_axis_of_rotation:{magnitude_r_parallel_to_axis_of_rotation}\n')
+                # print(f'Torque unit vector:{torque_unit_vector}\n')
+                # print(f'r_parallel_to_torque_unit_vector:{r_parallel_to_axis_of_rotation/magnitude_r_parallel_to_axis_of_rotation[:,np.newaxis]}\n')
+                r_perpendicular_to_axis_of_rotation = translated_particle_nodes - r_parallel_to_axis_of_rotation
+                # print(f'r_perpendiular to axis of rotation:{r_perpendicular_to_axis_of_rotation}\n')
+                r_perp_magnitude = np.linalg.norm(r_perpendicular_to_axis_of_rotation,axis=1)
+                # print(f'magnitude of component perpendicular to axis of rotation:{r_perp_magnitude}\n')
+                rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
+                rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
+                rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
+                # print(f'rotational acceleration unit vectors:{rotational_acceleration_unit_vector}\n')
+                # print(f'magnitude of rotational acceleration unit vectors:{np.linalg.norm(rotational_acceleration_unit_vector,axis=1)}\n')
+                rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
+                # print(f'magnitude of rotational acceleration vectors:{np.linalg.norm(rotational_acceleration,axis=1)}\n')
+                accel[particle] += rotational_acceleration
+                # post_torque = get_torque_on_particle(particle,accel,x0)
+                # print(f'Torque prior to maniuplation:{total_torque[i,:]}\n')
+                # print(f'Torque after manipulations:{post_torque}\n')
+                # print(f'{post_torque/total_torque[i,:]}')
+                # print(f'pre-operation torque unit vector:\n{torque_unit_vector}\npost-operation torque unit vector:\n{post_torque/np.linalg.norm(post_torque)}')
+                #calculate the angular acceleration vector/magnitude for each node to see if the manipulations resulted in the expected (and fixed in magnitude for each node) angular acceleration for rigid body rotation
+                # rotational_acceleration_only_torque = np.cross(translated_particle_nodes,rotational_acceleration)
+                # rotational_accel_only_angular_accel = rotational_acceleration_only_torque/particle_moment_of_inertia
+                # print(f'considering rotational acceleration only, torque:\n{rotational_acceleration_only_torque}\n')
+                # rot_accel_only_net_torque = np.sum(rotational_acceleration_only_torque,axis=0)
+                # print(f'considering rotational acceleration only, net torque:\n{rot_accel_only_net_torque}\n')
+                # print(f'considering rotational acceleration only, angular acceleration:\n{rotational_accel_only_angular_accel}')
+                # print(f'considering rotational acceleration only, net angular acceleration:\n{rot_accel_only_net_torque/particle_moment_of_inertia}')
+                # print(f'angular acceleration magnitude:\n{np.linalg.norm(rot_accel_only_net_torque/particle_moment_of_inertia)}\n')
+                # #make plots showing the vector quantities for the rotational acceleration
+                # ax = plt.figure().add_subplot(projection='3d')
+                # x = translated_particle_nodes[:,0]
+                # y = translated_particle_nodes[:,1]
+                # z = translated_particle_nodes[:,2]
+                # u = rotational_acceleration[:,0]
+                # v = rotational_acceleration[:,1]
+                # w = rotational_acceleration[:,2]
+                # ax.quiver(x,y,z,u,v,w,length=0.1,normalize=True)
+                # X = 0
+                # Y = 0
+                # Z = 0
+                # U = torque_unit_vector[0]
+                # V = torque_unit_vector[1]
+                # W = torque_unit_vector[2]
+                # ax.quiver(X,Y,Z,U,V,W,length=0.5,normalize=True)
+                # u = accel[particle,0]
+                # v = accel[particle,1]
+                # w = accel[particle,2]
+                # ax.quiver(x,y,z,u,v,w,length=0.1,normalize=True,color='r')
+                # plt.show()
+                # post_angular_acceleration = rotational_acceleration/r_perp_magnitude[:,np.newaxis]
+                # print(f'angular acceleration vectors:\n{post_angular_acceleration}\n')
+                # post_angular_acceleration_magnitude = np.linalg.norm(post_angular_acceleration,axis=1)
+                # print(f'angular acceleration vector magnitudes:\n{post_angular_acceleration_magnitude}\n')
     return accel
 
 def get_particle_center(particle_nodes,node_posns):
