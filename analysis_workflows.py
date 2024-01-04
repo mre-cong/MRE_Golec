@@ -264,8 +264,134 @@ def analysis_case2():
 def analysis_case3():
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
-    For case (2), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, and the effective modulus for an applied strain"""
-    pass
+    For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
+    #   if a directory to save the visualizations doesn't exist, make it
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    figure_types = ['modulus','stress','strain','cuts','outer_surfaces']
+    figure_subtypes = ['center', 'particle', 'outer_surface']
+    for figure_type in figure_types:
+        if not (os.path.isdir(output_dir+figure_type+'/')):
+          os.mkdir(output_dir+figure_type+'/')
+        if figure_type == 'stress' or figure_type =='strain' or figure_type == 'cuts':
+            for figure_subtype in figure_subtypes:
+                if not (figure_type == 'cuts' and figure_subtype == 'outer_surface'):
+                    if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                        os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
+#   user provides directory containing simulation files, including init.h5, output_i.h5 files
+#   init.h5 is read in and simulation parameters are extracted
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+#   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
+    surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
+    surf_type = ('left','right','front','back','bottom','top')
+#   find indices corresponding to the "center" of the simulated volume for plotting and visualization, corresponding to cut_types values
+    center_indices = (int((num_nodes[2]-1)/2),int((num_nodes[1]-1)/2),int((num_nodes[0]-1)/2))
+#   lambda and mu (Lame parameters) are calculated from Young's modulus and Poisson's ratio variables from the init.h5 file
+    #see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
+#   in a loop, output files are read in and manipulated
+#       node positions and boundary conditions are used to calculate forces happening at relevant fixed boundaries
+#       forces are scaled to SI units
+#       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
+#       effective modulus is calculated from stress and strain
+#       effective modulus and stress are saved to respective array variables
+    #TODO effective modulus calculations for field dependent simulations
+#     effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
+# #   outside the loop:
+# #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
+# #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
+#     subplot_stress_strain_modulus(stress,strains,strain_direction,effective_modulus,output_dir+'modulus/',tag="")
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+#   in a loop, output files are read in and manipulated
+    for i in range(len(Hext_series)):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+#       node positions are scaled to SI units using l_e variable for visualization
+        si_final_posns = final_posns*l_e
+#       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
+#TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
+        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+        if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+            except:
+                print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+#       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+#       visualizations of cuts through the center of the volume are generated and saved out
+        mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{series[i]}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+        if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+            except:
+                print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+#       visualizations of cuts through the particle centers and edges are generated and saved out
+        if particles.shape[0] != 0:
+            mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/particle/',tag=f"series_{i}")
+            mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,output_dir+'cuts/particle/',tag=f"series_{i}")
+#       node positions are used to calculate nodal displacement
+        displacement_field = get_displacement_field(initial_node_posns,final_posns)
+#       nodal displacement is used to calculated displacement gradient
+        gradu = get_gradu(displacement_field,num_nodes)
+#       displacement gradient is used to calculate linear and nonlinear strain tensors
+        strain_tensor = get_strain_tensor(gradu)
+        green_strain_tensor = get_green_strain_tensor(gradu)
+#       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
+        stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+#       stress and strain tensors are visualized for the outer surfaces
+        for surf_idx,surface in zip(surf_indices,surf_type):
+            if surface == 'left' or surface == 'right':
+                cut_type = 'yz'
+            elif surface == 'front' or surface == 'back':
+                cut_type = 'xz'
+            elif surface == 'top' or surface == 'bottom':
+                cut_type = 'xy'
+            tag = surface+'_surface_strain_' + f'{series[i]}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+#       stress and strain tensors are visualized for cuts through the center of the volume
+        for cut_type,center_idx in zip(cut_types,center_indices):
+            tag = 'center_'  f'{series[i]}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
+#       if particles present:
+#          stress and strain tensors are visualized for cuts through particle centers and edges if particles present
+        if particles.shape[0] != 0:
+            centers = np.zeros((particles.shape[0],3))
+            for i, particle in enumerate(particles):
+                tag=f"particle{i+1}_edge_" + f'strain_{series[i]}_'
+                centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
+                particle_node_posns = initial_node_posns[particle,:]
+                x_max = np.max(particle_node_posns[:,0])
+                y_max = np.max(particle_node_posns[:,1])
+                z_max = np.max(particle_node_posns[:,2])
+                x_min = np.min(particle_node_posns[:,0])
+                y_min = np.min(particle_node_posns[:,1])
+                z_min = np.min(particle_node_posns[:,2])
+                edge_indices = ((z_max,z_min),(y_max,y_min),(x_max,x_min))
+                #TODO switchover to plotting tensorfields from this surf plot, but utilize the appropriate indices, cut types, and generate useful tags
+                for cut_type,layer_indices in zip(cut_types,edge_indices):
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'strain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'strain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
+            tag='particle_centers_'+ f'strain_{series[i]}_'
+            layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
+            for cut_type,layer in zip(cut_types,layers):
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/particle/',tag=tag+'stress')
+#   outside the loop:
+#   table or csv file with stress, strain, and effective modulus values are saved out for potential reconstruction or modification of figures
 
 def main():
     print('main')
@@ -768,10 +894,30 @@ def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
     format_figure(ax,title_size,label_size,tick_size)
     ax.set_zlabel(ax.get_zlabel(),fontsize=label_size)
 
+def get_num_output_files(sim_dir):
+    """Get the number of output files, since the series variable in current implementations will only contain the applied strains, and not the applied fields. used for properly reading in output files during analysis, and naming figures"""
+    with os.scandir(sim_dir) as dirIterator:
+        output_files = [f.path for f in dirIterator if f.is_file() and f.name.startswith('output')]
+    num_output_files = len(output_files)
+    return num_output_files
+
+def get_applied_field_series(sim_dir):
+    """Read in the output files to get the external magnetic fields applied during each simulation step"""
+    num_output_files = get_num_output_files(sim_dir)
+    Hext_series = np.zeros((num_output_files,3),dtype=np.float64)
+    for i in range(num_output_files):
+        _, Hext, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        Hext_series[i,:] = Hext
+    return Hext_series
+
 if __name__ == "__main__":
     main()
     # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-15_strain_testing_shearing_order_1_drag_20/'
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-21_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_drag_20_Bext_[0.05 0.   0.  ]/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_strain_testing_torsion_order_0_drag_20/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-21_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_drag_20_Bext_[0.05 0.   0.  ]/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_strain_testing_torsion_order_0_drag_20/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-25_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
+    Hext_series = get_applied_field_series(sim_dir)
+    Bext_series = mu0*Hext_series
+    print(Bext_series)
     analysis_case1(sim_dir)

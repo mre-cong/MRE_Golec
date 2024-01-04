@@ -370,9 +370,9 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
             raise ValueError('Strain type not one of the following accepted types ("tension", "compression", "shearing", "torsion")')
         for i, Hext in enumerate(Hext_series):
             if output_dir[-1] != '/':
-                current_output_dir = output_dir + f'/strain_{count}_{strain_type}_{np.round(strain,decimals=3)}_field_{count}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'/strain_{count}_{strain_type}_{np.round(strain,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             elif output_dir[-1] == '/':
-                current_output_dir = output_dir + f'strain_{count}_{strain_type}_{np.round(strain,decimals=3)}_field_{count}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'strain_{count}_{strain_type}_{np.round(strain,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
             print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
@@ -395,7 +395,7 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
             end_result = sol
             x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
             print('took %.2f seconds to simulate' % delta)
-            mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
+            mre.initialize.write_output_file(count*Hext_series.shape[0]+i,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
     return total_delta, return_status
 
 def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
@@ -1015,6 +1015,10 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     current_dir = os.path.abspath('.')
 
     mu0 = 4*np.pi*1e-7
+    if Hext_series[1,0] != 0:
+        Bext_angle = np.arctan(Hext_series[1,1]/Hext_series[1,0])*180/np.pi
+    else:
+        Bext_angle = 90
     x0 = normalized_posns.copy()
     #mass assignment per node according to density of PDMS-527 (or matrix material) and carbonyl iron
     #if using periodic boundary conditions, the system is inside the bulk of an MRE, and each node should be assumed to be sharing 8 volume elements, and have the same mass. if we do not use periodic boundary conditions, the nodes on surfaces, edges, and corners need to have their mass adjusted based on the number of shared elements. periodic boundary conditions imply force accumulation at boundaries due to effective wrap around, magnetic interactions of particles are more complicated, but symmetries likely to reduce complexity of the calculations. Unlikely to attempt to deal with peridoic boudnary conditions in this work.
@@ -1042,7 +1046,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
         strain_step_size = strain_max/(n_strain_steps-1)
     strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_drag_{drag}/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_Bext_angle_{Bext_angle}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
@@ -1056,7 +1060,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
     #then run with the particle rotations
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_drag_{drag}_particle_rotations/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_Bext_angle_{Bext_angle}_particle_rotations/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
