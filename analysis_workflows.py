@@ -261,7 +261,7 @@ def analysis_case2():
     For case (2), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization without an applied strain"""
     pass
 
-def analysis_case3():
+def analysis_case3(sim_dir):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
     For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
@@ -298,15 +298,16 @@ def analysis_case3():
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
     #TODO effective modulus calculations for field dependent simulations
-#     effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
-# #   outside the loop:
-# #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
-# #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
-#     subplot_stress_strain_modulus(stress,strains,strain_direction,effective_modulus,output_dir+'modulus/',tag="")
+    effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
+#   outside the loop:
+#   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
+#   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
+    subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
 #   in a loop, output files are read in and manipulated
-    for i in range(len(Hext_series)):
+    for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 #       node positions are scaled to SI units using l_e variable for visualization
@@ -316,18 +317,18 @@ def analysis_case3():
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
             except:
                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
 #       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{series[i]}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+        mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of cuts through the particle centers and edges are generated and saved out
@@ -452,6 +453,77 @@ def get_effective_modulus_strain_series(sim_dir):
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
     return effective_modulus, stress, strains, strain_direction
+
+def get_field_dependent_effective_modulus(sim_dir):
+    """Given a simulation directory, calculate and plot the effective modulus versus applied field. The returned stress variable is the effective stress applied to the surface equivalent to the "probe" in an indentation experiment. The secondary_stress variable is the effective stress applied to the surface held fixed by a table/wall/platform in an experimental measurement. The effective modulus is calculated using the effective stress applied to the "probed" surface."""
+    _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    strain_type = boundary_conditions[0]
+    strain_direction = boundary_conditions[1]
+    if strain_type == 'tension' or strain_type == 'compression':
+        effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
+    elif strain_type == 'shearing':
+        effective_modulus, stress, strains, secondary_stress = get_shearing_modulus(sim_dir,strain_direction)
+    elif strain_type == 'torsion':
+        get_torsion_modulus(sim_dir,strain_direction)
+    return effective_modulus, stress, strain, Bext_series, strain_direction
+
+def get_strain_dependent_tension_compression_modulus(sim_dir,strain_direction):
+    """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = series
+    n_strain_steps = len(series)
+    stress = np.zeros((n_strain_steps,3))
+    secondary_stress = np.zeros((n_strain_steps,3))
+    effective_modulus = np.zeros((n_strain_steps,))
+    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+        effective_modulus[i], stress[i], strains[i], secondary_stress[i] = get_tension_compression_modulus_v2(sim_dir,i,strain_direction,beta_i, springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
+    return effective_modulus, stress, strains, secondary_stress
+
+def get_field_dependent_tension_compression_modulus(sim_dir,strain_direction):
+    """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of applied field values."""
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    Hext_series = get_applied_field_series(sim_dir)
+    Bext_series = mu0*Hext_series
+    n_series_steps = np.shape(Bext_series)[0]
+    stress = np.zeros((n_series_steps,3))
+    strain = np.zeros((n_series_steps,))
+    effective_modulus = np.zeros((n_series_steps,))
+    for i in range(n_series_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+        effective_modulus[i], stress[i], strain[i], _ = get_tension_compression_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
+    return effective_modulus, stress, strain, Bext_series
+
+def get_tension_compression_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions):
+    """For a given configuration of nodes and particles, calculate the effective modulus, effective stress on the probe surface, and return those values."""
+    force_component = {'x':0,'y':1,'z':2}
+    final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
+    Hext = applied_field
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    strain = boundary_conditions[2]
+    y = np.zeros((6*total_num_nodes,))
+    y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
+    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    if strain_direction[0] == 'x':
+        #forces that must act on the boundaries for them to be in this position
+        relevant_boundaries = ('right','left')
+        dimension_indices = (1,2)
+    elif strain_direction[0] == 'y':
+        relevant_boundaries = ('back','front')
+        dimension_indices = (0,2)
+    elif strain_direction[0] == 'z':
+        relevant_boundaries = ('top','bot')
+        dimension_indices = (0,1)
+    first_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[0]]]/beta_i[boundaries[relevant_boundaries[0]],np.newaxis]
+    second_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[1]]]/beta_i[boundaries[relevant_boundaries[1]],np.newaxis]
+    first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+    second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+    stress = first_bdry_stress
+    secondary_stress = second_bdry_stress
+    if strain == 0:# and np.isclose(np.linalg.norm(stress[i,:]),0):
+        effective_modulus = E
+    else:
+        effective_modulus = np.abs(stress[force_component[strain_direction[1]]]/strain)
+    return effective_modulus, stress, strain, secondary_stress
 
 def get_tension_compression_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied."""
@@ -882,6 +954,34 @@ def subplot_stress_strain_modulus(stress,strain,strain_direction,effective_modul
     plt.savefig(savename)
     plt.close()
 
+def subplot_stress_field_modulus(stress,strains,strain_direction,effective_modulus,Bext_series,output_dir,tag=""):
+    """Generate figure with subplots of stress-field curve and effective modulus versus field."""
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    force_component = {'x':0,'y':1,'z':2}
+    Bext_magnitude = np.linalg.norm(Bext_series,axis=1)
+    plotting_indices = strains > 0
+    stress = stress[plotting_indices]
+    Bext_magnitude = Bext_magnitude[plotting_indices]
+    effective_modulus = effective_modulus[plotting_indices]
+    axs[0].plot(Bext_magnitude,np.abs(stress[:,force_component[strain_direction[1]]]),'-o')
+    axs[0].set_title('Stress vs Applied Field')
+    axs[0].set_xlabel('Applied Field (T)')
+    axs[0].set_ylabel('Stress')
+    axs[1].plot(Bext_magnitude,effective_modulus,'-o')
+    axs[1].set_title('Effective Modulus vs Applied Field')
+    axs[1].set_xlabel('Applied Field (T)')
+    axs[1].set_ylabel('Effective Modulus')
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
+    savename = output_dir + f'subplots_stress-field_effective_modulus_'+tag+'.png'
+    plt.savefig(savename)
+    plt.close()
+
 def format_figure(ax,title_size=30,label_size=30,tick_size=30):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
@@ -910,6 +1010,27 @@ def get_applied_field_series(sim_dir):
         Hext_series[i,:] = Hext
     return Hext_series
 
+def get_applied_strain_series(sim_dir):
+    """Read in the simulation directory and parse the subfolders to find the applied strain values"""
+    with os.scandir(sim_dir) as dirIterator:
+        subfolders = [f.path for f in dirIterator if f.is_dir() and f.name.startswith('strain')]
+    for folder_num, subfolder in enumerate(subfolders):
+        fn = subfolder.split('/')[-1]
+        fn_components = fn.split('_')
+        strain_indices = np.zeros((len(subfolders),),dtype=np.int64)
+        field_indices = np.zeros((len(subfolders),),dtype=np.int64)
+        output_file_indices = np.zeros((len(subfolders),),dtype=np.int64)
+        for i in range(len(fn_components)):
+            if fn_components[i] == 'strain':
+                strain_indices[folder_num] = int(fn_components[i+1])
+            if fn_components[i] == 'field':
+                field_indices[folder_num] = int(fn_components[i+1])
+        #the associated output file for each subfolder
+    max_field_index = np.max(field_indices)
+    for folder_num in range(len(subfolders)):
+        output_file_indices[folder_num] = strain_indices[folder_num]*(max_field_index+1)+field_indices[folder_num]
+    print(fn_components)
+
 if __name__ == "__main__":
     main()
     # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-15_strain_testing_shearing_order_1_drag_20/'
@@ -917,7 +1038,5 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_strain_testing_torsion_order_0_drag_20/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-25_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    Hext_series = get_applied_field_series(sim_dir)
-    Bext_series = mu0*Hext_series
-    print(Bext_series)
+    analysis_case3(sim_dir)
     analysis_case1(sim_dir)
