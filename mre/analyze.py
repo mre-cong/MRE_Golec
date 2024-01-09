@@ -309,8 +309,8 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     fcolors = my_cmap.to_rgba(color_dimension)
-    surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
-    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+    surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+    # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -740,8 +740,8 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
         my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
         fcolors = my_cmap.to_rgba(color_dimension)
-        surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False)
-        ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+        surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+        # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
         xlabel = 'X (um)'
         ylabel = 'Y (um)'
         zlabel = 'Z (um)'
@@ -1161,7 +1161,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
         for i in range(2):
             idx = int(layers[2*cut_type_index+i])
             xvar, yvar, zvar = get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D)
-            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1)
+            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1206,8 +1206,8 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
         for i in range(2):
             idx = int(layers[2*cut_type_index+i])
             xvar, yvar, zvar = get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D)
-            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1)
-            ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
+            # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)

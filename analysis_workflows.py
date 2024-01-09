@@ -3,17 +3,19 @@
 #Establishing the distinct workflows for different types of simulations and analyses via pseudocode. Followed by implementation of necessary component functions and visualizations.
 
 import numpy as np
+import scipy.special as sci
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
-# plt.switch_backend('TkAgg')
-plt.switch_backend('Agg')
+plt.switch_backend('TkAgg')
+# plt.switch_backend('Agg')
 import time
 import os
 import tables as tb#pytables, for HDF5 interface
 import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
+import magnetism
 import simulate
 import re
 #magnetic permeability of free space
@@ -306,8 +308,32 @@ def analysis_case3(sim_dir):
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
-#   in a loop, output files are read in and manipulated
+    #get the particle separations and overall magnetizations
+    num_particles = particles.shape[0]
+    num_separations = int(sci.binom(num_particles,2))
+    separations = np.zeros((num_output_files,num_separations))
+    magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        separations[i,:] = get_particle_separation(final_posns,particles)
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for j, particle in enumerate(particles):
+            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
+        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    fig, ax = plt.subplots()
+    ax.plot(np.linalg.norm(mu0*Hext_series,axis=1),separations*l_e,'o')
+    ax.set_xlabel('Applied Field (T)')
+    ax.set_ylabel('Particle Separation (m)')
+    fig.show()
+    fig, ax = plt.subplots()
+    ax.plot(np.linalg.norm(mu0*Hext_series,axis=1),magnetization[:,0],'o')
+    ax.set_xlabel('Applied Field (T)')
+    ax.set_ylabel('Normalized System Magnetization')
+    fig.show()
+
+#   in a loop, output files are read in and manipulated
+    for i in range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 #       node positions are scaled to SI units using l_e variable for visualization
@@ -352,13 +378,13 @@ def analysis_case3(sim_dir):
                 cut_type = 'xz'
             elif surface == 'top' or surface == 'bottom':
                 cut_type = 'xy'
-            tag = surface+'_surface_strain_' + f'{series[i]}_'
+            tag = surface+'_surface_strain_' + f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
 #       stress and strain tensors are visualized for cuts through the center of the volume
         for cut_type,center_idx in zip(cut_types,center_indices):
-            tag = 'center_'  f'{series[i]}_'
+            tag = 'center_'  f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
@@ -367,7 +393,7 @@ def analysis_case3(sim_dir):
         if particles.shape[0] != 0:
             centers = np.zeros((particles.shape[0],3))
             for i, particle in enumerate(particles):
-                tag=f"particle{i+1}_edge_" + f'strain_{series[i]}_'
+                tag=f"particle{i+1}_edge_" + f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
                 centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
                 particle_node_posns = initial_node_posns[particle,:]
                 x_max = np.max(particle_node_posns[:,0])
@@ -385,7 +411,7 @@ def analysis_case3(sim_dir):
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
-            tag='particle_centers_'+ f'strain_{series[i]}_'
+            tag='particle_centers_'+ f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
             layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
             for cut_type,layer in zip(cut_types,layers):
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
@@ -1030,6 +1056,28 @@ def get_applied_strain_series(sim_dir):
     for folder_num in range(len(subfolders)):
         output_file_indices[folder_num] = strain_indices[folder_num]*(max_field_index+1)+field_indices[folder_num]
     print(fn_components)
+
+def get_particle_separation(posns,particles):
+    """Calculate the particle centers and the magnitude of the center-to-center separation."""
+    num_particles = particles.shape[0]
+    centers = np.zeros((num_particles,3))
+    num_separations = int(sci.binom(num_particles,2))
+    separations = np.zeros((num_separations,))
+    for i, particle in enumerate(particles):
+        centers[i] = simulate.get_particle_center(particle,posns)
+    counter = 0
+    for i in range(num_particles):
+        for j in range(i+1,num_particles):
+            separations[counter] = np.linalg.norm(centers[i]-centers[j])
+            counter += 1
+    return separations
+
+def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
+    """Get the overall system magnetization as a vector sum of the magnetizations of the particles."""
+    magnetizations = magnetism.get_magnetization_iterative_normalized(Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    normalized_magnetizations = magnetizations/Ms
+    overall_magnetization = np.sum(normalized_magnetizations,axis=0)/magnetizations.shape[0]
+    return overall_magnetization
 
 if __name__ == "__main__":
     main()
