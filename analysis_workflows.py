@@ -474,8 +474,10 @@ def get_effective_modulus_strain_series(sim_dir):
     strain_direction = boundary_conditions[1]
     if strain_type == 'tension' or strain_type == 'compression':
         effective_modulus, stress, strains, secondary_stress = get_tension_compression_modulus(sim_dir,strain_direction)
+        effective_modulus_alt, stress_alt, strains_alt, secondary_stress_alt = get_strain_dependent_tension_compression_modulus(sim_dir,strain_direction)
     elif strain_type == 'shearing':
         effective_modulus, stress, strains, secondary_stress = get_shearing_modulus(sim_dir,strain_direction)
+        effective_modulus, stress, strains, secondary_stress = get_strain_dependent_shearing_modulus(sim_dir,strain_direction)
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
     return effective_modulus, stress, strains, strain_direction
@@ -489,7 +491,7 @@ def get_field_dependent_effective_modulus(sim_dir):
     if strain_type == 'tension' or strain_type == 'compression':
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
     elif strain_type == 'shearing':
-        effective_modulus, stress, strains, secondary_stress = get_shearing_modulus(sim_dir,strain_direction)
+        effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
     return effective_modulus, stress, strain, Bext_series, strain_direction
@@ -589,6 +591,64 @@ def get_tension_compression_modulus(sim_dir,strain_direction):
         else:
             effective_modulus[i] = np.abs(stress[i,force_component[strain_direction[1]]]/strains[i])
     return effective_modulus, stress, strains, secondary_stress
+
+def get_strain_dependent_shearing_modulus(sim_dir,strain_direction):
+    """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = series
+    n_strain_steps = len(series)
+    stress = np.zeros((n_strain_steps,3))
+    secondary_stress = np.zeros((n_strain_steps,3))
+    effective_modulus = np.zeros((n_strain_steps,))
+    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+        effective_modulus[i], stress[i], strains[i], secondary_stress[i] = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i, springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
+    return effective_modulus, stress, strains, secondary_stress
+
+def get_field_dependent_shearing_modulus(sim_dir,strain_direction):
+    """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of applied field values."""
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    Hext_series = get_applied_field_series(sim_dir)
+    Bext_series = mu0*Hext_series
+    n_series_steps = np.shape(Bext_series)[0]
+    stress = np.zeros((n_series_steps,3))
+    strain = np.zeros((n_series_steps,))
+    effective_modulus = np.zeros((n_series_steps,))
+    for i in range(n_series_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+        effective_modulus[i], stress[i], strain[i], _ = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
+    return effective_modulus, stress, strain, Bext_series
+
+def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions):
+    #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
+    """Calculate a shear modulus, using the shear strain (shearing angle) and the force applied to the sheared surface in the shearing direction to get a shear stress."""
+    #nonlinear shear strains are defined as tangent of the angle opened up by the shearing. linear shear strain is the linear, small angle approximation of tan theta ~= theta
+    force_component = {'x':0,'y':1,'z':2}
+    y = np.zeros((6*total_num_nodes,))
+    final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    strain = np.tan(boundary_conditions[2])
+    Hext = applied_field
+    y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
+    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    if strain_direction[0] == 'x':
+        relevant_boundaries = ('right','left')
+        dimension_indices = (1,2)
+    elif strain_direction[0] == 'y':
+        relevant_boundaries = ('back','front')
+        dimension_indices = (0,2)
+    elif strain_direction[0] == 'z':
+        relevant_boundaries = ('top','bot')
+        dimension_indices = (0,1)
+    first_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[0]]]/beta_i[boundaries[relevant_boundaries[0]],np.newaxis]
+    second_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[1]]]/beta_i[boundaries[relevant_boundaries[1]],np.newaxis]
+    first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+    second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+    stress = first_bdry_stress
+    secondary_stress = second_bdry_stress
+    if strain == 0 and np.isclose(np.linalg.norm(stress),0):
+        effective_modulus = E/3
+    else:
+        effective_modulus = np.abs(stress[force_component[strain_direction[1]]]/strain)
+    return effective_modulus, stress, strain, secondary_stress
 
 def get_shearing_modulus(sim_dir,strain_direction):
     #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
@@ -1087,4 +1147,4 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-25_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
     analysis_case3(sim_dir)
-    analysis_case1(sim_dir)
+    # analysis_case1(sim_dir)
