@@ -1288,13 +1288,22 @@ def format_figure(ax,title_size=30,label_size=30,tick_size=30):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+    # ax.xaxis.set_label_coords(0.5,-0.1)
     ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+    # ax.yaxis.set_label_coords(-0.1,0.5)
     ax.set_title(ax.get_title(),fontsize=title_size)
 
 def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
-    format_figure(ax,title_size,label_size,tick_size)
-    ax.set_zlabel(ax.get_zlabel(),fontsize=label_size)
+    # format_figure(ax,title_size,label_size,tick_size)
+    ax.tick_params(labelsize=tick_size)
+    ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+    # ax.xaxis.set_label_coords(0.5,-0.1)
+    ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
+    # ax.yaxis.set_label_coords(-0.1,0.5)
+    ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size)
+    # ax.zaxis.set_label_coords(1.1,0.5)
+    ax.set_title(ax.get_title(),fontsize=title_size)
 
 def get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index):
     """Manipulate node positions variable and return x, y, and z variables for 3D plots (wireframe and surface plots) based on the type of cut and the desired layer"""

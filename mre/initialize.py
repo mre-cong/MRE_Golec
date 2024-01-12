@@ -538,7 +538,7 @@ def read_criteria_file(fn):
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
 def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,output_dir):
-    """Write out the vertex positions, boundary conditinos, and simulation wall time (time to complete simulation) as HDF5 file."""
+    """Write out the vertex positions, boundary conditions, and simulation wall time (time to complete simulation) as HDF5 file."""
     f = tb.open_file(f'{output_dir}output_{count}.h5','w')
     f.create_array('/','node_posns',posns)
     # f.create_group('/','node_posns','Final Configurations')

@@ -395,7 +395,13 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
             end_result = sol
             x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
             print('took %.2f seconds to simulate' % delta)
-            mre.initialize.write_output_file(count*Hext_series.shape[0]+i,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
+            output_file_number = count*Hext_series.shape[0]+i
+            mre.initialize.write_output_file(output_file_number,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
+            #if we have already run a particular simulation with zero strain and at some field, use that as the starting point for the solution
+            if (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(strains)-1):
+                output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
+                x0, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
+                print(f'reusing previously calculated solution with B_ext = {mu0*output_file_Hext}')
     return total_delta, return_status
 
 def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
@@ -926,8 +932,8 @@ def main_strain():
 
 def main_series_simulations():
     """A series of simulations to run during the winter break while I'm away, with a focus on getting results that can be used for calculating effective moduli dependence on the applied field"""
-    youngs_modulus = [9e5,9e4,9e3]
-    discretizations = [0,1,2,3]
+    youngs_modulus = [3e4]
+    discretizations = [1]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.25/mu0
     n_field_steps = 5
@@ -935,9 +941,9 @@ def main_series_simulations():
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    strain_types = ('tension','compression','shearing')
-    strain_type_strings = ('tension_strain','compressive_strain','shear_strain')
-    strain_directions = ((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
+    strain_types = ('tension','shearing')#('tension','compression','shearing')
+    strain_type_strings = ('tension_strain','shear_strain')#('tension_strain','compressive_strain','shear_strain')
+    strain_directions = ((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z')))#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
     Hext_angles = (0,np.pi/2)
     total_sim_num = 0
     for E in youngs_modulus:
@@ -955,6 +961,36 @@ def main_series_simulations():
                         total_sim_num += 1
     print(total_sim_num)
 
+def zero_modulus_zero_vcf_test_particle_collision():
+    """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
+    youngs_modulus = [9e3]
+    discretizations = [1]
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.25/mu0
+    n_field_steps = 1
+    H_step = H_mag/n_field_steps
+    Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    strain_types = ('tension',)#('tension','compression','shearing')
+    strain_type_strings = ('tension_strain',)#('tension_strain','compressive_strain','shear_strain')
+    strain_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
+    Hext_angles = (0,)
+    total_sim_num = 0
+    for E in youngs_modulus:
+        for discretization_order in discretizations:
+            for i, strain_type in enumerate(strain_types):
+                for strain_direction in strain_directions[i]:
+                    field_or_strain_type_string = strain_type_strings[i]
+                    for Hext_angle in Hext_angles:
+                        Hext_series = np.zeros((len(Hext_series_magnitude),3))
+                        Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+                        Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+                        print(f'field_or_strain_type_string = {field_or_strain_type_string}\nstrain_type = {strain_type}\nstrain_direction = {strain_direction}\n')
+                        print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nstrain_direction={strain_direction}\n")
+                        main_field_dependent_modulus(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=5,max_integration_steps=5000,tolerance=1e-4)
+                        total_sim_num += 1
+    print(total_sim_num)
 
 def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext_series=np.array(np.array([0,0,0],dtype=np.float64)),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-4):
     """Running a two particle simulation whose output can be used to calculate an effective modulus, with the end goal being calculation of the dependence of the effective modulus on the applied magnetic field."""
@@ -1028,7 +1064,10 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
     #we will call the scaling coefficient beta
-    beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+    if (not np.isclose(k_e,0)):
+        beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+    else:
+        beta = 1e-9
     #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
     beta_i = beta/m
     drag = 20
@@ -1046,21 +1085,21 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
         strain_step_size = strain_max/(n_strain_steps-1)
     strains = np.arange(0.0,strain_max+0.01*strain_max,strain_step_size)
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_Bext_angle_{Bext_angle}/'
-    if not (os.path.isdir(output_dir)):
-        os.mkdir(output_dir)
-    my_sim.write_log(output_dir)
+    # output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_Bext_angle_{Bext_angle}/'
+    # if not (os.path.isdir(output_dir)):
+    #     os.mkdir(output_dir)
+    # my_sim.write_log(output_dir)
     
-    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,strains,field_or_strain_type_string,output_dir)
-    end = time.time()
-    delta = end - start
-    print(f'Time to initialize:{delta} seconds\n')
-    #first run without the particle rotations
-    simulation_time, return_status = run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=False)
-    my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
+    # mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,strains,field_or_strain_type_string,output_dir)
+    # end = time.time()
+    # delta = end - start
+    # print(f'Time to initialize:{delta} seconds\n')
+    # #first run without the particle rotations
+    # simulation_time, return_status = run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=False)
+    # my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
     #then run with the particle rotations
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_Bext_angle_{Bext_angle}_particle_rotations/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_strain_{strain_type}_direction{strain_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
@@ -1071,6 +1110,7 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    main_series_simulations()
+    zero_modulus_zero_vcf_test_particle_collision()
+    # main_series_simulations()
     # main_strain()
     # main2()
