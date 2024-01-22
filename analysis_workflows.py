@@ -305,6 +305,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
 #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
     subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+    # subplot_stress_field_modulus(alternative_stress_measure,strain,strain_direction,alternative_effective_modulus,Bext_series,output_dir+'modulus/',tag="alternative_measures")
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
@@ -354,6 +355,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
         Lz = initial_node_posns[:,2].max()
         layers = (Lx,Ly,Lz)
         boundary_forces, all_forces = get_probe_boundary_forces(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag)
+        #go from forces acting on the boundary to forces that would need to be acting to keep the boudnary in place
+        all_forces *= -1
         if boundary_conditions[1][0] == 'x':
             index = int(Lx)
             cut_type = 'yz'
@@ -399,6 +402,9 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
             green_strain_tensor = get_green_strain_tensor(gradu)
     #       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
             stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+    #       use the components of linear stress and strain tensors to get something like an effective modulus on a per node basis
+            effective_modulus_tensor = stress_tensor/strain_tensor
+            np.nan_to_num(effective_modulus_tensor,copy=False,nan=0.0,posinf=-1,neginf=+1)
     #       stress and strain tensors are visualized for the outer surfaces
             for surf_idx,surface in zip(surf_indices,surf_type):
                 if surface == 'left' or surface == 'right':
@@ -408,9 +414,11 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
                 elif surface == 'top' or surface == 'bottom':
                     cut_type = 'xy'
                 tag = surface+'_surface_strain_' + f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+                if surface == 'right':
+                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,effective_modulus_tensor,surf_idx,output_dir+'modulus/',tag=tag+'quasi-modulus')
     #       stress and strain tensors are visualized for cuts through the center of the volume
             for cut_type,center_idx in zip(cut_types,center_indices):
                 tag = 'center_'  f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
@@ -520,10 +528,10 @@ def get_field_dependent_effective_modulus(sim_dir):
     if strain_type == 'tension' or strain_type == 'compression':
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
     elif strain_type == 'shearing':
-        effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
+        effective_modulus, stress, strain, Bext_series, alternative_stress_measure, alternative_effective_modulus = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
-    return effective_modulus, stress, strain, Bext_series, strain_direction
+    return effective_modulus, stress, strain, Bext_series, strain_direction#, alternative_stress_measure, alternative_effective_modulus
 
 def get_strain_dependent_tension_compression_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
@@ -640,11 +648,31 @@ def get_field_dependent_shearing_modulus(sim_dir,strain_direction):
     Bext_series = mu0*Hext_series
     n_series_steps = np.shape(Bext_series)[0]
     stress = np.zeros((n_series_steps,3))
+    alternative_stress_measure = np.zeros((n_series_steps,3))
     strain = np.zeros((n_series_steps,))
     effective_modulus = np.zeros((n_series_steps,))
+    if strain_direction[0] == 'x':
+        relevant_boundary = 'right'
+        dimension_indices = (1,2)
+    elif strain_direction[0] == 'y':
+        relevant_boundary = 'back'
+        dimension_indices = (0,2)
+    elif strain_direction[0] == 'z':
+        relevant_boundary = 'top'
+        dimension_indices = (0,1)
+    bdry_forces = np.zeros((n_series_steps,len(boundaries[relevant_boundary]),3))
+    alternative_effective_modulus = np.zeros((n_series_steps,))
     for i in range(n_series_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         effective_modulus[i], stress[i], strain[i], _ = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
-    return effective_modulus, stress, strain, Bext_series
+        # effective_modulus[i], stress[i], strain[i], _, bdry_forces[i] = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
+    # below was part of an attempt to subtract out contributions to the forces on the boundary surface due to the particle motion, but the results demonstrate how poor of an idea that was. i had thought it might show more reasonable effective modulus values, i was wrong.
+    # num_sims_zero_strain = int(n_series_steps/2)
+    # force_component = {'x':0,'y':1,'z':2}
+    # for i in range(num_sims_zero_strain):
+    #     adjusted_boundary_forces = bdry_forces[i + num_sims_zero_strain] - bdry_forces[i]
+    #     alternative_stress_measure[i+num_sims_zero_strain] = np.sum(adjusted_boundary_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+    #     alternative_effective_modulus[i+num_sims_zero_strain] = np.abs(alternative_stress_measure[i+num_sims_zero_strain,force_component[strain_direction[1]]]/strain[i+num_sims_zero_strain])
+    return effective_modulus, stress, strain, Bext_series#, alternative_stress_measure, alternative_effective_modulus
 
 def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions):
     #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
@@ -677,7 +705,7 @@ def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,s
         effective_modulus = E/3
     else:
         effective_modulus = np.abs(stress[force_component[strain_direction[1]]]/strain)
-    return effective_modulus, stress, strain, secondary_stress
+    return effective_modulus, stress, strain, secondary_stress#, first_bdry_forces
 
 def get_shearing_modulus(sim_dir,strain_direction):
     #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
@@ -918,7 +946,7 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
         if i != 3:
             vectorfield_component = vectorfield[i]
         else:
-            vectorfield_component = np.sqrt(np.power(vectorfield[0],2) +np.power(vectorfield[1],2) + np.power(vectorfield[2],2)) 
+            vectorfield_component = np.sqrt(np.power(vectorfield[0],2) + np.power(vectorfield[1],2) + np.power(vectorfield[2],2))
         if cut_type == 'xy':
             Z = vectorfield_component[:,:,index]
             X = xposns[:,:,index]
@@ -937,7 +965,6 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
             Y = zposns[index,:,:]
             xlabel = 'Y'
             ylabel = 'Z'
-        img = ax.pcolormesh(X,Y,Z)
         # img = ax.pcolormesh(X,Y,Z,shading='gouraud')
         #don't forget to add a colorbar and limits
         color_dimension = Z
@@ -949,7 +976,8 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
         my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
         # fig.colorbar(img,ax=ax)
-        cbar = fig.colorbar(my_cmap,ax=ax)
+        img = ax.pcolormesh(X,Y,Z,norm=norm)
+        cbar = fig.colorbar(img,ax=ax)
         cbar.ax.tick_params(labelsize=25)
         # fig.colorbar(img,ax=ax)
         ax.axis('equal')
@@ -1220,9 +1248,11 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('z', 'z')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-10_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_1_E_30000.0_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations/"
-    analysis_case3(sim_dir,stress_strain_flag=False)    
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
+    analysis_case3(sim_dir,stress_strain_flag=True)
     # analysis_case1(sim_dir)

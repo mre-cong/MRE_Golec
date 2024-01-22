@@ -1873,7 +1873,6 @@ static void __pyx_f_19get_spring_force_cy_get_spring_forces(__Pyx_memviewslice, 
 static void __pyx_f_19get_spring_force_cy_get_spring_force(int const , int const , int const , __Pyx_memviewslice, __Pyx_memviewslice, double *); /*proto*/
 static void __pyx_f_19get_spring_force_cy_get_spring_forces_WCA(__Pyx_memviewslice, __Pyx_memviewslice, __Pyx_memviewslice, int __pyx_skip_dispatch); /*proto*/
 static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const , int const , int const , __Pyx_memviewslice, __Pyx_memviewslice, double *); /*proto*/
-static double __pyx_f_19get_spring_force_cy_get_wca_force(double, double); /*proto*/
 static double __pyx_f_19get_spring_force_cy_dot_prod(double *, double *); /*proto*/
 static struct __pyx_array_obj *__pyx_array_new(PyObject *, Py_ssize_t, char *, char *, char *); /*proto*/
 static void *__pyx_align_pointer(void *, size_t); /*proto*/
@@ -2911,17 +2910,12 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
   double __pyx_v_eq_length;
   double __pyx_v_rij_mag;
   double __pyx_v_spring_mag;
-  double __pyx_v_wca_mag;
-  double __pyx_v_sigma;
-  double __pyx_v_cutoff_length;
   Py_ssize_t __pyx_t_1;
   Py_ssize_t __pyx_t_2;
   int __pyx_t_3;
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   double __pyx_t_6;
-  int __pyx_t_7;
-  int __pyx_t_8;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -2995,7 +2989,7 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
  *     cdef double spring_mag = -1 * k * (rij_mag - eq_length)
  *     for i in range(3):             # <<<<<<<<<<<<<<
  *         spring_force[i] = spring_mag * rij[i] / rij_mag
- *     cdef double wca_mag
+ *     # cdef double wca_mag
  */
   for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
@@ -3004,8 +2998,8 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
  *     cdef double spring_mag = -1 * k * (rij_mag - eq_length)
  *     for i in range(3):
  *         spring_force[i] = spring_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
- *     cdef double wca_mag
- *     cdef double sigma = 0.45*eq_length
+ *     # cdef double wca_mag
+ *     # cdef double sigma = 0.45*eq_length
  */
     __pyx_t_6 = (__pyx_v_spring_mag * (__pyx_v_rij[__pyx_v_i]));
     if (unlikely(__pyx_v_rij_mag == 0)) {
@@ -3019,84 +3013,6 @@ static void __pyx_f_19get_spring_force_cy_get_spring_force_WCA(int const __pyx_v
       __PYX_ERR(0, 75, __pyx_L1_error)
     }
     (__pyx_v_spring_force[__pyx_v_i]) = (__pyx_t_6 / __pyx_v_rij_mag);
-  }
-
-  /* "get_spring_force_cy.pyx":77
- *         spring_force[i] = spring_mag * rij[i] / rij_mag
- *     cdef double wca_mag
- *     cdef double sigma = 0.45*eq_length             # <<<<<<<<<<<<<<
- *     cdef double cutoff_length = pow(2,(1/6))*sigma
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
- */
-  __pyx_v_sigma = (0.45 * __pyx_v_eq_length);
-
-  /* "get_spring_force_cy.pyx":78
- *     cdef double wca_mag
- *     cdef double sigma = 0.45*eq_length
- *     cdef double cutoff_length = pow(2,(1/6))*sigma             # <<<<<<<<<<<<<<
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
- *         wca_mag = get_wca_force(rij_mag,sigma)
- */
-  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
-
-  /* "get_spring_force_cy.pyx":79
- *     cdef double sigma = 0.45*eq_length
- *     cdef double cutoff_length = pow(2,(1/6))*sigma
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
- *         wca_mag = get_wca_force(rij_mag,sigma)
- *         for i in range(3):
- */
-  __pyx_t_7 = ((__pyx_v_rij_mag <= __pyx_v_cutoff_length) != 0);
-  if (__pyx_t_7) {
-
-    /* "get_spring_force_cy.pyx":80
- *     cdef double cutoff_length = pow(2,(1/6))*sigma
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
- *         wca_mag = get_wca_force(rij_mag,sigma)             # <<<<<<<<<<<<<<
- *         for i in range(3):
- *             spring_force[i] += wca_mag * rij[i] / rij_mag
- */
-    __pyx_v_wca_mag = __pyx_f_19get_spring_force_cy_get_wca_force(__pyx_v_rij_mag, __pyx_v_sigma);
-
-    /* "get_spring_force_cy.pyx":81
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
- *         wca_mag = get_wca_force(rij_mag,sigma)
- *         for i in range(3):             # <<<<<<<<<<<<<<
- *             spring_force[i] += wca_mag * rij[i] / rij_mag
- * 
- */
-    for (__pyx_t_3 = 0; __pyx_t_3 < 3; __pyx_t_3+=1) {
-      __pyx_v_i = __pyx_t_3;
-
-      /* "get_spring_force_cy.pyx":82
- *         wca_mag = get_wca_force(rij_mag,sigma)
- *         for i in range(3):
- *             spring_force[i] += wca_mag * rij[i] / rij_mag             # <<<<<<<<<<<<<<
- * 
- * @cython.boundscheck(False)
- */
-      __pyx_t_8 = __pyx_v_i;
-      __pyx_t_6 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
-      if (unlikely(__pyx_v_rij_mag == 0)) {
-        #ifdef WITH_THREAD
-        PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-        #endif
-        PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-        #ifdef WITH_THREAD
-        __Pyx_PyGILState_Release(__pyx_gilstate_save);
-        #endif
-        __PYX_ERR(0, 82, __pyx_L1_error)
-      }
-      (__pyx_v_spring_force[__pyx_t_8]) = ((__pyx_v_spring_force[__pyx_t_8]) + (__pyx_t_6 / __pyx_v_rij_mag));
-    }
-
-    /* "get_spring_force_cy.pyx":79
- *     cdef double sigma = 0.45*eq_length
- *     cdef double cutoff_length = pow(2,(1/6))*sigma
- *     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements             # <<<<<<<<<<<<<<
- *         wca_mag = get_wca_force(rij_mag,sigma)
- *         for i in range(3):
- */
   }
 
   /* "get_spring_force_cy.pyx":65
