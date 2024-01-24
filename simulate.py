@@ -807,42 +807,6 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
     x0 = np.reshape(y[:N],(N_nodes,3))
     v0 = np.reshape(y[N:],(N_nodes,3))
     # drag = 20
-    bc_forces = np.zeros(x0.shape,dtype=float)
-    if bc[0] == 'stress':
-        for surface in bc[1]:
-            # stress times surface area divided by number of vertices on the surface (resulting in the appropriate stress being applied)
-            # !!! it seems likely that this is inappropriate, that for each element in the surface, the vertices need to be counted in a way that takes into account vertices shared by elements. right now the even distribution of force but uneven assignment of stiffnesses based on vertices belonging to multple elements means the edges will push in further than the central vertices on the surface... but let's move forward with this method first and see how it does
-            if surface == 'left' or surface == 'right':
-                surface_area = dimensions[0]*dimensions[2]
-            elif surface == 'top' or surface == 'bottom':
-                surface_area = dimensions[0]*dimensions[1]
-            else:
-                surface_area = dimensions[1]*dimensions[2]
-            # assuming tension force only, no compression
-            if surface == 'right':
-                force_direction = np.array([1,0,0])
-            elif surface == 'left':
-                force_direction = np.array([-1,0,0])
-            elif surface == 'top':
-                force_direction = np.array([0,0,1])
-            elif surface == 'bottom':
-                force_direction = np.array([0,0,-1])
-            elif surface == 'front':
-                force_direction = np.array([0,1,0])
-            elif surface == 'back':
-                force_direction = np.array([0,-1,0])
-            # i need to distinguish between vertices that exist on the corners, edges, and the rest of the vertices on the boundary surface to adjust the force. I also need to understand how to distribute the force. I want to have a sum of forces such that the stress applied is correct, but i need to corners to have a lower magnitude force vector exerted due to the weaker spring stiffness, the edges to have a force magnitude greater than the corners but less than the center
-            bc_forces[boundaries[surface]] = force_direction*bc[2]/len(boundaries[surface])*surface_area
-    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
-        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
-        if bc[1][0] == 'x':
-            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
-        elif bc[1][0] == 'y':
-            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
-        elif bc[1][0] == 'z':
-            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
-    else:
-        fixed_nodes = np.array([0])
     correction_force_el = np.empty((8,3),dtype=np.float64)
     vectors = np.empty((8,3),dtype=np.float64)
     avg_vectors = np.empty((3,3),dtype=np.float64)
@@ -852,8 +816,36 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
     get_spring_force_cy.get_spring_forces_WCA(x0, springs, spring_force)
     volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
     spring_force *= l_e*beta_i[:,np.newaxis]
-    accel = spring_force + volume_correction_force - drag * v0 + bc_forces
-    accel = set_fixed_nodes(accel,fixed_nodes)
+    accel = spring_force + volume_correction_force - drag * v0# + bc_forces
+    if bc[0] == 'stress_compression':
+        plate_orientation = bc[1][0]
+        global_index_interacting_nodes, plate_force = get_plate_force(x0,bc[2],plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+    elif bc[0] == 'plate_compression':
+        plate_orientation = bc[1][0]
+        global_index_interacting_nodes, plate_force = get_plate_force(x0,bc[2],plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        if bc[1][0] == 'x':
+            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
+        elif bc[1][0] == 'y':
+            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
+        elif bc[1][0] == 'z':
+            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    else:
+        fixed_nodes = np.array([0])
+        accel = set_fixed_nodes(accel,fixed_nodes)
     #characteristic time necessary to get the scaled angular acceleration correctly.
     characteristic_time_squared = beta*l_e
     if particles.shape[0] != 0:
@@ -958,10 +950,27 @@ def get_particle_center(particle_nodes,node_posns):
 
 def set_fixed_nodes(accel,fixed_nodes):
     """Given the acceleration variable and the indices of the nodes that should be held fixed in the simulation, set the acceleration variable entries to zero for all components of acceleration for the passed nodes"""
-    for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
-        #TODO almost certainly faster to remove the inner loop and just set each value to 0 in order, or using python semantics, just set the row to zero?
-        for j in range(3):
-            accel[fixed_nodes[i],j] = 0
+    accel[fixed_nodes] = 0
+    # for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
+    #     #TODO almost certainly faster to remove the inner loop and just set each value to 0 in order, or using python semantics, just set the row to zero?
+    #     for j in range(3):
+    #         accel[fixed_nodes[i],j] = 0
+    return accel
+
+def set_plate_fixed_nodes(accel,fixed_nodes,plate_orientation):
+    """Given the acceleration variable and the indices of the nodes that should be held fixed (in the plane of and) by the probe plate, return a modified acceleration variable preventing that in-plane motion"""
+    if plate_orientation == 'x':
+        relevant_indices = [1,2]
+    elif plate_orientation == 'y':
+        relevant_indices = [0,2]
+    elif plate_orientation == 'z':
+        relevant_indices = [0,1]
+    accel[fixed_nodes,relevant_indices[0]] = 0
+    accel[fixed_nodes,relevant_indices[1]] = 0
+    # for i in range(fixed_nodes.shape[0]):#after the fact, can set node accelerations and velocities to zero if they are supposed to be held fixed
+    #     #TODO almost certainly faster to remove the inner loop and just set each value to 0 in order, or using python semantics, just set the row to zero?
+    #     for j in range(3):
+    #         accel[fixed_nodes[i],j] = 0
     return accel
 
 def get_accel_scaled_no_fixed_nodes(y,elements,springs,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag=10):
@@ -1172,3 +1181,91 @@ def get_accel_scaled_alt(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
         inspect_springWCA = spring_force[particles[0],:]
         inspect_particle = accel[particles[0],:]
     return accel
+
+def get_plate_force(node_posns,plate_posn,plate_orientation,boundaries):
+    """Given the position and orientation of the plate (experimental probe with force reading), and the position of the nodes on the relevant surface, calculate the forces acting on those nodes due to the interaction of the material surface with the plate surface"""
+    # based on the plate orientation, decide which boundary is relevant, which coordinate of position is relevant, and the direction of the normal force exerted on the material surface by the plate
+    if plate_orientation == 'x':
+        relevant_index = 0
+        relevant_boundary = 'right'
+    elif plate_orientation == 'y':
+        relevant_index = 1
+        relevant_boundary = 'back'
+    elif plate_orientation == 'z':
+        relevant_index = 2
+        relevant_boundary = 'top'
+    # based on the distance to the plate, decide if the nodes are interacting with the plate, and how much force they experience
+    distance_to_plate = plate_posn - node_posns[boundaries[relevant_boundary],relevant_index]
+    eps_constant = 0.1
+    sigma = 0.01
+    distance_to_plate[distance_to_plate<0] = sigma
+    cutoff_distance = sigma * np.power(2,(1/6))
+    interacting_nodes = distance_to_plate<cutoff_distance
+    sigma_over_separation = sigma/distance_to_plate[interacting_nodes]
+    np.nan_to_num(sigma_over_separation,copy=False,nan=0.0,posinf=1,neginf=-1)
+    force_mag = 4*eps_constant*(12*np.power(sigma_over_separation,13)/sigma - 6* np.power(sigma_over_separation,7)/sigma)
+    force_mag[force_mag>100] = 100
+    force = np.zeros((force_mag.shape[0],3))
+    #pushing the material boundary away from the plate
+    force[:,relevant_index] -= force_mag
+    #if there is a normal force exerted by the plate on the surface, there should be some frictional forces exerted in a direction spanning the plane of the plate
+    # coefficient_of_friction = 100
+    # frictional_force_magnitude = coefficient_of_friction*force_mag
+    global_index_interacting_nodes = boundaries[relevant_boundary][interacting_nodes]
+    return global_index_interacting_nodes, force#, frictional_force_magnitude
+
+def get_frictional_force_vector(node_velocities,node_accel,frictional_force_magnitude,plate_orientation):
+    # I technically don't need to do this. i can just say that if the nodes are interacting with the plate, that is, have some normal force due to interaction with the plate, then the acceleration in the plane of the plate has to be zero. when i want to deal with shearing forces, instead of considering forces i can just consider some plate velocity and force the nodes interacting with the plate to move at that velocity until the plate has come to a rest
+    """Given the velocities and accelerations of the boundary nodes that are interacting with the probe plate, the maximum frictional force for each node, and the orientation of the force probe plate, return the frictional force vector acting on the boundary nodes"""
+    #i started doing things this way...
+    # velocity_unit_vectors = node_velocities/np.linalg.norm(node_velocities,axis=1)
+    # dot_product_velocity_unit_vec_and_accel_vec = np.tensordot(velocity_unit_vectors,node_accel,(1,1))
+    # acceleration_parallel_to_velocity = dot_product_velocity_unit_vec_and_accel_vec * velocity_unit_vectors
+    # parallel_accel_magnitude = np.linalg.norm(acceleration_parallel_to_velocity,axis=1)
+    # (dot_product_velocity_unit_vec_and_accel_vec > 0) and (parallel_accel_magnitude < frictional_force_magnitude)
+    #but i could also do this
+    if plate_orientation == 'x':
+        relevant_index = 0
+    elif plate_orientation == 'y':
+        relevant_index = 1
+    elif plate_orientation == 'z':
+        relevant_index = 2
+    in_plane_accel = node_accel.copy()
+    in_plane_accel[:,relevant_index] = 0
+    in_plane_accel_magnitude = np.linalg.norm(in_plane_accel,axis=1)
+    #if the nodes are moving, we need friction to be in the direction opposing the motion, if the nodes aren't moving, we need the friction to be in the direction of any acceleration in the plane of the probe plate
+
+    
+def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,l_e,plate_orientation,boundaries):
+    """Given the boundary node positions, desired stress, stress direction, material boundary dimensions, discretization length, orientation of the plate (experimental probe with force reading), and the position of the nodes on the relevant surface, calculate the forces acting on those nodes due to the interaction of the material surface with the plate surface"""
+    # based on the plate orientation, decide which boundary is relevant, which coordinate of position is relevant, and the direction of the normal force exerted on the material surface by the plate
+    if plate_orientation == 'x':
+        relevant_index = 0
+        relevant_boundary = 'right'
+        relevant_dimension_indices = [1,2]
+    elif plate_orientation == 'y':
+        relevant_index = 1
+        relevant_boundary = 'back'
+        relevant_dimension_indices = [0,2]
+    elif plate_orientation == 'z':
+        relevant_index = 2
+        relevant_boundary = 'top'
+        relevant_dimension_indices = [0,1]
+    # based on the maximum node position of the relevant coordinate, decide which nodes are being acted upon by the fictitious plate, and how much force they experience
+    plate_posn = np.max(node_posns[boundaries[relevant_boundary],relevant_index])
+    distance_to_plate = plate_posn - node_posns[boundaries[relevant_boundary],relevant_index]
+    cutoff_distance = 0.01
+    interacting_nodes = distance_to_plate<cutoff_distance
+    num_interacting_nodes = np.nonzero(interacting_nodes)
+    net_force_mag = stress*dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]/np.power(l_e,2)
+    force_mag = net_force_mag/num_interacting_nodes
+    force = np.zeros((force_mag.shape[0],3))
+    #pushing the interacting nodes of the material boundary in the desired direction
+    if stress_direction == 'x':
+        force[:,0] += force_mag
+    elif stress_direction == 'y':
+        force[:,1] += force_mag
+    elif stress_direction == 'z':
+        force[:,2] += force_mag
+    global_index_interacting_nodes = boundaries[relevant_boundary][interacting_nodes]
+    return global_index_interacting_nodes, force

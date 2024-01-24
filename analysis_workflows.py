@@ -355,6 +355,10 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
         Lz = initial_node_posns[:,2].max()
         layers = (Lx,Ly,Lz)
         boundary_forces, all_forces = get_probe_boundary_forces(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag)
+        plate_posn = boundary_conditions[2]
+        plate_orientation = boundary_conditions[1][0]
+        global_index_interacting_nodes, plate_force = simulate.get_plate_force(final_posns,plate_posn,plate_orientation,boundaries)
+        plate_force /= beta_i[global_index_interacting_nodes,np.newaxis]
         #go from forces acting on the boundary to forces that would need to be acting to keep the boudnary in place
         all_forces *= -1
         if boundary_conditions[1][0] == 'x':
@@ -367,6 +371,9 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
             index = int(Lz)
             cut_type = 'xy'
         subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir+'modulus/',tag=f"probed_surface_force_series{i}")
+        plate_forces = np.zeros(np.shape(all_forces))
+        plate_forces[global_index_interacting_nodes] = plate_force
+        subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,plate_forces,index,output_dir+'modulus/',tag=f"probe_plate_force_series{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
         si_final_posns = final_posns*l_e
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
@@ -414,9 +421,10 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
                 elif surface == 'top' or surface == 'bottom':
                     cut_type = 'xy'
                 tag = surface+'_surface_strain_' + f'strain_{boundary_conditions[2]}_field_{mu0*Hext}_'
-                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
                 # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
-                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+                # below, used for plotting the per node effective modulus using stress and strain tensor components. a review of the analytical expressions for the stress and strain tensor components (and looking over figures that were generated) shows that the effective modulus calculated this way will not vary over the surface, or with changes in the applied field, due to their (seemingly entirely) linear relationship (between stress and strain components, through the Lame parameters)
                 if surface == 'right':
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,effective_modulus_tensor,surf_idx,output_dir+'modulus/',tag=tag+'quasi-modulus')
     #       stress and strain tensors are visualized for cuts through the center of the volume
@@ -525,10 +533,10 @@ def get_field_dependent_effective_modulus(sim_dir):
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     strain_type = boundary_conditions[0]
     strain_direction = boundary_conditions[1]
-    if strain_type == 'tension' or strain_type == 'compression':
+    if strain_type == 'tension' or strain_type == 'compression' or strain_type == 'plate_compression' or strain_type == 'plate_compre':
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
     elif strain_type == 'shearing':
-        effective_modulus, stress, strain, Bext_series, alternative_stress_measure, alternative_effective_modulus = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
+        effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
     return effective_modulus, stress, strain, Bext_series, strain_direction#, alternative_stress_measure, alternative_effective_modulus
@@ -567,7 +575,9 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,strain_directi
     strain = boundary_conditions[2]
     y = np.zeros((6*total_num_nodes,))
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    particle_moment_of_inertia = 1
+    end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+    # end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
     if strain_direction[0] == 'x':
         #forces that must act on the boundaries for them to be in this position
         relevant_boundaries = ('right','left')
@@ -648,20 +658,20 @@ def get_field_dependent_shearing_modulus(sim_dir,strain_direction):
     Bext_series = mu0*Hext_series
     n_series_steps = np.shape(Bext_series)[0]
     stress = np.zeros((n_series_steps,3))
-    alternative_stress_measure = np.zeros((n_series_steps,3))
+    # alternative_stress_measure = np.zeros((n_series_steps,3))
     strain = np.zeros((n_series_steps,))
     effective_modulus = np.zeros((n_series_steps,))
-    if strain_direction[0] == 'x':
-        relevant_boundary = 'right'
-        dimension_indices = (1,2)
-    elif strain_direction[0] == 'y':
-        relevant_boundary = 'back'
-        dimension_indices = (0,2)
-    elif strain_direction[0] == 'z':
-        relevant_boundary = 'top'
-        dimension_indices = (0,1)
-    bdry_forces = np.zeros((n_series_steps,len(boundaries[relevant_boundary]),3))
-    alternative_effective_modulus = np.zeros((n_series_steps,))
+    # if strain_direction[0] == 'x':
+    #     relevant_boundary = 'right'
+    #     dimension_indices = (1,2)
+    # elif strain_direction[0] == 'y':
+    #     relevant_boundary = 'back'
+    #     dimension_indices = (0,2)
+    # elif strain_direction[0] == 'z':
+    #     relevant_boundary = 'top'
+    #     dimension_indices = (0,1)
+    # bdry_forces = np.zeros((n_series_steps,len(boundaries[relevant_boundary]),3))
+    # alternative_effective_modulus = np.zeros((n_series_steps,))
     for i in range(n_series_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         effective_modulus[i], stress[i], strain[i], _ = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
         # effective_modulus[i], stress[i], strain[i], _, bdry_forces[i] = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
@@ -775,7 +785,10 @@ def get_probe_boundary_forces(sim_dir,output_file_number,strain_direction,beta_i
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     y = np.zeros((6*total_num_nodes,))
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    particle_moment_of_inertia = 1
+    dimensions = []
+    end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+    # end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
     if strain_direction[0] == 'x':
         #forces that must act on the boundaries for them to be in this position
         relevant_boundaries = ('right','left')
@@ -1254,5 +1267,6 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
-    analysis_case3(sim_dir,stress_strain_flag=True)
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-22_field_dependent_modulus_strain_plate_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    analysis_case3(sim_dir,stress_strain_flag=False)
     # analysis_case1(sim_dir)

@@ -25,6 +25,9 @@ def main():
     # radius = (discretization_order + 1/2)*l_e
 
     l_e = 1
+    # Lx = 47
+    # Ly = 35
+    # Lz = Ly
     Lx = 256#separation_meters + particle_diameter + 1.8*separation_volume_elements*l_e
     Ly = 128#particle_diameter * 7
     Lz = Ly
@@ -216,15 +219,25 @@ def main():
     execution_gpu = cupyx.profiler.benchmark(element_func_w_transfers,(cupy_elements,normalized_posns,kappa,l_e,N_nodes,size_elements),n_repeat=N_iterations)
     delta_gpu_naive = np.sum(execution_gpu.gpu_times)
 
-    correction_force_el = np.empty((8,3),dtype=np.float64)
-    vectors = np.empty((8,3),dtype=np.float64)
-    avg_vectors = np.empty((3,3),dtype=np.float64)
-    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
+    correction_force_el = np.empty((8,3),dtype=np.float32)
+    vectors = np.empty((8,3),dtype=np.float32)
+    avg_vectors = np.empty((3,3),dtype=np.float32)
+    volume_correction_force = np.zeros((N_nodes,3),dtype=np.float32)
     start = time.perf_counter()
     for i in range(N_iterations):
-        get_volume_correction_force_cy_nogil.get_volume_correction_force(normalized_posns,elements,kappa,l_e,correction_force_el,vectors,avg_vectors,volume_correction_force)
+        get_volume_correction_force_cy_nogil.get_volume_correction_force_32bit(np.float32(normalized_posns),elements,np.float32(kappa),np.float32(l_e),correction_force_el,vectors,avg_vectors,volume_correction_force)
     end = time.perf_counter()
     delta_cy = end-start
+    #using the 64 bit version, commented out so i can try and see how results compare if i have an implemented 32 bit version of the function
+    # correction_force_el = np.empty((8,3),dtype=np.float64)
+    # vectors = np.empty((8,3),dtype=np.float64)
+    # avg_vectors = np.empty((3,3),dtype=np.float64)
+    # volume_correction_force = np.zeros((N_nodes,3),dtype=np.float64)
+    # start = time.perf_counter()
+    # for i in range(N_iterations):
+    #     get_volume_correction_force_cy_nogil.get_volume_correction_force(normalized_posns,elements,kappa,l_e,correction_force_el,vectors,avg_vectors,volume_correction_force)
+    # end = time.perf_counter()
+    # delta_cy = end-start
     host_cupy_forces = element_func_w_transfers(cupy_elements,normalized_posns,kappa,l_e,N_nodes,size_elements)
     host_cupy_forces = np.reshape(host_cupy_forces,(volume_correction_force.shape[0],volume_correction_force.shape[1]))
     try:

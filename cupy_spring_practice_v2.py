@@ -190,6 +190,9 @@ def main():
     E = 1
     nu = 0.49
     l_e = 0.1
+    # Lx = 4.5
+    # Ly = 3.2
+    # Lz = 3.2
     Lx = 25.6
     Ly = 12.8
     Lz = 12.8
@@ -408,6 +411,7 @@ def main():
         cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
         spring_kernel((grid_size,),(block_size,),(cupy_edges,cupy_node_posns,cupy_forces,size_edges))
         host_cupy_forces = cp.asnumpy(cupy_forces)
+        return host_cupy_forces
     def spring_func_w_transfers(edges,node_posns,N_nodes,size_edges):
         cupy_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
         cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
@@ -489,15 +493,18 @@ edges = np.array(edges,dtype=np.float64)
     end = time.perf_counter()
     delta_np = end-start
     spring_force = spring_force.astype(np.float32)
-    cupy_cython_spring_force = cp.asarray(spring_force).reshape((spring_force.shape[0]*spring_force.shape[1],1),order='C')
+    # cupy_cython_spring_force = cp.asarray(spring_force).reshape((spring_force.shape[0]*spring_force.shape[1],1),order='C')
+    host_cupy_forces = spring_func_w_less_transfers(cupy_edges,node_posns,N_nodes,size_edges)
+    host_cupy_forces = np.reshape(host_cupy_forces,(spring_force.shape[0],spring_force.shape[1]))
     # host_cupy_forces = cp.asnumpy(cupy_forces)
-    # try:
-    #     correctness = np.allclose(host_cupy_forces,cupy_cython_spring_force)
-    # except Exception as inst:
-    #         print('Exception raised during calculation')
-    #         print(type(inst))
-    #         print(inst)
-    # print("GPU and CPU based calculations of forces agree?: " + str(correctness))
+    try:
+        correctness = np.allclose(host_cupy_forces,spring_force)
+        # correctness = np.allclose(host_cupy_forces,cupy_cython_spring_force)
+    except Exception as inst:
+            print('Exception raised during calculation')
+            print(type(inst))
+            print(inst)
+    print("GPU and CPU based calculations of forces agree?: " + str(correctness))
     print("CPU time is {} seconds".format(delta_np))
     print("GPU time is {} seconds".format(delta_gpu_naive))
     print("GPU is {}x faster than CPU".format(delta_np/delta_gpu_naive))
