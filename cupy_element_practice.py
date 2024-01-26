@@ -200,6 +200,134 @@ def main():
         }
         ''', 'element_force')
 
+    scaled_element_kernel = cp.RawKernel(r'''
+    extern "C" __global__
+    void element_force(const int* elements, const float* node_posns, const float kappa, float* forces, const int size_elements) {
+        int tid = blockDim.x * blockIdx.x + threadIdx.x;
+        if (tid < size_elements)
+        {
+            int index0 = elements[8*tid+0];
+            int index1 = elements[8*tid+1];
+            int index2 = elements[8*tid+2];
+            int index3 = elements[8*tid+3];
+            int index4 = elements[8*tid+4];
+            int index5 = elements[8*tid+5];
+            int index6 = elements[8*tid+6];
+            int index7 = elements[8*tid+7];
+                                  
+            //printf("tid = %i, index0 = %i, index1 = %i, index2 = %i, index3 = %i, index4 = %i, index5 = %i, index6 = %i, index7 = %i\n",tid,index0,index1,index2,index3,index4,index5,index6,index7);
+            //printf("tid = %i, node_posns[3*index2] = %f, node_posns[3*index0]= %f\n",tid,node_posns[3*index2],node_posns[3*index0]);                     
+            //for(int i = 0; i < 24; i++){
+            //    printf("node_posns[%i] = %f\n",i,node_posns[i]);
+            //}
+            //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
+            float avg_vector_i[3];
+            float avg_vector_j[3];
+            float avg_vector_k[3];
+                                  
+            avg_vector_i[0] = (node_posns[3*index2] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index1] + node_posns[3*index6] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index5])/4;
+            avg_vector_i[1] = (node_posns[1+3*index2] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index1] + node_posns[1+3*index6] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index5])/4;
+            avg_vector_i[2] = (node_posns[2+3*index2] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index1] + node_posns[2+3*index6] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index5])/4;
+
+            //printf("tid = %i, avg_vector_i[0] = %f, avg_vector_i[1] = %f, avg_vector_i[2] = %f\n",tid,avg_vector_i[0],avg_vector_i[1],avg_vector_i[2]);
+                                  
+            avg_vector_j[0] = (node_posns[3*index4] - node_posns[3*index0] + node_posns[3*index6] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index1] + node_posns[3*index7] - node_posns[3*index3])/4;
+            avg_vector_j[1] = (node_posns[1+3*index4] - node_posns[1+3*index0] + node_posns[1+3*index6] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index1] + node_posns[1+3*index7] - node_posns[1+3*index3])/4;
+            avg_vector_j[2] = (node_posns[2+3*index4] - node_posns[2+3*index0] + node_posns[2+3*index6] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index1] + node_posns[2+3*index7] - node_posns[2+3*index3])/4;
+                                  
+            //printf("tid = %i, avg_vector_j[0] = %f, avg_vector_j[1] = %f, avg_vector_j[2] = %f\n",tid,avg_vector_j[0],avg_vector_j[1],avg_vector_j[2]);
+
+            avg_vector_k[0] = (node_posns[3*index1] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index6])/4;
+            avg_vector_k[1] = (node_posns[1+3*index1] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index6])/4;
+            avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;
+
+            //printf("tid = %i, avg_vector_k[0] = %f, avg_vector_k[1] = %f, avg_vector_k[2] = %f\n",tid,avg_vector_k[0],avg_vector_k[1],avg_vector_k[2]);                      
+            
+            //need to get cross products of average vectors, stored as variables for gradient vectors, prefactor, then atomicAdd for assignment to forces
+            float acrossb[3];
+            float bcrossc[3];
+            float ccrossa[3];
+            float adotbcrossc;
+                                  
+            acrossb[0] = avg_vector_i[1]*avg_vector_j[2] - avg_vector_i[2]*avg_vector_j[1];
+            acrossb[1] = avg_vector_i[2]*avg_vector_j[0] - avg_vector_i[0]*avg_vector_j[2];
+            acrossb[2] = avg_vector_i[0]*avg_vector_j[1] - avg_vector_i[1]*avg_vector_j[0];
+                                  
+            bcrossc[0] = avg_vector_j[1]*avg_vector_k[2] - avg_vector_j[2]*avg_vector_k[1];
+            bcrossc[1] = avg_vector_j[2]*avg_vector_k[0] - avg_vector_j[0]*avg_vector_k[2];
+            bcrossc[2] = avg_vector_j[0]*avg_vector_k[1] - avg_vector_j[1]*avg_vector_k[0];
+                                  
+            ccrossa[0] = avg_vector_k[1]*avg_vector_i[2] - avg_vector_k[2]*avg_vector_i[1];
+            ccrossa[1] = avg_vector_k[2]*avg_vector_i[0] - avg_vector_k[0]*avg_vector_i[2];
+            ccrossa[2] = avg_vector_k[0]*avg_vector_i[1] - avg_vector_k[1]*avg_vector_i[0];
+                                  
+            adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
+                                  
+            float gradV1[3];
+            float gradV8[3];
+            float gradV3[3];
+            float gradV6[3];
+            float gradV7[3];
+            float gradV2[3];
+            float gradV5[3];
+            float gradV4[3];
+                                  
+            gradV1[0] = -1*bcrossc[0] -1*ccrossa[0] -1*acrossb[0];
+            gradV8[0] = -1*gradV1[0];
+            gradV3[0] = bcrossc[0] -1*ccrossa[0] -1*acrossb[0];
+            gradV6[0] = -1*gradV3[0];
+            gradV7[0] = bcrossc[0] + ccrossa[0] -1*acrossb[0];
+            gradV2[0] = -1*gradV7[0];
+            gradV5[0] = -1*bcrossc[0] + ccrossa[0] -1*acrossb[0];
+            gradV4[0] = -1*gradV5[0];
+            
+            gradV1[1] = -1*bcrossc[1] -1*ccrossa[1] -1*acrossb[1];
+            gradV8[1] = -1*gradV1[1];
+            gradV3[1] = bcrossc[1] -1*ccrossa[1] -1*acrossb[1];
+            gradV6[1] = -1*gradV3[1];
+            gradV7[1] = bcrossc[1] + ccrossa[1] -1*acrossb[1];
+            gradV2[1] = -1*gradV7[1];
+            gradV5[1] = -1*bcrossc[1] + ccrossa[1] -1*acrossb[1];
+            gradV4[1] = -1*gradV5[1];
+                                  
+            gradV1[2] = -1*bcrossc[2] -1*ccrossa[2] -1*acrossb[2];
+            gradV8[2] = -1*gradV1[2];
+            gradV3[2] = bcrossc[2] -1*ccrossa[2] -1*acrossb[2];
+            gradV6[2] = -1*gradV3[2];
+            gradV7[2] = bcrossc[2] + ccrossa[2] -1*acrossb[2];
+            gradV2[2] = -1*gradV7[2];
+            gradV5[2] = -1*bcrossc[2] + ccrossa[2] -1*acrossb[2];
+            gradV4[2] = -1*gradV5[2];
+
+            float prefactor = -1*kappa * (adotbcrossc - 1);
+            atomicAdd(&forces[3*index0],prefactor*gradV1[0]);
+            atomicAdd(&forces[3*index0+1],prefactor*gradV1[1]);
+            atomicAdd(&forces[3*index0+2],prefactor*gradV1[2]);
+            atomicAdd(&forces[3*index1],prefactor*gradV2[0]);
+            atomicAdd(&forces[3*index1+1],prefactor*gradV2[1]);
+            atomicAdd(&forces[3*index1+2],prefactor*gradV2[2]);
+            atomicAdd(&forces[3*index2],prefactor*gradV3[0]);
+            atomicAdd(&forces[3*index2+1],prefactor*gradV3[1]);
+            atomicAdd(&forces[3*index2+2],prefactor*gradV3[2]);
+            atomicAdd(&forces[3*index3],prefactor*gradV4[0]);
+            atomicAdd(&forces[3*index3+1],prefactor*gradV4[1]);
+            atomicAdd(&forces[3*index3+2],prefactor*gradV4[2]);
+            atomicAdd(&forces[3*index4],prefactor*gradV5[0]);
+            atomicAdd(&forces[3*index4+1],prefactor*gradV5[1]);
+            atomicAdd(&forces[3*index4+2],prefactor*gradV5[2]);
+            atomicAdd(&forces[3*index5],prefactor*gradV6[0]);
+            atomicAdd(&forces[3*index5+1],prefactor*gradV6[1]);
+            atomicAdd(&forces[3*index5+2],prefactor*gradV6[2]);
+            atomicAdd(&forces[3*index6],prefactor*gradV7[0]);
+            atomicAdd(&forces[3*index6+1],prefactor*gradV7[1]);
+            atomicAdd(&forces[3*index6+2],prefactor*gradV7[2]);
+            atomicAdd(&forces[3*index7],prefactor*gradV8[0]);
+            atomicAdd(&forces[3*index7+1],prefactor*gradV8[1]);
+            atomicAdd(&forces[3*index7+2],prefactor*gradV8[2]);
+        }
+        }
+        ''', 'element_force')
+
     normalized_posns[:,0] *= 1.01
     # cupy_node_posns = cp.array(node_posns).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
     cupy_elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
@@ -249,8 +377,16 @@ def main():
     print("GPU and CPU based calculations of forces agree?: " + str(correctness))
     if not correctness:
         difference = host_cupy_forces-volume_correction_force
+        max_component_diff = np.max(difference)
+        print(f'maximum difference in volume correction force components is {max_component_diff}')
         max_norm_diff = np.max(np.linalg.norm(difference,axis=1))
+        print(f'number of NaN entries in the CPU VCF {np.nonzero(np.isnan(volume_correction_force))}')
+        print(f'number of NaN entries in the GPU VCF {np.nonzero(np.isnan(host_cupy_forces))}')
+        print(f'number of NaN entries in the norm of the CPU VCF {np.nonzero(np.isnan(np.linalg.norm(volume_correction_force,axis=1)))}')
+        print(f'number of zero entries in the norm of the CPU VCF {np.sum(np.nonzero(np.isclose(np.linalg.norm(volume_correction_force,axis=1),0)))}')
         print(f'maximum difference in volume correction force norm is {max_norm_diff}')
+        max_norm_percent_diff = np.max(np.nan_to_num(np.linalg.norm(difference,axis=1)/np.linalg.norm(volume_correction_force,axis=1)))
+        print(f'maximum percentage difference in volume correction force norm is {max_norm_percent_diff}')
     print("CPU time is {} seconds".format(delta_cy))
     print("GPU time is {} seconds".format(delta_gpu_naive))
     print("GPU is {}x faster than CPU".format(delta_cy/delta_gpu_naive))

@@ -34,6 +34,7 @@ Created on Fri Aug 26 09:19:19 2022
 # consider and implement options for particle magnetization (mumax3 results are only useful for the two particle case with particle aligned field): options include froehlich-kennely, hyperbolic tangent (anhysteretic saturable models)
 
 import numpy as np
+import cupy as cp
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import time
@@ -283,7 +284,7 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
     return total_delta, return_status
 
-def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):
+def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False,gpu_flag=False):
     """Run a simulation applying a series of a particular type of strain to the volume with a series of applied external magnetic fields, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     eq_posns = x0.copy()
     total_delta = 0
@@ -390,10 +391,14 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
             print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
             start = time.time()
             try:
-                if particle_rotation_flag == False:
+                if not particle_rotation_flag:
                     sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
-                elif particle_rotation_flag == True:
+                elif particle_rotation_flag and (not gpu_flag):
                     sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+                elif gpu_flag:
+                    # mempool = cp.get_default_memory_pool()
+                    # print(f'Memory used by springs and elements variable in GB: {mempool.used_bytes()/1024/1024/1024}')
+                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
             except Exception as inst:
                 print('Exception raised during simulation')
                 print(type(inst))
@@ -973,10 +978,10 @@ def main_series_simulations():
                         total_sim_num += 1
     print(total_sim_num)
 
-def zero_modulus_zero_vcf_test_particle_collision():
+def experimental_simulation_tests():
     """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
     youngs_modulus = [9e3]
-    discretizations = [0]
+    discretizations = [2]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.25/mu0
     n_field_steps = 1
@@ -984,8 +989,8 @@ def zero_modulus_zero_vcf_test_particle_collision():
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    strain_types = ('plate_compression',)#('tension',)#('tension','compression','shearing')
-    strain_type_strings = ('plate_compression',)#('tension_strain',)#('tension_strain','compressive_strain','shear_strain')
+    strain_types = ('compression',)#('plate_compression',)#('tension',)#('tension','compression','shearing')
+    strain_type_strings = ('compressive_strain',)#('plate_compression',)#('tension_strain',)#('tension_strain','compressive_strain','shear_strain')
     strain_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
     Hext_angles = (0,)
     total_sim_num = 0
@@ -1000,11 +1005,11 @@ def zero_modulus_zero_vcf_test_particle_collision():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_strain_type_string}\nstrain_type = {strain_type}\nstrain_direction = {strain_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nstrain_direction={strain_direction}\n")
-                        main_field_dependent_modulus(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=10,max_integration_steps=2000,tolerance=1e-4)
+                        main_field_dependent_modulus(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=5,max_integration_steps=1000,tolerance=1e-4,gpu_flag=True)
                         total_sim_num += 1
     print(total_sim_num)
 
-def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext_series=np.array(np.array([0,0,0],dtype=np.float64)),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-4):
+def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E=9e3,nu=0.499,Hext_series=np.array(np.array([0,0,0],dtype=np.float64)),field_or_strain_type_string = 'shear_strain',strain_type = 'shearing',strain_direction = ('z','x'),max_integrations = 5,max_integration_steps = 5000,tolerance = 1e-4,gpu_flag=False):
     """Running a two particle simulation whose output can be used to calculate an effective modulus, with the end goal being calculation of the dependence of the effective modulus on the applied magnetic field."""
     start = time.time()
     # E = 9e3
@@ -1118,11 +1123,31 @@ def main_field_dependent_modulus(discretization_order=1,separation_meters=9e-6,E
     
     mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,strains,field_or_strain_type_string,output_dir)
     
-    simulation_time, return_status = run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True)
+    if gpu_flag:
+        # print(np.can_cast(np.float64,np.float32))
+        x0 = np.float32(normalized_posns.copy())
+        beta_i = np.float32(beta_i)
+        beta = np.float32(beta)
+        drag = np.float32(drag)
+        strains = np.float32(strains)
+        Hext_series = np.float32(Hext_series)
+        particles = np.int32(particles)
+        for key in boundaries:
+            boundaries[key] = np.int32(boundaries[key])
+        dimensions = np.float32(dimensions)
+        kappa = cp.float32(kappa)
+        l_e = np.float32(l_e)
+        particle_radius = np.float32(particle_radius)
+        particle_mass = np.float32(particle_mass)
+        chi = np.float32(chi)
+        Ms = np.float32(Ms)
+        elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+        springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    simulation_time, return_status = run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strains,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True,gpu_flag=gpu_flag)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    zero_modulus_zero_vcf_test_particle_collision()
+    experimental_simulation_tests()
     # main_series_simulations()
     # main_strain()
     # main2()
