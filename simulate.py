@@ -801,7 +801,8 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
             force_index = 1
         elif stress_direction == 'z':
             force_index = 2
-        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]/np.power(l_e,2)
+        stress = bc[2]
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
         net_force_mag = stress*surface_area
         single_node_accel = (net_force_mag/stressed_nodes.shape[0])*beta_i[stressed_nodes]
         accel[stressed_nodes,force_index] += single_node_accel
@@ -964,13 +965,59 @@ def set_plate_fixed_nodes(accel,fixed_nodes,plate_orientation):
     #         accel[fixed_nodes[i],j] = 0
     return accel
 
-def get_accel_scaled_no_fixed_nodes(y,elements,springs,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag=10):
+def get_accel_scaled_no_fixed_nodes(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     #scipy.ode integrator requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
     N_nodes = int(np.round(N/3))
     x0 = np.reshape(y[:N],(N_nodes,3))
     v0 = np.reshape(y[N:],(N_nodes,3))
+    if bc[0] == 'simple_stress_compression':
+        #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+            stressed_nodes = boundaries['right']
+            relevant_dimension_indices = [1,2]
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+            stressed_nodes = boundaries['back']
+            relevant_dimension_indices = [0,2]
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+            stressed_nodes = boundaries['top']
+            relevant_dimension_indices = [0,1]
+        accel = set_fixed_nodes(accel,fixed_nodes)
+        stress_direction = bc[1][1]
+        if stress_direction == 'x':
+            force_index = 0
+        elif stress_direction == 'y':
+            force_index = 1
+        elif stress_direction == 'z':
+            force_index = 2
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+        net_force_mag = stress*surface_area
+        single_node_accel = (net_force_mag/stressed_nodes.shape[0])*beta_i[stressed_nodes]
+        accel[stressed_nodes,force_index] += single_node_accel
+    elif bc[0] == 'stress_compression':
+        plate_orientation = bc[1][0]
+        stress_direction = bc[1][1]
+        stress = bc[2]
+        global_index_interacting_nodes, plate_force = distribute_plate_stress(x0,stress,stress_direction,dimensions,l_e,plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+    elif bc[0] == 'plate_compression':
+        plate_orientation = bc[1][0]
+        global_index_interacting_nodes, plate_force = get_plate_force(x0,bc[2],plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+        #opposing surface to the probe surface needs to be held fixed
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+        accel = set_fixed_nodes(accel,fixed_nodes)
     # if bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
     #     #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
     #     if bc[1][0] == 'x':
@@ -1073,7 +1120,7 @@ def get_frictional_force_vector(node_velocities,node_accel,frictional_force_magn
     #if the nodes are moving, we need friction to be in the direction opposing the motion, if the nodes aren't moving, we need the friction to be in the direction of any acceleration in the plane of the probe plate
 
     
-def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,l_e,plate_orientation,boundaries):
+def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,beta_i,plate_orientation,boundaries):
     """Given the boundary node positions, desired stress, stress direction, material boundary dimensions, discretization length, orientation of the plate (experimental probe with force reading), and the position of the nodes on the relevant surface, calculate the forces acting on those nodes due to the interaction of the material surface with the plate surface"""
     # based on the plate orientation, decide which boundary is relevant, which coordinate of position is relevant, and the direction of the normal force exerted on the material surface by the plate
     if plate_orientation == 'x':
@@ -1093,9 +1140,10 @@ def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,l_e,pl
     distance_to_plate = plate_posn - node_posns[boundaries[relevant_boundary],relevant_index]
     cutoff_distance = 0.01
     interacting_nodes = distance_to_plate<cutoff_distance
+    global_index_interacting_nodes = boundaries[relevant_boundary][interacting_nodes]
     num_interacting_nodes = np.nonzero(interacting_nodes)
-    net_force_mag = stress*dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]/np.power(l_e,2)
-    force_mag = net_force_mag/num_interacting_nodes
+    net_force_mag = stress*dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]#/np.power(l_e,2)
+    force_mag = (net_force_mag/num_interacting_nodes)*beta_i[global_index_interacting_nodes]
     force = np.zeros((force_mag.shape[0],3))
     #pushing the interacting nodes of the material boundary in the desired direction
     if stress_direction == 'x':
@@ -1104,7 +1152,6 @@ def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,l_e,pl
         force[:,1] += force_mag
     elif stress_direction == 'z':
         force[:,2] += force_mag
-    global_index_interacting_nodes = boundaries[relevant_boundary][interacting_nodes]
     return global_index_interacting_nodes, force
 
 ###### GPU Kernels and Functions
