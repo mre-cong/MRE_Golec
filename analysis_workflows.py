@@ -320,42 +320,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
-    #get the particle separations and overall magnetizations
-    num_particles = particles.shape[0]
-    num_separations = int(sci.binom(num_particles,2))
-    separations = np.zeros((num_output_files,num_separations))
-    magnetization = np.zeros((num_output_files,3))
-    for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-        #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
-        Hext = np.float64(Hext)
-        separations[i,:] = get_particle_separation(final_posns,particles)
-        #for each particle, find the position of the center
-        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-        for j, particle in enumerate(particles):
-            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
-        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-    fig, axs = plt.subplots(2)
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    # fig.tight_layout()
-    axs[0].plot(np.linalg.norm(mu0*Hext_series,axis=1),separations*l_e,'o')
-    axs[0].set_xlabel('Applied Field (T)')
-    axs[0].set_ylabel('Particle Separation (m)')
-    #find the unit vector describing the direction along which the external magnetic field is applied
-    nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
-    Bext_unit_vector = Bext_series[nonzero_field_value_indices[0],:]/np.linalg.norm(Bext_series[nonzero_field_value_indices[0],:])
-    magnetization_along_applied_field = np.dot(magnetization,Bext_unit_vector)
-    axs[1].plot(np.linalg.norm(mu0*Hext_series,axis=1),magnetization_along_applied_field,'o')
-    axs[1].set_xlabel('Applied Field (T)')
-    axs[1].set_ylabel('Normalized System Magnetization')
-    format_figure(axs[0])
-    format_figure(axs[1])
-    # fig.show()
-    savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
-    plt.savefig(savename)
-    plt.close()
+    #get the particle separations and overall magnetizations and plot them
+    plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
@@ -589,9 +555,11 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,strain_directi
     y = np.zeros((6*total_num_nodes,))
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
     particle_moment_of_inertia = 1
+    #if the boundary conditions are strain based, need to get accelerations calculated where we do not set the boundary nodes accelerations to zero
     if boundary_conditions[0] == 'tension' or boundary_conditions[0] == 'compression' or boundary_conditions[0] == 'shearing' or boundary_conditions[0] == 'torsion':
         end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
     else:
+    #if the boundary conditions are stress based, need to consider the forces acting on the boundary nodes and the enforced stress boundary conditions
         end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
     if strain_direction[0] == 'x':
         #forces that must act on the boundaries for them to be in this position
@@ -1258,6 +1226,44 @@ def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
     normalized_magnetizations = magnetizations/Ms
     overall_magnetization = np.sum(normalized_magnetizations,axis=0)/magnetizations.shape[0]
     return overall_magnetization
+
+def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
+    num_particles = particles.shape[0]
+    num_separations = int(sci.binom(num_particles,2))
+    separations = np.zeros((num_output_files,num_separations))
+    magnetization = np.zeros((num_output_files,3))
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
+        Hext = np.float64(Hext)
+        separations[i,:] = get_particle_separation(final_posns,particles)
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for j, particle in enumerate(particles):
+            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
+        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    # fig.tight_layout()
+    axs[0].plot(np.linalg.norm(mu0*Hext_series,axis=1),separations*l_e,'o')
+    axs[0].set_xlabel('Applied Field (T)')
+    axs[0].set_ylabel('Particle Separation (m)')
+    #find the unit vector describing the direction along which the external magnetic field is applied
+    Bext_series = mu0*Hext_series
+    nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+    Bext_unit_vector = Bext_series[nonzero_field_value_indices[0],:]/np.linalg.norm(Bext_series[nonzero_field_value_indices[0],:])
+    magnetization_along_applied_field = np.dot(magnetization,Bext_unit_vector)
+    axs[1].plot(np.linalg.norm(mu0*Hext_series,axis=1),magnetization_along_applied_field,'o')
+    axs[1].set_xlabel('Applied Field (T)')
+    axs[1].set_ylabel('Normalized System Magnetization')
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # fig.show()
+    savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
+    plt.savefig(savename)
+    plt.close()
 
 if __name__ == "__main__":
     main()
