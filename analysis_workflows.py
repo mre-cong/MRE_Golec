@@ -263,7 +263,7 @@ def analysis_case2():
     For case (2), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization without an applied strain"""
     pass
 
-def analysis_case3(sim_dir,stress_strain_flag=True):
+def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
     For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
@@ -284,6 +284,17 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
     initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    if gpu_flag:
+        initial_node_posns = np.float64(initial_node_posns)
+        beta_i = np.float64(beta_i)
+        springs_var = np.float64(springs_var)
+        kappa = np.float64(kappa)
+        beta = np.float64(beta)
+        l_e = np.float64(l_e)
+        particle_mass = np.float64(particle_mass)
+        particle_radius = np.float64(particle_radius)
+        Ms = np.float64(Ms)
+        chi = np.float64(chi)
 #   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
     surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
     surf_type = ('left','right','front','back','bottom','top')
@@ -316,6 +327,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True):
     magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
+        Hext = np.float64(Hext)
         separations[i,:] = get_particle_separation(final_posns,particles)
         #for each particle, find the position of the center
         particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
@@ -570,14 +583,16 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,strain_directi
     """For a given configuration of nodes and particles, calculate the effective modulus, effective stress on the probe surface, and return those values."""
     force_component = {'x':0,'y':1,'z':2}
     final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
-    Hext = applied_field
+    Hext = np.float64(applied_field)
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     strain = boundary_conditions[2]
     y = np.zeros((6*total_num_nodes,))
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
     particle_moment_of_inertia = 1
-    end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
-    # end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    if boundary_conditions[0] == 'tension' or boundary_conditions[0] == 'compression' or boundary_conditions[0] == 'shearing' or boundary_conditions[0] == 'torsion':
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    else:
+        end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
     if strain_direction[0] == 'x':
         #forces that must act on the boundaries for them to be in this position
         relevant_boundaries = ('right','left')
@@ -781,7 +796,7 @@ def get_torsion_modulus(sim_dir,strain_direction):
 def get_probe_boundary_forces(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag):
     """For a given configuration of nodes and particles, calculate the forces on the probe surface, and return those values."""
     final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
-    Hext = applied_field
+    Hext = np.float64(applied_field)
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     y = np.zeros((6*total_num_nodes,))
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
@@ -1268,5 +1283,9 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-22_field_dependent_modulus_strain_plate_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    analysis_case3(sim_dir,stress_strain_flag=False)
+    #cpu case that was profiled
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-27_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    #gpu case (calculation of elastic and vcf forces) that was profiled
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-26_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)
