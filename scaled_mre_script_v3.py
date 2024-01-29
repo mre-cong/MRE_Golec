@@ -95,6 +95,7 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     return particles
 
 def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation):
+    #TODO Unfinished, intention to place particles with either random distribution or regular/crystal structure like distribution.
     """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
     Nel_x, Nel_y, Nel_z = dimensions
     # radius = 0.5*l_e# radius = l_e*(4.5)
@@ -124,7 +125,6 @@ def placeholder_particle_placement(radius,l_e,dimensions):
     allowed_elements_x = (Nel_x - 2*radius_voxels).astype(np.int32)
     allowed_elements_y = (Nel_y - 2*radius_voxels).astype(np.int32)
     allowed_elements_z = (Nel_z - 2*radius_voxels).astype(np.int32)
-
     pass
 
 def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):

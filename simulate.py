@@ -779,7 +779,33 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
     volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0# + bc_forces
-    if bc[0] == 'stress_compression':
+    if bc[0] == 'simple_stress_compression':
+        #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+            stressed_nodes = boundaries['right']
+            relevant_dimension_indices = [1,2]
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+            stressed_nodes = boundaries['back']
+            relevant_dimension_indices = [0,2]
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+            stressed_nodes = boundaries['top']
+            relevant_dimension_indices = [0,1]
+        accel = set_fixed_nodes(accel,fixed_nodes)
+        stress_direction = bc[1][1]
+        if stress_direction == 'x':
+            force_index = 0
+        elif stress_direction == 'y':
+            force_index = 1
+        elif stress_direction == 'z':
+            force_index = 2
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]/np.power(l_e,2)
+        net_force_mag = stress*surface_area
+        single_node_accel = (net_force_mag/stressed_nodes.shape[0])*beta_i[stressed_nodes]
+        accel[stressed_nodes,force_index] += single_node_accel
+    elif bc[0] == 'stress_compression':
         plate_orientation = bc[1][0]
         stress_direction = bc[1][1]
         stress = bc[2]
@@ -791,6 +817,7 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
         global_index_interacting_nodes, plate_force = get_plate_force(x0,bc[2],plate_orientation,boundaries)
         accel[global_index_interacting_nodes] += plate_force
         accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+        #opposing surface to the probe surface needs to be held fixed
         if bc[1][0] == 'x':
             fixed_nodes = boundaries['left']
         elif bc[1][0] == 'y':

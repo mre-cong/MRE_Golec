@@ -536,7 +536,7 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,strain_directi
     particle_moment_of_inertia = 1
     #if the boundary conditions are strain based, need to get accelerations calculated where we do not set the boundary nodes accelerations to zero
     if boundary_conditions[0] == 'tension' or boundary_conditions[0] == 'compression' or boundary_conditions[0] == 'shearing' or boundary_conditions[0] == 'torsion':
-        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     else:
     #if the boundary conditions are stress based, need to consider the forces acting on the boundary nodes and the enforced stress boundary conditions
         end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
@@ -576,7 +576,7 @@ def get_tension_compression_modulus(sim_dir,strain_direction):
         final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         Hext = applied_field
         y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         if strain_direction[0] == 'x':
             #forces that must act on the boundaries for them to be in this position
             relevant_boundaries = ('right','left')
@@ -657,7 +657,7 @@ def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,s
     strain = np.tan(boundary_conditions[2])
     Hext = applied_field
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     if strain_direction[0] == 'x':
         relevant_boundaries = ('right','left')
         dimension_indices = (1,2)
@@ -695,7 +695,7 @@ def get_shearing_modulus(sim_dir,strain_direction):
         final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         Hext = applied_field
         y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
         if strain_direction[0] == 'x':
             relevant_boundaries = ('right','left')
             dimension_indices = (1,2)
@@ -750,7 +750,7 @@ def get_probe_boundary_forces(sim_dir,output_file_number,strain_direction,beta_i
     particle_moment_of_inertia = 1
     dimensions = []
     end_accel = simulate.get_accel_scaled_rotation(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
-    # end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    # end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     if strain_direction[0] == 'x':
         #forces that must act on the boundaries for them to be in this position
         relevant_boundaries = ('right','left')
