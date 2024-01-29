@@ -402,47 +402,6 @@ def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement
     plt.savefig(output_dir+'displacement.png')
     plt.close()
     
-def simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,initialized_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio,drag=10):
-    """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
-    #function to be called at every sucessful integration step to get the solution output
-    solutions = []
-    def solout(t,y):
-        solutions.append([t,*y])
-    tolerance = 1e-4
-    max_iters = 8
-    v0 = np.zeros(x0.shape)
-    y_0 = np.concatenate((x0.reshape((3*x0.shape[0],)),v0.reshape((3*v0.shape[0],))))
-    N_nodes = int(x0.shape[0])
-    #scipy.integrate.solve_ivp() requires the solution y to have shape (n,)
-    r = sci.ode(scaled_fun).set_integrator('dopri5',nsteps=1000,verbosity=1)
-    r.set_solout(solout)
-    for i in range(max_iters):
-        r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-        sol = r.integrate(t_f)
-        a_var = get_accel_scaled(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-        a_var_alt = get_accel_scaled_alt(sol,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
-        a_norms = np.linalg.norm(a_var,axis=1)
-        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
-        if i == 0:
-            criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
-        else:
-            other_criteria = SimCriteria(solutions,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
-            criteria.append_criteria(other_criteria)
-        # plot_criteria_v_iteration_scaled(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
-        final_posns = np.reshape(solutions[-1][1:N_nodes*3+1],(N_nodes,3))
-        # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir)
-        solutions = []
-        r.set_solout(solout)
-        if a_norm_avg < tolerance:
-            break
-        else:
-            y_0 = sol
-    # plot_criteria_v_time(solutions,N_nodes,i,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms)
-    criteria.plot_criteria(output_dir)
-    criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
-    # criteria.plot_criteria_v_time(output_dir)
-    return sol#returning a solution object, that can then have it's attributes inspected
-
 class SimCriteria:
     """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
     def __init__(self,solutions,*args):
