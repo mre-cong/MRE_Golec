@@ -421,36 +421,6 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
                 print(f'reusing previously calculated solution with B_ext = {mu0*output_file_Hext}')
     return total_delta, return_status
 
-def run_hysteresis_sim_testing_scaling_alt(output_dir,Hext_series,eq_posns,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio):
-    for count, Hext in enumerate(Hext_series):
-        #TODO better implementation of boundary conditions
-        boundary_conditions = ('free',('free','free'),0) 
-        try:
-            start = time.time()
-            sol = simulate.simulate_scaled_alt(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,eq_posns,output_dir,scaled_kappa,scaled_springs_var,scaled_magnetic_force_coefficient,m_ratio)
-        except Exception as inst:
-            print('Exception raised during simulation')
-            print(type(inst))
-            print(inst)
-        # post_plot(posns,c,k)
-        end = time.time()
-        delta = end - start
-        #below, getting the solution at the final time, since the solution at all times is recorded (there has to be some way for me to alter the behavior of the function in my own separate version so that i'm not storing intermediate states i don't want or need (memory optimization))
-        # end_result = sol.y[:,-1]
-        #below getting the solution at the final time, is the solution provided from scipy.integrate.ode. no more issue with memory overhead since this way, instead of using solve_ivp(), doesn't record the itnermediate states, just spits out the state at the desired time
-        end_result = sol
-        x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
-        # posns = np.reshape(end_result[:node_posns.shape[0]*node_posns.shape[1]],node_posns.shape)
-        # max_accel = np.max(np.linalg.norm(a,axis=1))
-        # print('max acceleration was %.4f' % max_accel)
-        print('took %.2f seconds to simulate' % delta)
-        # a_var = mre.analyze.get_accelerations_post_simulation_v3(x0,boundaries,springs_var,elements,kappa,l_e,boundary_conditions)
-        # end_boundary_forces = a_var[boundaries['right']]*m[boundaries['right'],np.newaxis]
-        # boundary_stress_xx_magnitude[count] = np.abs(np.sum(end_boundary_forces,0)[0])/(Ly*Lz)
-        # effective_modulus[count] = boundary_stress_xx_magnitude[count]/boundary_conditions[2]
-        mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
-        # mre.analyze.post_plot_cut_normalized_hyst(eq_posns,x0,springs_var,particles,Hext,output_dir)
-
 def main():
     E = 1e3
     nu = 0.499
