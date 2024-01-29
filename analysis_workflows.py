@@ -329,30 +329,9 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
         #plotting the force components acting on the probed surface
-        Lx = initial_node_posns[:,0].max()
-        Ly = initial_node_posns[:,1].max()
-        Lz = initial_node_posns[:,2].max()
-        layers = (Lx,Ly,Lz)
-        boundary_forces, all_forces = get_probe_boundary_forces(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag)
-        plate_posn = boundary_conditions[2]
-        plate_orientation = boundary_conditions[1][0]
-        global_index_interacting_nodes, plate_force = simulate.get_plate_force(final_posns,plate_posn,plate_orientation,boundaries)
-        plate_force /= beta_i[global_index_interacting_nodes,np.newaxis]
-        #go from forces acting on the boundary to forces that would need to be acting to keep the boudnary in place
-        all_forces *= -1
-        if boundary_conditions[1][0] == 'x':
-            index = int(Lx)
-            cut_type = 'yz'
-        elif boundary_conditions[1][0] == 'y':
-            index = int(Ly)
-            cut_type = 'xz'
-        elif boundary_conditions[1][0] == 'z':
-            index = int(Lz)
-            cut_type = 'xy'
-        subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir+'modulus/',tag=f"probed_surface_force_series{i}")
-        plate_forces = np.zeros(np.shape(all_forces))
-        plate_forces[global_index_interacting_nodes] = plate_force
-        subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,plate_forces,index,output_dir+'modulus/',tag=f"probe_plate_force_series{i}")
+        if boundary_conditions[0] == 'plate_compression':
+            force_plate_flag = True
+        plot_surface_node_force_vector(sim_dir,output_dir,i,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag)
 #       node positions are scaled to SI units using l_e variable for visualization
         si_final_posns = final_posns*l_e
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
@@ -1228,6 +1207,7 @@ def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
     return overall_magnetization
 
 def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
+    """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
     num_particles = particles.shape[0]
     num_separations = int(sci.binom(num_particles,2))
     separations = np.zeros((num_output_files,num_separations))
@@ -1264,6 +1244,37 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
     plt.savefig(savename)
     plt.close()
+
+def plot_surface_node_force_vector(sim_dir,output_dir,file_number,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag=False):
+    """Calculate the forces acting on the "probed" boundary nodes and plot the force vector components and norm in a subplot. Option force_plate_flag to calculate and plot the forces acting on a fictional "force plate" for "plate based" stress boundary conditions"""
+    #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
+    #plotting the force components acting on the probed surface
+    i = file_number
+    Lx = initial_node_posns[:,0].max()
+    Ly = initial_node_posns[:,1].max()
+    Lz = initial_node_posns[:,2].max()
+    layers = (Lx,Ly,Lz)
+    boundary_forces, all_forces = get_probe_boundary_forces(sim_dir,i,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag)
+    plate_posn = boundary_conditions[2]
+    plate_orientation = boundary_conditions[1][0]
+    global_index_interacting_nodes, plate_force = simulate.get_plate_force(final_posns,plate_posn,plate_orientation,boundaries)
+    plate_force /= beta_i[global_index_interacting_nodes,np.newaxis]
+    #go from forces acting on the boundary to forces that would need to be acting to keep the boudnary in place
+    all_forces *= -1
+    if boundary_conditions[1][0] == 'x':
+        index = int(Lx)
+        cut_type = 'yz'
+    elif boundary_conditions[1][0] == 'y':
+        index = int(Ly)
+        cut_type = 'xz'
+    elif boundary_conditions[1][0] == 'z':
+        index = int(Lz)
+        cut_type = 'xy'
+    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir+'modulus/',tag=f"probed_surface_force_series{i}")
+    if force_plate_flag:
+        plate_forces = np.zeros(np.shape(all_forces))
+        plate_forces[global_index_interacting_nodes] = plate_force
+        subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,plate_forces,index,output_dir+'modulus/',tag=f"probe_plate_force_series{i}")
 
 if __name__ == "__main__":
     main()
