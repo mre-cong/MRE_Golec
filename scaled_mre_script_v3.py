@@ -916,7 +916,7 @@ def main_series_simulations():
 def experimental_simulation_tests():
     """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
     youngs_modulus = [9e3]
-    discretizations = [0]
+    discretizations = [2]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.25/mu0
     n_field_steps = 1
@@ -924,8 +924,8 @@ def experimental_simulation_tests():
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    strain_types = ('simple_stress_compression',)#('compression',)#('plate_compression',)#('tension',)#('tension','compression','shearing')
-    strain_type_strings = ('compressive_stress',)#('compressive_strain',)#('plate_compression',)#('tension_strain',)#('tension_strain','compressive_strain','shear_strain')
+    strain_types = ('compression',)#('plate_compression',)#('tension',)#('tension','compression','shearing')
+    strain_type_strings = ('compressive_strain',)#('plate_compression',)#('tension_strain',)#('tension_strain','compressive_strain','shear_strain')
     strain_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
     Hext_angles = (0,)
     total_sim_num = 0
@@ -955,9 +955,9 @@ def experimental_stress_simulation_tests():
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    stress_types = ('simple_stress_compression',)
-    bc_type_strings = ('compressive_stress',)
-    bc_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
+    stress_types = ('simple_stress_shearing',)#('simple_stress_compression',)
+    bc_type_strings = ('shearing_stress',)
+    bc_directions = ((('x','y'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
     Hext_angles = (0,)
     total_sim_num = 0
     for E in youngs_modulus:
@@ -1201,7 +1201,7 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     else:  
         stress_step_size = stress_max/(n_stress_steps-1)
     stresses = np.arange(0.0,stress_max+0.01*stress_max,stress_step_size)
-    if bc_type == 'simple_stress_compression':
+    if 'compression' in bc_type:
         stresses *= -1
     #then run with the particle rotations
     today = date.today()
@@ -1236,8 +1236,8 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    experimental_stress_simulation_tests()
-    # experimental_simulation_tests()
+    # experimental_stress_simulation_tests()
+    experimental_simulation_tests()
     # main_series_simulations()
     # main_strain()
     # main2()

@@ -779,7 +779,7 @@ def get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i
     volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0# + bc_forces
-    if bc[0] == 'simple_stress_compression':
+    if 'simple_stress' in bc[0]:
         #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
         if bc[1][0] == 'x':
             fixed_nodes = boundaries['left']

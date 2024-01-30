@@ -517,8 +517,8 @@ def get_field_dependent_effective_modulus_stress_sim(sim_dir):
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,bc_direction)
     # if bc_type == 'tension' or bc_type == 'compression' or bc_type == 'plate_compression' or bc_type == 'plate_compre':
     #     effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,bc_direction)
-    # elif bc_type == 'shearing':
-    #     effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,bc_direction)
+    elif bc_type == 'shearing' or ('shearing' in bc_type):
+        effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,bc_direction)
     # elif bc_type == 'torsion':
     #     get_torsion_modulus(sim_dir,bc_direction)
     return effective_modulus, stress, strain, Bext_series, bc_direction#, alternative_stress_measure, alternative_effective_modulus
@@ -693,7 +693,7 @@ def get_field_dependent_shearing_modulus(sim_dir,strain_direction):
     #     alternative_effective_modulus[i+num_sims_zero_strain] = np.abs(alternative_stress_measure[i+num_sims_zero_strain,force_component[strain_direction[1]]]/strain[i+num_sims_zero_strain])
     return effective_modulus, stress, strain, Bext_series#, alternative_stress_measure, alternative_effective_modulus
 
-def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions):
+def get_shearing_modulus_v2(sim_dir,output_file_number,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions):
     #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
     """Calculate a shear modulus, using the shear strain (shearing angle) and the force applied to the sheared surface in the shearing direction to get a shear stress."""
     #nonlinear shear strains are defined as tangent of the angle opened up by the shearing. linear shear strain is the linear, small angle approximation of tan theta ~= theta
@@ -701,29 +701,59 @@ def get_shearing_modulus_v2(sim_dir,output_file_number,strain_direction,beta_i,s
     y = np.zeros((6*total_num_nodes,))
     final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
     boundary_conditions = format_boundary_conditions(boundary_conditions)
-    strain = np.tan(boundary_conditions[2])
     Hext = applied_field
     y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
-    end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
-    if strain_direction[0] == 'x':
-        relevant_boundaries = ('right','left')
-        dimension_indices = (1,2)
-    elif strain_direction[0] == 'y':
-        relevant_boundaries = ('back','front')
-        dimension_indices = (0,2)
-    elif strain_direction[0] == 'z':
-        relevant_boundaries = ('top','bot')
-        dimension_indices = (0,1)
-    first_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[0]]]/beta_i[boundaries[relevant_boundaries[0]],np.newaxis]
-    second_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[1]]]/beta_i[boundaries[relevant_boundaries[1]],np.newaxis]
-    first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
-    second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
-    stress = first_bdry_stress
-    secondary_stress = second_bdry_stress
-    if strain == 0:# and np.isclose(np.linalg.norm(stress),0):
-        effective_modulus = E/3
+    if not 'stress' in boundary_conditions[0]:
+        strain = np.tan(boundary_conditions[2])
+        end_accel, _ = simulate.get_accel_scaled_no_fixed_nodes(y,elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+        if bc_direction[0] == 'x':
+            relevant_boundaries = ('right','left')
+            dimension_indices = (1,2)
+        elif bc_direction[0] == 'y':
+            relevant_boundaries = ('back','front')
+            dimension_indices = (0,2)
+        elif bc_direction[0] == 'z':
+            relevant_boundaries = ('top','bot')
+            dimension_indices = (0,1)
+        first_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[0]]]/beta_i[boundaries[relevant_boundaries[0]],np.newaxis]
+        second_bdry_forces = -1*end_accel[boundaries[relevant_boundaries[1]]]/beta_i[boundaries[relevant_boundaries[1]],np.newaxis]
+        first_bdry_stress = np.sum(first_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+        second_bdry_stress = np.sum(second_bdry_forces,axis=0)/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+        stress = first_bdry_stress
+        secondary_stress = second_bdry_stress
+        if strain == 0:# and np.isclose(np.linalg.norm(stress),0):
+            effective_modulus = E/3
+        else:
+            effective_modulus = np.abs(stress[force_component[bc_direction[1]]]/strain)
     else:
-        effective_modulus = np.abs(stress[force_component[strain_direction[1]]]/strain)
+        #if the boundary conditions are stress based, need to consider the forces acting on the boundary nodes and the enforced stress boundary conditions
+        if bc_direction[0] == 'x':
+            relevant_boundary = 'right'
+            if bc_direction[1] == 'y':
+                coordinate_indices = [0,1]
+            elif bc_direction[1] == 'z':
+                coordinate_indices = [0,2]
+        elif bc_direction[0] == 'y':
+            relevant_boundary = 'back'
+            if bc_direction[1] == 'x':
+                coordinate_indices = [1,0]
+            elif bc_direction[1] == 'z':
+                coordinate_indices = [1,2]
+        elif bc_direction[0] == 'z':
+            relevant_boundary = 'top'
+            if bc_direction[1] == 'x':
+                coordinate_indices = [2,0]
+            elif bc_direction[1] == 'y':
+                coordinate_indices = [2,1]
+        stress = boundary_conditions[2]
+        #calculate the angle that opens up... invtan(opp/adj)
+        mean_surface_posn = np.mean(final_posns[boundaries[relevant_boundary],coordinate_indices[0]]) #aka adjacent side length
+        print(f'starting surface position in shearing coordinate: {dimensions[coordinate_indices[1]]/l_e/2}')
+        print(f'mean surface shearing position: {np.mean(final_posns[boundaries[relevant_boundary],coordinate_indices[1]])}')
+        mean_surface_shearing_displacement = np.mean(final_posns[boundaries[relevant_boundary],coordinate_indices[1]]) - dimensions[coordinate_indices[1]]/l_e/2 #find the midpoint of the surface (in it's initial configuration) along the shearing direction, and subtract that from the current midpoint of the surface in the shearing direction
+        strain = np.arctan(mean_surface_shearing_displacement/mean_surface_posn)
+        effective_modulus = stress/strain
+        secondary_stress = None
     return effective_modulus, stress, strain, secondary_stress#, first_bdry_forces
 
 def get_shearing_modulus(sim_dir,strain_direction):
@@ -1351,5 +1381,6 @@ if __name__ == "__main__":
     #gpu case (calculation of elastic and vcf forces) that was profiled
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-26_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=False)
     # analysis_case1(sim_dir)
