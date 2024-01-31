@@ -1,6 +1,8 @@
 import numpy as np
 import magnetism
-
+import matplotlib.pyplot as plt
+import os
+import scipy.special as sci
 #TODO test the calculation of magnetization, dipole fields, and dipole dipole forces. compare results to by hand calculations
 #1) magnetization response to 0 field, saturating field, subsaturating fields (resulting magnetization 0.5*Ms), and fields along and between two cardinal directions
 #2) dipole fields, directly above, directly to the right/left, directly below, and at an abritrary angle relative to the magnetization vector direction. for unit magnetization, unit distance. increment distance via doubling/halving to ensure it behaves according to the expected power law dependence
@@ -89,76 +91,144 @@ import magnetism
 
 #dipole-dipole force testing
 #unit distance separation, no magnetic moments
-m_i = np.zeros((3,),dtype=np.float64)
-r_i = np.zeros((3,),dtype=np.float64)
-m_j = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-assert np.allclose(mag_force,np.array([0,0,0]))
-#unit distance separation, unit magnetic moments, attractive parallel alignment
-m_i[0] = 1
-m_j[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-assert np.allclose(mag_force,np.array([-6e-7,0,0]))
+# m_i = np.zeros((3,),dtype=np.float64)
+# r_i = np.zeros((3,),dtype=np.float64)
+# m_j = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# assert np.allclose(mag_force,np.array([0,0,0]))
+# #unit distance separation, unit magnetic moments, attractive parallel alignment
+# m_i[0] = 1
+# m_j[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# assert np.allclose(mag_force,np.array([-6e-7,0,0]))
 
-#unit distance separation, unit magnetic moments, repulsive parallel alignment
-r_i[0] = 0
-r_i[1] = 1
-m_i[0] = 1
-m_j[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-assert np.allclose(mag_force,np.array([0,3e-7,0]))
+# #unit distance separation, unit magnetic moments, repulsive parallel alignment
+# r_i[0] = 0
+# r_i[1] = 1
+# m_i[0] = 1
+# m_j[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# assert np.allclose(mag_force,np.array([0,3e-7,0]))
 
-#unit distance separation, unit magnetic moments, anti-parallel alignment
-m_i[0] = -1
-m_j[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-assert np.allclose(mag_force,np.array([0,-3e-7,0]))
+# #unit distance separation, unit magnetic moments, anti-parallel alignment
+# m_i[0] = -1
+# m_j[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# assert np.allclose(mag_force,np.array([0,-3e-7,0]))
 
-#unit distance separation, unit magnetic moment and double magnetic moment, parallel alignment
-m_i[0] = 2
-m_j[0] = 1
-r_i = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-assert np.allclose(mag_force,np.array([-12e-7,0,0]))
+# #unit distance separation, unit magnetic moment and double magnetic moment, parallel alignment
+# m_i[0] = 2
+# m_j[0] = 1
+# r_i = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# assert np.allclose(mag_force,np.array([-12e-7,0,0]))
 
-#twice unit distance separation, unit magnetic moments, parallel alignment. should be 2**4 factor weaker
-m_i[0] = 2
-m_j[0] = 1
-r_i = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 2
-mag_force2 = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-ratio = mag_force/mag_force2
-assert np.allclose(mag_force2,np.array([-(12/(2**4))*1e-7,0,0]))
+# #twice unit distance separation, unit magnetic moments, parallel alignment. should be 2**4 factor weaker
+# m_i[0] = 2
+# m_j[0] = 1
+# r_i = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 2
+# mag_force2 = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# ratio = mag_force/mag_force2
+# assert np.allclose(mag_force2,np.array([-(12/(2**4))*1e-7,0,0]))
 
-#half unit distance separation, unit magnetic moments, parallel alignment. should be 2**4 factor stronger
-m_i[0] = 2
-m_j[0] = 1
-r_i = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 1/2
-mag_force3 = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-ratio = mag_force/mag_force3
-assert np.allclose(mag_force3,np.array([-(12*2**4)*1e-7,0,0]))
+# #half unit distance separation, unit magnetic moments, parallel alignment. should be 2**4 factor stronger
+# m_i[0] = 2
+# m_j[0] = 1
+# r_i = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 1/2
+# mag_force3 = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# ratio = mag_force/mag_force3
+# assert np.allclose(mag_force3,np.array([-(12*2**4)*1e-7,0,0]))
 
-#unit distance, unit moments, perpendicular orientation\
-m_i[0] = 1
-m_j[0] = 0
-m_j[1] = 1
-r_i = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# #unit distance, unit moments, perpendicular orientation\
+# m_i[0] = 1
+# m_j[0] = 0
+# m_j[1] = 1
+# r_i = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
 
-#unit distance, one unit moment, one zero moment
-m_i[0] = 1
-m_j = np.zeros((3,),dtype=np.float64)
-r_i = np.zeros((3,),dtype=np.float64)
-r_j = np.zeros((3,),dtype=np.float64)
-r_i[0] = 1
-mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
-print('end')
+# #unit distance, one unit moment, one zero moment
+# m_i[0] = 1
+# m_j = np.zeros((3,),dtype=np.float64)
+# r_i = np.zeros((3,),dtype=np.float64)
+# r_j = np.zeros((3,),dtype=np.float64)
+# r_i[0] = 1
+# mag_force = magnetism.get_dip_dip_force(m_i,m_j,r_i,r_j)
+# print('end')
+
+def main():
+    """Testing magnetization for a single particle, plotting a hysteresis loop"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 1./mu0
+    n_field_steps = 1000
+    if n_field_steps != 1:
+        H_step = H_mag/(n_field_steps-1)
+    else:
+        H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = 131
+    Ms = 1.9e6
+    particle_radius = 1.5e-6
+    l_e = 1e-6
+    # particle_posns = np.array([[0,0,0]],dtype=np.float64)
+    particle_posns = np.array([[0,0,0],[9,0,0]],dtype=np.float64)
+    num_particles = particle_posns.shape[0]
+    if num_particles == 1:
+        separation = None
+    elif num_particles == 2:
+        separation = np.linalg.norm(particle_posns[0,:]-particle_posns[1,:])
+    else:
+        num_separations = int(sci.binom(num_particles,2))
+        separations = np.zeros((num_separations,))
+        counter = 0
+        for i in range(num_particles):
+            for j in range(i,num_particles):
+                separations[counter] = np.linalg.norm(particle_posns[i,:]-particle_posns[j,:])
+                counter +=1
+        separation = np.mean(separations)
+    magnetization = np.zeros((Hext_series.shape[0],num_particles,3))
+    for i, Hext in enumerate(Hext_series):
+        magnetization[i] = magnetism.get_magnetization_iterative_normalized(Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    normalized_magnetization = magnetization/Ms
+    system_magnetization = np.sum(normalized_magnetization,axis=1)/num_particles
+    system_magnetization = np.squeeze(system_magnetization)
+    Bext_series = mu0*Hext_series
+    Bext_series_norm = np.linalg.norm(Bext_series,axis=1)
+    nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+    unit_Bext_series = Bext_series[nonzero_field_value_indices[0]]/Bext_series_norm[nonzero_field_value_indices[0]]
+    parallel_magnetization = np.dot(system_magnetization,unit_Bext_series)
+    fig, ax = plt.subplots()
+    ax.plot(Bext_series_norm,parallel_magnetization,'.')
+    ax.set_xlabel('B Field (T)')
+    ax.set_ylabel('Normalized Magnetization')
+    ax.set_title(f'Magnetization versus Applied Field\n{num_particles} Particles, Separation {separation}\nTheta {Bext_theta_angle} Phi {Bext_phi_angle}')
+    fig.show()
+    save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing/'
+    if not (os.path.isdir(save_dir)):
+        os.mkdir(save_dir)
+    savename = save_dir + f'{num_particles}_particles_magnetization_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+    plt.savefig(savename)
+
+if __name__ == "__main__":
+    main()

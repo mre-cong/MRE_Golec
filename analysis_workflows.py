@@ -311,8 +311,10 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
     #TODO effective modulus calculations for field dependent simulations
-    # effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
-    effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
+    if 'strain' in sim_dir:
+        effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
+    elif 'stress' in sim_dir:
+        effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
     fig, ax = plt.subplots()
     ax.plot(strain,stress)
     ax.set_xlabel('strain')
@@ -1382,5 +1384,7 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-26_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    #rerunning simulation that was used for profiling the cpu and gpu approaches on the 27th and 26th respectively, to see if the changes to the codebase since then have introduced any bugs/errors
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=False)
     # analysis_case1(sim_dir)
