@@ -191,6 +191,9 @@ def main():
     Ms = 1.9e6
     particle_radius = 1.5e-6
     l_e = 1e-6
+    beta = 6.734260376702891e-09
+    particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
     # particle_posns = np.array([[0,0,0]],dtype=np.float64)
     particle_posns = np.array([[0,0,0],[9,0,0]],dtype=np.float64)
     num_particles = particle_posns.shape[0]
@@ -208,8 +211,17 @@ def main():
                 counter +=1
         separation = np.mean(separations)
     magnetization = np.zeros((Hext_series.shape[0],num_particles,3))
+    mag_forces = np.zeros((Hext_series.shape[0],num_particles,3))
+    M32bit = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
+    mag_forces32bit = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
     for i, Hext in enumerate(Hext_series):
         magnetization[i] = magnetism.get_magnetization_iterative_normalized(Hext,particle_posns,particle_radius,chi,Ms,l_e)
+        mag_forces[i] = magnetism.get_dip_dip_forces_normalized(magnetization[i],particle_posns,particle_radius,l_e)
+        mag_forces[i] *= beta/(particle_mass*(np.power(l_e,4)))
+        M32bit[i] = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
+        mag_forces32bit[i] = magnetism.get_dip_dip_forces_normalized_32bit(M32bit[i],np.float32(particle_posns),np.float32(particle_radius),np.float32(l_e))
+        # magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
+        mag_forces32bit[i] *= np.float32(beta/(particle_mass*(np.power(l_e,4))))
     normalized_magnetization = magnetization/Ms
     system_magnetization = np.sum(normalized_magnetization,axis=1)/num_particles
     system_magnetization = np.squeeze(system_magnetization)
@@ -228,6 +240,24 @@ def main():
     if not (os.path.isdir(save_dir)):
         os.mkdir(save_dir)
     savename = save_dir + f'{num_particles}_particles_magnetization_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+    plt.savefig(savename)
+    print(f'32bit and 64bit magnetization match?:{np.allclose(magnetization,M32bit)}')
+    print(f'32bit and 64bit magnetic forces match?:{np.allclose(mag_forces,mag_forces32bit)}')
+    fig, axs = plt.subplots(3)
+    axs[0].plot(Bext_series_norm,mag_forces[:,0,0],'r.')
+    axs[0].plot(Bext_series_norm,mag_forces32bit[:,0,0],'b.')
+    axs[0].set_xlabel('B Field (T)')
+    axs[0].set_ylabel('Magnetic Force X-Dir')
+    axs[1].plot(Bext_series_norm,mag_forces[:,0,1],'r.')
+    axs[1].plot(Bext_series_norm,mag_forces32bit[:,0,1],'b.')
+    axs[1].set_xlabel('B Field (T)')
+    axs[1].set_ylabel('Magnetic Force Y-Dir')
+    axs[2].plot(Bext_series_norm,mag_forces[:,0,2],'r.')
+    axs[2].plot(Bext_series_norm,mag_forces32bit[:,0,2],'b.')
+    axs[2].set_xlabel('B Field (T)')
+    axs[2].set_ylabel('Magnetic Force Z-Dir')
+    fig.legend(labels=['64bit','32bit'])
+    savename = save_dir + f'{num_particles}_particles_mag_forces_64bit_vs_32bit_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
     plt.savefig(savename)
 
 if __name__ == "__main__":

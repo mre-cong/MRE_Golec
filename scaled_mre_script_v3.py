@@ -1157,8 +1157,11 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
     node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
     k = np.array(k,dtype=np.float64)
+    k_e = k[0]
     max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
     springs_var = np.empty((max_springs,4),dtype=np.float64)
+    if gpu_flag:
+        k *= l_e
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
     
@@ -1181,7 +1184,6 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
     m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
     #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
-    k_e = k[0]
     characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
     #we will call the scaling coefficient beta
     if (not np.isclose(k_e,0)):
@@ -1224,7 +1226,7 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
         for key in boundaries:
             boundaries[key] = np.int32(boundaries[key])
         dimensions = np.float32(dimensions)
-        kappa = cp.float32(kappa)
+        kappa = cp.float32(kappa*(l_e**2))
         l_e = np.float32(l_e)
         particle_radius = np.float32(particle_radius)
         particle_mass = np.float32(particle_mass)

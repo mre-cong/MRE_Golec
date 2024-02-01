@@ -1382,13 +1382,14 @@ void spring_force(const float* edges, const float* node_posns, float* forces, co
 
 def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_springs):
     """Combining the two kernels so that the positions only need to be transferred from host to device memory once per calculation"""
-    mempool = cp.get_default_memory_pool()
+    # mempool = cp.get_default_memory_pool()
     # print(f'default memory limit is {mempool.get_limit()}')
     # pinned_mempool = cp.get_default_pinned_memory_pool()
     # print(f'Bytes used before instantiating force arrays and moving node posn variable in GB: {mempool.used_bytes()/1024/1024/1024}')
     # print(f'Total bytes before instantiating force arrays and moving node posn variable in GB: {mempool.total_bytes()/1024/1024/1024}')
-    cupy_element_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
-    cupy_spring_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+    # cupy_element_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+    # cupy_spring_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
+    cupy_composite_element_spring_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
     cupy_node_posns = cp.array(np.float32(normalized_posns)).reshape((normalized_posns.shape[0]*normalized_posns.shape[1],1),order='C')
     #print(f'Bytes used after instantiation and moving node posns from host to device in GB: {mempool.used_bytes()/1024/1024/1024}')
     #print(f'Total bytes after instantiation and moving node posns from host to device in GB: {mempool.total_bytes()/1024/1024/1024}')
@@ -1398,16 +1399,17 @@ def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_s
     size_elements = int(cupy_elements.shape[0]/8)
     block_size = 128
     element_grid_size = (int (np.ceil((int (np.ceil(size_elements/block_size)))/14)*14))
-    scaled_element_kernel((element_grid_size,),(block_size,),(cupy_elements,cupy_node_posns,kappa,cupy_element_forces,size_elements))
+    scaled_element_kernel((element_grid_size,),(block_size,),(cupy_elements,cupy_node_posns,kappa,cupy_composite_element_spring_forces,size_elements))
     # cupy_stream = cp.cuda.get_current_stream()
     # cupy_stream.synchronize()
     size_springs = int(cupy_springs.shape[0]/4)
     spring_grid_size = (int (np.ceil((int (np.ceil(size_springs/block_size)))/14)*14))
-    scaled_spring_kernel((spring_grid_size,),(block_size,),(cupy_springs,cupy_node_posns,cupy_spring_forces,size_springs))
+    scaled_spring_kernel((spring_grid_size,),(block_size,),(cupy_springs,cupy_node_posns,cupy_composite_element_spring_forces,size_springs))
     # cp.cuda.Device().synchronize()
-    host_element_forces = cp.asnumpy(cupy_element_forces)
-    host_spring_forces = cp.asnumpy(cupy_spring_forces)
-    return host_element_forces, host_spring_forces
+    # host_element_forces = cp.asnumpy(cupy_element_forces)
+    # host_spring_forces = cp.asnumpy(cupy_spring_forces)
+    host_composite_element_spring_forces = cp.asnumpy(cupy_composite_element_spring_forces)
+    return host_composite_element_spring_forces# host_element_forces, host_spring_forces
 
 def get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag=10):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
@@ -1416,12 +1418,16 @@ def get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
     N_nodes = int(np.round(N/3))
     x0 = np.reshape(y[:N],(N_nodes,3))
     v0 = np.reshape(y[N:],(N_nodes,3))
-    volume_correction_force, spring_force = composite_gpu_force_calc(x0,N_nodes,elements,kappa,springs)
-    volume_correction_force = np.reshape(volume_correction_force,(N_nodes,3))
-    spring_force = np.reshape(spring_force,(N_nodes,3))
-    volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
-    spring_force *= l_e*beta_i[:,np.newaxis]
-    accel = spring_force + volume_correction_force - drag * v0# + bc_forces
+    composite_element_spring_forces = composite_gpu_force_calc(x0,N_nodes,elements,kappa,springs)
+    composite_element_spring_forces = np.reshape(composite_element_spring_forces,(N_nodes,3))
+    composite_element_spring_forces *= beta_i[:,np.newaxis]
+    accel = composite_element_spring_forces - drag * v0
+    # volume_correction_force, spring_force = composite_gpu_force_calc(x0,N_nodes,elements,kappa,springs)
+    # volume_correction_force = np.reshape(volume_correction_force,(N_nodes,3))
+    # spring_force = np.reshape(spring_force,(N_nodes,3))
+    # volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
+    # spring_force *= l_e*beta_i[:,np.newaxis]
+    # accel = spring_force + volume_correction_force - drag * v0# + bc_forces
     if 'simple_stress' in bc[0]:
         #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
         if bc[1][0] == 'x':
