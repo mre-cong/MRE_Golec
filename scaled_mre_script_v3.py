@@ -388,17 +388,17 @@ def run_field_dependent_strain_sim(output_dir,strain_type,strain_direction,strai
                 current_output_dir = output_dir + f'strain_{count}_{strain_type}_{np.round(strain,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
-            print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
+            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=2)}, {np.round(Hext[1]*mu0,decimals=2)}, {np.round(Hext[2]*mu0,decimals=2)}) T\n')
             start = time.time()
             try:
                 if not particle_rotation_flag:
                     sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
                 elif particle_rotation_flag and (not gpu_flag):
-                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
                 elif gpu_flag:
                     # mempool = cp.get_default_memory_pool()
                     # print(f'Memory used by springs and elements variable in GB: {mempool.used_bytes()/1024/1024/1024}')
-                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
             except Exception as inst:
                 print('Exception raised during simulation')
                 print(type(inst))
@@ -435,17 +435,17 @@ def run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext
                 current_output_dir = output_dir + f'stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
-            print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
+            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=2)}, {np.round(Hext[1]*mu0,decimals=2)}, {np.round(Hext[2]*mu0,decimals=2)}) T\n')
             start = time.time()
             try:
                 if not particle_rotation_flag:
                     sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
                 elif particle_rotation_flag and (not gpu_flag):
-                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
                 elif gpu_flag:
                     # mempool = cp.get_default_memory_pool()
                     # print(f'Memory used by springs and elements variable in GB: {mempool.used_bytes()/1024/1024/1024}')
-                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
             except Exception as inst:
                 print('Exception raised during simulation')
                 print(type(inst))
@@ -916,7 +916,7 @@ def main_series_simulations():
 def experimental_simulation_tests():
     """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
     youngs_modulus = [9e3]
-    discretizations = [2]
+    discretizations = [0]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.25/mu0
     n_field_steps = 1
@@ -940,14 +940,14 @@ def experimental_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_strain_type_string}\nstrain_type = {strain_type}\nstrain_direction = {strain_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nstrain_direction={strain_direction}\n")
-                        main_field_dependent_modulus(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=5,max_integration_steps=1000,tolerance=1e-4,gpu_flag=False)
+                        main_field_dependent_modulus(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_strain_type_string=field_or_strain_type_string,strain_type=strain_type,strain_direction=strain_direction,max_integrations=3,max_integration_steps=1000,tolerance=1e-4,gpu_flag=False)
                         total_sim_num += 1
     print(total_sim_num)
 
 def experimental_stress_simulation_tests():
     """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
     youngs_modulus = [9e3]
-    discretizations = [0]
+    discretizations = [1]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.25/mu0
     n_field_steps = 1
@@ -955,9 +955,9 @@ def experimental_stress_simulation_tests():
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    stress_types = ('simple_stress_shearing',)#('simple_stress_compression',)
-    bc_type_strings = ('shearing_stress',)
-    bc_directions = ((('x','y'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
+    stress_types = ('simple_stress_compression',)#('simple_stress_shearing',)
+    bc_type_strings = ('compression_stress',)#('shearing_stress',)
+    bc_directions = ((('x','x'),),)#((('x','y'),),)#((('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))#((('x','x'),('y','y'),('z','z')),(('x','x'),('y','y'),('z','z')),(('x','y'),('x','z'),('y','x'),('y','z'),('z','x'),('z','y')))
     Hext_angles = (0,)
     total_sim_num = 0
     for E in youngs_modulus:
@@ -971,7 +971,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=5,max_integration_steps=1000,tolerance=1e-4,gpu_flag=False)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=2,max_integration_steps=10000,tolerance=1e-4,gpu_flag=True)
                         total_sim_num += 1
     print(total_sim_num)
 
@@ -1135,7 +1135,7 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     Ly = particle_diameter * 7
     Lz = Ly
     # l_e = 1e-6
-    t_f = 30
+    t_f = 300
     
     N_nodes_x = np.round(Lx/l_e + 1)
     N_nodes_y = np.round(Ly/l_e + 1)
@@ -1205,7 +1205,7 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
         stresses *= -1
     #then run with the particle rotations
     today = date.today()
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_stress_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations/'
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_field_dependent_modulus_stress_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations_gpu_{gpu_flag}_tf_{t_f}/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     my_sim.write_log(output_dir)
@@ -1236,8 +1236,8 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
-    # experimental_stress_simulation_tests()
-    experimental_simulation_tests()
+    experimental_stress_simulation_tests()
+    # experimental_simulation_tests()
     # main_series_simulations()
     # main_strain()
     # main2()

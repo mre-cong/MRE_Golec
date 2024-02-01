@@ -7,8 +7,8 @@ import scipy.special as sci
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
-plt.switch_backend('TkAgg')
-# plt.switch_backend('Agg')
+#plt.switch_backend('TkAgg')
+plt.switch_backend('Agg')
 import time
 import os
 import tables as tb#pytables, for HDF5 interface
@@ -319,7 +319,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     ax.plot(strain,stress)
     ax.set_xlabel('strain')
     ax.set_ylabel('stress')
-    plt.show()
+    # plt.show()
+    plt.close()
 #   outside the loop:
 #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
@@ -1386,5 +1387,7 @@ if __name__ == "__main__":
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #rerunning simulation that was used for profiling the cpu and gpu approaches on the 27th and 26th respectively, to see if the changes to the codebase since then have introduced any bugs/errors
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=False)
+    #gpu simulations with simple stress
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)

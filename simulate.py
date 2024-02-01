@@ -142,7 +142,11 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
     solutions = []
     sim_time = []
     def solout_timestep(t,y):
-        sim_time.append([t])
+        if sim_time == []:
+            sim_time.append(t)
+        else:
+            new_time = t + np.max(np.array(sim_time))
+            sim_time.append(new_time)
     def solout(t,y):
         solutions.append([t,*y])
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
@@ -272,8 +276,8 @@ def plot_simulation_time_versus_integration_step(sim_time,output_dir):
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(100)
     integration_number = np.arange(len(sim_time))
-    delta_t = sim_time[1:] - sim_time[:-1]
-    axs[0].plot(delta_t,sim_time[1:],'.')
+    delta_t = np.array(sim_time[1:]) - np.array(sim_time[:-1])
+    axs[0].plot(sim_time[1:],delta_t,'.')
     axs[0].set_title('Time Step Taken')
     axs[0].set_xlabel('scaled time')
     axs[0].set_ylabel('time step')
@@ -1378,7 +1382,7 @@ void spring_force(const float* edges, const float* node_posns, float* forces, co
 
 def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_springs):
     """Combining the two kernels so that the positions only need to be transferred from host to device memory once per calculation"""
-    # mempool = cp.get_default_memory_pool()
+    mempool = cp.get_default_memory_pool()
     # print(f'default memory limit is {mempool.get_limit()}')
     # pinned_mempool = cp.get_default_pinned_memory_pool()
     # print(f'Bytes used before instantiating force arrays and moving node posn variable in GB: {mempool.used_bytes()/1024/1024/1024}')
@@ -1386,8 +1390,8 @@ def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_s
     cupy_element_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
     cupy_spring_forces = cp.zeros((N_nodes*3,1),dtype=cp.float32)
     cupy_node_posns = cp.array(np.float32(normalized_posns)).reshape((normalized_posns.shape[0]*normalized_posns.shape[1],1),order='C')
-    # print(f'Bytes used after instantiation and moving node posns from host to device in GB: {mempool.used_bytes()/1024/1024/1024}')
-    # print(f'Total bytes after instantiation and moving node posns from host to device in GB: {mempool.total_bytes()/1024/1024/1024}')
+    #print(f'Bytes used after instantiation and moving node posns from host to device in GB: {mempool.used_bytes()/1024/1024/1024}')
+    #print(f'Total bytes after instantiation and moving node posns from host to device in GB: {mempool.total_bytes()/1024/1024/1024}')
     # print(f'current memory limit is {mempool.get_limit()}')
     # mempool.set_limit(size=1024**3)
     # print(f'current memory limit is {mempool.get_limit()}')
@@ -1418,7 +1422,34 @@ def get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
     volume_correction_force *= (l_e**2)*beta_i[:,np.newaxis]
     spring_force *= l_e*beta_i[:,np.newaxis]
     accel = spring_force + volume_correction_force - drag * v0# + bc_forces
-    if bc[0] == 'stress_compression':
+    if 'simple_stress' in bc[0]:
+        #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+            stressed_nodes = boundaries['right']
+            relevant_dimension_indices = [1,2]
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+            stressed_nodes = boundaries['back']
+            relevant_dimension_indices = [0,2]
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+            stressed_nodes = boundaries['top']
+            relevant_dimension_indices = [0,1]
+        accel = set_fixed_nodes(accel,fixed_nodes)
+        stress_direction = bc[1][1]
+        if stress_direction == 'x':
+            force_index = 0
+        elif stress_direction == 'y':
+            force_index = 1
+        elif stress_direction == 'z':
+            force_index = 2
+        stress = bc[2]
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+        net_force_mag = stress*surface_area
+        single_node_accel = (net_force_mag/stressed_nodes.shape[0])*beta_i[stressed_nodes]
+        accel[stressed_nodes,force_index] += single_node_accel
+    elif bc[0] == 'stress_compression':
         plate_orientation = bc[1][0]
         stress_direction = bc[1][1]
         stress = bc[2]
@@ -1516,7 +1547,11 @@ def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kapp
     solutions = []
     sim_time = []
     def solout_timestep(t,y):
-        sim_time.append([t])
+        if sim_time == []:
+            sim_time.append(t)
+        else:
+            new_time = t + np.max(np.array(sim_time))
+            sim_time.append(new_time)
     def solout(t,y):
         solutions.append([t,*y])
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
@@ -1549,6 +1584,10 @@ def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kapp
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
     for i in range(max_integrations):
+        # if len(sim_time) != 0:
+        #     delta_t = np.array(sim_time[1:]) - np.array(sim_time[:-1])
+        #     first_step = delta_t[-1]
+        #     r = sci.ode(scaled_fun_gpu).set_integrator('dopri5',nsteps=max_integration_steps,verbosity=1,first_step=first_step)
         r.set_initial_value(y_0).set_f_params(elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
         print(f'starting integration run {i+1}')
         sol = r.integrate(t_f)
