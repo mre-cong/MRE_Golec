@@ -441,11 +441,11 @@ def run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext
                 if not particle_rotation_flag:
                     sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
                 elif particle_rotation_flag and (not gpu_flag):
-                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
+                    sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True,get_norms_flag=False)
                 elif gpu_flag:
                     # mempool = cp.get_default_memory_pool()
                     # print(f'Memory used by springs and elements variable in GB: {mempool.used_bytes()/1024/1024/1024}')
-                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True)
+                    sol, return_status = simulate.simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag,get_time_flag=True,get_norms_flag=False)
             except Exception as inst:
                 print('Exception raised during simulation')
                 print(type(inst))
@@ -949,7 +949,7 @@ def experimental_stress_simulation_tests():
     youngs_modulus = [9e3]
     discretizations = [1]
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.25/mu0
+    H_mag = 0.1/mu0
     n_field_steps = 1
     H_step = H_mag/n_field_steps
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
@@ -971,7 +971,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=2,max_integration_steps=10000,tolerance=1e-4,gpu_flag=True)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.25,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=1,max_integration_steps=100,tolerance=1e-4,gpu_flag=False)
                         total_sim_num += 1
     print(total_sim_num)
 

@@ -136,17 +136,27 @@ def simulate_scaled(x0,elements,particles,boundaries,dimensions,springs,kappa,l_
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
-def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,get_time_flag=False):
+def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,get_time_flag=False,get_norms_flag=False):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a ... dictionary(?) where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
     sim_time = []
+    solution_norms = []
+    derivative_norms = []
+    def solout_norms(t,y):
+        solution_norms.append(np.linalg.norm(y))
+        accel = get_accel_scaled_rotation(y,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        N = int(np.round(y.shape[0]/2))
+        accel = np.reshape(accel,(3*N_nodes,))
+        derivatives = np.concatenate((y[N:],accel))
+        derivative_norms.append(np.linalg.norm(derivatives))
     def solout_timestep(t,y):
         if sim_time == []:
             sim_time.append(t)
         else:
             new_time = t + np.max(np.array(sim_time))
             sim_time.append(new_time)
+        solutions.append([*y])
     def solout(t,y):
         solutions.append([t,*y])
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
@@ -175,6 +185,8 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
         r.set_solout(solout)
     elif get_time_flag:
         r.set_solout(solout_timestep)
+    elif get_norms_flag:
+        r.set_solout(solout_norms)
     max_displacement = np.zeros((max_integrations,))
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
@@ -264,6 +276,9 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
         criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     if get_time_flag:
         plot_simulation_time_versus_integration_step(sim_time,output_dir)
+        np.save(output_dir+'solutions.npy',solutions,allow_pickle=False)
+    if get_norms_flag:
+        plot_solution_and_derivative_norms_versus_integration_step(solution_norms,derivative_norms,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
     # mre.analyze.post_plot_cut_normalized(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag='end_configuration')
@@ -290,6 +305,30 @@ def plot_simulation_time_versus_integration_step(sim_time,output_dir):
     axs[2].set_xlabel('integration number')
     axs[2].set_ylabel('total scaled time')
     savename = output_dir + 'timestep_per_iteration_and_time.png'
+    plt.savefig(savename)
+    plt.close()
+    np.save(output_dir+'timesteps.npy',delta_t,allow_pickle=False)
+
+def plot_solution_and_derivative_norms_versus_integration_step(solution_norms,derivative_norms,output_dir):
+    """Plot the simulation time versus integration step. Shows how the adaptive time step is adjusting through the course of numerical integration"""
+    fig, axs = plt.subplots(1,3)
+    default_width, default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(100)
+    integration_number = np.arange(len(solution_norms))
+    axs[0].plot(integration_number,solution_norms,'.')
+    axs[0].set_title('Sol Vector Norms')
+    axs[0].set_xlabel('integration number')
+    axs[0].set_ylabel('Sol Vector Norm')
+    axs[1].plot(integration_number,derivative_norms,'.')
+    axs[1].set_title('Derivative Vector Norms')
+    axs[1].set_xlabel('integration number')
+    axs[1].set_ylabel('Derivative Vector Norm')
+    axs[2].plot(integration_number,np.array(solution_norms)/np.array(derivative_norms),'.')
+    axs[2].set_title('Ratio of Norms')
+    axs[2].set_xlabel('integration number')
+    axs[2].set_ylabel('Sol Norm/Derivative Norm')
+    savename = output_dir + 'solution_and_derivative_norms_vs_integration_number.png'
     plt.savefig(savename)
     plt.close()
 
@@ -1538,7 +1577,7 @@ def scaled_fun_gpu(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting forces on each vertex/node and their velocities"""
     #scipy.integrate.solve_ivp() requires y (the initial conditions), and also the output of fun(), to be in the shape (n,). because of how the functions calculating forces expect the arguments to be shaped we have to reshape the y variable that is passed to fun()
     N = int(np.round(y.shape[0]/2))
-    y = np.float32(y)
+    # y = np.float32(y)
     accel = get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
     N_nodes = int(np.round(N/3))
     accel = np.reshape(accel,(3*N_nodes,))
@@ -1547,17 +1586,27 @@ def scaled_fun_gpu(t,y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,bound
     #we have to reshape our results as fun() has to return something in the shape (n,) (has to return dy/dt = f(t,y,y')). because the ODE is second order we break it into a system of first order ODEs by substituting y1 = y, y2 = dy/dt. so that dy1/dt = y2, dy2/dt = f(t,y,y') (Which is the acceleration)
     return result
 
-def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=False,get_time_flag=False):
+def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,initialized_posns,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=False,get_time_flag=False,get_norms_flag=False):
     """Run a simulation of a hybrid mass spring system using a Dormand-Prince adaptive step size numerical integration. Node_posns is an N_vertices by 3 numpy array of the positions of the vertices, elements is an N_elements by 8 numpy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined. t_f is the upper time integration bound, from t_i = 0 to t_f, over which the numerical integration will be performed with adaptive time steps ."""
     #function to be called at every sucessful integration step to get the solution output
     solutions = []
     sim_time = []
+    solution_norms = []
+    derivative_norms = []
+    def solout_norms(t,y):
+        solution_norms.append(np.linalg.norm(y))
+        accel = get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+        N = int(np.round(y.shape[0]/2))
+        accel = np.reshape(accel,(3*N_nodes,))
+        derivatives = np.concatenate((y[N:],accel))
+        derivative_norms.append(np.linalg.norm(derivatives))
     def solout_timestep(t,y):
         if sim_time == []:
             sim_time.append(t)
         else:
             new_time = t + np.max(np.array(sim_time))
             sim_time.append(new_time)
+        solutions.append([*y])
     def solout(t,y):
         solutions.append([t,*y])
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
@@ -1586,6 +1635,8 @@ def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kapp
         r.set_solout(solout)
     elif get_time_flag:
         r.set_solout(solout_timestep)
+    elif get_norms_flag:
+        r.set_solout(solout_norms)
     max_displacement = np.zeros((max_integrations,))
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
@@ -1667,6 +1718,9 @@ def simulate_scaled_gpu(x0,elements,particles,boundaries,dimensions,springs,kapp
         criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     if get_time_flag:
         plot_simulation_time_versus_integration_step(sim_time,output_dir)
+        np.save(output_dir+'solutions.npy',solutions,allow_pickle=False)
+    if get_norms_flag:
+        plot_solution_and_derivative_norms_versus_integration_step(solution_norms,derivative_norms,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
     return sol, return_status#returning a solution object, that can then have it's attributes inspected

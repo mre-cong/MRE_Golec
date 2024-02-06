@@ -7,8 +7,8 @@ import scipy.special as sci
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
-#plt.switch_backend('TkAgg')
-plt.switch_backend('Agg')
+plt.switch_backend('TkAgg')
+# plt.switch_backend('Agg')
 import time
 import os
 import tables as tb#pytables, for HDF5 interface
@@ -18,6 +18,7 @@ import mre.sphere_rasterization
 import magnetism
 import simulate
 import re
+import cupy as cp
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 
@@ -1355,6 +1356,221 @@ def plot_surface_node_force_vector(sim_dir,output_dir,file_number,initial_node_p
         plate_forces[global_index_interacting_nodes] = plate_force
         subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,plate_forces,index,output_dir+'modulus/',tag=f"probe_plate_force_series{i}")
 
+def time_step_comparison(dir_one,dir_two):
+    with open(dir_one + 'timesteps.npy','rb') as data:
+        delta_t_one = np.load(data)
+    with open(dir_two + 'timesteps.npy','rb') as data:
+        delta_t_two = np.load(data)
+    if delta_t_one.shape[0] == delta_t_two.shape[0]:
+        print(f'are the step sizes the same for all entries?:{np.allclose(np.array(delta_t_one),np.array(delta_t_two))}')
+        fig, axs = plt.subplots(2)
+        axs[0].plot(np.arange(delta_t_one.shape[0]),delta_t_one-delta_t_two)
+        axs[0].set_xlabel('integration number')
+        axs[0].set_ylabel('difference in step size')
+        axs[1].plot(np.arange(delta_t_one.shape[0]),delta_t_one)
+        axs[1].plot(np.arange(delta_t_one.shape[0]),delta_t_two)
+        axs[1].set_xlabel('integration number')
+        axs[1].set_ylabel('step size')
+        fig.legend(['dir_one','dir_two'])
+        plt.show()
+    else:
+        print(f'different number of steps executed for each\nfirst directory steps:{delta_t_one.shape[0]}\nsecond directory steps:{delta_t_two.shape[0]}')
+        fig, ax = plt.subplots()
+        line1, = ax.plot(np.arange(delta_t_one.shape[0]),delta_t_one)
+        line2, = ax.plot(np.arange(delta_t_two.shape[0]),delta_t_two)
+        ax.set_xlabel('integration number')
+        ax.set_ylabel('step size')
+        line1.set_label('dir_one')
+        line2.set_label('dir_two')
+        ax.legend()
+        plt.show()
+
+def cpu_vs_gpu_time_step_comparison(sim_dir_one,sim_dir_two):
+    with os.scandir(sim_dir_one) as dirIterator:
+        subfolders = [f.name for f in dirIterator if f.is_dir()]
+    for subfolder in subfolders:    
+        if not 'figure' in subfolder:
+            time_step_comparison(sim_dir_one+subfolder+'/',sim_dir_two+subfolder+'/')
+
+def cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two):
+    if 'gpu_True' in sim_dir_one:
+        gpu_dir = sim_dir_one
+        cpu_dir = sim_dir_two
+    elif 'gpu_True' in sim_dir_two:
+        gpu_dir = sim_dir_two
+        cpu_dir = sim_dir_one
+    with os.scandir(gpu_dir) as dirIterator:
+        subfolders = [f.name for f in dirIterator if f.is_dir()]
+    i = 0
+    for subfolder in subfolders:    
+        if not 'figure' in subfolder:
+            print(f'beginning comparison for subfolder:{subfolder}')
+            compare_per_step_solution_vectors(gpu_dir,cpu_dir,subfolder)
+            compare_per_step_acceleration_vectors(gpu_dir,cpu_dir,subfolder,output_file_number=i)
+            # gpu_acceleration_norm = get_per_step_acceleration_norms(gpu_dir,subfolder,output_file_number=i)
+            # cpu_acceleration_norm = get_per_step_acceleration_norms(cpu_dir,subfolder,output_file_number=i)
+            i += 1
+            # fig, ax = plt.subplots()
+            # line1, = ax.plot(np.arange(gpu_acceleration_norm.shape[0]),gpu_acceleration_norm)
+            # line2, = ax.plot(np.arange(gpu_acceleration_norm.shape[0]),cpu_acceleration_norm[:gpu_acceleration_norm.shape[0]])
+            # ax.set_xlabel('integration step')
+            # ax.set_ylabel('acceleration_norm')
+            # line1.set_label('gpu')
+            # line2.set_label('cpu')
+            # ax.legend()
+            # plt.show()
+
+def get_per_step_acceleration_norms(sim_dir,subfolder,output_file_number):
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
+    scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+    with open(sim_dir + subfolder + '/solutions.npy','rb') as data:
+        solutions = np.load(data)
+        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+    acceleration_norm = np.zeros((solutions.shape[0],))
+    if 'gpu_True' in sim_dir:
+        beta_i = np.float32(beta_i)
+        beta = np.float32(beta)
+        drag = np.float32(drag)
+        Hext = np.float32(Hext)
+        particles = np.int32(particles)
+        for key in boundaries:
+            boundaries[key] = np.int32(boundaries[key])
+        dimensions = np.float32(dimensions)
+        kappa = np.float32(kappa*(l_e**2))
+        l_e = np.float32(l_e)
+        particle_radius = np.float32(particle_radius)
+        particle_mass = np.float32(particle_mass)
+        chi = np.float32(chi)
+        Ms = np.float32(Ms)
+        elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+        springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+        boundary_conditions = (boundary_conditions[0],boundary_conditions[1],np.float32(boundary_conditions[2]))
+        for i in range(solutions.shape[0]):
+            a_var = simulate.get_accel_scaled_GPU(solutions[i],elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            acceleration_norm[i] = np.linalg.norm(a_var)#np.linalg.norm(a_var,axis=1)
+    else:
+        for i in range(solutions.shape[0]):
+            a_var = simulate.get_accel_scaled_rotation(solutions[i],elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+            acceleration_norm[i] = np.linalg.norm(a_var)#np.linalg.norm(a_var,axis=1)
+    return acceleration_norm
+
+def compare_per_step_acceleration_vectors(sim_dir_one,sim_dir_two,subfolder,output_file_number):
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir_one)
+    particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
+    scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+    with open(sim_dir_one + subfolder + '/solutions.npy','rb') as data:
+        solutions_one = np.load(data)
+    with open(sim_dir_two + subfolder + '/solutions.npy','rb') as data:
+        solutions_two = np.load(data)
+    if 'gpu_True' in sim_dir_one:
+        cpu_solutions = solutions_two
+        gpu_solutions = solutions_one
+        a_var_cpu = np.zeros((solutions_two.shape[0],total_num_nodes,3))
+        a_var_gpu = np.zeros((solutions_one.shape[0],total_num_nodes,3))
+        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir_two+f'output_{output_file_number}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+    else:
+        cpu_solutions = solutions_one
+        gpu_solutions = solutions_two
+        a_var_cpu = np.zeros((solutions_one.shape[0],total_num_nodes,3))
+        a_var_gpu = np.zeros((solutions_two.shape[0],total_num_nodes,3))
+        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir_one+f'output_{output_file_number}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+    for i in range(cpu_solutions.shape[0]):
+        a_var_cpu[i] = simulate.get_accel_scaled_rotation(cpu_solutions[i],elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag)
+    beta_i = np.float32(beta_i)
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    Hext = np.float32(Hext)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = np.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    boundary_conditions = (boundary_conditions[0],boundary_conditions[1],np.float32(boundary_conditions[2]))
+    for i in range(gpu_solutions.shape[0]):
+        a_var_gpu[i] = simulate.get_accel_scaled_GPU(gpu_solutions[i],elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    smallest_number_of_solutions = np.min([solutions_one.shape[0],solutions_two.shape[0]])
+    for i in range(smallest_number_of_solutions):
+        print(f'Acceleration vectors are close to being the same?:{np.allclose(a_var_gpu[i],a_var_cpu[i])}')
+        if not np.allclose(a_var_gpu[i],a_var_cpu[i]):
+            accel_diff = a_var_gpu[i] - a_var_cpu[i]
+            print(f'max acceleration component difference is:{np.max(np.abs(accel_diff))}')
+            print(f'mean acceleration component difference is:{np.mean(np.abs(accel_diff))}')
+
+def compare_per_step_solution_vectors(sim_dir_one,sim_dir_two,subfolder):
+    with open(sim_dir_one + subfolder + '/solutions.npy','rb') as data:
+        solutions_one = np.load(data)
+    with open(sim_dir_two + subfolder + '/solutions.npy','rb') as data:
+        solutions_two = np.load(data)
+    smallest_number_of_solutions = np.min([solutions_one.shape[0],solutions_two.shape[0]])
+    solutions_difference = solutions_one[:smallest_number_of_solutions] - solutions_two[:smallest_number_of_solutions]
+    for i in range(smallest_number_of_solutions):
+        print(f'Solutions are close to being the same?:{np.allclose(solutions_one[i],solutions_two[i])}')
+        if not np.allclose(solutions_one[i],solutions_two[i]):
+            solutions_difference = solutions_one[i] - solutions_two[i]
+            print(f'max solution component difference is:{np.max(np.abs(solutions_difference))}')
+            print(f'mean solution component difference is:{np.mean(np.abs(solutions_difference))}')
+
+def compare_repeat_calculation_gpu_acceleration_vectors(sim_dir,subfolder,output_file_number):
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
+    scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+    n_repititions = 10
+    with open(sim_dir + subfolder + '/solutions.npy','rb') as data:
+        solutions = np.load(data)
+        a_var = np.zeros((n_repititions,total_num_nodes,3))
+        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+    beta_i = np.float32(beta_i)
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    Hext = np.float32(Hext)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = np.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    boundary_conditions = (boundary_conditions[0],boundary_conditions[1],np.float32(boundary_conditions[2]))
+    for i in range(solutions.shape[0]):
+        for j in range(n_repititions):
+            a_var[j] = simulate.get_accel_scaled_GPU(solutions[i],elements,springs_var,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+        for j in range(n_repititions):
+            for k in range(j,n_repititions):
+                print(f'maximum acceleration vector component {np.max(a_var[j])}')
+                print(f'Acceleration vectors are close to being the same?:{np.allclose(a_var[j],a_var[k])}')
+                accel_diff = a_var[j] - a_var[k]
+                print(f'max acceleration component difference is:{np.max(np.abs(accel_diff))}')
+                print(f'mean acceleration component difference is:{np.mean(np.abs(accel_diff))}')
+                print(f'acceleration component difference standard deviation is:{np.std(accel_diff)}')
+
+def gpu_repeat_accel_calculation_comparison(sim_dir):
+    with os.scandir(sim_dir) as dirIterator:
+        subfolders = [f.name for f in dirIterator if f.is_dir()]
+    i = 0
+    for subfolder in subfolders:    
+        if not 'figure' in subfolder:
+            print(f'beginning comparison for subfolder:{subfolder}')
+            compare_repeat_calculation_gpu_acceleration_vectors(sim_dir,subfolder,i)
+            i += 1
+
+
 if __name__ == "__main__":
     main()
     # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-15_strain_testing_shearing_order_1_drag_20/'
@@ -1389,5 +1605,22 @@ if __name__ == "__main__":
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #gpu simulations with simple stress
     sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-02_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations
+    sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the particle rotations turned off
+    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_False_tf_300/"
+    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_True_tf_300/"
+    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the VCF turned off (nu=0.25)
+    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the VCF turned off (nu=0.25) and the springs turned off (E=0)
+    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    gpu_repeat_accel_calculation_comparison(sim_dir_two)
+    cpu_vs_gpu_time_step_comparison(sim_dir_one,sim_dir_two)
+    cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)

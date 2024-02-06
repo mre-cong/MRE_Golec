@@ -187,15 +187,15 @@ def main():
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
-    chi = 131
+    chi = 66#131
     Ms = 1.9e6
     particle_radius = 1.5e-6
     l_e = 1e-6
     beta = 6.734260376702891e-09
     particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    # particle_posns = np.array([[0,0,0]],dtype=np.float64)
-    particle_posns = np.array([[0,0,0],[9,0,0]],dtype=np.float64)
+    particle_posns = np.array([[0,0,0]],dtype=np.float64)
+    # particle_posns = np.array([[0,0,0],[9,0,0]],dtype=np.float64)
     num_particles = particle_posns.shape[0]
     if num_particles == 1:
         separation = None
@@ -239,7 +239,7 @@ def main():
     save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing/'
     if not (os.path.isdir(save_dir)):
         os.mkdir(save_dir)
-    savename = save_dir + f'{num_particles}_particles_magnetization_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+    savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
     plt.savefig(savename)
     print(f'32bit and 64bit magnetization match?:{np.allclose(magnetization,M32bit)}')
     print(f'32bit and 64bit magnetic forces match?:{np.allclose(mag_forces,mag_forces32bit)}')
@@ -257,7 +257,7 @@ def main():
     axs[2].set_xlabel('B Field (T)')
     axs[2].set_ylabel('Magnetic Force Z-Dir')
     fig.legend(labels=['64bit','32bit'])
-    savename = save_dir + f'{num_particles}_particles_mag_forces_64bit_vs_32bit_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+    savename = save_dir + f'{num_particles}_particles_chi_{chi}_mag_forces_64bit_vs_32bit_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
     plt.savefig(savename)
 
 if __name__ == "__main__":
