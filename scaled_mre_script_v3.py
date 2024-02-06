@@ -468,6 +468,43 @@ def run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext
                 print(f'reusing previously calculated solution with B_ext = {mu0*output_file_Hext}')
     return total_delta, return_status
 
+def run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
+    """Run a simulation applying a series of a particular type of strain to the volume with a series of applied external magnetic fields, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
+    total_delta = 0
+    for count, stress in enumerate(stresses):
+        boundary_conditions = (bc_type,(bc_direction[0],bc_direction[1]),stress)
+        for i, Hext in enumerate(Hext_series):
+            if output_dir[-1] != '/':
+                current_output_dir = output_dir + f'/stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            elif output_dir[-1] == '/':
+                current_output_dir = output_dir + f'stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            if not (os.path.isdir(current_output_dir)):
+                os.mkdir(current_output_dir)
+            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=2)}, {np.round(Hext[1]*mu0,decimals=2)}, {np.round(Hext[2]*mu0,decimals=2)}) T\n')
+            start = time.time()
+            try:
+                sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+            except Exception as inst:
+                print('Exception raised during simulation')
+                print(type(inst))
+                print(inst)
+            end = time.time()
+            delta = end - start
+            total_delta += delta
+            final_posns = sol[:int(sol.shape[0]/2)]
+            N_nodes = int(sol.shape[0]/6)
+            final_posns = np.reshape(final_posns,(N_nodes,3))
+            print('took %.2f seconds to simulate' % delta)
+            output_file_number = count*Hext_series.shape[0]+i
+            mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
+            #if we have already run a particular simulation with zero strain and at some field, use that as the starting point for the solution
+            if (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(stresses)-1):
+                output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
+                x0, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
+                print(f'reusing previously calculated solution with B_ext = {mu0*output_file_Hext}')
+                x0 = cp.array(x0.astype(np.float32)).reshape((x0.shape[0]*x0.shape[1],1),order='C')
+    return total_delta, return_status
+
 def main():
     E = 1e3
     nu = 0.499
@@ -947,7 +984,7 @@ def experimental_simulation_tests():
 def experimental_stress_simulation_tests():
     """A simulation with the stiffness constants set to zero and the additional bulk modulus set to zero, used for testing the impact of node-node WCA forces and particle-particle WCA forces for an attractive magnetic field and particle configuration. What kinds of accelerations occur? Where do the particles stop, or do they stop at all? How much does the system oscillate around equilibrium?"""
     youngs_modulus = [9e3]
-    discretizations = [1]
+    discretizations = [0]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.1/mu0
     n_field_steps = 1
@@ -971,7 +1008,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.25,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=1,max_integration_steps=100,tolerance=1e-4,gpu_flag=False)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=2,max_integration_steps=100,tolerance=1e-4,gpu_flag=True)
                         total_sim_num += 1
     print(total_sim_num)
 
@@ -1216,8 +1253,10 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     
     if gpu_flag:
         # print(np.can_cast(np.float64,np.float32))
-        x0 = np.float32(normalized_posns.copy())
-        beta_i = np.float32(beta_i)
+        # x0 = np.float32(normalized_posns.copy())
+        x0 = cp.array(normalized_posns.astype(np.float32)).reshape((normalized_posns.shape[0]*normalized_posns.shape[1],1),order='C')
+        # beta_i = np.float32(beta_i)
+        beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
         beta = np.float32(beta)
         drag = np.float32(drag)
         stresses = np.float32(stresses)
@@ -1234,7 +1273,9 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
         Ms = np.float32(Ms)
         elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
         springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
-    simulation_time, return_status = run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True,gpu_flag=gpu_flag)
+        step_size = cp.float32(0.01)
+    simulation_time, return_status = run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag=True)
+    # simulation_time, return_status = run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True,gpu_flag=gpu_flag)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
 if __name__ == "__main__":
