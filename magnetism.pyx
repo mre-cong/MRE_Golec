@@ -452,13 +452,18 @@ cdef np.ndarray[np.float32_t, ndim=1] get_dip_dip_force_32bit(float[:] m_i, floa
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float[:,::1] M, float[:,::1] particle_posns, float particle_radius, float l_e):
+cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float[:,::1] M, float[:,::1] particle_posns, float particle_radius, float l_e, float Ms):
     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
     cdef int N_particles = particle_posns.shape[0]
     cdef np.ndarray[np.float32_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float32)
     cdef int i
     cdef int j
     cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef float MAX_FORCE_NORM = (3*mu0_32bit)/(2*np.pi*pow(2*particle_radius,4))*pow(particle_V,2)*pow(Ms,2)
+    cdef float[3] rij = np.empty((3,),dtype=np.float32)
+    cdef float rij_mag = 0
+    cdef float force_norm = 0
+    cdef float force_norm_ratio = 1
     cdef np.ndarray[np.float32_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float32)
     cdef float[3] r_i = np.empty((3,),dtype=np.float32)
     cdef float[3] r_j = np.empty((3,),dtype=np.float32)
@@ -476,8 +481,23 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float
             r_j[0] = particle_posns[j,0]
             r_j[1] = particle_posns[j,1]
             r_j[2] = particle_posns[j,2]
+            for my_counter in range(3):
+                rij[my_counter] = r_i[my_counter] - r_j[my_counter]
+            rij_mag = sqrt(dot_prod_32bit(rij,rij))
             force = get_dip_dip_force_32bit(moments[i,:],moments[j,:],r_i,r_j)
+            force_norm = sqrt(dot_prod_32bit(force,force))
+            if rij_mag < 4.5e-6:
+                print(f'force: {force}')
+                print(f'force_norm_si: {force_norm}')
             wca_force = get_particle_wca_force_normalized_32bit(r_i,r_j,particle_radius,l_e)
+            # if force_norm > MAX_FORCE_NORM:
+            #     force_norm_ratio = MAX_FORCE_NORM/force_norm
+            #     print(f'force norm ratio: {force_norm_ratio}\n force norm: {force_norm}')
+            #     force[0] *= force_norm_ratio
+            #     force[1] *= force_norm_ratio
+            #     force[2] *= force_norm_ratio
+            #     print(f'new force: {force}')
+            #     print(f'wca_force: {wca_force}')
             forces[i,0] += force[0]
             forces[i,1] += force[1]
             forces[i,2] += force[2]
@@ -497,12 +517,13 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float
 cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(float[:] r_i, float[:] r_j, float particle_radius,float l_e):
     """Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
     cdef float wca_mag
-    cdef float sigma = (2*particle_radius+1e-6)/l_e#want there to be some volume/space between the particles even if they are strongly attracted
+    cdef float SURFACE_TO_SURFACE_SPACING = 1e-6
+    cdef float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING)#/l_e#want there to be some volume/space between the particles even if they are strongly attracted
     cdef float cutoff_length = pow(2,(1/6))*sigma
     cdef float[3] rij
     cdef int i
     for i in range(3):
-        rij[i] = r_i[i] - r_j[i]
+        rij[i] = (r_i[i] - r_j[i])#/l_e
     cdef float rij_mag =  sqrt(dot_prod_32bit(rij,rij))
     cdef np.ndarray[np.float32_t, ndim=1] force = np.empty((3,),dtype=np.float32)
     cdef float eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*pi*(Ms**2)*(R**3)/72

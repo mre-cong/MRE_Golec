@@ -1008,7 +1008,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=3,max_integration_steps=1000,tolerance=1e-4,gpu_flag=True)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=3,max_integration_steps=3000,tolerance=1e-4,gpu_flag=True)
                         total_sim_num += 1
     print(total_sim_num)
 

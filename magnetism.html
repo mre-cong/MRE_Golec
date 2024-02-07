@@ -6122,19 +6122,25 @@ static PyObject *__pyx_pf_9magnetism_14get_dipole_field_normalized_32bit(CYTHON_
 </pre><pre class="cython line score-0">&#xA0;<span class="">452</span>: </pre>
 <pre class="cython line score-0">&#xA0;<span class="">453</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
 <pre class="cython line score-0">&#xA0;<span class="">454</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
-<pre class="cython line score-90" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">455</span>: <span class="k">cpdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">2</span><span class="p">]</span> <span class="n">get_dip_dip_forces_normalized_32bit</span><span class="p">(</span><span class="nb">float</span><span class="p">[:,::</span><span class="mf">1</span><span class="p">]</span> <span class="n">M</span><span class="p">,</span> <span class="nb">float</span><span class="p">[:,::</span><span class="mf">1</span><span class="p">]</span> <span class="n">particle_posns</span><span class="p">,</span> <span class="nb">float</span> <span class="n">particle_radius</span><span class="p">,</span> <span class="nb">float</span> <span class="n">l_e</span><span class="p">):</span></pre>
-<pre class='cython code score-90 '>static PyObject *__pyx_pw_9magnetism_17get_dip_dip_forces_normalized_32bit(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized_32bit(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, float __pyx_v_particle_radius, float __pyx_v_l_e, CYTHON_UNUSED int __pyx_skip_dispatch) {
+<pre class="cython line score-106" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">455</span>: <span class="k">cpdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">2</span><span class="p">]</span> <span class="n">get_dip_dip_forces_normalized_32bit</span><span class="p">(</span><span class="nb">float</span><span class="p">[:,::</span><span class="mf">1</span><span class="p">]</span> <span class="n">M</span><span class="p">,</span> <span class="nb">float</span><span class="p">[:,::</span><span class="mf">1</span><span class="p">]</span> <span class="n">particle_posns</span><span class="p">,</span> <span class="nb">float</span> <span class="n">particle_radius</span><span class="p">,</span> <span class="nb">float</span> <span class="n">l_e</span><span class="p">,</span> <span class="nb">float</span> <span class="n">Ms</span><span class="p">):</span></pre>
+<pre class='cython code score-106 '>static PyObject *__pyx_pw_9magnetism_17get_dip_dip_forces_normalized_32bit(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized_32bit(__Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, float __pyx_v_particle_radius, float __pyx_v_l_e, float __pyx_v_Ms, CYTHON_UNUSED int __pyx_skip_dispatch) {
   int __pyx_v_N_particles;
   PyArrayObject *__pyx_v_forces = 0;
   int __pyx_v_i;
   int __pyx_v_j;
   float __pyx_v_particle_V;
+  CYTHON_UNUSED float __pyx_v_MAX_FORCE_NORM;
+  float __pyx_v_rij[3];
+  float __pyx_v_rij_mag;
+  float __pyx_v_force_norm;
+  CYTHON_UNUSED float __pyx_v_force_norm_ratio;
   PyArrayObject *__pyx_v_moments = 0;
   float __pyx_v_r_i[3];
   float __pyx_v_r_j[3];
   float __pyx_v_force[3];
   float __pyx_v_wca_force[3];
+  long __pyx_v_my_counter;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_forces;
   __Pyx_Buffer __pyx_pybuffer_forces;
   __Pyx_LocalBuf_ND __pyx_pybuffernd_moments;
@@ -6158,11 +6164,11 @@ static PyArrayObject *__pyx_f_9magnetism_get_dip_dip_forces_normalized_32bit(__P
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_20, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_21, 1);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_t_22));
+  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_t_21));
+  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_22, 1);
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_23, 1);
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
+  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_25, 1);
   { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
@@ -6192,16 +6198,19 @@ static PyObject *__pyx_pw_9magnetism_17get_dip_dip_forces_normalized_32bit(PyObj
   __Pyx_memviewslice __pyx_v_particle_posns = { 0, 0, { 0 }, { 0 }, { 0 } };
   float __pyx_v_particle_radius;
   float __pyx_v_l_e;
+  float __pyx_v_Ms;
   PyObject *__pyx_r = 0;
   <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
   <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_dip_dip_forces_normalized_32bit (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&amp;__pyx_n_s_M,&amp;__pyx_n_s_particle_posns,&amp;__pyx_n_s_particle_radius,&amp;__pyx_n_s_l_e,0};
-    PyObject* values[4] = {0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&amp;__pyx_n_s_M,&amp;__pyx_n_s_particle_posns,&amp;__pyx_n_s_particle_radius,&amp;__pyx_n_s_l_e,&amp;__pyx_n_s_Ms,0};
+    PyObject* values[5] = {0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args);
       switch (pos_args) {
+        case  5: values[4] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
         case  4: values[3] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 3);
         CYTHON_FALLTHROUGH;
         case  3: values[2] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 2);
@@ -6222,46 +6231,54 @@ static PyObject *__pyx_pw_9magnetism_17get_dip_dip_forces_normalized_32bit(PyObj
         case  1:
         if (likely((values[1] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_particle_posns)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 4, 4, 1); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 5, 5, 1); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_particle_radius)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 4, 4, 2); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 5, 5, 2); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_l_e)) != 0)) kw_args--;
         else {
-          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 4, 4, 3); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 5, 5, 3); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+        }
+        CYTHON_FALLTHROUGH;
+        case  4:
+        if (likely((values[4] = <span class='pyx_c_api'>__Pyx_PyDict_GetItemStr</span>(__pyx_kwds, __pyx_n_s_Ms)) != 0)) kw_args--;
+        else {
+          <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 5, 5, 4); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
         }
       }
       if (unlikely(kw_args &gt; 0)) {
         if (unlikely(<span class='pyx_c_api'>__Pyx_ParseOptionalKeywords</span>(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "get_dip_dip_forces_normalized_32bit") &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
       }
-    } else if (<span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args) != 4) {
+    } else if (<span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 0);
       values[1] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 1);
       values[2] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 2);
       values[3] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 3);
+      values[4] = <span class='py_macro_api'>PyTuple_GET_ITEM</span>(__pyx_args, 4);
     }
     __pyx_v_M = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_float</span>(values[0], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_M.memview)) __PYX_ERR(0, 455, __pyx_L3_error)</span>
     __pyx_v_particle_posns = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_d_dc_float</span>(values[1], PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_v_particle_posns.memview)) __PYX_ERR(0, 455, __pyx_L3_error)</span>
     __pyx_v_particle_radius = __pyx_<span class='py_c_api'>PyFloat_AsFloat</span>(values[2]); if (unlikely((__pyx_v_particle_radius == (float)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
     __pyx_v_l_e = __pyx_<span class='py_c_api'>PyFloat_AsFloat</span>(values[3]); if (unlikely((__pyx_v_l_e == (float)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+    __pyx_v_Ms = __pyx_<span class='py_c_api'>PyFloat_AsFloat</span>(values[4]); if (unlikely((__pyx_v_Ms == (float)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 4, 4, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
+  <span class='pyx_c_api'>__Pyx_RaiseArgtupleInvalid</span>("get_dip_dip_forces_normalized_32bit", 1, 5, 5, <span class='py_macro_api'>PyTuple_GET_SIZE</span>(__pyx_args)); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L3_error)</span>
   __pyx_L3_error:;
   <span class='pyx_c_api'>__Pyx_AddTraceback</span>("magnetism.get_dip_dip_forces_normalized_32bit", __pyx_clineno, __pyx_lineno, __pyx_filename);
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e);
+  __pyx_r = __pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(__pyx_self, __pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e, __pyx_v_Ms);
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -6271,14 +6288,14 @@ static PyObject *__pyx_pw_9magnetism_17get_dip_dip_forces_normalized_32bit(PyObj
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, float __pyx_v_particle_radius, float __pyx_v_l_e) {
+static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHON_UNUSED PyObject *__pyx_self, __Pyx_memviewslice __pyx_v_M, __Pyx_memviewslice __pyx_v_particle_posns, float __pyx_v_particle_radius, float __pyx_v_l_e, float __pyx_v_Ms) {
   PyObject *__pyx_r = NULL;
   <span class='refnanny'>__Pyx_RefNannyDeclarations</span>
   <span class='refnanny'>__Pyx_RefNannySetupContext</span>("get_dip_dip_forces_normalized_32bit", 0);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_r);
   if (unlikely(!__pyx_v_M.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("M"); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L1_error)</span> }
   if (unlikely(!__pyx_v_particle_posns.memview)) { <span class='pyx_c_api'>__Pyx_RaiseUnboundLocalError</span>("particle_posns"); <span class='error_goto'>__PYX_ERR(0, 455, __pyx_L1_error)</span> }
-  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized_32bit(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e, 0));<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 455, __pyx_L1_error)</span>
+  __pyx_t_1 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_forces_normalized_32bit(__pyx_v_M, __pyx_v_particle_posns, __pyx_v_particle_radius, __pyx_v_l_e, __pyx_v_Ms, 0));<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 455, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6370,365 +6387,535 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
   __pyx_t_7 = __pyx_<span class='py_c_api'>PyFloat_AsFloat</span>(__pyx_t_5); if (unlikely((__pyx_t_7 == (float)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 461, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_particle_V = __pyx_t_7;
-</pre><pre class="cython line score-44" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">462</span>:     <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">2</span><span class="p">]</span> <span class="n">moments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">N_particles</span><span class="p">,</span><span class="mf">3</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
-<pre class='cython code score-44 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+</pre><pre class="cython line score-67" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">462</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">MAX_FORCE_NORM</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3</span><span class="o">*</span><span class="n">mu0_32bit</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="mf">2</span><span class="o">*</span><span class="n">particle_radius</span><span class="p">,</span><span class="mf">4</span><span class="p">))</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">particle_V</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">Ms</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span></pre>
+<pre class='cython code score-67 '>  __pyx_t_5 = <span class='py_c_api'>PyFloat_FromDouble</span>((3.0 * __pyx_v_9magnetism_mu0_32bit));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_N_particles);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  __pyx_t_3 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_pi);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_5);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 0, __pyx_t_5);
-  <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_int_3);
-  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_int_3);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 1, __pyx_int_3);
-  __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='py_c_api'>PyTuple_New</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_3);
-  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_5, 0, __pyx_t_3);
-  __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_2, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_2, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_1, __pyx_t_5, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_1 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_int_2, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 462, __pyx_L1_error)</span>
-  __pyx_t_8 = ((PyArrayObject *)__pyx_t_4);
-  {
-    __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(<span class='pyx_c_api'>__Pyx_GetBufferAndValidate</span>(&amp;__pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer, (PyObject*)__pyx_t_8, &amp;__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
-      __pyx_v_moments = ((PyArrayObject *)Py_None); <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None); __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.buf = NULL;
-      <span class='error_goto'>__PYX_ERR(0, 462, __pyx_L1_error)</span>
-    } else {__pyx_pybuffernd_moments.diminfo[0].strides = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.strides[0]; __pyx_pybuffernd_moments.diminfo[0].shape = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.shape[0]; __pyx_pybuffernd_moments.diminfo[1].strides = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.strides[1]; __pyx_pybuffernd_moments.diminfo[1].shape = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.shape[1];
-    }
-  }
-  __pyx_t_8 = 0;
-  __pyx_v_moments = ((PyArrayObject *)__pyx_t_4);
-  __pyx_t_4 = 0;
-</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">463</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">r_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
-<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_4, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_4, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
+  __pyx_t_3 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow((2.0 * __pyx_v_particle_radius), 4.0));<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  __pyx_t_2 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_t_1, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyNumber_Divide</span>(__pyx_t_5, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow(__pyx_v_particle_V, 2.0));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  __pyx_t_5 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_t_3, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = <span class='py_c_api'>PyFloat_FromDouble</span>(pow(__pyx_v_Ms, 2.0));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  __pyx_t_3 = <span class='py_c_api'>PyNumber_Multiply</span>(__pyx_t_5, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_7 = __pyx_<span class='py_c_api'>PyFloat_AsFloat</span>(__pyx_t_3); if (unlikely((__pyx_t_7 == (float)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 462, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_v_MAX_FORCE_NORM = __pyx_t_7;
+</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">463</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">rij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_3, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
   __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_1) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 463, __pyx_L1_error)</span>
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 463, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_3, __pyx_tuple__2, __pyx_t_4);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_2, __pyx_tuple__2, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 463, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_1, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 463, __pyx_L1_error)</span>
+  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_1, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 463, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  memcpy(&amp;(__pyx_v_r_i[0]), __pyx_t_9, sizeof(__pyx_v_r_i[0]) * (3));
-</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">464</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">r_j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
-<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
+  memcpy(&amp;(__pyx_v_rij[0]), __pyx_t_8, sizeof(__pyx_v_rij[0]) * (3));
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">464</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">rij_mag</span> <span class="o">=</span> <span class="mf">0</span></pre>
+<pre class='cython code score-0 '>  __pyx_v_rij_mag = 0.0;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">465</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">force_norm</span> <span class="o">=</span> <span class="mf">0</span></pre>
+<pre class='cython code score-0 '>  __pyx_v_force_norm = 0.0;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">466</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">force_norm_ratio</span> <span class="o">=</span> <span class="mf">1</span></pre>
+<pre class='cython code score-0 '>  __pyx_v_force_norm_ratio = 1.0;
+</pre><pre class="cython line score-44" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">467</span>:     <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">2</span><span class="p">]</span> <span class="n">moments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">N_particles</span><span class="p">,</span><span class="mf">3</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-44 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_3, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_4, __pyx_tuple__2, __pyx_t_1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_5, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 464, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  memcpy(&amp;(__pyx_v_r_j[0]), __pyx_t_9, sizeof(__pyx_v_r_j[0]) * (3));
-</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">465</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
-<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_4, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_4, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_1, __pyx_tuple__2, __pyx_t_5);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 465, __pyx_L1_error)</span>
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_3, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 465, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  memcpy(&amp;(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
-</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">466</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">wca_force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="c">#additional repulsive force to keep the particles from collapsing on one another</span></pre>
-<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_3, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_N_particles);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 466, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_5, __pyx_tuple__2, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 466, __pyx_L1_error)</span>
+  __pyx_t_2 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_1);
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 0, __pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_int_3);
+  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_int_3);
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 1, __pyx_int_3);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = <span class='py_c_api'>PyTuple_New</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_2);
+  <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_1, 0, __pyx_t_2);
+  __pyx_t_2 = 0;
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 466, __pyx_L1_error)</span>
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 467, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-  memcpy(&amp;(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">467</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_particles</span><span class="p">):</span></pre>
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_3, __pyx_t_1, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 467, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 467, __pyx_L1_error)</span>
+  __pyx_t_9 = ((PyArrayObject *)__pyx_t_4);
+  {
+    __Pyx_BufFmt_StackElem __pyx_stack[1];
+    if (unlikely(<span class='pyx_c_api'>__Pyx_GetBufferAndValidate</span>(&amp;__pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer, (PyObject*)__pyx_t_9, &amp;__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) {
+      __pyx_v_moments = ((PyArrayObject *)Py_None); <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None); __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.buf = NULL;
+      <span class='error_goto'>__PYX_ERR(0, 467, __pyx_L1_error)</span>
+    } else {__pyx_pybuffernd_moments.diminfo[0].strides = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.strides[0]; __pyx_pybuffernd_moments.diminfo[0].shape = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.shape[0]; __pyx_pybuffernd_moments.diminfo[1].strides = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.strides[1]; __pyx_pybuffernd_moments.diminfo[1].shape = __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.shape[1];
+    }
+  }
+  __pyx_t_9 = 0;
+  __pyx_v_moments = ((PyArrayObject *)__pyx_t_4);
+  __pyx_t_4 = 0;
+</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">468</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">r_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_4, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_4, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_3) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_2, __pyx_tuple__2, __pyx_t_4);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_3, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 468, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  memcpy(&amp;(__pyx_v_r_i[0]), __pyx_t_8, sizeof(__pyx_v_r_i[0]) * (3));
+</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">469</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">r_j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_3, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_2, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_2, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_4, __pyx_tuple__2, __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_1, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 469, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  memcpy(&amp;(__pyx_v_r_j[0]), __pyx_t_8, sizeof(__pyx_v_r_j[0]) * (3));
+</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">470</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_1, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  __pyx_t_3 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_1, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_4, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_4, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_2) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_3, __pyx_tuple__2, __pyx_t_1);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_2, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 470, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  memcpy(&amp;(__pyx_v_force[0]), __pyx_t_8, sizeof(__pyx_v_force[0]) * (3));
+</pre><pre class="cython line score-23" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">471</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">wca_force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="c">#additional repulsive force to keep the particles from collapsing on one another</span></pre>
+<pre class='cython code score-23 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_2, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  __pyx_t_1 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_2, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_1);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_3, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_3, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_4) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_1, __pyx_tuple__2, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_1); __pyx_t_1 = 0;
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+  if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 471, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+  memcpy(&amp;(__pyx_v_wca_force[0]), __pyx_t_8, sizeof(__pyx_v_wca_force[0]) * (3));
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">472</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_particles</span><span class="p">):</span></pre>
 <pre class='cython code score-0 '>  __pyx_t_10 = __pyx_v_N_particles;
   __pyx_t_11 = __pyx_t_10;
   for (__pyx_t_12 = 0; __pyx_t_12 &lt; __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">468</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">473</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
 <pre class='cython code score-0 '>    __pyx_t_13 = __pyx_v_i;
     __pyx_t_14 = 0;
     __pyx_t_15 = __pyx_v_i;
     __pyx_t_16 = 0;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">469</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">474</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
 <pre class='cython code score-0 '>    __pyx_t_14 = __pyx_v_i;
     __pyx_t_13 = 1;
     __pyx_t_16 = __pyx_v_i;
     __pyx_t_15 = 1;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_14 * __pyx_v_M.strides[0]) )) + __pyx_t_13)) ))) * __pyx_v_particle_V);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">470</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">475</span>:         <span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">M</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span><span class="o">*</span><span class="n">particle_V</span></pre>
 <pre class='cython code score-0 '>    __pyx_t_13 = __pyx_v_i;
     __pyx_t_14 = 2;
     __pyx_t_15 = __pyx_v_i;
     __pyx_t_16 = 2;
     *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_moments.rcbuffer-&gt;pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_moments.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_moments.diminfo[1].strides) = ((*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_M.data + __pyx_t_13 * __pyx_v_M.strides[0]) )) + __pyx_t_14)) ))) * __pyx_v_particle_V);
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">471</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_particles</span><span class="p">):</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">476</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_particles</span><span class="p">):</span></pre>
 <pre class='cython code score-0 '>  __pyx_t_10 = __pyx_v_N_particles;
   __pyx_t_11 = __pyx_t_10;
   for (__pyx_t_12 = 0; __pyx_t_12 &lt; __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i = __pyx_t_12;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">472</span>:         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mf">1</span><span class="p">,</span><span class="n">N_particles</span><span class="p">):</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">477</span>:         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mf">1</span><span class="p">,</span><span class="n">N_particles</span><span class="p">):</span></pre>
 <pre class='cython code score-0 '>    __pyx_t_17 = __pyx_v_N_particles;
     __pyx_t_18 = __pyx_t_17;
     for (__pyx_t_19 = (__pyx_v_i + 1); __pyx_t_19 &lt; __pyx_t_18; __pyx_t_19+=1) {
       __pyx_v_j = __pyx_t_19;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">473</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">478</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 0;
       (__pyx_v_r_i[0]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">474</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">479</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_i;
       __pyx_t_14 = 1;
       (__pyx_v_r_i[1]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">475</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">480</span>:             <span class="n">r_i</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 2;
       (__pyx_v_r_i[2]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">476</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">481</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 0;
       (__pyx_v_r_j[0]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">477</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">482</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_j;
       __pyx_t_13 = 1;
       (__pyx_v_r_j[1]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_14 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_13)) )));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">478</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">483</span>:             <span class="n">r_j</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">particle_posns</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
       (__pyx_v_r_j[2]) = (*((float *) ( /* dim=1 */ ((char *) (((float *) ( /* dim=0 */ (__pyx_v_particle_posns.data + __pyx_t_13 * __pyx_v_particle_posns.strides[0]) )) + __pyx_t_14)) )));
-</pre><pre class="cython line score-45" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">479</span>:             <span class="n">force</span> <span class="o">=</span> <span class="n">get_dip_dip_force_32bit</span><span class="p">(</span><span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span><span class="n">moments</span><span class="p">[</span><span class="n">j</span><span class="p">,:],</span><span class="n">r_i</span><span class="p">,</span><span class="n">r_j</span><span class="p">)</span></pre>
-<pre class='cython code score-45 '>      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_i);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">484</span>:             <span class="k">for</span> <span class="n">my_counter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mf">3</span><span class="p">):</span></pre>
+<pre class='cython code score-0 '>      for (__pyx_t_20 = 0; __pyx_t_20 &lt; 3; __pyx_t_20+=1) {
+        __pyx_v_my_counter = __pyx_t_20;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">485</span>:                 <span class="n">rij</span><span class="p">[</span><span class="n">my_counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_i</span><span class="p">[</span><span class="n">my_counter</span><span class="p">]</span> <span class="o">-</span> <span class="n">r_j</span><span class="p">[</span><span class="n">my_counter</span><span class="p">]</span></pre>
+<pre class='cython code score-0 '>        (__pyx_v_rij[__pyx_v_my_counter]) = ((__pyx_v_r_i[__pyx_v_my_counter]) - (__pyx_v_r_j[__pyx_v_my_counter]));
+      }
+</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">486</span>:             <span class="n">rij_mag</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">dot_prod_32bit</span><span class="p">(</span><span class="n">rij</span><span class="p">,</span><span class="n">rij</span><span class="p">))</span></pre>
+<pre class='cython code score-12 '>      __pyx_t_2 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
       <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_3 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_4);
-      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 0, __pyx_t_4);
-      <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_slice__3);
-      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_slice__3);
-      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 1, __pyx_slice__3);
-      __pyx_t_4 = 0;
-      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetItem</span>(((PyObject *)__pyx_v_moments), __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_20 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(__pyx_t_4, PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_20.memview)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
+      __pyx_t_21 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_rij);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
       <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_j);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_22 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_22.memview)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
       <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_3 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_4);
-      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 0, __pyx_t_4);
-      <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_slice__3);
-      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_slice__3);
-      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_3, 1, __pyx_slice__3);
-      __pyx_t_4 = 0;
-      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetItem</span>(((PyObject *)__pyx_v_moments), __pyx_t_3);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_21 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(__pyx_t_4, PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_21.memview)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
+      __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_2, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_rij);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
       <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_3 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) <span class='error_goto'>__PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_22);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_23 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_22), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) <span class='error_goto'>__PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_22);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_24 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_22), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force_32bit(__pyx_t_20, __pyx_t_21, __pyx_t_23, __pyx_t_24));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_20, 1);
-      __pyx_t_20.memview = NULL;
-      __pyx_t_20.data = NULL;
-      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_21, 1);
-      __pyx_t_21.memview = NULL;
-      __pyx_t_21.data = NULL;
+      __pyx_t_23 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 486, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod_32bit(__pyx_t_22, __pyx_t_23));
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_22, 1);
+      __pyx_t_22.memview = NULL;
+      __pyx_t_22.data = NULL;
       __PYX_XDEC_MEMVIEW(&amp;__pyx_t_23, 1);
       __pyx_t_23.memview = NULL;
       __pyx_t_23.data = NULL;
-      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
-      __pyx_t_24.memview = NULL;
-      __pyx_t_24.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 479, __pyx_L1_error)</span>
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      memcpy(&amp;(__pyx_v_force[0]), __pyx_t_9, sizeof(__pyx_v_force[0]) * (3));
-</pre><pre class="cython line score-13" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">480</span>:             <span class="n">wca_force</span> <span class="o">=</span> <span class="n">get_particle_wca_force_normalized_32bit</span><span class="p">(</span><span class="n">r_i</span><span class="p">,</span><span class="n">r_j</span><span class="p">,</span><span class="n">particle_radius</span><span class="p">,</span><span class="n">l_e</span><span class="p">)</span></pre>
-<pre class='cython code score-13 '>      __pyx_t_3 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
+</pre><pre class="cython line score-45" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">487</span>:             <span class="n">force</span> <span class="o">=</span> <span class="n">get_dip_dip_force_32bit</span><span class="p">(</span><span class="n">moments</span><span class="p">[</span><span class="n">i</span><span class="p">,:],</span><span class="n">moments</span><span class="p">[</span><span class="n">j</span><span class="p">,:],</span><span class="n">r_i</span><span class="p">,</span><span class="n">r_j</span><span class="p">)</span></pre>
+<pre class='cython code score-45 '>      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_i);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
       <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_22 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_3), (char *) "fortran", (char *) __pyx_v_r_i);
-      if (unlikely(!__pyx_t_22)) <span class='error_goto'>__PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_22);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_24 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_22), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
+      __pyx_t_2 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_4);
+      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 0, __pyx_t_4);
+      <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_slice__3);
+      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_slice__3);
+      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 1, __pyx_slice__3);
+      __pyx_t_4 = 0;
+      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetItem</span>(((PyObject *)__pyx_v_moments), __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
       <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __pyx_t_3 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_3);
-      __pyx_t_22 = __pyx_array_new(__pyx_t_3, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
-      if (unlikely(!__pyx_t_22)) <span class='error_goto'>__PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_22);
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_3); __pyx_t_3 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_23 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(__pyx_t_4, PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
       <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_23 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_22), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_23.memview)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
-      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_22)); __pyx_t_22 = 0;
-      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized_32bit(__pyx_t_24, __pyx_t_23, __pyx_v_particle_radius, __pyx_v_l_e));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 480, __pyx_L1_error)</span>
+      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyInt_From_int</span>(__pyx_v_j);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
       <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
-      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
-      __pyx_t_24.memview = NULL;
-      __pyx_t_24.data = NULL;
+      __pyx_t_2 = <span class='py_c_api'>PyTuple_New</span>(2);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_t_4);
+      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 0, __pyx_t_4);
+      <span class='pyx_macro_api'>__Pyx_INCREF</span>(__pyx_slice__3);
+      <span class='refnanny'>__Pyx_GIVEREF</span>(__pyx_slice__3);
+      <span class='py_macro_api'>PyTuple_SET_ITEM</span>(__pyx_t_2, 1, __pyx_slice__3);
+      __pyx_t_4 = 0;
+      __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_GetItem</span>(((PyObject *)__pyx_v_moments), __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_22 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(__pyx_t_4, PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_22.memview)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_2 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_r_i);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_24 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_2, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_25 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_dip_dip_force_32bit(__pyx_t_23, __pyx_t_22, __pyx_t_24, __pyx_t_25));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 487, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
       __PYX_XDEC_MEMVIEW(&amp;__pyx_t_23, 1);
       __pyx_t_23.memview = NULL;
       __pyx_t_23.data = NULL;
-      if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_9, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 480, __pyx_L1_error)</span>
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_22, 1);
+      __pyx_t_22.memview = NULL;
+      __pyx_t_22.data = NULL;
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
+      __pyx_t_24.memview = NULL;
+      __pyx_t_24.data = NULL;
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_25, 1);
+      __pyx_t_25.memview = NULL;
+      __pyx_t_25.data = NULL;
+      if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 487, __pyx_L1_error)</span>
       <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
-      memcpy(&amp;(__pyx_v_wca_force[0]), __pyx_t_9, sizeof(__pyx_v_wca_force[0]) * (3));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">481</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
+      memcpy(&amp;(__pyx_v_force[0]), __pyx_t_8, sizeof(__pyx_v_force[0]) * (3));
+</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">488</span>:             <span class="n">force_norm</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">dot_prod_32bit</span><span class="p">(</span><span class="n">force</span><span class="p">,</span><span class="n">force</span><span class="p">))</span></pre>
+<pre class='cython code score-12 '>      __pyx_t_2 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_force);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_25 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_2, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_force);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_24 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 488, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_v_force_norm = sqrt(__pyx_f_9magnetism_dot_prod_32bit(__pyx_t_25, __pyx_t_24));
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_25, 1);
+      __pyx_t_25.memview = NULL;
+      __pyx_t_25.data = NULL;
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
+      __pyx_t_24.memview = NULL;
+      __pyx_t_24.data = NULL;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">489</span>:             <span class="k">if</span> <span class="n">rij_mag</span> <span class="o">&lt;</span> <span class="mf">4.5e-6</span><span class="p">:</span></pre>
+<pre class='cython code score-0 '>      __pyx_t_26 = ((__pyx_v_rij_mag &lt; 4.5e-6) != 0);
+      if (__pyx_t_26) {
+/* … */
+      }
+</pre><pre class="cython line score-10" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">490</span>:                 <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s">&#39;force: {force}&#39;</span><span class="p">)</span></pre>
+<pre class='cython code score-10 '>        __pyx_t_4 = __Pyx_carray_to_py_float(__pyx_v_force, 3);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 490, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+        __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_FormatSimple</span>(__pyx_t_4, __pyx_empty_unicode);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 490, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+        __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyUnicode_Concat</span>(__pyx_kp_u_force, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 490, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+        __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyObject_CallOneArg</span>(__pyx_builtin_print, __pyx_t_4);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 490, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+</pre><pre class="cython line score-15" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">491</span>:                 <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s">&#39;force_norm_si: {force_norm}&#39;</span><span class="p">)</span></pre>
+<pre class='cython code score-15 '>        __pyx_t_2 = <span class='py_c_api'>PyFloat_FromDouble</span>(__pyx_v_force_norm);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 491, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+        __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_FormatSimple</span>(__pyx_t_2, __pyx_empty_unicode);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 491, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+        __pyx_t_2 = <span class='pyx_c_api'>__Pyx_PyUnicode_Concat</span>(__pyx_kp_u_force_norm_si, __pyx_t_4);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 491, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+        __pyx_t_4 = <span class='pyx_c_api'>__Pyx_PyObject_CallOneArg</span>(__pyx_builtin_print, __pyx_t_2);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 491, __pyx_L1_error)</span>
+        <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+        <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+</pre><pre class="cython line score-13" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">492</span>:             <span class="n">wca_force</span> <span class="o">=</span> <span class="n">get_particle_wca_force_normalized_32bit</span><span class="p">(</span><span class="n">r_i</span><span class="p">,</span><span class="n">r_j</span><span class="p">,</span><span class="n">particle_radius</span><span class="p">,</span><span class="n">l_e</span><span class="p">)</span></pre>
+<pre class='cython code score-13 '>      __pyx_t_2 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_4 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_4, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_2), (char *) "fortran", (char *) __pyx_v_r_i);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_24 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_24.memview)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __pyx_t_2 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_2);
+      __pyx_t_21 = __pyx_array_new(__pyx_t_2, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_4), (char *) "fortran", (char *) __pyx_v_r_j);
+      if (unlikely(!__pyx_t_21)) <span class='error_goto'>__PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_21);
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_2); __pyx_t_2 = 0;
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_25 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_21), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_25.memview)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_21)); __pyx_t_21 = 0;
+      __pyx_t_4 = ((PyObject *)__pyx_f_9magnetism_get_particle_wca_force_normalized_32bit(__pyx_t_24, __pyx_t_25, __pyx_v_particle_radius, __pyx_v_l_e));<span class='error_goto'> if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_24, 1);
+      __pyx_t_24.memview = NULL;
+      __pyx_t_24.data = NULL;
+      __PYX_XDEC_MEMVIEW(&amp;__pyx_t_25, 1);
+      __pyx_t_25.memview = NULL;
+      __pyx_t_25.data = NULL;
+      if (unlikely(__Pyx_carray_from_py_float(__pyx_t_4, __pyx_t_8, 3) &lt; 0)) <span class='error_goto'>__PYX_ERR(0, 492, __pyx_L1_error)</span>
+      <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_4); __pyx_t_4 = 0;
+      memcpy(&amp;(__pyx_v_wca_force[0]), __pyx_t_8, sizeof(__pyx_v_wca_force[0]) * (3));
+</pre><pre class="cython line score-0">&#xA0;<span class="">493</span>:             <span class="c"># if force_norm &gt; MAX_FORCE_NORM:</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">494</span>:             <span class="c">#     force_norm_ratio = MAX_FORCE_NORM/force_norm</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">495</span>:             <span class="c">#     print(f&#39;force norm ratio: {force_norm_ratio}\n force norm: {force_norm}&#39;)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">496</span>:             <span class="c">#     force[0] *= force_norm_ratio</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">497</span>:             <span class="c">#     force[1] *= force_norm_ratio</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">498</span>:             <span class="c">#     force[2] *= force_norm_ratio</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">499</span>:             <span class="c">#     print(f&#39;new force: {force}&#39;)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">500</span>:             <span class="c">#     print(f&#39;wca_force: {wca_force}&#39;)</span></pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">501</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[0]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">482</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">502</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_i;
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[1]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">483</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">503</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_force[2]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">484</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">504</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[0]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">485</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">505</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_j;
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[1]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">486</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">506</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_force[2]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">487</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">507</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[0]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">488</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">508</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_i;
       __pyx_t_14 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[1]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">489</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">509</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_i;
       __pyx_t_13 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) += (__pyx_v_wca_force[2]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">490</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">510</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">0</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">0</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 0;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[0]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">491</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">511</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">1</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_14 = __pyx_v_j;
       __pyx_t_13 = 1;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[1]);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">492</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">512</span>:             <span class="n">forces</span><span class="p">[</span><span class="n">j</span><span class="p">,</span><span class="mf">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">wca_force</span><span class="p">[</span><span class="mf">2</span><span class="p">]</span></pre>
 <pre class='cython code score-0 '>      __pyx_t_13 = __pyx_v_j;
       __pyx_t_14 = 2;
       *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_forces.rcbuffer-&gt;pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_14, __pyx_pybuffernd_forces.diminfo[1].strides) -= (__pyx_v_wca_force[2]);
     }
   }
-</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">493</span>:     <span class="k">return</span> <span class="n">forces</span></pre>
+</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">513</span>:     <span class="k">return</span> <span class="n">forces</span></pre>
 <pre class='cython code score-2 '>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_r));
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_forces));
   __pyx_r = ((PyArrayObject *)__pyx_v_forces);
   goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">494</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">495</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">496</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
-<pre class="cython line score-16" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">497</span>: <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">1</span><span class="p">]</span> <span class="n">get_particle_wca_force_normalized_32bit</span><span class="p">(</span><span class="nb">float</span><span class="p">[:]</span> <span class="n">r_i</span><span class="p">,</span> <span class="nb">float</span><span class="p">[:]</span> <span class="n">r_j</span><span class="p">,</span> <span class="nb">float</span> <span class="n">particle_radius</span><span class="p">,</span><span class="nb">float</span> <span class="n">l_e</span><span class="p">):</span></pre>
-<pre class='cython code score-16 '>static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized_32bit(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, float __pyx_v_particle_radius, float __pyx_v_l_e) {
+</pre><pre class="cython line score-0">&#xA0;<span class="">514</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">515</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">516</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
+<pre class="cython line score-16" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">517</span>: <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">1</span><span class="p">]</span> <span class="n">get_particle_wca_force_normalized_32bit</span><span class="p">(</span><span class="nb">float</span><span class="p">[:]</span> <span class="n">r_i</span><span class="p">,</span> <span class="nb">float</span><span class="p">[:]</span> <span class="n">r_j</span><span class="p">,</span> <span class="nb">float</span> <span class="n">particle_radius</span><span class="p">,</span><span class="nb">float</span> <span class="n">l_e</span><span class="p">):</span></pre>
+<pre class='cython code score-16 '>static PyArrayObject *__pyx_f_9magnetism_get_particle_wca_force_normalized_32bit(__Pyx_memviewslice __pyx_v_r_i, __Pyx_memviewslice __pyx_v_r_j, float __pyx_v_particle_radius, CYTHON_UNUSED float __pyx_v_l_e) {
   float __pyx_v_wca_mag;
+  float __pyx_v_SURFACE_TO_SURFACE_SPACING;
   float __pyx_v_sigma;
   float __pyx_v_cutoff_length;
   float __pyx_v_rij[3];
@@ -6748,13 +6935,13 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
 /* … */
   /* function exit code */
   __pyx_L1_error:;
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_t_5));
+  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_t_4));
+  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_5);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_6);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_7);
+  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_7, 1);
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_8, 1);
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_9, 1);
+  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_9);
   <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_10);
-  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(__pyx_t_11);
   { PyObject *__pyx_type, *__pyx_value, *__pyx_tb;
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
@@ -6772,126 +6959,123 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
   <span class='refnanny'>__Pyx_RefNannyFinishContext</span>();
   return __pyx_r;
 }
-</pre><pre class="cython line score-0">&#xA0;<span class="">498</span>: <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters&quot;&quot;&quot;</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">499</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">wca_mag</span></pre>
-<pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">500</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">sigma</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2</span><span class="o">*</span><span class="n">particle_radius</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span><span class="o">/</span><span class="n">l_e</span><span class="c">#want there to be some volume/space between the particles even if they are strongly attracted</span></pre>
-<pre class='cython code score-5 '>  __pyx_t_1 = ((2.0 * __pyx_v_particle_radius) + 1e-6);
-  if (unlikely(__pyx_v_l_e == 0)) {
-    <span class='py_c_api'>PyErr_SetString</span>(PyExc_ZeroDivisionError, "float division");
-    <span class='error_goto'>__PYX_ERR(0, 500, __pyx_L1_error)</span>
-  }
-  __pyx_v_sigma = (__pyx_t_1 / ((double)__pyx_v_l_e));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">501</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">cutoff_length</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="mf">2</span><span class="p">,(</span><span class="mf">1</span><span class="o">/</span><span class="mf">6</span><span class="p">))</span><span class="o">*</span><span class="n">sigma</span></pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">518</span>: <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters&quot;&quot;&quot;</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">519</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">wca_mag</span></pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">520</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">SURFACE_TO_SURFACE_SPACING</span> <span class="o">=</span> <span class="mf">1e-6</span></pre>
+<pre class='cython code score-0 '>  __pyx_v_SURFACE_TO_SURFACE_SPACING = 1e-6;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">521</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">sigma</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2</span><span class="o">*</span><span class="n">particle_radius</span><span class="o">+</span><span class="n">SURFACE_TO_SURFACE_SPACING</span><span class="p">)</span><span class="c">#/l_e#want there to be some volume/space between the particles even if they are strongly attracted</span></pre>
+<pre class='cython code score-0 '>  __pyx_v_sigma = ((2.0 * __pyx_v_particle_radius) + __pyx_v_SURFACE_TO_SURFACE_SPACING);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">522</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">cutoff_length</span> <span class="o">=</span> <span class="nb">pow</span><span class="p">(</span><span class="mf">2</span><span class="p">,(</span><span class="mf">1</span><span class="o">/</span><span class="mf">6</span><span class="p">))</span><span class="o">*</span><span class="n">sigma</span></pre>
 <pre class='cython code score-0 '>  __pyx_v_cutoff_length = (pow(2.0, (1.0 / 6.0)) * __pyx_v_sigma);
-</pre><pre class="cython line score-0">&#xA0;<span class="">502</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">rij</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">503</span>:     <span class="k">cdef</span> <span class="kt">int</span> <span class="nf">i</span></pre>
-<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">504</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mf">3</span><span class="p">):</span></pre>
-<pre class='cython code score-0 '>  for (__pyx_t_2 = 0; __pyx_t_2 &lt; 3; __pyx_t_2+=1) {
-    __pyx_v_i = __pyx_t_2;
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">505</span>:         <span class="n">rij</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r_i</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">r_j</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></pre>
-<pre class='cython code score-0 '>    __pyx_t_3 = __pyx_v_i;
-    __pyx_t_4 = __pyx_v_i;
-    (__pyx_v_rij[__pyx_v_i]) = ((*((float *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_3 * __pyx_v_r_i.strides[0]) ))) - (*((float *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_4 * __pyx_v_r_j.strides[0]) ))));
+</pre><pre class="cython line score-0">&#xA0;<span class="">523</span>:     <span class="k">cdef</span> <span class="kt">float</span>[3] <span class="nf">rij</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">524</span>:     <span class="k">cdef</span> <span class="kt">int</span> <span class="nf">i</span></pre>
+<pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">525</span>:     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mf">3</span><span class="p">):</span></pre>
+<pre class='cython code score-0 '>  for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
+    __pyx_v_i = __pyx_t_1;
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">526</span>:         <span class="n">rij</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">r_i</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">r_j</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="c">#/l_e</span></pre>
+<pre class='cython code score-0 '>    __pyx_t_2 = __pyx_v_i;
+    __pyx_t_3 = __pyx_v_i;
+    (__pyx_v_rij[__pyx_v_i]) = ((*((float *) ( /* dim=0 */ (__pyx_v_r_i.data + __pyx_t_2 * __pyx_v_r_i.strides[0]) ))) - (*((float *) ( /* dim=0 */ (__pyx_v_r_j.data + __pyx_t_3 * __pyx_v_r_j.strides[0]) ))));
   }
-</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">506</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">rij_mag</span> <span class="o">=</span>  <span class="n">sqrt</span><span class="p">(</span><span class="n">dot_prod_32bit</span><span class="p">(</span><span class="n">rij</span><span class="p">,</span><span class="n">rij</span><span class="p">))</span></pre>
-<pre class='cython code score-12 '>  __pyx_t_7 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_7);
-  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
+</pre><pre class="cython line score-12" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">527</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">rij_mag</span> <span class="o">=</span>  <span class="n">sqrt</span><span class="p">(</span><span class="n">dot_prod_32bit</span><span class="p">(</span><span class="n">rij</span><span class="p">,</span><span class="n">rij</span><span class="p">))</span></pre>
+<pre class='cython code score-12 '>  __pyx_t_6 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  __pyx_t_5 = __pyx_array_new(__pyx_t_6, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_7), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) <span class='error_goto'>__PYX_ERR(0, 506, __pyx_L1_error)</span>
+  __pyx_t_5 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  __pyx_t_4 = __pyx_array_new(__pyx_t_5, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
+  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 527, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_8 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_5), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_t_6 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
+  __pyx_t_7 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
+  __pyx_t_5 = __pyx_format_from_typeinfo(&amp;__Pyx_TypeInfo_float);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  __pyx_t_6 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  __pyx_t_7 = Py_BuildValue((char*) "("  __PYX_BUILD_PY_SSIZE_T  ")", ((Py_ssize_t)3));<span class='error_goto'> if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_7);
-  __pyx_t_5 = __pyx_array_new(__pyx_t_7, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_6), (char *) "fortran", (char *) __pyx_v_rij);
-  if (unlikely(!__pyx_t_5)) <span class='error_goto'>__PYX_ERR(0, 506, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_4 = __pyx_array_new(__pyx_t_6, sizeof(float), <span class='py_macro_api'>PyBytes_AS_STRING</span>(__pyx_t_5), (char *) "fortran", (char *) __pyx_v_rij);
+  if (unlikely(!__pyx_t_4)) <span class='error_goto'>__PYX_ERR(0, 527, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_4);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_9 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_5), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_9.memview)) __PYX_ERR(0, 506, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_5)); __pyx_t_5 = 0;
-  __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod_32bit(__pyx_t_8, __pyx_t_9));
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_8 = <span class='pyx_c_api'>__Pyx_PyObject_to_MemoryviewSlice_ds_float</span>(((PyObject *)__pyx_t_4), PyBUF_WRITABLE);<span class='error_goto'> if (unlikely(!__pyx_t_8.memview)) __PYX_ERR(0, 527, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(((PyObject *)__pyx_t_4)); __pyx_t_4 = 0;
+  __pyx_v_rij_mag = sqrt(__pyx_f_9magnetism_dot_prod_32bit(__pyx_t_7, __pyx_t_8));
+  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_7, 1);
+  __pyx_t_7.memview = NULL;
+  __pyx_t_7.data = NULL;
   __PYX_XDEC_MEMVIEW(&amp;__pyx_t_8, 1);
   __pyx_t_8.memview = NULL;
   __pyx_t_8.data = NULL;
-  __PYX_XDEC_MEMVIEW(&amp;__pyx_t_9, 1);
-  __pyx_t_9.memview = NULL;
-  __pyx_t_9.data = NULL;
-</pre><pre class="cython line score-27" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">507</span>:     <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">1</span><span class="p">]</span> <span class="n">force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
-<pre class='cython code score-27 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_6, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
+</pre><pre class="cython line score-27" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">528</span>:     <span class="k">cdef</span> <span class="kt">np</span>.<span class="kt">ndarray</span>[<span class="kt">np</span>.<span class="nf">float32_t</span><span class="p">,</span> <span class="nf">ndim</span><span class="o">=</span><span class="mf">1</span><span class="p">]</span> <span class="n">force</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mf">3</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></pre>
+<pre class='cython code score-27 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_5, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_5, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  __pyx_t_7 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_6, __pyx_n_s_empty);<span class='error_goto'> if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_7);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_10, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyDict_NewPresized</span>(1);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_9, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_9);
+  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_9, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
   <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
-  __pyx_t_11 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_10, __pyx_n_s_float32);<span class='error_goto'> if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_11);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_9); __pyx_t_9 = 0;
+  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_10) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 528, __pyx_L1_error)</span>
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_10); __pyx_t_10 = 0;
-  if (<span class='py_c_api'>PyDict_SetItem</span>(__pyx_t_6, __pyx_n_s_dtype, __pyx_t_11) &lt; 0) <span class='error_goto'>__PYX_ERR(0, 507, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_7, __pyx_tuple__2, __pyx_t_6);<span class='error_goto'> if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 507, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_11);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_10 = <span class='pyx_c_api'>__Pyx_PyObject_Call</span>(__pyx_t_6, __pyx_tuple__2, __pyx_t_5);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 528, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
   <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  if (!(likely(((__pyx_t_11) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_11, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 507, __pyx_L1_error)</span>
-  __pyx_t_12 = ((PyArrayObject *)__pyx_t_11);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  if (!(likely(((__pyx_t_10) == Py_None) || likely(<span class='pyx_c_api'>__Pyx_TypeTest</span>(__pyx_t_10, __pyx_ptype_5numpy_ndarray))))) <span class='error_goto'>__PYX_ERR(0, 528, __pyx_L1_error)</span>
+  __pyx_t_11 = ((PyArrayObject *)__pyx_t_10);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(<span class='pyx_c_api'>__Pyx_GetBufferAndValidate</span>(&amp;__pyx_pybuffernd_force.rcbuffer-&gt;pybuffer, (PyObject*)__pyx_t_12, &amp;__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
+    if (unlikely(<span class='pyx_c_api'>__Pyx_GetBufferAndValidate</span>(&amp;__pyx_pybuffernd_force.rcbuffer-&gt;pybuffer, (PyObject*)__pyx_t_11, &amp;__Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_force = ((PyArrayObject *)Py_None); <span class='pyx_macro_api'>__Pyx_INCREF</span>(Py_None); __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.buf = NULL;
-      <span class='error_goto'>__PYX_ERR(0, 507, __pyx_L1_error)</span>
+      <span class='error_goto'>__PYX_ERR(0, 528, __pyx_L1_error)</span>
     } else {__pyx_pybuffernd_force.diminfo[0].strides = __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.strides[0]; __pyx_pybuffernd_force.diminfo[0].shape = __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.shape[0];
     }
   }
-  __pyx_t_12 = 0;
-  __pyx_v_force = ((PyArrayObject *)__pyx_t_11);
   __pyx_t_11 = 0;
-</pre><pre class="cython line score-16" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">508</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">eps_constant</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-7</span><span class="p">)</span><span class="o">*</span><span class="mf">4</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="mf">1.9e6</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="mf">1.5e-6</span><span class="p">,</span><span class="mf">3</span><span class="p">)</span><span class="o">/</span><span class="mf">72</span><span class="c">#mu0*pi*(Ms**2)*(R**3)/72</span></pre>
-<pre class='cython code score-16 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_11, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 508, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_11);
-  __pyx_t_6 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_11, __pyx_n_s_pi);<span class='error_goto'> if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 508, __pyx_L1_error)</span>
-  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_6);
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_1 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_t_6); if (unlikely((__pyx_t_1 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 508, __pyx_L1_error)</span>
-  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_v_eps_constant = (((((1e-7 * 4.0) * pow(__pyx_t_1, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">509</span>:     <span class="k">if</span> <span class="n">rij_mag</span> <span class="o">&lt;=</span> <span class="n">cutoff_length</span><span class="p">:</span><span class="c">#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another</span></pre>
+  __pyx_v_force = ((PyArrayObject *)__pyx_t_10);
+  __pyx_t_10 = 0;
+</pre><pre class="cython line score-16" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">529</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">eps_constant</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1e-7</span><span class="p">)</span><span class="o">*</span><span class="mf">4</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="mf">1.9e6</span><span class="p">,</span><span class="mf">2</span><span class="p">)</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="mf">1.5e-6</span><span class="p">,</span><span class="mf">3</span><span class="p">)</span><span class="o">/</span><span class="mf">72</span><span class="c">#mu0*pi*(Ms**2)*(R**3)/72</span></pre>
+<pre class='cython code score-16 '>  <span class='pyx_c_api'>__Pyx_GetModuleGlobalName</span>(__pyx_t_10, __pyx_n_s_np);<span class='error_goto'> if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 529, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_10);
+  __pyx_t_5 = <span class='pyx_c_api'>__Pyx_PyObject_GetAttrStr</span>(__pyx_t_10, __pyx_n_s_pi);<span class='error_goto'> if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 529, __pyx_L1_error)</span>
+  <span class='refnanny'>__Pyx_GOTREF</span>(__pyx_t_5);
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_10); __pyx_t_10 = 0;
+  __pyx_t_12 = __pyx_<span class='py_c_api'>PyFloat_AsDouble</span>(__pyx_t_5); if (unlikely((__pyx_t_12 == (double)-1) &amp;&amp; <span class='py_c_api'>PyErr_Occurred</span>())) <span class='error_goto'>__PYX_ERR(0, 529, __pyx_L1_error)</span>
+  <span class='pyx_macro_api'>__Pyx_DECREF</span>(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_v_eps_constant = (((((1e-7 * 4.0) * pow(__pyx_t_12, 2.0)) * pow(1.9e6, 2.0)) * pow(1.5e-6, 3.0)) / 72.0);
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">530</span>:     <span class="k">if</span> <span class="n">rij_mag</span> <span class="o">&lt;=</span> <span class="n">cutoff_length</span><span class="p">:</span><span class="c">#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another</span></pre>
 <pre class='cython code score-0 '>  __pyx_t_13 = ((__pyx_v_rij_mag &lt;= __pyx_v_cutoff_length) != 0);
   if (__pyx_t_13) {
 /* … */
   }
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">510</span>:         <span class="n">wca_mag</span> <span class="o">=</span> <span class="n">get_wca_force_32bit</span><span class="p">(</span><span class="n">eps_constant</span><span class="p">,</span><span class="n">rij_mag</span><span class="p">,</span><span class="n">sigma</span><span class="p">)</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">531</span>:         <span class="n">wca_mag</span> <span class="o">=</span> <span class="n">get_wca_force_32bit</span><span class="p">(</span><span class="n">eps_constant</span><span class="p">,</span><span class="n">rij_mag</span><span class="p">,</span><span class="n">sigma</span><span class="p">)</span></pre>
 <pre class='cython code score-0 '>    __pyx_v_wca_mag = __pyx_f_9magnetism_get_wca_force_32bit(__pyx_v_eps_constant, __pyx_v_rij_mag, __pyx_v_sigma);
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">511</span>:         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mf">3</span><span class="p">):</span></pre>
-<pre class='cython code score-0 '>    for (__pyx_t_2 = 0; __pyx_t_2 &lt; 3; __pyx_t_2+=1) {
-      __pyx_v_i = __pyx_t_2;
-</pre><pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">512</span>:             <span class="n">force</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_mag</span> <span class="o">*</span> <span class="n">rij</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">rij_mag</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">532</span>:         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mf">3</span><span class="p">):</span></pre>
+<pre class='cython code score-0 '>    for (__pyx_t_1 = 0; __pyx_t_1 &lt; 3; __pyx_t_1+=1) {
+      __pyx_v_i = __pyx_t_1;
+</pre><pre class="cython line score-5" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">533</span>:             <span class="n">force</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">wca_mag</span> <span class="o">*</span> <span class="n">rij</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">rij_mag</span></pre>
 <pre class='cython code score-5 '>      __pyx_t_14 = (__pyx_v_wca_mag * (__pyx_v_rij[__pyx_v_i]));
       if (unlikely(__pyx_v_rij_mag == 0)) {
         <span class='py_c_api'>PyErr_SetString</span>(PyExc_ZeroDivisionError, "float division");
-        <span class='error_goto'>__PYX_ERR(0, 512, __pyx_L1_error)</span>
+        <span class='error_goto'>__PYX_ERR(0, 533, __pyx_L1_error)</span>
       }
-      __pyx_t_4 = __pyx_v_i;
-      *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.buf, __pyx_t_4, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_14 / __pyx_v_rij_mag);
+      __pyx_t_3 = __pyx_v_i;
+      *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float32_t *, __pyx_pybuffernd_force.rcbuffer-&gt;pybuffer.buf, __pyx_t_3, __pyx_pybuffernd_force.diminfo[0].strides) += (__pyx_t_14 / __pyx_v_rij_mag);
     }
-</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">513</span>:     <span class="k">return</span> <span class="n">force</span></pre>
+</pre><pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">534</span>:     <span class="k">return</span> <span class="n">force</span></pre>
 <pre class='cython code score-2 '>  <span class='pyx_macro_api'>__Pyx_XDECREF</span>(((PyObject *)__pyx_r));
   <span class='pyx_macro_api'>__Pyx_INCREF</span>(((PyObject *)__pyx_v_force));
   __pyx_r = ((PyArrayObject *)__pyx_v_force);
   goto __pyx_L0;
-</pre><pre class="cython line score-0">&#xA0;<span class="">514</span>: </pre>
-<pre class="cython line score-0">&#xA0;<span class="">515</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
-<pre class="cython line score-0">&#xA0;<span class="">516</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
-<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">517</span>: <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">get_wca_force_32bit</span><span class="p">(</span><span class="nb">float</span> <span class="n">eps_constant</span><span class="p">,</span> <span class="nb">float</span> <span class="n">r</span><span class="p">,</span> <span class="nb">float</span> <span class="n">sigma</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span></pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">535</span>: </pre>
+<pre class="cython line score-0">&#xA0;<span class="">536</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">boundscheck</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
+<pre class="cython line score-0">&#xA0;<span class="">537</span>: <span class="nd">@cython</span><span class="o">.</span><span class="n">wraparound</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span></pre>
+<pre class="cython line score-2" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">538</span>: <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">get_wca_force_32bit</span><span class="p">(</span><span class="nb">float</span> <span class="n">eps_constant</span><span class="p">,</span> <span class="nb">float</span> <span class="n">r</span><span class="p">,</span> <span class="nb">float</span> <span class="n">sigma</span><span class="p">)</span> <span class="k">nogil</span><span class="p">:</span></pre>
 <pre class='cython code score-2 '>static float __pyx_f_9magnetism_get_wca_force_32bit(float __pyx_v_eps_constant, float __pyx_v_r, float __pyx_v_sigma) {
   float __pyx_v_sigma_over_separation;
   float __pyx_v_force_mag;
@@ -6904,7 +7088,7 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
   __pyx_L0:;
   return __pyx_r;
 }
-</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">518</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">sigma_over_separation</span> <span class="o">=</span> <span class="n">sigma</span><span class="o">/</span><span class="n">r</span></pre>
+</pre><pre class="cython line score-9" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">539</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">sigma_over_separation</span> <span class="o">=</span> <span class="n">sigma</span><span class="o">/</span><span class="n">r</span></pre>
 <pre class='cython code score-9 '>  if (unlikely(__pyx_v_r == 0)) {
     #ifdef WITH_THREAD
     PyGILState_STATE __pyx_gilstate_save = <span class='pyx_c_api'>__Pyx_PyGILState_Ensure</span>();
@@ -6913,11 +7097,11 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 518, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 539, __pyx_L1_error)</span>
   }
   __pyx_v_sigma_over_separation = (__pyx_v_sigma / __pyx_v_r);
-</pre><pre class="cython line score-0">&#xA0;<span class="">519</span>:     <span class="c"># potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))</span></pre>
-<pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">520</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">force_mag</span> <span class="o">=</span> <span class="mf">4</span><span class="o">*</span><span class="n">eps_constant</span><span class="o">*</span><span class="p">(</span><span class="mf">12</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">sigma_over_separation</span><span class="p">,</span><span class="mf">13</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span> <span class="o">-</span> <span class="mf">6</span><span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">sigma_over_separation</span><span class="p">,</span><span class="mf">7</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span></pre>
+</pre><pre class="cython line score-0">&#xA0;<span class="">540</span>:     <span class="c"># potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))</span></pre>
+<pre class="cython line score-18" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">541</span>:     <span class="k">cdef</span> <span class="kt">float</span> <span class="nf">force_mag</span> <span class="o">=</span> <span class="mf">4</span><span class="o">*</span><span class="n">eps_constant</span><span class="o">*</span><span class="p">(</span><span class="mf">12</span><span class="o">*</span><span class="nb">pow</span><span class="p">(</span><span class="n">sigma_over_separation</span><span class="p">,</span><span class="mf">13</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span> <span class="o">-</span> <span class="mf">6</span><span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="n">sigma_over_separation</span><span class="p">,</span><span class="mf">7</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span></pre>
 <pre class='cython code score-18 '>  __pyx_t_1 = (12.0 * pow(__pyx_v_sigma_over_separation, 13.0));
   if (unlikely(__pyx_v_sigma == 0)) {
     #ifdef WITH_THREAD
@@ -6927,7 +7111,7 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 520, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 541, __pyx_L1_error)</span>
   }
   __pyx_t_2 = (6.0 * pow(__pyx_v_sigma_over_separation, 7.0));
   if (unlikely(__pyx_v_sigma == 0)) {
@@ -6938,10 +7122,10 @@ static PyObject *__pyx_pf_9magnetism_16get_dip_dip_forces_normalized_32bit(CYTHO
     #ifdef WITH_THREAD
     <span class='pyx_c_api'>__Pyx_PyGILState_Release</span>(__pyx_gilstate_save);
     #endif
-    <span class='error_goto'>__PYX_ERR(0, 520, __pyx_L1_error)</span>
+    <span class='error_goto'>__PYX_ERR(0, 541, __pyx_L1_error)</span>
   }
   __pyx_v_force_mag = ((4.0 * __pyx_v_eps_constant) * ((__pyx_t_1 / ((double)__pyx_v_sigma)) - (__pyx_t_2 / ((double)__pyx_v_sigma))));
-</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">521</span>:     <span class="k">return</span> <span class="n">force_mag</span></pre>
+</pre><pre class="cython line score-0" onclick="(function(s){s.display=s.display==='block'?'none':'block'})(this.nextElementSibling.style)">+<span class="">542</span>:     <span class="k">return</span> <span class="n">force_mag</span></pre>
 <pre class='cython code score-0 '>  __pyx_r = __pyx_v_force_mag;
   goto __pyx_L0;
 </pre></div></body></html>

@@ -1569,7 +1569,7 @@ def get_accel_scaled_GPU(y,elements,springs,particles,kappa,l_e,beta,beta_i,bc,b
         for i, particle in enumerate(particles):
             particle_centers[i,:] = get_particle_center(particle,x0)
         M = magnetism.get_magnetization_iterative_normalized_32bit(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers,particle_radius,l_e)
+        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers,particle_radius,l_e,Ms)
         magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
         type_cast_scaling_factor = np.float32(magnetic_scaling_factor)
         mag_forces *= np.float32(beta/(particle_mass*(np.power(l_e,4))))
@@ -1868,14 +1868,22 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
         particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
         for i, particle in enumerate(particles):
             particle_centers[i,:] = get_particle_center(particle,host_posns)
+        particle_separation = np.linalg.norm(particle_centers[0]-particle_centers[1])
+        if particle_separation*l_e < 5e-6:
+            print(f'particle separation = {particle_separation*l_e*1e6} um')
+            # if particle_separation*l_e < 4.5e-6:
+            #     print(f'debugger should be used to stop here and inspect step by step to find runtimewarning: invalid value encountered in subtract and invalid value encountered in reduce')
         M = magnetism.get_magnetization_iterative_normalized_32bit(Hext,particle_centers,particle_radius,chi,Ms,l_e)
-        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers,particle_radius,l_e)
+        # !!! Trying to resolve issues with float32 data types. trying to use scaled positions was resulting in the returned magnetic forces being small enough that calculating the force norm before scaling by beta and dividing by the particle mass would result in a norm of zero, even for what should result in non-zero accelerations. by using SI units for the particle positions in this function call, it is possible to avoid issues with the floating point value being so small that (what i think is an underflow) some sort of error occurs where the resulting scaled acceleration is very large (components on the order of 1e19)
+        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers*l_e,particle_radius,l_e,Ms)
         # mag_forces_si = mag_forces/np.power(l_e,4)
         # mag_force_clipping_check = np.linalg.norm(mag_forces_si,axis=1)>max_magnetic_force_norm
         # if np.any(mag_force_clipping_check):
-        #     mag_forces[mag_force_clipping_check,:] *= max_magnetic_force_norm/np.power(l_e,4)/np.linalg.norm(mag_forces[mag_force_clipping_check,:],axis=1)
+        # #     mag_forces[mag_force_clipping_check,:] *= max_magnetic_force_norm/np.power(l_e,4)/np.linalg.norm(mag_forces[mag_force_clipping_check,:],axis=1)
+        # max_mag_force_norm_si = 5.3443908e-6
         # magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
-        mag_forces *= np.float32(beta/(particle_mass*(np.power(l_e,4))))
+        # scaled_max_force = max_mag_force_norm_si*magnetic_scaling_factor*np.power(l_e,4)
+        mag_forces *= np.float32(beta/particle_mass)#np.float32(beta/(particle_mass*(np.power(l_e,4))))
         for i, particle in enumerate(particles):
             # print(f'accel[particles[{i}]]:{accel[particle]}')
             accel[particle] += mag_forces[i]
@@ -1950,19 +1958,22 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
             leapfrog_update(posns,velocities,step_size,size_entries)
-            host_posns = cp.asnumpy(posns)
-            host_posns = np.reshape(host_posns,(N_nodes,3))
-            for i, particle in enumerate(particles):
-                particle_center[i,:] = get_particle_center(particle,host_posns)
-                # print(f'particle center posns:{get_particle_center(particle,host_posns)}')
-            particle_separation = np.linalg.norm(particle_center[0]-particle_center[1])
-            if particle_separation*l_e < 5e-6:
-                print(f'particle separation = {particle_separation*l_e*1e-6} um')
+            # host_posns = cp.asnumpy(posns)
+            # host_posns = np.reshape(host_posns,(N_nodes,3))
+            # for i, particle in enumerate(particles):
+            #     particle_center[i,:] = get_particle_center(particle,host_posns)
+            #     # print(f'particle center posns:{get_particle_center(particle,host_posns)}')
+            # particle_separation = np.linalg.norm(particle_center[0]-particle_center[1])
+            # if particle_separation*l_e < 5e-6:
+            #     print(f'particle separation = {particle_separation*l_e*1e6} um')
             a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(a_var.astype(np.float32)).reshape((a_var.shape[0]*a_var.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             # host_velocities = cp.asnumpy(velocities)
             # host_velocities = np.reshape(host_velocities,(N_nodes,3))
+            # particle_velocity = host_velocities[particles[0][0],0]
+            # if np.abs(particle_velocity)*step_size > 0.1:
+            #     print(f'particle velocity and step size result in large change in position')
             # print(f'particle velocities : {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
         #!!! do i need this acceleration calculation below?
         # a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
