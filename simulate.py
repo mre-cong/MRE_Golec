@@ -1413,7 +1413,7 @@ void beta_scaling(const float* beta_i, float* forces, const int num_nodes) {
     {
         forces[3*tid] *= beta_i[tid];
         forces[3*tid+1] *= beta_i[tid];
-        forces[3*tid+1] *= beta_i[tid];
+        forces[3*tid+2] *= beta_i[tid];
     }
     }
     ''', 'beta_scaling')
@@ -1446,10 +1446,10 @@ void y_update(float* y, float* dy, const float step_size, const int num_entries)
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
     if (tid < num_entries)
     {
-        if (dy[tid] < -10)
-        {
-            printf("step_size %f * dy %f = %f\n",step_size,dy[tid],step_size*dy[tid]);                       
-        }
+        //if (dy[tid] < -10)
+        //{
+        //    printf("step_size %f * dy %f = %f\n",step_size,dy[tid],step_size*dy[tid]);                       
+        //}
         y[tid] = y[tid] + step_size * dy[tid];
     }
     }
@@ -1790,6 +1790,13 @@ def leapfrog_update(y,dy,step_size,size_entries):
     leapfrog_kernel((grid_size,),(block_size,),(y,dy,step_size,size_entries))
     return
 
+
+# #GLOBAL VARIABLE FOR MAXIMUM MAGNETIC FORCE IN SI UNITS
+# mu0 = 4*np.pi*1e-7
+# particle_Ms = 1.9e6
+# particle_radius_si = 1.5e-6
+# particle_volume_si = (4/3)*np.pi*np.power(particle_radius_si,3)
+# max_magnetic_force_norm = (3*mu0)/(2*np.pi*np.power(2*particle_radius_si,4))*np.power(particle_volume_si,2)*np.power(particle_Ms,2)
 def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,device_beta_i,host_beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag=10):
     """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
     N_nodes = int(posns.shape[0]/3)
@@ -1863,13 +1870,17 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
             particle_centers[i,:] = get_particle_center(particle,host_posns)
         M = magnetism.get_magnetization_iterative_normalized_32bit(Hext,particle_centers,particle_radius,chi,Ms,l_e)
         mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers,particle_radius,l_e)
+        # mag_forces_si = mag_forces/np.power(l_e,4)
+        # mag_force_clipping_check = np.linalg.norm(mag_forces_si,axis=1)>max_magnetic_force_norm
+        # if np.any(mag_force_clipping_check):
+        #     mag_forces[mag_force_clipping_check,:] *= max_magnetic_force_norm/np.power(l_e,4)/np.linalg.norm(mag_forces[mag_force_clipping_check,:],axis=1)
         # magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
         mag_forces *= np.float32(beta/(particle_mass*(np.power(l_e,4))))
         for i, particle in enumerate(particles):
-            print(f'accel[particles[{i}]]:{accel[particle]}')
+            # print(f'accel[particles[{i}]]:{accel[particle]}')
             accel[particle] += mag_forces[i]
-            print('after adding magnetic forces')
-            print(f'accel[particles[{i}]]:{accel[particle]}')
+            # print('after adding magnetic forces')
+            # print(f'accel[particles[{i}]]:{accel[particle]}')
         #TODO remove loops as much as possible within python. this function may be cythonized anyway, there is serious overhead with any looping, even just dealing with the rigid particles
         total_torque = np.zeros((particles.shape[0],3))
         for i, particle in enumerate(particles):
@@ -1922,10 +1933,11 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     mean_displacement = np.zeros((max_integrations,))
     return_status = 1
     last_posns = cp.asnumpy(posns)
+    last_posns = np.reshape(last_posns,(N_nodes,3))
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
     a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
-    print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
+    # print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
     a_var = cp.array(a_var.astype(np.float32)).reshape((a_var.shape[0]*a_var.shape[1],1),order='C')
     size_entries = int(N_nodes*3)
     leapfrog_update(velocities,a_var,np.float32(step_size/2),size_entries)
@@ -1933,20 +1945,25 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     # host_velocities = cp.asnumpy(velocities)
     # host_velocities = np.reshape(host_velocities,(N_nodes,3))
     # print(f'particle velocities: {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
+    particle_center = np.zeros((2,3))
     for i in range(max_integrations):
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
             leapfrog_update(posns,velocities,step_size,size_entries)
             host_posns = cp.asnumpy(posns)
             host_posns = np.reshape(host_posns,(N_nodes,3))
-            for particle in particles:
-                print(f'particle center posns:{get_particle_center(particle,host_posns)}')
+            for i, particle in enumerate(particles):
+                particle_center[i,:] = get_particle_center(particle,host_posns)
+                # print(f'particle center posns:{get_particle_center(particle,host_posns)}')
+            particle_separation = np.linalg.norm(particle_center[0]-particle_center[1])
+            if particle_separation*l_e < 5e-6:
+                print(f'particle separation = {particle_separation*l_e*1e-6} um')
             a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(a_var.astype(np.float32)).reshape((a_var.shape[0]*a_var.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
-            host_velocities = cp.asnumpy(velocities)
-            host_velocities = np.reshape(host_velocities,(N_nodes,3))
-            print(f'particle velocities : {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
+            # host_velocities = cp.asnumpy(velocities)
+            # host_velocities = np.reshape(host_velocities,(N_nodes,3))
+            # print(f'particle velocities : {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
         #!!! do i need this acceleration calculation below?
         # a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
         host_posns = cp.asnumpy(posns)
@@ -1977,7 +1994,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
-            last_posns = np.reshape(final_posns,(N_nodes,3))
+            last_posns = final_posns.copy()
         if persistent_checkpointing_flag:
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)

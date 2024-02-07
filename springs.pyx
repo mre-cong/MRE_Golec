@@ -215,6 +215,7 @@ cdef np.ndarray[np.int32_t, ndim=1] get_row_indices(double[:,:] node_posns, doub
 # cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] node_type,  int max_springs, double[:] k, double[:] dim, double l_e):
 cpdef int get_springs(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] springs, int max_springs, double[:] k, double[:] dim, double l_e):
 #used in get springs to define which adjacent nodes would be above/below/etc the current node of interest, for deciding which connections are possible based on the node type (a node on the top surface can't be connected to a node above it, there are no nodes above it)
+#below boolean arrays correspond to the adjacent_node_indices variable. where the adjacent_node_indices variable is initialized it does not consider the actual dimensions of the simulation. These boolean arrays say 'for the node listed in adjacent_node_indices, if the value is True, the adjacent node would be considered "above/below,left/right,in front/in back of" the current node of interest. Used to define unique spring variable rows without duplications
     cdef int i
     cdef np.ndarray[np.npy_bool, ndim=1] ABOVE = np.array([True,False,False,False,True,False,False,True,False,False,True,False,True],dtype=np.bool_)
     cdef np.ndarray[np.npy_bool, ndim=1] BELOW = np.array([False,False,False,True,False,False,True,False,False,True,False,True,False],dtype=np.bool_)
@@ -258,7 +259,7 @@ cpdef int get_springs(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] spri
         TOPBACK[i] = ABOVE[i] or BACK[i]
         BOTFRONT[i] = BELOW[i] or FRONT[i]
         BOTBACK[i] = BELOW[i] or BACK[i]
-        #combinations of the first set of arrays to define nodes which are placed above to the let and behind, etc.
+        #combinations of the first set of arrays to define nodes which are placed above to the left and behind, etc.
         LTOPFRONT[i] = LEFT[i] or ABOVE[i] or FRONT[i]
         LTOPBACK[i] = LEFT[i] or ABOVE[i] or BACK[i]
         LBOTFRONT[i] = LEFT[i] or BELOW[i] or FRONT[i]
