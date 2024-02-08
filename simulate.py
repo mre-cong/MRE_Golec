@@ -1394,6 +1394,26 @@ void spring_force(const float* edges, const float* node_posns, float* forces, co
     }
     ''', 'spring_force')
 
+spring_length_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void spring_length(const float* edges, const float* node_posns, float* lengths, const int size_edges) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    //printf("entered the kernel");
+    if (tid < size_edges)
+    {
+        //printf("entered the if block");
+        //printf("spring tid = %i, size_springs = %i\n",tid,size_edges);  
+        int iid = edges[4*tid];
+        int jid = edges[4*tid+1];
+        float rij[3];
+        rij[0] = node_posns[3*iid]-node_posns[3*jid];
+        rij[1] = node_posns[3*iid+1]-node_posns[3*jid+1];
+        rij[2] = node_posns[3*iid+2]-node_posns[3*jid+2];
+        lengths[tid] = sqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+    }
+    }
+    ''', 'spring_length')
+
 drag_kernel = cp.RawKernel(r'''
 extern "C" __global__
 void drag_force(float* acceleration, float* velocity, float drag, const int num_entries) {
@@ -1774,14 +1794,29 @@ def composite_gpu_force_calc_v2(posns,velocities,N_nodes,cupy_elements,kappa,cup
     block_size = 128
     element_grid_size = (int (np.ceil((int (np.ceil(size_elements/block_size)))/14)*14))
     scaled_element_kernel((element_grid_size,),(block_size,),(cupy_elements,posns,kappa,cupy_composite_forces,size_elements))
+    # host_forces = cp.asnumpy(cupy_composite_forces)
+    # if np.any(np.isnan(host_forces)):
+    #     print(f'NaN entries from VCF force')
+    #     print(f'Num NaN Entries{np.count_nonzero(np.isnan(host_forces))}')
     size_springs = int(cupy_springs.shape[0]/4)
     spring_grid_size = (int (np.ceil((int (np.ceil(size_springs/block_size)))/14)*14))
     scaled_spring_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,cupy_composite_forces,size_springs))
+    # host_forces = cp.asnumpy(cupy_composite_forces)
+    # if np.any(np.isnan(host_forces)):
+    #     print(f'NaN entries after spring force')
+    #     print(f'Num NaN Entries{np.count_nonzero(np.isnan(host_forces))}')
     beta_scaling_grid_size = (int (np.ceil((int (np.ceil(N_nodes/block_size)))/14)*14))
     beta_scaling_kernel((beta_scaling_grid_size,),(block_size,),(beta_i,cupy_composite_forces,N_nodes))
+    # host_forces = cp.asnumpy(cupy_composite_forces)
+    # if np.any(np.isnan(host_forces)):
+    #     print(f'NaN entries after scaling force')
+    #     print(f'Num NaN Entries{np.count_nonzero(np.isnan(host_forces))}')
     drag_grid_size = (int (np.ceil((int (np.ceil(3*N_nodes/block_size)))/14)*14))
     drag_kernel((drag_grid_size,),(block_size,),(cupy_composite_forces,velocities,drag,int(3*N_nodes)))
     host_composite_forces = cp.asnumpy(cupy_composite_forces)
+    # if np.any(np.isnan(host_composite_forces)):
+    #     print(f'NaN entries after drag force')
+    #     print(f'Num NaN Entries{np.count_nonzero(np.isnan(host_composite_forces))}')
     return host_composite_forces
 
 def leapfrog_update(y,dy,step_size,size_entries):
@@ -1802,6 +1837,16 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
     N_nodes = int(posns.shape[0]/3)
     accel = composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs,device_beta_i,drag)
     accel = np.reshape(accel,(N_nodes,3))
+    # if np.any(np.isnan(accel)):
+    #     print(f'NaN entry found in the acceleration variable')
+    #     print(f'{np.count_nonzero(np.isnan(accel))} NaN entries in acceleration variable')
+    #     block_size = 128
+    #     size_springs = int(springs.shape[0]/4)
+    #     spring_grid_size = (int (np.ceil((int (np.ceil(size_springs/block_size)))/14)*14))
+    #     spring_lengths = cp.empty((size_springs,),dtype=cp.float32)
+    #     spring_length_kernel((spring_grid_size,),(block_size,),(springs,posns,spring_lengths,size_springs))
+    #     host_spring_lengths = cp.asnumpy(spring_lengths)
+    #     print(f'Number of springs with length zero: {np.count_nonzero(np.isclose(host_spring_lengths,0.0))}')
     if 'simple_stress' in bc[0]:
         #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
         if bc[1][0] == 'x':
@@ -1868,14 +1913,16 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
         particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
         for i, particle in enumerate(particles):
             particle_centers[i,:] = get_particle_center(particle,host_posns)
-        particle_separation = np.linalg.norm(particle_centers[0]-particle_centers[1])
-        if particle_separation*l_e < 5e-6:
-            print(f'particle separation = {particle_separation*l_e*1e6} um')
+        # particle_separation = np.linalg.norm(particle_centers[0]-particle_centers[1])
+        # if particle_separation*l_e < 5e-6:
+        #     print(f'particle separation = {particle_separation*l_e*1e6} um')
             # if particle_separation*l_e < 4.5e-6:
             #     print(f'debugger should be used to stop here and inspect step by step to find runtimewarning: invalid value encountered in subtract and invalid value encountered in reduce')
         M = magnetism.get_magnetization_iterative_normalized_32bit(Hext,particle_centers,particle_radius,chi,Ms,l_e)
         # !!! Trying to resolve issues with float32 data types. trying to use scaled positions was resulting in the returned magnetic forces being small enough that calculating the force norm before scaling by beta and dividing by the particle mass would result in a norm of zero, even for what should result in non-zero accelerations. by using SI units for the particle positions in this function call, it is possible to avoid issues with the floating point value being so small that (what i think is an underflow) some sort of error occurs where the resulting scaled acceleration is very large (components on the order of 1e19)
         mag_forces = magnetism.get_dip_dip_forces_normalized_32bit(M,particle_centers*l_e,particle_radius,l_e,Ms)
+        # if np.any(np.isnan(mag_forces)):
+        #     print(f'NaN entry found in the mag_forces variable')
         # mag_forces_si = mag_forces/np.power(l_e,4)
         # mag_force_clipping_check = np.linalg.norm(mag_forces_si,axis=1)>max_magnetic_force_norm
         # if np.any(mag_force_clipping_check):
@@ -1909,10 +1956,22 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
                 r_perpendicular_to_axis_of_rotation = translated_particle_nodes - r_parallel_to_axis_of_rotation
                 r_perp_magnitude = np.linalg.norm(r_perpendicular_to_axis_of_rotation,axis=1)
                 rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
+                # if np.any(rotational_acceleration_magnitude > 200):
+                #     print(f'large rotational acceleration')
                 rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
                 rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
                 rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
                 accel[particle] += rotational_acceleration
+                # with np.errstate(over='raise'):
+                    # accel[particle] += rotational_acceleration
+                # try:
+                #     with np.errstate(over='raise'):
+                #         accel[particle] += rotational_acceleration
+                # except:
+                #     print(f'error raised, potentially due to overflow. Inspect variable values')
+    # if np.any(np.isnan(accel)):
+    #     print(f'NaN entry found in the acceleration variable')
+    #     print(f'{np.count_nonzero(np.isnan(accel))} NaN entries in acceleration variable')
     return accel
 
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
@@ -1942,6 +2001,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     return_status = 1
     last_posns = cp.asnumpy(posns)
     last_posns = np.reshape(last_posns,(N_nodes,3))
+    last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
     a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
@@ -1954,7 +2014,9 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     # host_velocities = np.reshape(host_velocities,(N_nodes,3))
     # print(f'particle velocities: {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
     particle_center = np.zeros((2,3))
-    for i in range(max_integrations):
+    rerun_flag = False
+    i = 0
+    while i < max_integrations:
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
             leapfrog_update(posns,velocities,step_size,size_entries)
@@ -2002,13 +2064,31 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
             return_status = 0
             break
+        elif np.any(np.isnan(a_norms)):
+            print(f'Integration failure mode: NaN entries in accelerations. (possible overflow error)')
+            if rerun_flag:
+                print(f'halving step size and restarting still resulted in integration failure')
+                return_status = -2
+                break
+            step_size = np.float32(0.5*step_size)
+            max_integration_steps = int(2*max_integration_steps)
+            posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
+            velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
+            i -= 1
+            rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
+            last_velocity = final_v.copy()
+            if rerun_flag:
+                rerun_flag = False
+                step_size = np.float32(2*step_size)
+                max_integration_steps = int(max_integration_steps/2)
         if persistent_checkpointing_flag:
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+        i += 1
     plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')

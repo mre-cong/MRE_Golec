@@ -501,7 +501,7 @@ def run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_directio
             if (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(stresses)-1):
                 output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
                 x0, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
-                print(f'reusing previously calculated solution with B_ext = {mu0*output_file_Hext}')
+                print(f'reusing previously calculated solution with B_ext = {np.round(mu0*output_file_Hext,decimals=2)}')
                 x0 = cp.array(x0.astype(np.float32)).reshape((x0.shape[0]*x0.shape[1],1),order='C')
     return total_delta, return_status
 
@@ -1008,7 +1008,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=3,max_integration_steps=3000,tolerance=1e-4,gpu_flag=True)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=3,max_integration_steps=3000,tolerance=1e-4,gpu_flag=False)
                         total_sim_num += 1
     print(total_sim_num)
 
@@ -1273,7 +1273,7 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
         Ms = np.float32(Ms)
         elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
         springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
-        step_size = cp.float32(0.01)
+        step_size = cp.float32(0.01)#cp.float32(0.01/2)
         simulation_time, return_status = run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag=True)
     else:
         simulation_time, return_status = run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True,gpu_flag=gpu_flag)

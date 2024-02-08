@@ -459,11 +459,11 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float
     cdef int i
     cdef int j
     cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
-    cdef float MAX_FORCE_NORM = (3*mu0_32bit)/(2*np.pi*pow(2*particle_radius,4))*pow(particle_V,2)*pow(Ms,2)
-    cdef float[3] rij = np.empty((3,),dtype=np.float32)
-    cdef float rij_mag = 0
-    cdef float force_norm = 0
-    cdef float force_norm_ratio = 1
+    # cdef float MAX_FORCE_NORM = (3*mu0_32bit)/(2*np.pi*pow(2*particle_radius,4))*pow(particle_V,2)*pow(Ms,2)
+    # cdef float[3] rij = np.empty((3,),dtype=np.float32)
+    # cdef float rij_mag = 0
+    # cdef float force_norm = 0
+    # cdef float force_norm_ratio = 1
     cdef np.ndarray[np.float32_t, ndim=2] moments = np.empty((N_particles,3),dtype=np.float32)
     cdef float[3] r_i = np.empty((3,),dtype=np.float32)
     cdef float[3] r_j = np.empty((3,),dtype=np.float32)
@@ -481,14 +481,14 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float
             r_j[0] = particle_posns[j,0]
             r_j[1] = particle_posns[j,1]
             r_j[2] = particle_posns[j,2]
-            for my_counter in range(3):
-                rij[my_counter] = r_i[my_counter] - r_j[my_counter]
-            rij_mag = sqrt(dot_prod_32bit(rij,rij))
+            # for my_counter in range(3):
+            #     rij[my_counter] = r_i[my_counter] - r_j[my_counter]
+            # rij_mag = sqrt(dot_prod_32bit(rij,rij))
             force = get_dip_dip_force_32bit(moments[i,:],moments[j,:],r_i,r_j)
-            force_norm = sqrt(dot_prod_32bit(force,force))
-            if rij_mag < 4.5e-6:
-                print(f'force: {force}')
-                print(f'force_norm_si: {force_norm}')
+            # force_norm = sqrt(dot_prod_32bit(force,force))
+            # if rij_mag < 4.5e-6:
+            #     print(f'force: {force}')
+            #     print(f'force_norm_si: {force_norm}')
             wca_force = get_particle_wca_force_normalized_32bit(r_i,r_j,particle_radius,l_e)
             # if force_norm > MAX_FORCE_NORM:
             #     force_norm_ratio = MAX_FORCE_NORM/force_norm
