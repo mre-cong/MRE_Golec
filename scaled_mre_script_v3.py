@@ -50,6 +50,7 @@ import mre.sphere_rasterization
 import springs
 # import magnetism
 import simulate
+import random
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 #remember, purpose, signature, stub
@@ -118,14 +119,62 @@ def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def placeholder_particle_placement(radius,l_e,dimensions):
+def placeholder_particle_placement(radius,l_e,dimensions,placement_type,volume_fraction=None,n_particles=1):
     Nel_x, Nel_y, Nel_z = dimensions
     radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
     #if i want to think about the grid of possible "points" where a particle would be entirely within the internal volume (no voxel of the particle existing at the boundaries of the simulated system), then i need to think about the number of potential voxels in each dimension that could be the center voxel of a particle. if i am placing them "randomly" then i need to ensure that the particles neither overlap, or have immediately adjacent voxels. 
-    allowed_elements_x = (Nel_x - 2*radius_voxels).astype(np.int32)
-    allowed_elements_y = (Nel_y - 2*radius_voxels).astype(np.int32)
-    allowed_elements_z = (Nel_z - 2*radius_voxels).astype(np.int32)
-    pass
+    allowed_elements_x = (Nel_x - 2*radius_voxels - 1).astype(np.int32)
+    allowed_elements_y = (Nel_y - 2*radius_voxels - 1).astype(np.int32)
+    allowed_elements_z = (Nel_z - 2*radius_voxels - 1).astype(np.int32)
+    #if i want a particular volume fraction, i should estimate the number of particles
+    if volume_fraction != None:
+        total_volume = Nel_x*Nel_y*Nel_z*np.power(l_e,3)
+        total_particle_volume = total_volume*volume_fraction
+        single_particle_volume = (4/3)*np.pi*np.power(radius,3)
+        num_particles = int(np.floor(total_particle_volume/single_particle_volume))
+    else:
+        num_particles = n_particles
+    particles = []
+    particle_posns = []
+    placement_allowed_array = np.ones((Nel_x,Nel_y,Nel_z),dtype=np.bool_)
+    for i in range(np.ceil(radius_voxels).astype(np.int32)):
+        placement_allowed_array[i,:,:] = False
+        placement_allowed_array[:,i,:] = False
+        placement_allowed_array[:,:,i] = False
+        placement_allowed_array[(-1*i)-1,:,:] = False
+        placement_allowed_array[:,(-1*i)-1,:] = False
+        placement_allowed_array[:,:,(-1*i)-1] = False
+    # print(placement_allowed_array)
+    if 'regular' in placement_type:
+        pass
+    elif 'random' in placement_type:
+        failed_attempt_count = 0
+        particles_placed = 0
+        while particles_placed < num_particles:
+            if failed_attempt_count > 10:
+                print(f'failed to place particle {particles_placed+1}, after {failed_attempt_count} attempts. exiting particle placement loop')
+            potential_x_posn = random.randint(0,allowed_elements_x) + int((2*radius_voxels + 1)/2)
+            potential_y_posn = random.randint(0,allowed_elements_y) + int((2*radius_voxels + 1)/2)
+            potential_z_posn = random.randint(0,allowed_elements_z) + int((2*radius_voxels + 1)/2)
+            if placement_allowed_array[potential_x_posn,potential_y_posn,potential_z_posn]:
+                # placement_allowed_array[potential_x_posn,potential_y_posn,potential_z_posn] = False
+                exclusion_range = int(radius_voxels*2)
+                for i in range(potential_x_posn-exclusion_range,potential_x_posn+exclusion_range):
+                    for j in range(potential_y_posn-exclusion_range,potential_y_posn+exclusion_range):
+                        for k in range(potential_z_posn-exclusion_range,potential_z_posn+exclusion_range):
+                            if i < 0 or j < 0 or k < 0 or i >= Nel_x or j >= Nel_y or k >= Nel_z:
+                                pass
+                            else:
+                                grid_distance = np.abs(potential_x_posn-i) + np.abs(potential_y_posn-j) + np.abs(potential_z_posn-k)
+                                if grid_distance <= exclusion_range:
+                                    placement_allowed_array[i,j,k] = False
+                particles.append(mre.sphere_rasterization.place_sphere_normalized(radius_voxels,np.array([potential_x_posn,potential_y_posn,potential_z_posn]),dimensions))
+                particles_placed +=1
+                failed_attempt_count = 0
+                # print(placement_allowed_array)
+            else:
+                failed_attempt_count += 1
+    return np.array(particles,dtype=np.int64)
 
 def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):
     """Run a simulation applying a series of a particular type of strain to the volume, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
@@ -240,7 +289,7 @@ def run_strain_sim(output_dir,strain_type,strain_direction,strains,Hext,x0,eleme
         mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
     return total_delta, return_status
 
-def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False):
+def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,criteria_flag=True,plotting_flag=True,persistent_checkpointing_flag=False,particle_rotation_flag=False,gpu_flag=False,step_size=np.float32(0.005)):
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
@@ -255,10 +304,12 @@ def run_hysteresis_sim(output_dir,Hext_series,x0,elements,particles,boundaries,d
         try:
             print(f'Running simulation with external magnetic field: ({Hext[0]*mu0}, {Hext[1]*mu0}, {Hext[2]*mu0}) T\n')
             start = time.time()
-            if particle_rotation_flag == False:
+            if not particle_rotation_flag:
                 sol, return_status = simulate.simulate_scaled(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
-            elif particle_rotation_flag == True:
+            elif particle_rotation_flag and (not gpu_flag):
                 sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
+            elif gpu_flag:
+                sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -469,7 +520,7 @@ def run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext
     return total_delta, return_status
 
 def run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
-    """Run a simulation applying a series of a particular type of strain to the volume with a series of applied external magnetic fields, by passing the strain type as a string (one of the following: tension, compression, shearing, torsion), the strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
+    """Run a simulation applying a series of a particular type of stress/strain to the volume with a series of applied external magnetic fields, by passing the boundary condition type as a string (one of the following: tension, compression, shearing, torsion, or simple_stress_* where * is one of tension/compression/shearing), the stress/strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the stress/strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing strain the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     total_delta = 0
     for count, stress in enumerate(stresses):
         boundary_conditions = (bc_type,(bc_direction[0],bc_direction[1]),stress)
@@ -987,9 +1038,11 @@ def experimental_stress_simulation_tests():
     discretizations = [1]
     mu0 = 4*np.pi*1e-7
     H_mag = 0.1/mu0
-    n_field_steps = 1
+    n_field_steps = 10
     H_step = H_mag/n_field_steps
     Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
+    # if hysteresis_loop_flag:
+    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
     # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
     stress_types = ('simple_stress_compression',)#('simple_stress_shearing',)
@@ -1008,7 +1061,7 @@ def experimental_stress_simulation_tests():
                         Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
                         print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
                         print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=3,max_integration_steps=3000,tolerance=1e-4,gpu_flag=False)
+                        main_field_dependent_modulus_stress(discretization_order=discretization_order,separation_meters=9e-6,E=E,nu=0.47,Hext_series=Hext_series,field_or_bc_type_string=field_or_bc_type_string,bc_type=stress_type,bc_direction=bc_direction,max_integrations=5,max_integration_steps=5000,tolerance=1e-4,gpu_flag=True)
                         total_sim_num += 1
     print(total_sim_num)
 
@@ -1202,8 +1255,13 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
     springs_var = springs_var[:num_springs,:]
     
+    # placement_type= 'random'
+    # volume_fraction = 0.03
+    # random_particles = placeholder_particle_placement(particle_radius,l_e,normalized_dimensions,placement_type,n_particles=2)
+    # particles = random_particles
     # particles = np.array([],dtype=np.int32)
     particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation)
+    # springs_var = reinforce_particle_particle_spring(springs_var,particles)
     chi = 131
     Ms = 1.9e6
 
@@ -1273,13 +1331,75 @@ def main_field_dependent_modulus_stress(discretization_order=1,separation_meters
         Ms = np.float32(Ms)
         elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
         springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
-        step_size = cp.float32(0.01)#cp.float32(0.01/2)
+        step_size = cp.float32(0.01/2)#cp.float32(0.01)
         simulation_time, return_status = run_field_dependent_stress_sim_gpu_integrator(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag=True)
     else:
         simulation_time, return_status = run_field_dependent_stress_sim(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,t_f,particle_radius,particle_mass,chi,Ms,drag,max_integrations,max_integration_steps,tolerance,criteria_flag=False,plotting_flag=False,persistent_checkpointing_flag=True,particle_rotation_flag=True,gpu_flag=gpu_flag)
     my_sim.append_log(f'Simulation took:{simulation_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
+def reinforce_particle_particle_spring(springs,particles):
+    """go through the springs variable and greatly increase the spring stiffness of intra-particle nodes"""
+    particles_set = set(np.ravel(particles))
+    for i in range(springs.shape[0]):
+        spring_node_indices = set(springs[i,0:2].astype(np.int32))
+        if spring_node_indices.issubset(particles_set):
+            springs[i,2] *= 100
+    return springs
+
+def batch_job_runner():
+    """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
+    youngs_modulus = [9e3]
+    discretizations = [1]
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.1/mu0
+    n_field_steps = 10
+    H_step = H_mag/n_field_steps
+    Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
+    # if hysteresis_loop_flag:
+    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    stress_types = ('simple_stress_compression',)
+    bc_type_strings = ('compression_stress',)
+    bc_directions = ((('x','x'),),)
+    Hext_angles = (0,)
+    total_sim_num = 0
+    for E in youngs_modulus:
+        for discretization_order in discretizations:
+            for i, stress_type in enumerate(stress_types):
+                for bc_direction in bc_directions[i]:
+                    field_or_bc_type_string = bc_type_strings[i]
+                    for Hext_angle in Hext_angles:
+                        Hext_series = np.zeros((len(Hext_series_magnitude),3))
+                        Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_angle)
+                        Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_angle)
+                        print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
+                        print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
+                        # parameters could be a dict with key value pairs describing the simulation, acting like a struct, sim_type would be a string used to describe the type of simulation to run (stress based/strain based boundary conditions, magnetic hysteresis, etc.)
+                        run_sim(parameters,sim_type)
+                        total_sim_num += 1
+    print(total_sim_num)
+
+def run_sim(parameters,sim_type):
+    # needs to select amongst different simulation types, and needs to initialize things
+    """Driver for a simulation of a particular type with a given set of parameters."""
+    sim_variables_dict = initialize_simulation_variables(parameters)
+    if 'hystersis' in sim_type:
+        run_hysteresis_sim(sim_variables_dict)
+    elif 'stress' in sim_type:
+        run_stress_sim(sim_variables_dict)
+    elif 'strain' in sim_type:
+        run_strain_sim(sim_variables_dict)
+    else:
+        print(f'simulation of type: {sim_type} is not defined\n Exiting Program')
+        return -1
+
 if __name__ == "__main__":
+    # radius = 1.5e-6
+    # l_e = 1e-6
+    # dimensions = [10,10,10]
+    # placement_type = 'random'
+    # volume_fraction = 0.03
+    # placeholder_particle_placement(radius,l_e,dimensions,placement_type,volume_fraction)
     experimental_stress_simulation_tests()
     # experimental_simulation_tests()
     # main_series_simulations()
