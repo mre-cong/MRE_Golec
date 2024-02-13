@@ -146,6 +146,11 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
     v1 = np.array([1,0,0])*basis_vec_len
     v2 = np.array([0,1,0])*basis_vec_len
     v3 = np.array([0,0,1])*basis_vec_len
+    voxel_diameter = np.max(grid_points) + 1
+    # print(f'maximum and minimum x grid point:{np.max(grid_points[:,0])}, {np.min(grid_points[:,0])}')
+    # print(f'maximum and minimum y grid point:{np.max(grid_points[:,1])}, {np.min(grid_points[:,1])}')
+    # print(f'maximum and minimum z grid point:{np.max(grid_points[:,2])}, {np.min(grid_points[:,2])}')
+    translation -= (voxel_diameter-1)/2
     nodes = np.zeros((1,3))
     for point in grid_points:
         center = (np.array([point[0], point[1], point[2]])*l_e) + translation #+ basis_vec_len
