@@ -1096,6 +1096,7 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
     fig.tight_layout()
     savename = output_dir + f'outersurfaces_contours_tiled_' + tag + '.png'
     plt.savefig(savename)
+    plt.close()
     return 0
 
 def plot_outer_surfaces_wireframe(eq_node_posns,node_posns,boundary_conditions,output_dir,tag=""):
@@ -1327,6 +1328,38 @@ def get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D):
         yvar = yposn_3D[:,:,idx]
         zvar = zposn_3D[:,:,idx]
     return xvar, yvar, zvar
+
+def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
+    """Plot a scatter plot showing the nodes making up the particles"""
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    xlabel = 'X (l_e)'
+    ylabel = 'Y (l_e)'
+    zlabel = 'Z (l_e)'
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    particles = np.ravel(particles)
+    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2])
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    format_figure_3D(ax)
+    if tag != "":
+        ax.set_title(tag)
+        tag = "_" + tag
+    savename = output_dir + f'particle_nodes_'+ tag +'.png'
+    plt.savefig(savename)
+    plt.close()
 
 def main():
     pass
