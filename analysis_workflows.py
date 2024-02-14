@@ -7,8 +7,8 @@ import scipy.special as sci
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
-plt.switch_backend('TkAgg')
-# plt.switch_backend('Agg')
+# plt.switch_backend('TkAgg')
+plt.switch_backend('Agg')
 import time
 import os
 import tables as tb#pytables, for HDF5 interface
@@ -305,6 +305,13 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     #see en.wikipedia.org/wiki/Lame_parameters
     lame_lambda = E*nu/((1+nu)*(1-2*nu))
     shear_modulus = E/(2*(1+nu))
+
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+    #get the particle separations and overall magnetizations and plot them
+    plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+
 #   in a loop, output files are read in and manipulated
 #       node positions and boundary conditions are used to calculate forces happening at relevant fixed boundaries
 #       forces are scaled to SI units
@@ -327,23 +334,19 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
     subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
     # subplot_stress_field_modulus(alternative_stress_measure,strain,strain_direction,alternative_effective_modulus,Bext_series,output_dir+'modulus/',tag="alternative_measures")
-    #get the the applied field associated with each output file
-    Hext_series = get_applied_field_series(sim_dir)
-    num_output_files = get_num_output_files(sim_dir)
-    #get the particle separations and overall magnetizations and plot them
-    plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
         #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
         #plotting the force components acting on the probed surface
         if boundary_conditions[0] == 'plate_compression':
             force_plate_flag = True
         else:
             force_plate_flag = False
-        plot_surface_node_force_vector(sim_dir,output_dir,i,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag)
+        # plot_surface_node_force_vector(sim_dir,output_dir,i,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag)
 #       node positions are scaled to SI units using l_e variable for visualization
         si_final_posns = final_posns*l_e
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
@@ -1325,6 +1328,54 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     plt.savefig(savename)
     plt.close()
 
+def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
+    """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
+    num_particles = particles.shape[0]
+    num_separations = int(sci.binom(num_particles,2))
+    separations = np.zeros((num_output_files,num_separations))
+    magnetization = np.zeros((num_output_files,3))
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
+        Hext = np.float64(Hext)
+        separations[i,:] = get_particle_separation(final_posns,particles)
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+        for j, particle in enumerate(particles):
+            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
+        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    # fig.tight_layout()
+    B_field_norms = np.linalg.norm(mu0*Hext_series,axis=1)
+    turning_point_index = np.argwhere(np.max(B_field_norms)==B_field_norms)[0][0]
+    upward_leg, = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1]*l_e,'o-')
+    upward_leg.set_label('Upward Leg')
+    downward_leg, = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:]*l_e,'x--')
+    downward_leg.set_label('Downward Leg')
+    axs[0].set_xlabel('Applied Field (T)')
+    axs[0].set_ylabel('Particle Separation (m)')
+    axs[0].legend()
+    #find the unit vector describing the direction along which the external magnetic field is applied
+    Bext_series = mu0*Hext_series
+    nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+    Bext_unit_vector = Bext_series[nonzero_field_value_indices[0],:]/np.linalg.norm(Bext_series[nonzero_field_value_indices[0],:])
+    magnetization_along_applied_field = np.dot(magnetization,Bext_unit_vector)
+    upward_leg, = axs[1].plot(B_field_norms[:turning_point_index+1],magnetization_along_applied_field[:turning_point_index+1],'o-')
+    # upward_leg.set_label('Upward Leg')
+    downward_leg, = axs[1].plot(B_field_norms[turning_point_index:],magnetization_along_applied_field[turning_point_index:],'x--')
+    # downward_leg.set_label('Downward Leg')
+    axs[1].set_xlabel('Applied Field (T)')
+    axs[1].set_ylabel('Normalized System Magnetization')
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # fig.show()
+    savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
+    plt.savefig(savename)
+    plt.close()
+
 def plot_surface_node_force_vector(sim_dir,output_dir,file_number,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag=False):
     """Calculate the forces acting on the "probed" boundary nodes and plot the force vector components and norm in a subplot. Option force_plate_flag to calculate and plot the forces acting on a fictional "force plate" for "plate based" stress boundary conditions"""
     #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
@@ -1570,6 +1621,91 @@ def gpu_repeat_accel_calculation_comparison(sim_dir):
             compare_repeat_calculation_gpu_acceleration_vectors(sim_dir,subfolder,i)
             i += 1
 
+def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
+    """Given the folder containing simulation output, calculate relevant quantities and generate figures.
+    
+    For hysteresis simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization"""
+    #   if a directory to save the visualizations doesn't exist, make it
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    figure_types = ['modulus','particle_behavior','stress','strain','cuts','outer_surfaces']
+    figure_subtypes = ['center', 'particle', 'outer_surface']
+    for figure_type in figure_types:
+        if not (os.path.isdir(output_dir+figure_type+'/')):
+          os.mkdir(output_dir+figure_type+'/')
+        if figure_type == 'stress' or figure_type =='strain' or figure_type == 'cuts':
+            for figure_subtype in figure_subtypes:
+                if not (figure_type == 'cuts' and figure_subtype == 'outer_surface'):
+                    if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                        os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
+#   user provides directory containing simulation files, including init.h5, output_i.h5 files
+#   init.h5 is read in and simulation parameters are extracted
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    if gpu_flag:
+        initial_node_posns = np.float64(initial_node_posns)
+        beta_i = np.float64(beta_i)
+        springs_var = np.float64(springs_var)
+        kappa = np.float64(kappa)
+        beta = np.float64(beta)
+        l_e = np.float64(l_e)
+        particle_mass = np.float64(particle_mass)
+        particle_radius = np.float64(particle_radius)
+        Ms = np.float64(Ms)
+        chi = np.float64(chi)
+#   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
+    surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
+    surf_type = ('left','right','front','back','bottom','top')
+#   find indices corresponding to the "center" of the simulated volume for plotting and visualization, corresponding to cut_types values
+    center_indices = (int((num_nodes[2]-1)/2),int((num_nodes[1]-1)/2),int((num_nodes[0]-1)/2))
+#   lambda and mu (Lame parameters) are calculated from Young's modulus and Poisson's ratio variables from the init.h5 file
+    #see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
+
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+    #get the particle separations and overall magnetizations and plot them
+    plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+
+# #   in a loop, output files are read in and manipulated
+#     for i in range(num_output_files):#range(6,num_output_files):
+#         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+#         boundary_conditions = format_boundary_conditions(boundary_conditions)
+#         # mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+#         #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
+#         #plotting the force components acting on the probed surface
+#         if boundary_conditions[0] == 'plate_compression':
+#             force_plate_flag = True
+#         else:
+#             force_plate_flag = False
+#         # plot_surface_node_force_vector(sim_dir,output_dir,i,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag)
+# #       node positions are scaled to SI units using l_e variable for visualization
+#         si_final_posns = final_posns*l_e
+# #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
+# #TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
+#         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+#         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+#             try:
+#                 mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+#             except:
+#                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+# #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+#         mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+# #       visualizations of cuts through the center of the volume are generated and saved out
+#         mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+#         mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+#         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+#         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+#             try:
+#                 mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
+#             except:
+#                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+# #       visualizations of cuts through the particle centers and edges are generated and saved out
+#         if particles.shape[0] != 0:
+#             mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/particle/',tag=f"series_{i}")
+#             mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,output_dir+'cuts/particle/',tag=f"series_{i}")
 
 if __name__ == "__main__":
     main()
@@ -1619,8 +1755,25 @@ if __name__ == "__main__":
     # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the VCF turned off (nu=0.25) and the springs turned off (E=0)
     # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
     # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    gpu_repeat_accel_calculation_comparison(sim_dir_two)
-    cpu_vs_gpu_time_step_comparison(sim_dir_one,sim_dir_two)
-    cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two)
+    # gpu_repeat_accel_calculation_comparison(sim_dir_two)
+    # cpu_vs_gpu_time_step_comparison(sim_dir_one,sim_dir_two)
+    # cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two)
+    
+    # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # gpu based acceleration calculation and gpu based leapfrog integrator used simulation with "random" particle placement (but only two particles)
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # gpu based acceleration calculation and gpu based leapfrog integrator used for hysteresis simulation, with new (partially implemented) batch job driving function and simulation running function
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)
+    # ran a series of different discretization orders doing the hysteresis simulation. for this set of results the particle placement was not working as expected... so the initial particle separation was not always the 9 microns that was desired. that has since been fixed (as of 2024-02-13)
+    # for i in range(6):
+    #     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_{i}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    #     temp_hysteresis_analysis(sim_dir,gpu_flag=False)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    temp_hysteresis_analysis(sim_dir,gpu_flag=True)
