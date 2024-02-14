@@ -429,9 +429,11 @@ class Simulation(object):
     def write_log(self,output_dir):
         timestamp = time.ctime()
         script_name = lib_programname.get_path_executed_script()
-        explanation = "default explanation empty"#input("Add a sentence or two describing this simulation and/or explaining it's purpose:\n")
         with open(output_dir+'logfile.txt','a') as f_obj:
-            f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
+            f_obj.writelines([self.report2(),str(script_name)+'\n',timestamp+'\n'])
+        # explanation = "default explanation empty"#input("Add a sentence or two describing this simulation and/or explaining it's purpose:\n")
+        # with open(output_dir+'logfile.txt','a') as f_obj:
+        #     f_obj.writelines([explanation+'\n',self.report2(),str(script_name)+'\n',timestamp+'\n'])
 
     def append_log(self,message,output_dir):
         """Append message to an existing logfile.txt in output_dir, or else create logfile.txt and write message to it."""
