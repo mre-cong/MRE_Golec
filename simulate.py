@@ -156,7 +156,7 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
         else:
             new_time = t + np.max(np.array(sim_time))
             sim_time.append(new_time)
-        solutions.append([*y])
+        # solutions.append([*y])
     def solout(t,y):
         solutions.append([t,*y])
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
@@ -276,7 +276,7 @@ def simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs
         criteria.plot_displacement_hist(final_posns,initialized_posns,output_dir)
     if get_time_flag:
         plot_simulation_time_versus_integration_step(sim_time,output_dir)
-        np.save(output_dir+'solutions.npy',solutions,allow_pickle=False)
+        # np.save(output_dir+'solutions.npy',solutions,allow_pickle=False)
     if get_norms_flag:
         plot_solution_and_derivative_norms_versus_integration_step(solution_norms,derivative_norms,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
@@ -443,7 +443,8 @@ def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     fig,ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
-    ax.hist(bins[:-1], bins, weights=counts)
+    ax.hist(a_norms,bins=30)
+    # ax.hist(bins[:-1], bins, weights=counts)
     sigma = np.std(a_norms)
     mu = mean_accel
     ax.set_title(f'Residual '+tag+f' Histogram\nMaximum {max_accel}\nMean {mean_accel}\n$\sigma={sigma}$\nRMS {rms_accel}')
@@ -461,11 +462,11 @@ def get_displacement_norms(final_posns,start_posns):
     mean_displacement = np.mean(displacement_norms)
     return mean_displacement,max_displacement
 
-def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement,output_dir):
+def plot_displacement_v_integration(num_integration_rounds,mean_displacement,max_displacement,output_dir):
     """Given the number of integrations,array of mean and maximum displacements, and a directory to save to, generate and save a figure with two plots of mean and maximum node displacement versus integration."""
     fig, axs = plt.subplots(2)
-    axs[0].plot(np.arange(max_iters),mean_displacement,'r--',label='mean')
-    axs[1].plot(np.arange(max_iters),max_displacement,'k-',label='max')
+    axs[0].plot(np.arange(num_integration_rounds),mean_displacement[:num_integration_rounds],'r--',label='mean')
+    axs[1].plot(np.arange(num_integration_rounds),max_displacement[:num_integration_rounds],'k-',label='max')
     axs[0].set_title('displacement between integration iterations')
     axs[0].set_ylabel('displacement mean (units of l_e)')
     axs[1].set_ylabel('displacement max (units of l_e)')
@@ -476,6 +477,17 @@ def plot_displacement_v_integration(max_iters,mean_displacement,max_displacement
     plt.savefig(output_dir+'displacement.png')
     plt.close()
     
+def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
+    """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
+    fig, ax = plt.subplots()
+    simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
+    snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
+    ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries],'o-')
+    ax.set_xlabel('simulation time')
+    ax.set_ylabel(f'{tag}')
+    plt.savefig(output_dir+f'{tag}_snapshots.png')
+    plt.close()
+
 class SimCriteria:
     """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
     def __init__(self,solutions,*args):
@@ -1987,8 +1999,6 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     elif tmp_var[-1] != '':
         checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
     velocities = cp.zeros(posns.shape,dtype=cp.float32)
-    # if plotting_flag:
-    #     mre.analyze.plot_center_cuts(initialized_posns,posns,springs,particles,boundary_conditions,output_dir,tag='starting_configuration')
     N_nodes = int(posns.shape[0]/3)
     particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
     #needs to be scaled, but the scaling here includes (inside of beta) the characteristic time, squared, which is necessary for scaling the angular acceleration. the angular acceleration is scaling handled internally in the function get_accel_scaled_rotation(), but we need to account for the term to scale the moment of inertia properly, so we remove the time scaling that was previously involved here. the particle mass and the number of nodes making up the particle is used to go from beta to beta_i
@@ -2004,32 +2014,61 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
-    a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    host_accel = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
     # print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
-    a_var = cp.array(a_var.astype(np.float32)).reshape((a_var.shape[0]*a_var.shape[1],1),order='C')
+    a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
     size_entries = int(N_nodes*3)
     leapfrog_update(velocities,a_var,np.float32(step_size/2),size_entries)
     #exploring issues with leapfrog. stepsize wasn't originally float32, and the division by two reset step_size to a float64 even if step_size was float32, resulting in step sizes being way off from desired values.
     # host_velocities = cp.asnumpy(velocities)
     # host_velocities = np.reshape(host_velocities,(N_nodes,3))
     # print(f'particle velocities: {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
-    particle_center = np.zeros((2,3))
+    # particle_center = np.zeros((2,3))
     rerun_flag = False
+    snapshot_stepsize = 200
+    snapshot_count = 0
+    particle_center = np.zeros((particles.shape[0],3))
+    particle_separation = np.zeros((int(max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),))
+    snapshot_accel_norm = np.zeros(particle_separation.shape)
+    snapshot_accel_norm_std = np.zeros(particle_separation.shape)
+    snapshot_vel_norm = np.zeros(particle_separation.shape)
+    snapshot_vel_norm_std = np.zeros(particle_separation.shape)
+    previous_soln = np.zeros((N_nodes,3))
+    snapshot_soln_diff_norm = np.zeros(particle_separation.shape)
     i = 0
     while i < max_integrations:
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
             leapfrog_update(posns,velocities,step_size,size_entries)
-            # host_posns = cp.asnumpy(posns)
-            # host_posns = np.reshape(host_posns,(N_nodes,3))
-            # for i, particle in enumerate(particles):
-            #     particle_center[i,:] = get_particle_center(particle,host_posns)
-            #     # print(f'particle center posns:{get_particle_center(particle,host_posns)}')
-            # particle_separation = np.linalg.norm(particle_center[0]-particle_center[1])
+            if np.mod(j,snapshot_stepsize) == 0:
+                host_posns = cp.asnumpy(posns)
+                host_posns = np.reshape(host_posns,(N_nodes,3))
+                for particle_count, particle in enumerate(particles):
+                    particle_center[particle_count,:] = get_particle_center(particle,host_posns)
+                particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
+
+                if snapshot_count > 0:
+                    dparticle_dt = (particle_separation[snapshot_count] - particle_separation[snapshot_count-1])/snapshot_stepsize*step_size
+
+                host_accel_norms = np.linalg.norm(host_accel,axis=1)
+                snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
+                snapshot_accel_norm_std[snapshot_count] = np.std(host_accel_norms)
+
+                host_velocities = cp.asnumpy(velocities)
+                host_velocities = np.reshape(host_velocities,(N_nodes,3))
+                host_vel_norms = np.linalg.norm(host_velocities,axis=1)
+                snapshot_vel_norm[snapshot_count] = np.mean(host_vel_norms)
+                snapshot_vel_norm_std[snapshot_count] = np.std(host_vel_norms)
+
+                if snapshot_count > 0:
+                    soln_diff = host_posns - previous_soln
+                    snapshot_soln_diff_norm[snapshot_count-1] = np.linalg.norm(np.ravel(soln_diff))
+                previous_soln = host_posns
+                snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
-            a_var = cp.array(a_var.astype(np.float32)).reshape((a_var.shape[0]*a_var.shape[1],1),order='C')
+            host_accel = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             # host_velocities = cp.asnumpy(velocities)
             # host_velocities = np.reshape(host_velocities,(N_nodes,3))
@@ -2043,22 +2082,13 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         host_velocities = cp.asnumpy(velocities)
         sol = np.concatenate((host_posns,host_velocities))
         host_accel = cp.asnumpy(a_var)
+        host_accel = np.reshape(host_accel,(N_nodes,3))
         a_norms = np.linalg.norm(host_accel,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         final_posns = np.reshape(host_posns,(N_nodes,3))
         final_v = np.reshape(host_velocities,(N_nodes,3))
         v_norms = np.linalg.norm(final_v,axis=1)
         v_norm_avg = np.sum(v_norms)/N_nodes
-        # if i == 0:
-        #     tag = '1st_configuration'
-        # elif i == 1:
-        #     tag = '2nd_configuration'
-        # elif i == 2:
-        #     tag = '3rd_configuration'
-        # else:
-        #     tag = f'{i+1}th_configuration'
-        # if plotting_flag:
-        #     mre.analyze.plot_center_cuts(initialized_posns,final_posns,springs,particles,boundary_conditions,output_dir,tag)
         if a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
             print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
@@ -2075,6 +2105,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
             velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
             i -= 1
+            snapshot_count -= (int(j/snapshot_stepsize) + 1)
             rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
@@ -2088,8 +2119,16 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         if persistent_checkpointing_flag:
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+        print(f'approximate derivative of particle separation wrt time with dt = {snapshot_stepsize*step_size}: {dparticle_dt}')
         i += 1
-    plot_displacement_v_integration(max_integrations,mean_displacement,max_displacement,output_dir)
+    plot_displacement_v_integration(i,mean_displacement,max_displacement,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,particle_separation*1e6,output_dir,tag="particle_separation(um)")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="acceleration norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm_std,output_dir,tag="acceleration norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count-1,snapshot_soln_diff_norm,output_dir,tag="position solution vector difference norm")
+    
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
