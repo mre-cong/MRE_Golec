@@ -2122,12 +2122,15 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         if persistent_checkpointing_flag:
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
-        print(f'approximate derivative of particle separation wrt time with dt = {snapshot_stepsize*step_size}: {dparticle_dt}')
+        if particles.shape[0] != 0:
+            particle_velocity = np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0]
+            print(f'particle velocity = {particle_velocity}')
         i += 1
-        if i == max_integrations and np.abs(dparticle_dt) > tolerance:#if the particles are still in motion, allow the integration to continue
-            max_integrations += 1
-            if max_integrations > hard_limit_max_integrations:
-                break
+        if i == max_integrations and particles.shape[0] != 0:
+            if np.linalg.norm(particle_velocity) > tolerance:#if the particles are still in motion, allow the integration to continue
+                max_integrations += 1
+                if max_integrations > hard_limit_max_integrations:
+                    break
     plot_displacement_v_integration(i,mean_displacement,max_displacement,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
