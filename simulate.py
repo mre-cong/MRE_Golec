@@ -1992,6 +1992,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     solutions = []
     def solout(t,y):
         solutions.append([t,*y])
+    hard_limit_max_integrations = 2*max_integrations
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
     tmp_var = output_dir.split('/')
     if tmp_var[-1] == '':
@@ -2105,7 +2106,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
             velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
             i -= 1
-            snapshot_count -= (int(j/snapshot_stepsize) + 1)
+            snapshot_count -= (int(np.round(max_integration_steps/2/snapshot_stepsize)) + 1)
+            snapshot_stepsize *= 2
             rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
@@ -2116,11 +2118,16 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 rerun_flag = False
                 step_size = np.float32(2*step_size)
                 max_integration_steps = int(max_integration_steps/2)
+                snapshot_stepsize *= 0.5
         if persistent_checkpointing_flag:
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
         print(f'approximate derivative of particle separation wrt time with dt = {snapshot_stepsize*step_size}: {dparticle_dt}')
         i += 1
+        if i == max_integrations and np.abs(dparticle_dt) > tolerance:#if the particles are still in motion, allow the integration to continue
+            max_integrations += 1
+            if max_integrations > hard_limit_max_integrations:
+                break
     plot_displacement_v_integration(i,mean_displacement,max_displacement,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
