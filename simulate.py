@@ -2007,8 +2007,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     # scaled_moment_of_inertia = particle_moment_of_inertia*beta/(particle_mass/particles.shape[1])/l_e/characteristic_time_squared
     # using the fact that we have an analytical expression, I will rewrite the above initialization of the scaled moment of inertia in a way that uses less operations
     scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
-    max_displacement = np.zeros((max_integrations,))
-    mean_displacement = np.zeros((max_integrations,))
+    max_displacement = np.zeros((hard_limit_max_integrations,))
+    mean_displacement = np.zeros((hard_limit_max_integrations,))
     return_status = 1
     last_posns = cp.asnumpy(posns)
     last_posns = np.reshape(last_posns,(N_nodes,3))
@@ -2028,14 +2028,14 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     rerun_flag = False
     snapshot_stepsize = 200
     snapshot_count = 0
-    particle_center = np.zeros((particles.shape[0],3))
-    particle_separation = np.zeros((int(max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),))
-    snapshot_accel_norm = np.zeros(particle_separation.shape)
-    snapshot_accel_norm_std = np.zeros(particle_separation.shape)
-    snapshot_vel_norm = np.zeros(particle_separation.shape)
-    snapshot_vel_norm_std = np.zeros(particle_separation.shape)
-    previous_soln = np.zeros((N_nodes,3))
-    snapshot_soln_diff_norm = np.zeros(particle_separation.shape)
+    particle_center = np.zeros((particles.shape[0],3),dtype=np.float32)
+    particle_separation = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),),dtype=np.float32)
+    snapshot_accel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
+    snapshot_accel_norm_std = np.zeros(particle_separation.shape,dtype=np.float32)
+    snapshot_vel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
+    snapshot_vel_norm_std = np.zeros(particle_separation.shape,dtype=np.float32)
+    previous_soln = np.zeros((N_nodes,3),dtype=np.float32)
+    snapshot_soln_diff_norm = np.zeros(particle_separation.shape,dtype=np.float32)
     i = 0
     while i < max_integrations:
         print(f'starting integration run {i+1}')
@@ -2048,8 +2048,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                     particle_center[particle_count,:] = get_particle_center(particle,host_posns)
                 particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
 
-                if snapshot_count > 0:
-                    dparticle_dt = (particle_separation[snapshot_count] - particle_separation[snapshot_count-1])/snapshot_stepsize*step_size
+                # if snapshot_count > 0:
+                #     dparticle_dt = (particle_separation[snapshot_count] - particle_separation[snapshot_count-1])/snapshot_stepsize*step_size
 
                 host_accel_norms = np.linalg.norm(host_accel,axis=1)
                 snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
@@ -2111,6 +2111,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
+            print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm:')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
             last_velocity = final_v.copy()
@@ -2123,11 +2124,11 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
         if particles.shape[0] != 0:
-            particle_velocity = np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0]
+            particle_velocity = np.linalg.norm(np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0])
             print(f'particle velocity = {particle_velocity}')
         i += 1
         if i == max_integrations and particles.shape[0] != 0:
-            if np.linalg.norm(particle_velocity) > tolerance:#if the particles are still in motion, allow the integration to continue
+            if particle_velocity > tolerance:#if the particles are still in motion, allow the integration to continue
                 max_integrations += 1
                 if max_integrations > hard_limit_max_integrations:
                     break
@@ -2137,8 +2138,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,particle_separation*1e6,output_dir,tag="particle_separation(um)")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
-    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="acceleration norm average")
-    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm_std,output_dir,tag="acceleration norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm_std,output_dir,tag="velocity norm standard deviation")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count-1,snapshot_soln_diff_norm,output_dir,tag="position solution vector difference norm")
     
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
