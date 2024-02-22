@@ -488,6 +488,19 @@ def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,out
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
 
+def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
+    """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
+    fig, ax = plt.subplots()
+    simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
+    snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
+    ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries,0],'o-',label=f'{tag} x')
+    ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries,1],'o-',label=f'{tag} y')
+    ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
+    ax.set_xlabel('simulation time')
+    ax.set_ylabel(f'{tag}')
+    plt.savefig(output_dir+f'{tag}_snapshots.png')
+    plt.close()
+
 class SimCriteria:
     """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
     def __init__(self,solutions,*args):
@@ -2028,8 +2041,12 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     rerun_flag = False
     snapshot_stepsize = 200
     snapshot_count = 0
-    particle_center = np.zeros((particles.shape[0],3),dtype=np.float32)
-    particle_separation = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),),dtype=np.float32)
+    if particles.shape[0] != 0:
+        particle_center = np.zeros((particles.shape[0],3),dtype=np.float32)
+        particle_posn = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
+        particle_velocity = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
+        particle_accel = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
+        particle_separation = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),),dtype=np.float32)
     snapshot_accel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
     snapshot_accel_norm_std = np.zeros(particle_separation.shape,dtype=np.float32)
     snapshot_vel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
@@ -2044,12 +2061,6 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             if np.mod(j,snapshot_stepsize) == 0:
                 host_posns = cp.asnumpy(posns)
                 host_posns = np.reshape(host_posns,(N_nodes,3))
-                for particle_count, particle in enumerate(particles):
-                    particle_center[particle_count,:] = get_particle_center(particle,host_posns)
-                particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
-
-                # if snapshot_count > 0:
-                #     dparticle_dt = (particle_separation[snapshot_count] - particle_separation[snapshot_count-1])/snapshot_stepsize*step_size
 
                 host_accel_norms = np.linalg.norm(host_accel,axis=1)
                 snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
@@ -2060,6 +2071,14 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 host_vel_norms = np.linalg.norm(host_velocities,axis=1)
                 snapshot_vel_norm[snapshot_count] = np.mean(host_vel_norms)
                 snapshot_vel_norm_std[snapshot_count] = np.std(host_vel_norms)
+
+                if particles.shape[0] != 0:
+                    for particle_count, particle in enumerate(particles):
+                        particle_center[particle_count,:] = get_particle_center(particle,host_posns)
+                    particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
+                    particle_posn[snapshot_count,:] = particle_center[0,:]*l_e
+                    particle_velocity[snapshot_count,:] = np.sum(host_velocities[particles[0,:],:],axis=0)/particles[0,:].shape
+                    particle_accel[snapshot_count,:] = np.sum(host_accel[particles[0,:],:],axis=0)/particles[0,:].shape
 
                 if snapshot_count > 0:
                     soln_diff = host_posns - previous_soln
@@ -2111,7 +2130,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
-            print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm:')
+            print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
             last_velocity = final_v.copy()
@@ -2135,7 +2154,11 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     plot_displacement_v_integration(i,mean_displacement,max_displacement,output_dir)
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
-    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,particle_separation*1e6,output_dir,tag="particle_separation(um)")
+    if particles.shape[0] != 0:
+        plot_snapshots(snapshot_stepsize,step_size,snapshot_count,particle_separation*1e6,output_dir,tag="particle_separation(um)")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_posn*1e6,output_dir,tag="particle_posn(um)")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_velocity,output_dir,tag="particle_velocity")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_accel,output_dir,tag="particle_accel")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
