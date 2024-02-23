@@ -304,6 +304,19 @@ def place_sphere_normalized(radius,center,dim):
     row_indices = get_row_indices_normalized(node_posns,dim)
     return row_indices
 
+def place_spheres_normalized(radius,centers,dim):
+    """Given the sphere radius in voxels, the positions of the centers of the spherical particles in scaled units, and the normalized dimensions of the simulation (number of elements in each direction), return the indices of the nodes that make up the spherical particles."""
+    grid_points = get_sphere_on_grid(radius)
+    node_posns = get_nodes_from_grid_voxels(grid_points,1,centers[0])
+    row_indices = get_row_indices_normalized(node_posns,dim)
+    particles = np.zeros((centers.shape[0],row_indices.shape[0]),dtype=np.int64)
+    particles[0] = row_indices
+    for i in range(1,centers.shape[0]):
+        rij = centers[0] - centers[i]
+        next_particle_node_posns = node_posns + rij
+        next_particle_indices = get_row_indices_normalized(next_particle_node_posns,dim)
+        particles[i] = next_particle_indices
+    return particles
 
 def place_spheres(radius,l_e,centers,dim):
     """returns a 2D array of row indices defining the vertices making up a rasterized spherical particle. Assumes all particles have the same size"""
