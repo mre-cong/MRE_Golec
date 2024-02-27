@@ -150,10 +150,10 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
     # print(f'maximum and minimum x grid point:{np.max(grid_points[:,0])}, {np.min(grid_points[:,0])}')
     # print(f'maximum and minimum y grid point:{np.max(grid_points[:,1])}, {np.min(grid_points[:,1])}')
     # print(f'maximum and minimum z grid point:{np.max(grid_points[:,2])}, {np.min(grid_points[:,2])}')
-    translation -= (voxel_diameter-1)/2
+    adjusted_translation = translation - (voxel_diameter-1)/2
     nodes = np.zeros((1,3))
     for point in grid_points:
-        center = (np.array([point[0], point[1], point[2]])*l_e) + translation #+ basis_vec_len
+        center = (np.array([point[0], point[1], point[2]])*l_e) + adjusted_translation #+ basis_vec_len
         # center = np.array([point[0]*l_e, point[1]*l_e, point[2]*l_e])
         node0 = center + v1 + v2 + v3
         node1 = center - v1 + v2 + v3
@@ -312,7 +312,7 @@ def place_spheres_normalized(radius,centers,dim):
     particles = np.zeros((centers.shape[0],row_indices.shape[0]),dtype=np.int64)
     particles[0] = row_indices
     for i in range(1,centers.shape[0]):
-        rij = centers[0] - centers[i]
+        rij = centers[i] - centers[0]
         next_particle_node_posns = node_posns + rij
         next_particle_indices = get_row_indices_normalized(next_particle_node_posns,dim)
         particles[i] = next_particle_indices
