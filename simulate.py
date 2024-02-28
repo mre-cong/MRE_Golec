@@ -15,6 +15,7 @@ import get_volume_correction_force_cy_nogil
 import get_spring_force_cy
 import magnetism
 import mre.initialize
+import mre.analyze
 
 # plt.switch_backend('TkAgg')
 
@@ -442,6 +443,9 @@ def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     counts, bins = np.histogram(a_norms, bins=30)
     fig,ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     ax.hist(a_norms,bins=30)
     # ax.hist(bins[:-1], bins, weights=counts)
@@ -451,6 +455,7 @@ def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     ax.set_xlabel(tag + ' norm')
     ax.set_ylabel('counts')
     savename = output_dir +'node_residual_'+tag+'_hist.png'
+    mre.analyze.format_figure(ax)
     plt.savefig(savename)
     plt.close()
 
@@ -480,17 +485,24 @@ def plot_displacement_v_integration(num_integration_rounds,mean_displacement,max
 def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
     fig, ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
     simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
     snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
     ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries],'o-')
     ax.set_xlabel('simulation time')
     ax.set_ylabel(f'{tag}')
+    mre.analyze.format_figure(ax)
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
 
 def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
     fig, ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
     simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
     snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
     ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries,0],'o-',label=f'{tag} x')
@@ -498,6 +510,8 @@ def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,s
     ax.plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
     ax.set_xlabel('simulation time')
     ax.set_ylabel(f'{tag}')
+    fig.legend()
+    mre.analyze.format_figure(ax)
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
 
@@ -1897,6 +1911,10 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
         stress = bc[2]
         surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
         net_force_mag = stress*surface_area
+        # working out method for stress that takes into account node type to assign forces
+        # first, find the "force per node" by considering the net force mangitude to be the sum of the forces assigned to each of the nodes, with different weights/forces dependent on node type. if the node is on the surface interior, it gets the largest force. if on the corner, 1/4 that value, on an edge, 1/2 the surface interior force value
+        #\net_force_mag = \sum_{nodes} force_per_node*weight, where weight is 1, 1/2, or 1/4. 1/4 for 4 nodes. 1/2 for num_edge_nodes. need to know num_edge_nodes. then need to assign forces properly.
+        # effective_num_nodes = fixed_nodes.shape[0] - 
         single_node_accel = np.squeeze((net_force_mag/stressed_nodes.shape[0])*host_beta_i[stressed_nodes])
         accel[stressed_nodes,force_index] += single_node_accel
     elif bc[0] == 'stress_compression':
@@ -1981,22 +1999,10 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
                 r_perpendicular_to_axis_of_rotation = translated_particle_nodes - r_parallel_to_axis_of_rotation
                 r_perp_magnitude = np.linalg.norm(r_perpendicular_to_axis_of_rotation,axis=1)
                 rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
-                # if np.any(rotational_acceleration_magnitude > 200):
-                #     print(f'large rotational acceleration')
                 rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
                 rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
                 rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
                 accel[particle] += rotational_acceleration
-                # with np.errstate(over='raise'):
-                    # accel[particle] += rotational_acceleration
-                # try:
-                #     with np.errstate(over='raise'):
-                #         accel[particle] += rotational_acceleration
-                # except:
-                #     print(f'error raised, potentially due to overflow. Inspect variable values')
-    # if np.any(np.isnan(accel)):
-    #     print(f'NaN entry found in the acceleration variable')
-    #     print(f'{np.count_nonzero(np.isnan(accel))} NaN entries in acceleration variable')
     return accel
 
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
@@ -2014,12 +2020,15 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
     velocities = cp.zeros(posns.shape,dtype=cp.float32)
     N_nodes = int(posns.shape[0]/3)
-    particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
-    #needs to be scaled, but the scaling here includes (inside of beta) the characteristic time, squared, which is necessary for scaling the angular acceleration. the angular acceleration is scaling handled internally in the function get_accel_scaled_rotation(), but we need to account for the term to scale the moment of inertia properly, so we remove the time scaling that was previously involved here. the particle mass and the number of nodes making up the particle is used to go from beta to beta_i
-    # characteristic_time_squared = beta*l_e
-    # scaled_moment_of_inertia = particle_moment_of_inertia*beta/(particle_mass/particles.shape[1])/l_e/characteristic_time_squared
-    # using the fact that we have an analytical expression, I will rewrite the above initialization of the scaled moment of inertia in a way that uses less operations
-    scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+    if particles.shape[0] != 0:
+        particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
+        #needs to be scaled, but the scaling here includes (inside of beta) the characteristic time, squared, which is necessary for scaling the angular acceleration. the angular acceleration is scaling handled internally in the function get_accel_scaled_rotation(), but we need to account for the term to scale the moment of inertia properly, so we remove the time scaling that was previously involved here. the particle mass and the number of nodes making up the particle is used to go from beta to beta_i
+        # characteristic_time_squared = beta*l_e
+        # scaled_moment_of_inertia = particle_moment_of_inertia*beta/(particle_mass/particles.shape[1])/l_e/characteristic_time_squared
+        # using the fact that we have an analytical expression, I will rewrite the above initialization of the scaled moment of inertia in a way that uses less operations
+        scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+    else:
+        scaled_moment_of_inertia = None
     max_displacement = np.zeros((hard_limit_max_integrations,))
     mean_displacement = np.zeros((hard_limit_max_integrations,))
     return_status = 1
@@ -2040,25 +2049,26 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     # particle_center = np.zeros((2,3))
     rerun_flag = False
     snapshot_stepsize = 200
+    max_snapshot_count_value = int(1 + hard_limit_max_integrations*int(np.ceil(max_integration_steps/snapshot_stepsize)))
     snapshot_count = 0
     if particles.shape[0] != 0:
         particle_center = np.zeros((particles.shape[0],3),dtype=np.float32)
-        particle_posn = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
-        particle_velocity = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
-        particle_accel = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),3),dtype=np.float32)
-        particle_separation = np.zeros((int(hard_limit_max_integrations*int(1 + max_integration_steps/snapshot_stepsize)),),dtype=np.float32)
-    snapshot_accel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
-    snapshot_accel_norm_std = np.zeros(particle_separation.shape,dtype=np.float32)
-    snapshot_vel_norm = np.zeros(particle_separation.shape,dtype=np.float32)
-    snapshot_vel_norm_std = np.zeros(particle_separation.shape,dtype=np.float32)
+        snapshot_particle_posn = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_velocity = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_accel = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_separation = np.zeros((max_snapshot_count_value,),dtype=np.float32)
+    snapshot_accel_norm = np.zeros((max_snapshot_count_value,),dtype=np.float32)
+    snapshot_accel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_vel_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_vel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
     previous_soln = np.zeros((N_nodes,3),dtype=np.float32)
-    snapshot_soln_diff_norm = np.zeros(particle_separation.shape,dtype=np.float32)
+    snapshot_soln_diff_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
     i = 0
     while i < max_integrations:
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
             leapfrog_update(posns,velocities,step_size,size_entries)
-            if np.mod(j,snapshot_stepsize) == 0:
+            if np.mod(j+i*max_integration_steps,snapshot_stepsize) == 0:
                 host_posns = cp.asnumpy(posns)
                 host_posns = np.reshape(host_posns,(N_nodes,3))
 
@@ -2075,10 +2085,10 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 if particles.shape[0] != 0:
                     for particle_count, particle in enumerate(particles):
                         particle_center[particle_count,:] = get_particle_center(particle,host_posns)
-                    particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
-                    particle_posn[snapshot_count,:] = particle_center[0,:]*l_e
-                    particle_velocity[snapshot_count,:] = np.sum(host_velocities[particles[0,:],:],axis=0)/particles[0,:].shape
-                    particle_accel[snapshot_count,:] = np.sum(host_accel[particles[0,:],:],axis=0)/particles[0,:].shape
+                    snapshot_particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
+                    snapshot_particle_posn[snapshot_count] = particle_center[0,:]*l_e
+                    snapshot_particle_velocity[snapshot_count] = np.sum(host_velocities[particles[0],:],axis=0)/particles[0].shape
+                    snapshot_particle_accel[snapshot_count] = np.sum(host_accel[particles[0],:],axis=0)/particles[0].shape
 
                 if snapshot_count > 0:
                     soln_diff = host_posns - previous_soln
@@ -2116,18 +2126,20 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             break
         elif np.any(np.isnan(a_norms)):
             print(f'Integration failure mode: NaN entries in accelerations. (possible overflow error)')
-            if rerun_flag:
-                print(f'halving step size and restarting still resulted in integration failure')
-                return_status = -2
-                break
-            step_size = np.float32(0.5*step_size)
-            max_integration_steps = int(2*max_integration_steps)
-            posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
-            velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
-            i -= 1
-            snapshot_count -= (int(np.round(max_integration_steps/2/snapshot_stepsize)) + 1)
-            snapshot_stepsize *= 2
-            rerun_flag = True
+            return_status = -2
+            break
+            # if rerun_flag:
+            #     print(f'halving step size and restarting still resulted in integration failure')
+            #     return_status = -2
+            #     break
+            # step_size = np.float32(0.5*step_size)
+            # max_integration_steps = int(2*max_integration_steps)
+            # posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
+            # velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
+            # i -= 1
+            # snapshot_count -= (int(np.round(max_integration_steps/2/snapshot_stepsize)) + 1)
+            # snapshot_stepsize *= 2
+            # rerun_flag = True
         else:
             print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
             print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
@@ -2155,10 +2167,10 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
     plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
     if particles.shape[0] != 0:
-        plot_snapshots(snapshot_stepsize,step_size,snapshot_count,particle_separation*1e6,output_dir,tag="particle_separation(um)")
-        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_posn*1e6,output_dir,tag="particle_posn(um)")
-        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_velocity,output_dir,tag="particle_velocity")
-        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,particle_accel,output_dir,tag="particle_accel")
+        plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_separation*1e6,output_dir,tag="particle_separation(um)")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_posn*1e6,output_dir,tag="particle_posn(um)")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_velocity,output_dir,tag="particle_velocity")
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_accel,output_dir,tag="particle_accel")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
