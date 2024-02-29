@@ -4,6 +4,7 @@ Created on Tues October 3 10:20:19 2023
 @author: David Marchfield
 """
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 import cupy as cp
 from cupyx.profiler import benchmark
 import cupyx
@@ -2003,7 +2004,7 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
             #     rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
             #     rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
             #     accel[particle] += rotational_acceleration
-    return accel, total_torque
+    return accel, total_torque, host_posns
 
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
@@ -2027,6 +2028,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         # scaled_moment_of_inertia = particle_moment_of_inertia*beta/(particle_mass/particles.shape[1])/l_e/characteristic_time_squared
         # using the fact that we have an analytical expression, I will rewrite the above initialization of the scaled moment of inertia in a way that uses less operations
         scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
+        particle_angular_velocity = np.zeros((particles.shape[0],3),dtype=np.float32)
     else:
         scaled_moment_of_inertia = None
     max_displacement = np.zeros((hard_limit_max_integrations,))
@@ -2037,7 +2039,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
-    host_accel, particle_torques = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    host_accel, particle_torques, host_posns = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
     # print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
     a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
     size_entries = int(N_nodes*3)
@@ -2069,7 +2071,21 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     while i < max_integrations:
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
-            leapfrog_update(posns,velocities,step_size,size_entries)
+            #rotate particles, update the posns variable on the gpu, and then do translation updates of all nodes in the system
+            if particles.shape[0] != 0:
+                particle_angular_acceleration = particle_torques/scaled_moment_of_inertia
+                particle_angular_velocity += particle_angular_acceleration*step_size
+                if not np.allclose(np.linalg.norm(particle_angular_velocity,axis=1),0):
+                    axis_of_rotation = particle_angular_velocity/np.linalg.norm(particle_angular_velocity,axis=1)[:,np.newaxis]
+                    rotation_angle = np.linalg.norm(particle_angular_velocity,axis=1)*step_size
+                    for particle_counter, particle in enumerate(particles):
+                        # print(f'rotation angle: {rotation_angle[particle_counter]*180/np.pi}')
+                        # print(f'axis of rotation: {axis_of_rotation[particle_counter]}')
+                        rotation_matrix_generator = R.from_rotvec(rotation_angle[particle_counter]*axis_of_rotation[particle_counter])
+                        # rotation_matrix = rotation_matrix_generator.as_matrix()
+                        host_posns[particle] = rotation_matrix_generator.apply(host_posns[particle])
+                    posns = cp.array(host_posns.astype(np.float32)).reshape((host_posns.shape[0]*host_posns.shape[1],1),order='C')
+            leapfrog_update(posns,velocities,step_size,size_entries)  
             if np.mod(j+i*max_integration_steps,snapshot_stepsize) == 0:
                 host_posns = cp.asnumpy(posns)
                 host_posns = np.reshape(host_posns,(N_nodes,3))
@@ -2101,7 +2117,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            host_accel, particle_torques = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            host_accel, particle_torques, host_posns = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             # host_velocities = cp.asnumpy(velocities)
