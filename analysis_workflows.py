@@ -7,6 +7,7 @@ import scipy.special as sci
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
+from matplotlib.backends.backend_pdf import PdfPages
 # plt.switch_backend('TkAgg')
 plt.switch_backend('Agg')
 import time
@@ -164,7 +165,10 @@ def analysis_case1(sim_dir):
 #       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
-    effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
+    if 'stress' in sim_dir:
+        effective_modulus, stress, strains, strain_direction = get_effective_modulus_stress_sim(sim_dir)
+    elif 'strain' in sim_dir:
+        effective_modulus, stress, strains, strain_direction = get_effective_modulus_strain_series(sim_dir)
 #   outside the loop:
 #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
@@ -310,7 +314,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
     #get the particle separations and overall magnetizations and plot them
-    plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+    if particles.shape[0] != 0:
+        plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
 
 #   in a loop, output files are read in and manipulated
 #       node positions and boundary conditions are used to calculate forces happening at relevant fixed boundaries
@@ -323,16 +328,17 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
         effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
     elif 'stress' in sim_dir:
         effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
-    fig, ax = plt.subplots()
-    ax.plot(strain,stress)
-    ax.set_xlabel('strain')
-    ax.set_ylabel('stress')
+    # fig, ax = plt.subplots()
+    # ax.plot(strain,stress,'o')
+    # ax.set_xlabel('strain')
+    # ax.set_ylabel('stress')
     # plt.show()
-    plt.close()
+    # plt.close()
 #   outside the loop:
 #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
     subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+    subplot_stress_strain_modulus_by_field(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
     # subplot_stress_field_modulus(alternative_stress_measure,strain,strain_direction,alternative_effective_modulus,Bext_series,output_dir+'modulus/',tag="alternative_measures")
 
 #   in a loop, output files are read in and manipulated
@@ -500,6 +506,21 @@ def get_effective_modulus_strain_series(sim_dir):
         get_torsion_modulus(sim_dir,strain_direction)
     return effective_modulus, stress, strains, strain_direction
 
+def get_effective_modulus_stress_sim(sim_dir):
+    """Given a simulation directory, calculate and plot the stress-strain curve and effective modulus versus stress/strain. The returned strain variable is the "effective" strain. The effective modulus is calculated using the stress applied to the "probed" surface and the effective strain."""
+    raise NotImplementedError('This method has not been properly implemented, and should not be used.')
+    # _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
+    # boundary_conditions = format_boundary_conditions(boundary_conditions)
+    # stress_type = boundary_conditions[0]
+    # stress_direction = boundary_conditions[1]
+    # if stress_type == 'tension' or stress_type == 'compression':
+    #     effective_modulus, stress, strains = get_tension_compression_modulus(sim_dir,stress_direction)
+    # elif stress_type == 'shearing':
+    #     effective_modulus, stress, strains = get_shearing_modulus(sim_dir,stress_direction)
+    # elif stress_type == 'torsion':
+    #     get_torsion_modulus(sim_dir,stress_direction)
+    # return effective_modulus, stress, strains, stress_direction
+
 def get_field_dependent_effective_modulus(sim_dir):
     """Given a simulation directory, calculate and plot the effective modulus versus applied field. The returned stress variable is the effective stress applied to the surface equivalent to the "probe" in an indentation experiment. The secondary_stress variable is the effective stress applied to the surface held fixed by a table/wall/platform in an experimental measurement. The effective modulus is calculated using the effective stress applied to the "probed" surface."""
     _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
@@ -520,7 +541,7 @@ def get_field_dependent_effective_modulus_stress_sim(sim_dir):
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     bc_type = boundary_conditions[0]
     bc_direction = boundary_conditions[1]
-    if bc_type =='simple_stress_compression':
+    if bc_type =='simple_stress_compression' or 'tension' in bc_type:
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,bc_direction)
     # if bc_type == 'tension' or bc_type == 'compression' or bc_type == 'plate_compression' or bc_type == 'plate_compre':
     #     effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,bc_direction)
@@ -611,7 +632,8 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,bc_direction,b
         print(f'mean surface coordinate in relevant direction: {np.mean(final_posns[boundaries[relevant_boundary],coordinate_index])}')
         strain = np.max(final_posns[boundaries[relevant_boundary],coordinate_index])/(dimensions[coordinate_index]/l_e) - 1
         #TODO utilize both strain measures and create figures for stress-strain curve and effective modulus versus field
-        strain_from_mean_surface_posn = np.mean(final_posns[boundaries[relevant_boundary],coordinate_index])/(dimensions[coordinate_index]/l_e) - 1
+        # strain_from_mean_surface_posn = np.mean(final_posns[boundaries[relevant_boundary],coordinate_index])/(dimensions[coordinate_index]/l_e) - 1
+        strain = np.mean(final_posns[boundaries[relevant_boundary],coordinate_index])/(dimensions[coordinate_index]/l_e) - 1
         secondary_stress = None
         effective_modulus = np.abs(stress/strain)
     return effective_modulus, stress, strain, secondary_stress
@@ -1210,6 +1232,43 @@ def subplot_stress_field_modulus(stress,strains,strain_direction,effective_modul
     plt.savefig(savename)
     plt.close()
 
+def subplot_stress_strain_modulus_by_field(stress,strains,strain_direction,effective_modulus,Bext_series,output_dir,tag=""):
+    """Generate figure with subplots of stress-field curve and effective modulus versus field."""
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    force_component = {'x':0,'y':1,'z':2}
+    Bext_magnitude = np.linalg.norm(Bext_series,axis=1)
+    unique_field_values = np.unique(Bext_magnitude)
+
+    # plotting_indices = np.abs(strains) > 0
+    # stress = stress[plotting_indices]
+    # Bext_magnitude = Bext_magnitude[plotting_indices]
+    # effective_modulus = effective_modulus[plotting_indices]
+    for unique_value in unique_field_values:
+        plotting_indices = np.nonzero(np.isclose(unique_value,Bext_magnitude))
+        plotting_indices = plotting_indices[0]
+        plotting_strains = strains[plotting_indices]
+        plotting_stresses = stress[plotting_indices]
+        plotting_effective_modulus = effective_modulus[plotting_indices]
+        axs[0].plot(plotting_strains,np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),'-o',label=f'{np.round(unique_value*1000)} (mT)')
+        axs[1].plot(np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),plotting_effective_modulus,'-o')
+    axs[0].set_title('Stress vs Strain')
+    axs[0].set_xlabel('Strain')
+    axs[0].set_ylabel('Stress')
+    axs[1].set_title('Effective Modulus vs Stress')
+    axs[1].set_xlabel('Stress (Pa)')
+    axs[1].set_ylabel('Effective Modulus')
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
+    fig.legend()
+    savename = output_dir + f'subplots_stress-strain_effective_modulus_labeled_lines'+tag+'.png'
+    plt.savefig(savename)
+    plt.close()
+
 def format_figure(ax,title_size=30,label_size=30,tick_size=30):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
@@ -1776,4 +1835,34 @@ if __name__ == "__main__":
 
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
-    temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    sim_dir_one = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir_two = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # compare_fixed_time_step_solutions_hysteresis(sim_dir_one,sim_dir_two)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_4_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    # shearing stress simulation at multiple fields
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-18_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    # shearing stress simulation at a 2 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-22_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    # shearing stress simulation at a 5 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases. 3 particle chain
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-23_3_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+
+    # shearing/tension without particles.
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_0_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_None_gpu_True_stepsize_5.e-3/"
+
+    # shearing, two particles, incomplete run, but long run time/simulation time elapsed
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    
+    #tension, two particles, attractive
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-27_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3//"
+    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
