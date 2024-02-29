@@ -1988,22 +1988,22 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
             vecsum = np.sum(accel[particle],axis=0)
             accel[particle] = vecsum/particle.shape[0]
             #find the magnitude of the net torque, and if it is not 0, calculate and distribute the forces necessary to match rigid particle rotation behavior
-            torque_magnitude = np.linalg.norm(total_torque[i,:])
-            if not np.isclose(torque_magnitude,0):
-                angular_acceleration = total_torque[i,:]/particle_moment_of_inertia
-                angular_acceleration_magnitude = np.linalg.norm(angular_acceleration)
-                torque_unit_vector = total_torque[i,:]/torque_magnitude
-                #we are dealing with a coordinate system relative to the center of the particle, so we need to translate all the particle nodes in such a way that the center of the central voxel is at (0,0,0). This is necessary for calculating the vectors pointing from the axis of rotation to the particle nodes, so that we can calculate the correct forces involved
-                translated_particle_nodes = host_posns[particle,:] - particle_centers[i,:]
-                r_parallel_to_axis_of_rotation = np.sum(translated_particle_nodes*torque_unit_vector[np.newaxis,:],axis=1)[:,np.newaxis]*torque_unit_vector[np.newaxis,:]
-                r_perpendicular_to_axis_of_rotation = translated_particle_nodes - r_parallel_to_axis_of_rotation
-                r_perp_magnitude = np.linalg.norm(r_perpendicular_to_axis_of_rotation,axis=1)
-                rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
-                rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
-                rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
-                rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
-                accel[particle] += rotational_acceleration
-    return accel
+            # torque_magnitude = np.linalg.norm(total_torque[i,:])
+            # if not np.isclose(torque_magnitude,0):
+            #     angular_acceleration = total_torque[i,:]/particle_moment_of_inertia
+            #     angular_acceleration_magnitude = np.linalg.norm(angular_acceleration)
+            #     torque_unit_vector = total_torque[i,:]/torque_magnitude
+            #     #we are dealing with a coordinate system relative to the center of the particle, so we need to translate all the particle nodes in such a way that the center of the central voxel is at (0,0,0). This is necessary for calculating the vectors pointing from the axis of rotation to the particle nodes, so that we can calculate the correct forces involved
+            #     translated_particle_nodes = host_posns[particle,:] - particle_centers[i,:]
+            #     r_parallel_to_axis_of_rotation = np.sum(translated_particle_nodes*torque_unit_vector[np.newaxis,:],axis=1)[:,np.newaxis]*torque_unit_vector[np.newaxis,:]
+            #     r_perpendicular_to_axis_of_rotation = translated_particle_nodes - r_parallel_to_axis_of_rotation
+            #     r_perp_magnitude = np.linalg.norm(r_perpendicular_to_axis_of_rotation,axis=1)
+            #     rotational_acceleration_magnitude = r_perp_magnitude*angular_acceleration_magnitude
+            #     rotational_acceleration_nonunit_vector = np.cross(torque_unit_vector,r_perpendicular_to_axis_of_rotation)
+            #     rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
+            #     rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
+            #     accel[particle] += rotational_acceleration
+    return accel, total_torque
 
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
@@ -2037,7 +2037,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
-    host_accel = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    host_accel, particle_torques = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
     # print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
     a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
     size_entries = int(N_nodes*3)
@@ -2059,8 +2059,10 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         snapshot_particle_separation = np.zeros((max_snapshot_count_value,),dtype=np.float32)
     snapshot_accel_norm = np.zeros((max_snapshot_count_value,),dtype=np.float32)
     snapshot_accel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_accel_components_avg = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
     snapshot_vel_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
     snapshot_vel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_vel_components_avg = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
     previous_soln = np.zeros((N_nodes,3),dtype=np.float32)
     snapshot_soln_diff_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
     i = 0
@@ -2075,12 +2077,14 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 host_accel_norms = np.linalg.norm(host_accel,axis=1)
                 snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
                 snapshot_accel_norm_std[snapshot_count] = np.std(host_accel_norms)
+                snapshot_accel_components_avg[snapshot_count] = np.mean(host_accel,axis=0)
 
                 host_velocities = cp.asnumpy(velocities)
                 host_velocities = np.reshape(host_velocities,(N_nodes,3))
                 host_vel_norms = np.linalg.norm(host_velocities,axis=1)
                 snapshot_vel_norm[snapshot_count] = np.mean(host_vel_norms)
                 snapshot_vel_norm_std[snapshot_count] = np.std(host_vel_norms)
+                snapshot_vel_components_avg[snapshot_count] = np.mean(host_velocities,axis=0)
 
                 if particles.shape[0] != 0:
                     for particle_count, particle in enumerate(particles):
@@ -2097,7 +2101,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            host_accel = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            host_accel, particle_torques = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             # host_velocities = cp.asnumpy(velocities)
@@ -2171,6 +2175,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_posn*1e6,output_dir,tag="particle_posn(um)")
         plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_velocity,output_dir,tag="particle_velocity")
         plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_accel,output_dir,tag="particle_accel")
+    plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_components_avg,output_dir,tag="acceleration component averages")
+    plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_components_avg,output_dir,tag="velocity component averages")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
