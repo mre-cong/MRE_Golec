@@ -2047,6 +2047,10 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
             #     rotational_acceleration_unit_vector = rotational_acceleration_nonunit_vector/np.linalg.norm(rotational_acceleration_nonunit_vector,axis=1)[:,np.newaxis]
             #     rotational_acceleration = rotational_acceleration_unit_vector*rotational_acceleration_magnitude[:,np.newaxis]
             #     accel[particle] += rotational_acceleration
+    else:
+        host_posns = None
+        particle_centers = None
+        total_torque = None
     return accel, total_torque, host_posns, particle_centers
 
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
@@ -2083,6 +2087,14 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
     host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    #trying to check for deformations of the particle, which should not occur, but are currently happening in cases where the particles are close together, and more obviously for the case of smaller time step sizes, as well as stronger applied stress values (compression). this first calculation is to have a baseline to compare against as the system evolves
+    relative_to_particle_center_vectors = np.zeros((particles.shape[0],particles.shape[1],3))
+    particle_orientations = np.zeros((particles.shape[0],3))
+    particle_orientations[:,0] = 1
+    particle_initial_orientations = particle_orientations.copy()
+    # current_relative_to_particle_center_vectors = np.zeros((particles.shape[0],particles.shape[1],3))
+    for particle_counter, particle in enumerate(particles):
+        relative_to_particle_center_vectors[particle_counter] = host_posns[particle] - particle_centers[particle_counter]
     # print(f'particle accelerations: {a_var[particles[0]]}\n{a_var[particles[1]]}')
     a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
     size_entries = int(N_nodes*3)
@@ -2140,8 +2152,11 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                             # rotation_matrix = rotation_matrix_generator.as_matrix()
                             # the positions need to be translated so that the coordinate system sits at the center of the particle, then they can be rotated, before transforming/translating back to the original coordinate system
                             host_posns[particle] = rotation_matrix_generator.apply(host_posns[particle]-particle_centers[particle_counter]) + particle_centers[particle_counter]
+                            particle_orientations[particle_counter] = rotation_matrix_generator.apply(particle_orientations[particle_counter])
                     posns = cp.array(host_posns.astype(np.float32)).reshape((host_posns.shape[0]*host_posns.shape[1],1),order='C')
             leapfrog_update(posns,velocities,step_size,size_entries)
+            whole_step_velocities = cp.copy(velocities)
+            leapfrog_update(whole_step_velocities,a_var,np.float32(step_size/2),size_entries)
             if np.mod(j+i*max_integration_steps,snapshot_stepsize) == 0:
                 host_posns = cp.asnumpy(posns)
                 host_posns = np.reshape(host_posns,(N_nodes,3))
@@ -2166,6 +2181,18 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                         snapshot_particle_posn[particle_count,snapshot_count,:] = particle_center[particle_count,:]*l_e
                         snapshot_particle_velocity[particle_count,snapshot_count,:] = np.sum(host_velocities[particles[particle_count],:],axis=0)/particles[0].shape
                         snapshot_particle_accel[particle_count,snapshot_count,:] = np.sum(host_accel[particles[particle_count],:],axis=0)/particles[0].shape
+                        # current_relative_to_particle_center_vectors[particle_count] = host_posns[particle] - particle_center[particle_count]
+                    # if not np.allclose(relative_to_particle_center_vectors,current_relative_to_particle_center_vectors):
+                    #     print('relative position vectors for one or more particles do not match expectations for rigid body')
+                    #     print(f'attempting to calculate the l-2 norm of the difference of the current relative vectors to the expected relative vectors\n')
+                    #     relative_vector_difference_norms = np.linalg.norm(current_relative_to_particle_center_vectors-relative_to_particle_center_vectors,axis=2)
+                    #     print(relative_vector_difference_norms.shape)
+                    #     print(relative_vector_difference_norms)
+                    #     for particle_count, particle in enumerate(particles):
+                    #         print(f'particle {particle_count}')
+                    #         for node in particle:
+                    #             node_velocity = host_velocities[node]
+                    #             print(node_velocity)
                     snapshot_particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
 
                 if snapshot_count > 0:
@@ -2175,7 +2202,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,whole_step_velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             if particles.shape[0] != 0:
@@ -2190,6 +2217,15 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         #!!! do i need this acceleration calculation below?
         # a_var = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
         host_posns = cp.asnumpy(posns)
+        host_posns = np.reshape(host_posns,(N_nodes,3))
+        #after each integration round, use the particle_centers, particle_orientations, and relative_to_particle_center_vectors variables to "reset" the particle nodes to match the rigid body description, while maintaining the position of the center of the particle and the orientation. it is assumed that accumulation of floating point errors leads to deformation of the particle, as well as an additional unexplained behavior where some subset of the nodes experiences displacements not matching the rigid body motion expected. the second case occurs when the particles are clustered closely together, and has been seen in the case of a compressive force on the system boundary that would tend to push the particles closer together. this reset should prevent the particle from deforming while not significantly modifying any node positions
+        for particle_counter, particle in enumerate(particles):
+            # we use scipy's Rotation class to find the rotation that aligns a vector describing the initial particle orientation (which will always be [1,0,0]) with the current orientation. we then use that rotation to rotate the relative to particle center vectors, and add the coordinates of the particle center to those vectors
+            rigid_body_orientation_transformation, _ = R.align_vectors(particle_orientations[particle_counter][np.newaxis,:],particle_initial_orientations[particle_counter][np.newaxis,:])
+            host_posns[particle] = rigid_body_orientation_transformation.apply(relative_to_particle_center_vectors[particle_counter]) + particle_centers[particle_counter]
+        #after reseting the the particle nodes to match a rigid body
+        host_posns = np.reshape(host_posns,(3*N_nodes,))
+        posns = cp.array(host_posns.astype(np.float32))#.reshape((host_posns.shape[0]*host_posns.shape[1],1),order='C')
         host_velocities = cp.asnumpy(velocities)
         sol = np.concatenate((host_posns,host_velocities))
         host_accel = cp.asnumpy(a_var)
