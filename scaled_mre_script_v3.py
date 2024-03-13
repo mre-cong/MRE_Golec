@@ -35,6 +35,7 @@ Created on Fri Aug 26 09:19:19 2022
 
 import numpy as np
 import cupy as cp
+import scipy.special as sci
 import matplotlib.pyplot as plt
 plt.switch_backend('Agg')
 import time
@@ -70,7 +71,7 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
     Nel_x, Nel_y, Nel_z = dimensions
     # radius = 0.5*l_e# radius = l_e*(4.5)
-    assert radius < np.min(dimensions)/2, f"Particle size greater than the smallest dimension of the simulation"
+    assert radius < np.min(dimensions*l_e)/2, f"Particle size greater than the smallest dimension of the simulation"
     radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
     #find the center of the simulated system
     center = (np.array([Nel_x,Nel_y,Nel_z])/2)
@@ -99,8 +100,6 @@ def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation):
     #TODO Unfinished, intention to place particles with either random distribution or regular/crystal structure like distribution.
     """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
     Nel_x, Nel_y, Nel_z = dimensions
-    # radius = 0.5*l_e# radius = l_e*(4.5)
-    assert radius < np.min(dimensions)/2, f"Particle size greater than the smallest dimension of the simulation"
     radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
     #find the center of the simulated system
     center = (np.array([Nel_x,Nel_y,Nel_z])/2)
@@ -112,11 +111,23 @@ def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation):
     if np.mod(Nel_z,2) == 0:
         center[2] += 1/2
     #check particle separation to see if it is acceptable or not for the shift in particle placement from the simulation "center" to align with the cubic element centers
-    shift_l = np.round(separation/2)
-    shift_r = separation - shift_l
-    particle_nodes = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center-np.array([shift_l,0,0]),dimensions)
-    particle_nodes2 = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center+np.array([shift_r,0,0]),dimensions)
-    particles = np.vstack((particle_nodes,particle_nodes2))
+    if n_particles == 1:
+        centers = center
+    elif n_particles == 2:
+        shift_l_mag = np.round(separation/2)
+        shift_r_mag = separation - shift_l
+        shift_l = np.array([shift_l_mag,0,0])
+        shift_r = np.array([shift_r_mag,0,0])
+        centers = np.array([center-shift_l,center+shift_r])
+    elif n_particles == 3:
+        shift = np.array([separation,0,0])
+        centers = np.array([center-shift,center,center+shift])
+    else:
+        raise NotImplementedError('placement of more than 3 particles not implemented')
+    particles = mre.sphere_rasterization.place_spheres_normalized(radius_voxels,centers,dimensions)
+    # particle_nodes = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center-np.array([shift_l,0,0]),dimensions)
+    # particle_nodes2 = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center+np.array([shift_r,0,0]),dimensions)
+    # particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
 def placeholder_particle_placement(radius,l_e,dimensions,placement_type,volume_fraction=None,n_particles=1):
@@ -1352,28 +1363,20 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]
-    discretizations = [0,1,2,3,4,5]
+    discretizations = [6]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]
-    sim_type = 'hysteresis'
-    mu0 = 4*np.pi*1e-7
-    H_mag = 0.1/mu0
-    n_field_steps = 20
-    H_step = H_mag/n_field_steps
-    Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
-    # if hysteresis_loop_flag:
-    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
-    stress_types = ('simple_stress_compression',)
-    bc_type_strings = ('compression_stress',)
-    bc_directions = ((('x','x'),),)
+    stress_types = ('simple_stress_compression',)#('simple_stress_compression','simple_stress_tension',)#('simple_stress_shearing','simple_stress_compression','simple_stress_tension',)#('free',)#('simple_stress_compression',)
+    bc_type_strings = ('compression_stress',)#('compression_stress','tension_stress')#('stress_shearing','compression_stress','tension_stress')#('compression_stress',)
+    bc_directions = ((('x','x'),),)#((('x','x'),('z','z')),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)#((('x','x'),),)
     Hext_angles = ((np.pi/2,0),)
     parameters = dict({})
-    parameters['max_integration_steps'] = 5000
-    parameters['max_integrations'] = 5
-    parameters['tolerance'] = 1e-4
+    # parameters['tolerance'] = 1e-3/2
+    parameters['max_integrations'] = 20
+    # parameters['max_integration_steps'] = 5000
     parameters['step_size'] = np.float32(0.01/2)
-    sim_type = 'hysteresis'
-    bc_type = 'free'
+    # sim_type = 'hysteresis'
+    sim_types = ('simple_stress_compression',)#('simple_stress_compression','simple_stress_tension',)
+    bc_type = ('simple_stress_compression',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     parameters['gpu_flag'] = True 
     parameters['particle_rotation_flag'] = True
     parameters['persistent_checkpointing_flag'] = True
@@ -1381,32 +1384,52 @@ def batch_job_runner():
     parameters['criteria_flag'] = False
     parameters['particle_radius'] = 1.5e-6
     total_sim_num = 0
+    step_sizes = [np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
+    max_integration_steps = [5000]#[10000, 20000]#[2500]#[5000, 10000, 20000]
     for E in youngs_modulus:
         for poisson_ratio in poisson_ratios:
             for discretization_order in discretizations:
                 for i, stress_type in enumerate(stress_types):
-                    for bc_direction in bc_directions[i]:
-                        field_or_bc_type_string = bc_type_strings[i]
-                        for Hext_angle in Hext_angles:
-                            parameters['youngs_modulus'] = E
-                            parameters['poisson_ratio'] = poisson_ratio
-                            parameters['discretization_order'] = discretization_order
-                            parameters['num_particles'] = 2
-                            parameters['particle_placement'] = 'regular'
-                            parameters['particle_separation'] = 9e-6
-                            parameters['max_field'] = 0.1
-                            parameters['field_angle_theta'] = Hext_angle[0]
-                            parameters['field_angle_phi'] = Hext_angle[1]
-                            parameters['num_field_steps'] = 20
-                            parameters['boundary_condition_max_value'] = 0
-                            parameters['num_boundary_condition_steps'] = 1
-                            parameters['boundary_condition_type'] = bc_type
-                            parameters['boundary_condition_direction'] = bc_direction
-                            print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
-                            print(f"Young's modulus = {E} Pa\ndiscretization order = {discretization_order}\nbc_direction={bc_direction}\n")
-                            # parameters could be a dict with key value pairs describing the simulation, acting like a struct, sim_type would be a string used to describe the type of simulation to run (stress based/strain based boundary conditions, magnetic hysteresis, etc.)
-                            run_sim(parameters,sim_type)
-                            total_sim_num += 1
+                    for step_size,integration_steps in zip(step_sizes,max_integration_steps):
+                        # approximately 7 significant digits in decimal representation for 32bit floating point numbers. assuming that the postions are of order of magnitude 10^1, we can take into account the time step size and approximately calculate the smallest velocity that would still increment a position value of 10, or the largest velocity small enough that it would not increment a position value of 10. that should be our tolerance on the velocity norm (technically the velocity component magnitude). For the acceleration norm (or more significantly the component magnitude), we could have a separate tolerance based on the time step size and some magnitude of velocity, intuitively it would be the largest velocity small enough that in would not increment the position. the acceleration tolerance follows a similar logic to the velocity tolerance, if the time step size and the acceleration product would result in a value too small to incrememnt the floating point representation of the relevant velocity magnitude, it is effectively zero, and a lower bound on what our tolerance should be to consider the system converged (since it will be incapable of evolving if all nodes are experiencing velocities low enough to not cause position updates and accelerations low enough to not cause velocity updates.)
+                        #if the position value is 10., we need a velocity*time_step value that is at least 1e-6 (ref: https://float.exposed/, addtl terms like floating-point arithmetic, dynamic range, and "unit in the last place" or "unit of least precision")
+                        # 1e-6 = nearly_effectively_zero_velocity*time_step 
+                        #if i can find the position values of nodes, or estimate them, and their counts, i can get a sense for the effective_zero_velocity and average those values... if the magnitude of the component of velocity along a direction is close to the ulp average for that direction, the system has stopped evolving in that direction
+
+                        #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
+                        ulp = np.nextafter(np.float32(1),np.float32(np.Inf))-np.float32(1)
+                        effective_zero_velocity = (1e-6)/step_size
+                        # if the effectively zero velocity couldn't update... but this is going to be a significantly smaller tolerance than the velocity tolerance, and likely more stringent than what i am currently using
+                        # effective_zero_velocity*1e-6 = effective_zero_acceleration*time_step
+                        effective_zero_acceleration = (effective_zero_velocity*1e-6)/step_size
+                        parameters['tolerance'] = effective_zero_velocity
+                        for bc_direction in bc_directions[i]:
+                            field_or_bc_type_string = bc_type_strings[i]
+                            for Hext_angle in Hext_angles:
+                                parameters['max_integration_steps'] = integration_steps
+                                parameters['step_size'] = step_size
+                                parameters['youngs_modulus'] = E
+                                parameters['poisson_ratio'] = poisson_ratio
+                                parameters['drag'] = 1#0#20
+                                parameters['discretization_order'] = discretization_order
+                                parameters['num_particles'] = 2
+                                parameters['particle_placement'] = 'regular'
+                                parameters['particle_separation'] = 9e-6
+                                parameters['max_field'] = 0.045
+                                parameters['field_angle_theta'] = Hext_angle[0]
+                                parameters['field_angle_phi'] = Hext_angle[1]
+                                parameters['num_field_steps'] = 2
+                                parameters['boundary_condition_max_value'] = 100
+                                parameters['num_boundary_condition_steps'] = 1
+                                parameters['boundary_condition_type'] = bc_type[i]
+                                sim_type = sim_types[i]
+                                parameters['boundary_condition_direction'] = bc_direction
+                                print(f'field_or_strain_type_string = {field_or_bc_type_string}\nbc_type = {stress_type}\nbc_direction = {bc_direction}\n')
+                                print(f"Young's modulus = {E} Pa\nPoisson Ratio = {poisson_ratio}\ndiscretization order = {discretization_order}\n")
+                                print(f"gpu based calculation {parameters['gpu_flag']}")
+                                # parameters could be a dict with key value pairs describing the simulation, acting like a struct, sim_type would be a string used to describe the type of simulation to run (stress based/strain based boundary conditions, magnetic hysteresis, etc.)
+                                run_sim(parameters,sim_type)
+                                total_sim_num += 1
     print(total_sim_num)
 
 def run_sim(parameters,sim_type):
@@ -1430,6 +1453,7 @@ def initialize_simulation_variables(parameters,sim_type):
     mu0 = 4*np.pi*1e-7
     E = parameters['youngs_modulus']
     nu = parameters['poisson_ratio']
+    drag = parameters['drag']
     discretization_order = parameters['discretization_order']
 
     num_particles = parameters['num_particles']
@@ -1468,13 +1492,24 @@ def initialize_simulation_variables(parameters,sim_type):
 
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
 
+    separation_volume_elements = int(np.round(particle_separation / l_e,decimals=1))
+    separation_meters = l_e*separation_volume_elements
+    if num_particles < 2:
+        Lx = separation_meters + particle_diameter + 1.8*separation_meters
+        Ly = particle_diameter * 7
+        Lz = Ly
+        # raise NotImplementedError('Determination of system size for less than two particles not implemented')
     if num_particles == 2:
-        separation_volume_elements = int(particle_separation / l_e)
-        separation_meters = l_e*separation_volume_elements
+        Lx = separation_meters + particle_diameter + 1.8*separation_meters
+        Ly = particle_diameter * 7
+        Lz = Ly
+    elif num_particles == 3:
+        Lx = 2*separation_meters + particle_diameter + 1.8*separation_meters
+        Ly = particle_diameter * 7
+        Lz = Ly
+    elif num_particles > 3:
+        raise NotImplementedError('Determination of system size for more than 3 particles not implemented')
 
-    Lx = separation_meters + particle_diameter + 1.8*separation_meters
-    Ly = particle_diameter * 7
-    Lz = Ly
     t_f = 300
     
     N_nodes_x = np.round(Lx/l_e + 1)
@@ -1486,6 +1521,22 @@ def initialize_simulation_variables(parameters,sim_type):
     
     normalized_dimensions = np.array([N_el_x,N_el_y,N_el_z],dtype=np.int32)
     normalized_posns = mre.initialize.discretize_space_normalized(N_nodes_x,N_nodes_y,N_nodes_z)
+
+    #if i have the position values of nodes, or estimate them, and their counts, i can get a sense for the effective_zero_velocity and average those values... if the magnitude of the component of velocity along a direction is close to the ulp average for that direction, the system has stopped evolving in that direction
+
+    unique_values, unique_value_counts = np.unique(np.ravel(normalized_posns),return_counts=True)
+    ulp = np.zeros(unique_values.shape,dtype=np.float32)
+    for index, value in enumerate(unique_values):
+        #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
+        ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
+    step_size = parameters['step_size']
+    ulp_velocity = ulp/step_size
+    weighted_ulp_velocity = ulp_velocity*unique_value_counts
+    one_method = np.mean(weighted_ulp_velocity)
+    tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
+
+    sim_variables_dict['tolerance'] = tolerance
+
     Lx = N_el_x*l_e
     Ly = N_el_y*l_e
     Lz = N_el_z*l_e
@@ -1500,6 +1551,7 @@ def initialize_simulation_variables(parameters,sim_type):
     k_e = k[0]
     max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
     springs_var = np.empty((max_springs,4),dtype=np.float64)
+    effective_stiffness = 2*k[0] + 8*k[1]/np.sqrt(2) + 4*k[2]
     if gpu_flag:
         k *= l_e
     num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
@@ -1510,31 +1562,61 @@ def initialize_simulation_variables(parameters,sim_type):
     elif num_particles == 1:
         print(f'implement single particle placement')
         raise NotImplementedError(f'implement single particle placement')
+    elif num_particles == 0:
+        particles = np.array([],dtype=np.int64)
+    elif num_particles == 3:
+        particles = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements)
     else:
         print(f'implement multi-particle placement')
         raise NotImplementedError(f'implement multi-particle placement')
-    chi = 131
+    chi = 131#70
     Ms = 1.9e6
 
-    H_mag = parameters['max_field']/mu0
     field_angle_theta = parameters['field_angle_theta']
     field_angle_phi = parameters['field_angle_phi']
     num_field_steps = parameters['num_field_steps']
-    H_step = H_mag/num_field_steps
-    Hext_series_magnitude = np.arange(0.0,H_mag + 1,H_step)
-    if 'hysteresis' in sim_type:
-        Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
-    Hext_series = np.zeros((len(Hext_series_magnitude),3))
-    Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
-    Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
-    Hext_series[:,2] = Hext_series_magnitude*np.cos(field_angle_theta)
-    if Hext_series[1,0] != 0:
+    near_zero_field = 1e-4
+    near_zero_H_field = near_zero_field/mu0
+    if 'Hext_series' in parameters:
+        Hext_series = parameters['Hext_series']
+    else:
+        if num_field_steps == 0:
+            H_step = max_magnetic_field_strength + 1
+        else:
+            H_step = max_magnetic_field_strength/num_field_steps
+        Hext_series_magnitude = np.arange(0.0,max_magnetic_field_strength + 1,H_step)
+        if 'hysteresis' in sim_type:
+            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+        Hext_series_magnitude[0] = near_zero_H_field
+        Hext_series = np.zeros((len(Hext_series_magnitude),3))
+        Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
+        Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
+        Hext_series[:,2] = Hext_series_magnitude*np.cos(field_angle_theta)
+    if num_field_steps == 0:
+        Bext_angle = None
+    elif Hext_series[1,0] != 0:
         Bext_angle = np.arctan(Hext_series[1,1]/Hext_series[1,0])*180/np.pi
     else:
         Bext_angle = 90
 
     if 'stress' in sim_type:
-        raise NotImplementedError(f'Implement stress based simulation initialization specifics')
+        if num_boundary_condition_steps < 1:
+            raise ValueError('Number of boundary condition steps must be greater than 0')
+        elif num_boundary_condition_steps == 1:
+            boundary_condition_value_step = max_boundary_condition_value
+        else:
+            boundary_condition_value_step = max_boundary_condition_value/num_boundary_condition_steps
+        if max_boundary_condition_value == 0:
+            stresses = np.array([0.0],dtype=np.float64)
+        else:
+            stresses = np.arange(0.0,max_boundary_condition_value + 1,boundary_condition_value_step)
+        if 'compression' in sim_type:
+            stresses *= -1
+        elif 'tension' in sim_type:
+            pass
+        elif 'shearing' in sim_type:
+            pass
+        # raise NotImplementedError(f'Implement stress based simulation initialization specifics')
     if 'strain' in sim_type:
         raise NotImplementedError(f'Implement strain based simulation initialization specifics')
 
@@ -1546,36 +1628,45 @@ def initialize_simulation_variables(parameters,sim_type):
     N_nodes = (N_nodes_x*N_nodes_y*N_nodes_z).astype(np.int64)
     m, characteristic_mass, particle_mass = mre.initialize.get_node_mass_v2(N_nodes,node_types,l_e,particles,particle_radius)
     #calculating the characteristic time, t_c, as part of the process of calculating the scaling coefficients for the forces/accelerations
-    characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/k_e)
+    #trying this with an effective stiffness that i am intuiting to be a linear combination of the 3 spring stiffness types, with the characteristic stiffness being that which an interior volume node (not a magnetic particle node) would experience. the number of springs and angle with respect to the x axis is informing my choice of coefficients for each spring type. there are 6 edge springs, of which at least one pair if not two will not be contributing. imagine a displacement in the xy plane. the springs oriented along the z axis will not significantly contribute, and as we approximate the stiffness we can negelect their contribution. if the displacement is along the x direction, the same is true for the springs along the y axis. since there is a spring in front of and behind the node, there is the equivalent stiffness of two edge springs. for an arbitrary direction in the xy-plane the contribution from springs in the x direction depends on cosine of the angle wrt the x axis, and the contribution from the y direction springs depends on sine of the  angle wrt the x axis, so that for those spring types, the effective stiffness contribution for small displacements is approximated as twice the stiffness of a single edge spring. Arguments for the face springs require projection onto the z-axis or onto the xy-plane, but similar arguments apply. in this case there are 4 face springs in each of the xy, xz, and yz- planes. considering a displacement along the x axis the springs in the yz-plane will contribute the least to the effective stiffness, leaving 8 springs whose contribution to the effective stiffness is equal, but we can project each spring onto the x axis as sine or cosine of 45 degrees, resulting in 8/sqrt(2) k_f contribution to the effective stiffness. the center diagonal springs, of which there are 8 total connected to the node, can all be projected into the xy-plane by multiplying by cosine 45, 8/sqrt(2), followed by an additional projection onto the x-axis, resulting in a contribution of 8/2 or 4* k_c.
+    #already found an issue, I am assuming these things are all additive, but maybe that isn't the case. the rules for adding springs in series vs parallel are similar to that of a capacitor/resistor. if the springs are in parallel, the stiffnesses add, if the springs were in series, they would have the reciprocal of the effective stiffness equal to the sum of the reciprocal individual stiffnesses. i do think they should all be in parallel...
+    #found the actual issue, I was using the scaled stiffness values instead of the SI values, moving the commented out line further aboev, before the scaling by l_e occurs
+    # effective_stiffness = 2*k[0] + 8*k[1]/np.sqrt(2) + 4*k[2]
+    characteristic_time = 2*np.pi*np.sqrt(characteristic_mass/effective_stiffness)#2*np.pi*np.sqrt(characteristic_mass/k_e)
     #we will call the scaling coefficient beta
     if (not np.isclose(k_e,0)):
-        beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
+        beta = np.power(characteristic_time,2)/l_e
+        #beta = 4*(np.pi**2)*characteristic_mass/(k_e*l_e)
     else:
         beta = 1e-9
     #and if we want to have the scaling factor include the node mass we can calculate the suite of beta_i values, (or we could use the node_types variable and recognize that the masses of the non-particle nodes are all 2**n multiples of characteristic_mass/8 where n is an integer from 0 to 3)
     beta_i = beta/m
-    drag = 20
     
     today = date.today()
     if 'hysteresis' in sim_type:
-        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_hysteresis_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations_gpu_{gpu_flag}/'
+        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_hysteresis_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_gpu_{gpu_flag}/'
         field_or_bc_series = Hext_series
         field_or_bc_type_string = 'hysteresis'
     elif 'stress' in sim_type:
-        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_field_dependent_modulus_stress_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations_gpu_{gpu_flag}'
+        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_field_dependent_modulus_stress_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_drag_{drag}_Bext_angle_{Bext_angle}_gpu_{gpu_flag}/'
         field_or_bc_series = stresses
         field_or_bc_type_string = bc_type
     elif 'strain' in sim_type:
-        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_field_dependent_modulus_strain_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_particle_rotations_gpu_{gpu_flag}/'
+        output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/{today.isoformat()}_{num_particles}_particle_field_dependent_modulus_strain_{bc_type}_direction{bc_direction}_order_{discretization_order}_E_{E}_nu_{nu}_Bext_angle_{Bext_angle}_gpu_{gpu_flag}/'
         strains = np.array([0.0])
         field_or_bc_series = strains
         field_or_bc_type_string = bc_type
     else:
         raise ValueError(f'{sim_type} is not an acceptable sim_type value')
+    if gpu_flag:
+        step_size = parameters['step_size']
+        output_dir = output_dir[:-1] + f"_stepsize_{np.format_float_scientific(parameters['step_size'],exp_digits=1)}/"
+    else:
+        step_size = None
     sim_variables_dict['output_dir'] = output_dir
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
-    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps)
+    my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps,step_size,tolerance)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
     
@@ -1626,6 +1717,10 @@ def initialize_simulation_variables(parameters,sim_type):
     sim_variables_dict['chi'] = chi
     sim_variables_dict['Ms'] = Ms
 
+    if 'stress' in sim_type:
+        sim_variables_dict['stresses'] = stresses
+    elif 'strain' in sim_type:
+        sim_variables_dict['strains'] = strains
     # particle_rotation_flag = sim_variables_dict['particle_rotation_flag']
     # persistent_checkpointing_flag = sim_variables_dict['persistent_checkpointing_flag']
     # plotting_flag = sim_variables_dict['plotting_flag']
@@ -1766,7 +1861,7 @@ def run_stress_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
                 current_output_dir = output_dir + f'stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
-            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=2)}, {np.round(Hext[1]*mu0,decimals=2)}, {np.round(Hext[2]*mu0,decimals=2)}) T\n')
+            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=3)}, {np.round(Hext[1]*mu0,decimals=3)}, {np.round(Hext[2]*mu0,decimals=3)}) T\n')
             start = time.time()
             try:
                 sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
@@ -1785,10 +1880,10 @@ def run_stress_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             output_file_number = count*Hext_series.shape[0]+i
             mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
             #if we have already run a particular simulation with zero stress/strain and at some field, use that as the starting point for the solution
-            if (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(stresses)-1):
+            if Hext_series.shape[0] > 1 and (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(stresses)-1):
                 output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
                 x0, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
-                print(f'reusing previously calculated solution with B_ext = {np.round(mu0*output_file_Hext,decimals=2)}')
+                print(f'reusing previously calculated solution with B_ext = {np.round(mu0*output_file_Hext,decimals=3)}')
                 x0 = cp.array(x0.astype(np.float32)).reshape((x0.shape[0]*x0.shape[1],1),order='C')
             else:#use the last solution vector of positions as the starting set of positions for the next step
                 x0 = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
