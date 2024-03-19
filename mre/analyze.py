@@ -231,7 +231,7 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
     plt.savefig(savename)
     plt.close()
 
-def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=None):
+def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",ax=None):
     """Plot a cut through the simulated volume, showing the configuration of the nodes that sat at the specified layer of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -242,24 +242,36 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    if cut_type_index == 0:
-        assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
-    elif cut_type_index == 1:
-        assert layer <= Ly and layer >= 0, f'Layer choice not within bounds of available layers [0,{Ly}]'
-    elif cut_type_index == 2:
-        assert layer <= Lz and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lz}]'
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
+    # if cut_type_index == 0:
+    #     assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
+    # elif cut_type_index == 1:
+    #     assert layer <= Ly and layer >= 0, f'Layer choice not within bounds of available layers [0,{Ly}]'
+    # elif cut_type_index == 2:
+    #     assert layer <= Lz and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lz}]'
+
     if ax == None:
         fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(3*default_width,3*default_height)
         fig.set_dpi(200)
     xvar,yvar,zvar = get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
+
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
+    zvar *= l_e*1e6
+
+    Lx *= l_e*1e6
+    Ly *= l_e*1e6
+    Lz *= l_e*1e6
+
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
+    
+    xlabel = r'X ($\mu$m)'
+    ylabel = r'Y ($\mu$m)'
+    zlabel = r'Z ($\mu$m)'
+
     if cut_type_index == 0:
         xlim = (xvar.min(),xvar.max())
         color_dimension = xvar
@@ -315,19 +327,23 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=N
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.axis('equal')
+    cbar = fig.colorbar(my_cmap)
+    cbar.ax.set_ylabel(r'$\mu$m',rotation=270)
+    ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
+    format_figure_3D(ax)
+    # if tag != "":
+        # ax.set_title(tag)
+        # tag = "_" + tag
+    savename = output_dir + f'surf_cut_{cut_type}_{layer}_'+ tag +'.png'
+    plt.savefig(savename)
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    fig.colorbar(my_cmap)
     format_figure_3D(ax)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'surf_cut_{cut_type}_{layer}_'+ tag +'.png'
-    plt.savefig(savename)
+    savename = output_dir + f'surf_cut_{cut_type}_{layer}_'+ tag +'_zoomed.png'
     plt.close()
 
-def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="",ax=None):
+def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,output_dir,tag="",ax=None):
     """Plot a cut through the simulated volume, showing the configuration of the nodes that sat at the specified layer of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -335,34 +351,49 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundar
     tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
     cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     cut_type_index = cut_type_dict[cut_type]
-    Lx = eq_node_posns[:,0].max()
-    Ly = eq_node_posns[:,1].max()
-    Lz = eq_node_posns[:,2].max()
-    if cut_type_index == 0:
-        assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
-    elif cut_type_index == 1:
-        assert layer <= Ly and layer >= 0, f'Layer choice not within bounds of available layers [0,{Ly}]'
-    elif cut_type_index == 2:
-        assert layer <= Lz and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lz}]'
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
+    # if cut_type_index == 0:
+    #     assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
+    # elif cut_type_index == 1:
+    #     assert layer <= Ly and layer >= 0, f'Layer choice not within bounds of available layers [0,{Ly}]'
+    # elif cut_type_index == 2:
+    #     assert layer <= Lz and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lz}]'
     if ax == None:
+        # fig = plt.figure()
+        # ax = plt.axes(projection='3d',computed_zorder=False)
         fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(3*default_width,3*default_height)
         fig.set_dpi(200)
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(layer),eq_node_posns[:,cut_type_index]).nonzero()[0]
+
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+
     xvar,yvar,zvar = get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
+
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
+    zvar *= l_e*1e6
+
+    Lx *= l_e*1e6
+    Ly *= l_e*1e6
+    Lz *= l_e*1e6
+
+    xlim = (-0.1,Lx*1.1)
+    ylim = (-0.1,Ly*1.1)
+    zlim = (-0.1,Lz*1.1)
     if cut_type_index == 0:
         xlim = (xvar.min(),xvar.max())
     elif cut_type_index == 1:
         ylim = (yvar.min(),yvar.max())
     else:
         zlim = (zvar.min(),zvar.max())
+    
+    xlabel = r'X ($\mu$m)'
+    ylabel = r'Y ($\mu$m)'
+    zlabel = r'Z ($\mu$m)'
+
     # the below sets things up for everything laying in the same plane visually, for the different plot types. why not let it be the same for the different cuts, and just see how it is?
     # if cut_type_index == 0:
     #     xvar = yposn_3D[idx,:,:]
@@ -394,7 +425,7 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundar
     #     xlim = (-0.1,Lx*1.1)
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
-    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1,zorder=0)
     #now identify which of those nodes belong to the particle and the cut. set intersection?
     cut_nodes_set = set(cut_nodes)
     #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
@@ -416,22 +447,42 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundar
     #     xvar = node_posns[particle_cut_nodes,0]
     #     yvar = node_posns[particle_cut_nodes,1]
     #     zvar = node_posns[particle_cut_nodes,2]
-    xvar = node_posns[particle_cut_nodes,0]
-    yvar = node_posns[particle_cut_nodes,1]
-    zvar = node_posns[particle_cut_nodes,2]
-    ax.scatter(xvar,yvar,zvar,'o',color='r')
+    if particles.shape[0] != 0:
+        # # alternative particle visualization by plotting a 3d spherical surface. This didn't work due to matplotlib not handling 3D plotting "properly", so getting things to look natural was impossible (where the meshgrid would be obfuscated by the spheres in some places, and the mesh grid on top of the spheres in others, as if the sphere were properly embedded in the mesh grid.). so back to scatter plots.
+        # u = np.linspace(0,2*np.pi,100)
+        # v = np.linspace(0,np.pi,100)
+        # centers = np.zeros((particles.shape[0],3))
+        # #get the particle center positions and the particle diameter 
+        # particle_diameter = (np.max(eq_node_posns[particles[0],0]) - np.min(eq_node_posns[particles[0],0])) * l_e*1e6
+        # x = particle_diameter * np.outer(np.cos(u), np.sin(v))
+        # y = particle_diameter * np.outer(np.sin(u), np.sin(v))
+        # z = particle_diameter * np.outer(np.ones(np.size(u)), np.cos(v))
+        # for i, particle in enumerate(particles):
+        #     centers[i,:] = simulate.get_particle_center(particle,node_posns)
+        #     centers[i,:] *= l_e*1e6
+        #     ax.plot_surface(x+centers[i,0],y+centers[i,1],z+centers[i,2],zorder=i)
+        xvar = node_posns[particle_cut_nodes,0]
+        yvar = node_posns[particle_cut_nodes,1]
+        zvar = node_posns[particle_cut_nodes,2]
+        xvar *= l_e*1e6
+        yvar *= l_e*1e6
+        zvar *= l_e*1e6
+        ax.scatter(xvar,yvar,zvar,'o',color='r',zorder=2)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.axis('equal')
+    ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
+    format_figure_3D(ax)
+    if tag != "":
+        tag = "_" + tag
+    savename = output_dir + f'wireframe_cut_{cut_type}_{layer}'+ tag +'.png'
+    plt.savefig(savename)
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
     format_figure_3D(ax)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
-    savename = output_dir + f'wireframe_cut_{cut_type}_{layer}_'+ tag +'.png'
+    savename = output_dir + f'wireframe_cut_{cut_type}_{layer}'+ tag +'_zoomed.png'
     plt.savefig(savename)
     plt.close()
 
@@ -529,7 +580,7 @@ def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary
     plt.savefig(savename)
     plt.close()
 
-def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
+def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the user passed layer of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -542,21 +593,6 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
     Lz = eq_node_posns[:,2].max()
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     idx = layer
-    if cut_type_index == 0:
-        xlabel = 'Y (l_e)'
-        ylabel = 'Z (l_e)'
-        xlim = (-0.1,Ly*1.1)
-        ylim = (-0.1,Lz*1.1)
-    elif cut_type_index == 1:
-        xlabel = 'X (l_e)'
-        ylabel = 'Z (l_e)'
-        xlim = (-0.1,Lx*1.1)
-        ylim = (-0.1,Lz*1.1)
-    else:
-        xlabel = 'X (l_e)'
-        ylabel = 'Y (l_e)'
-        xlim = (-0.1,Lx*1.1)
-        ylim = (-0.1,Ly*1.1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.axis('equal')
@@ -583,6 +619,36 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
         xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
         yvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
         zvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
+    zvar *= l_e*1e6
+
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+    Lx *= l_e*1e6
+    Ly *= l_e*1e6
+    Lz *= l_e*1e6
+
+    if cut_type_index == 0:
+        xlabel = r'Y ($\mu$m)'
+        ylabel = r'Z ($\mu$m)'
+        xlim = (-0.1,Ly*1.1)
+        ylim = (-0.1,Lz*1.1)
+    elif cut_type_index == 1:
+        xlabel = r'X ($\mu$m)'
+        ylabel = r'Z ($\mu$m)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Lz*1.1)
+    else:
+        xlabel = r'X ($\mu$m)'
+        ylabel = r'Y ($\mu$m)'
+        xlim = (-0.1,Lx*1.1)
+        ylim = (-0.1,Ly*1.1)
+    
+    # xlabel = r'X ($\mu$m)'
+    # ylabel = r'Y ($\mu$m)'
+    # zlabel = r'Z ($\mu$m)'
     fig, ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -607,6 +673,8 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
     else:
         xvar = node_posns[particle_cut_nodes,0]
         yvar = node_posns[particle_cut_nodes,1]
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
     ax.plot(xvar,yvar,'o',color='r')
     format_figure(ax)
     color_dimension = zvar
@@ -617,11 +685,12 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_
     norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
-    fig.colorbar(my_cmap)
+    cbar = fig.colorbar(my_cmap)
     # plt.colorbar(sc)
-    if tag != "":
-        ax.set_title(tag)
-        tag = "_" + tag
+    ax.annotate(tag,xy=(0,0),xytext=(0.5,-0.15),xycoords='axes fraction',size=20)
+    # if tag != "":
+        # ax.set_title(tag)
+        # tag = "_" + tag
     savename = output_dir + f'tricontourf_cut_{cut_type}_{idx}_' + tag +'.png'
     plt.savefig(savename)
     plt.close()
@@ -647,13 +716,13 @@ def plot_center_cut_contour(cut_type,eq_node_posns,node_posns,particles,boundary
     layer = int(center[cut_type_index])
     plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="")
 
-def plot_center_cuts_wireframe(eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
+def plot_center_cuts_wireframe(eq_node_posns,node_posns,particles,l_e,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
-    plot_center_cut_wireframe('xy',eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag)
-    plot_center_cut_wireframe('xz',eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag)
-    plot_center_cut_wireframe('yz',eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag)
+    plot_center_cut_wireframe('xy',eq_node_posns,node_posns,particles,l_e,output_dir,tag)
+    plot_center_cut_wireframe('xz',eq_node_posns,node_posns,particles,l_e,output_dir,tag)
+    plot_center_cut_wireframe('yz',eq_node_posns,node_posns,particles,l_e,output_dir,tag)
     
-def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag=""):
+def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,l_e,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -666,15 +735,15 @@ def plot_center_cut_wireframe(cut_type,eq_node_posns,node_posns,particles,bounda
     cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
     cut_type_index = cut_type_dict[cut_type]
     layer = int(center[cut_type_index])
-    plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="",ax=None)
+    plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,output_dir,tag,ax=None)
 
-def plot_center_cuts_surf(eq_node_posns,node_posns,output_dir,tag=""):
+def plot_center_cuts_surf(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
-    plot_center_cut_surf('xy',eq_node_posns,node_posns,output_dir,tag)
-    plot_center_cut_surf('xz',eq_node_posns,node_posns,output_dir,tag)
-    plot_center_cut_surf('yz',eq_node_posns,node_posns,output_dir,tag)
+    plot_center_cut_surf('xy',eq_node_posns,node_posns,l_e,output_dir,tag)
+    plot_center_cut_surf('xz',eq_node_posns,node_posns,l_e,output_dir,tag)
+    plot_center_cut_surf('yz',eq_node_posns,node_posns,l_e,output_dir,tag)
     
-def plot_center_cut_surf(cut_type,eq_node_posns,node_posns,output_dir,tag=""):
+def plot_center_cut_surf(cut_type,eq_node_posns,node_posns,l_e,output_dir,tag=""):
     """Plot a cut through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system.
     
     cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
@@ -687,7 +756,7 @@ def plot_center_cut_surf(cut_type,eq_node_posns,node_posns,output_dir,tag=""):
     Lz = eq_node_posns[:,2].max()
     center = np.round(np.array([Lx,Ly,Lz]))/2
     layer = int(center[cut_type_index])
-    plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,output_dir,tag="",ax=None)
+    plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",ax=None)
 
 def plot_center_cuts_surf_si(eq_node_posns,node_posns,l_e,particles,output_dir,plot_3D_flag=True,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
@@ -838,7 +907,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
 
 #Particle focused cut visualizations
 
-def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=""):
+def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=""):
     """Given a simulation containing particles, plot wireframe cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
     xlayers_visualized = {}
@@ -854,37 +923,37 @@ def plot_particle_centric_cuts_wireframe(initialized_node_posns,current_node_pos
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
         if int(z_min) not in zlayers_visualized:
-            plot_wireframe_cut('xy',int(z_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_wireframe_cut('xy',int(z_min),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             zlayers_visualized[int(z_min)] = 0
         if int(z_max) not in zlayers_visualized:
-            plot_wireframe_cut('xy',int(z_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_wireframe_cut('xy',int(z_max),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             zlayers_visualized[int(z_max)] = 0
         if int(y_min) not in ylayers_visualized:
-            plot_wireframe_cut('xz',int(y_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_wireframe_cut('xz',int(y_min),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             ylayers_visualized[int(y_min)] = 0
         if int(y_max) not in ylayers_visualized:
-            plot_wireframe_cut('xz',int(y_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_wireframe_cut('xz',int(y_max),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             ylayers_visualized[int(y_max)] = 0
         if int(x_min) not in xlayers_visualized:
-            plot_wireframe_cut('yz',int(x_min),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge")
+            plot_wireframe_cut('yz',int(x_min),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             xlayers_visualized[int(x_min)] = 0
         if int(x_max) not in xlayers_visualized:
-            plot_wireframe_cut('yz',int(x_max),initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle{i+1}_edge2")
+            plot_wireframe_cut('yz',int(x_max),initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             xlayers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
     if layer not in xlayers_visualized:
-        plot_wireframe_cut('yz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_wireframe_cut('yz',layer,initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle_center")
         xlayers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
     if layer not in ylayers_visualized:
-        plot_wireframe_cut('xz',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_wireframe_cut('xz',layer,initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle_center")
         ylayers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
     if layer not in zlayers_visualized:
-        plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,boundary_conditions,output_dir,tag=f"particle_center")
+        plot_wireframe_cut('xy',layer,initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=tag+f"particle_center")
         zlayers_visualized[layer] = 0
 
-def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,output_dir,tag=""):
+def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,particles,l_e,output_dir,tag=""):
     """Given a simulation containing particles, plot surf cuts through the system based on the initial positions of the particles. Intended for single and two particle simulations"""
     centers = np.zeros((particles.shape[0],3))
     xlayers_visualized = {}
@@ -900,34 +969,34 @@ def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,pa
         y_min = np.min(particle_node_posns[:,1])
         z_min = np.min(particle_node_posns[:,2])
         if int(z_min) not in zlayers_visualized:
-            plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
+            plot_surf_cut('xy',int(z_min),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             zlayers_visualized[int(z_min)] = 0
         if int(z_max) not in zlayers_visualized:
-            plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
+            plot_surf_cut('xy',int(z_max),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             zlayers_visualized[int(z_max)] = 0
         if int(y_min) not in ylayers_visualized:
-            plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
+            plot_surf_cut('xz',int(y_min),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             ylayers_visualized[int(y_min)] = 0
         if int(y_max) not in ylayers_visualized:
-            plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
+            plot_surf_cut('xz',int(y_max),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             ylayers_visualized[int(y_max)] = 0
         if int(x_min) not in xlayers_visualized:
-            plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge")
+            plot_surf_cut('yz',int(x_min),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge")
             xlayers_visualized[int(x_min)] = 0
         if int(x_max) not in xlayers_visualized:
-            plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle{i+1}_edge2")
+            plot_surf_cut('yz',int(x_max),initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle{i+1}_edge2")
             xlayers_visualized[int(x_max)] = 0
     layer = int((centers[0,0]+centers[1,0])/2)
     if layer not in xlayers_visualized:
-        plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
+        plot_surf_cut('yz',layer,initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle_center")
         xlayers_visualized[layer] = 0
     layer = int((centers[0,1]+centers[1,1])/2)
     if layer not in ylayers_visualized:
-        plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
+        plot_surf_cut('xz',layer,initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle_center")
         ylayers_visualized[layer] = 0
     layer = int((centers[0,2]+centers[1,2])/2)
     if layer not in zlayers_visualized:
-        plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,output_dir,tag=tag+f"particle_center")
+        plot_surf_cut('xy',layer,initialized_node_posns,current_node_posns,l_e,output_dir,tag=tag+f"particle_center")
         zlayers_visualized[layer] = 0
 
 #Outer surface plots
@@ -1010,6 +1079,7 @@ def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag="
     fig.tight_layout()
     savename = output_dir + f'outersurfaces_tricontourf_tile_visualization' + tag + '.png'
     plt.savefig(savename)
+    plt.close()
     return 0
 
 def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
