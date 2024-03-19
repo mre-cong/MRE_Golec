@@ -312,10 +312,12 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     #     xlim = (-0.1,Lx*1.1)
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
-    color_min, color_max = layer - color_dimension.min(), color_dimension.max() - layer
+
+    layer_height = layer*l_e*1e6
+    color_min, color_max = layer_height - color_dimension.min(), color_dimension.max() - layer_height
     colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
-    colorbar_max = colorbar_limit + layer
-    colorbar_min = -1*colorbar_limit +layer
+    colorbar_max = colorbar_limit + layer_height
+    colorbar_min = -1*colorbar_limit + layer_height
     norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
     # norm = matplotlib.colors.Normalize(color_min,color_max)
     my_cmap = cm.ScalarMappable(norm=norm)
@@ -328,7 +330,8 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     ax.set_zlabel(zlabel)
     ax.axis('equal')
     cbar = fig.colorbar(my_cmap)
-    cbar.ax.set_ylabel(r'$\mu$m',rotation=270)
+    cbar.ax.set_ylabel(r'$\mu$m',rotation=270,fontsize=20)
+    cbar.ax.tick_params(labelsize=20)
     ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
     format_figure_3D(ax)
     # if tag != "":
@@ -341,6 +344,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     ax.set_zlim(zlim)
     format_figure_3D(ax)
     savename = output_dir + f'surf_cut_{cut_type}_{layer}_'+ tag +'_zoomed.png'
+    plt.savefig(savename)
     plt.close()
 
 def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,output_dir,tag="",ax=None):
@@ -593,11 +597,6 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,outpu
     Lz = eq_node_posns[:,2].max()
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     idx = layer
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.axis('equal')
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
     if cut_type_index == 0:
         xvar2D = xposn_3D[idx,:,:]
         yvar2D = yposn_3D[idx,:,:]
@@ -657,8 +656,11 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,outpu
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
         cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*(idx+1/2),eq_node_posns[:,cut_type_index]).nonzero()[0]
     levels = np.linspace(zvar.min(),zvar.max(),10)
-    ax.plot(xvar,yvar,'o',color='b')
-    sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
+    # ax.plot(xvar,yvar,'o',color='b')
+    if zvar.min() == zvar.max():
+        sc = ax.tricontourf(xvar,yvar,zvar)
+    else:
+        sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
     #now identify which of those nodes belong to the particle and the cut. set intersection?
     cut_nodes_set = set(cut_nodes)
     particle_nodes_set = set(particles.ravel())
@@ -676,18 +678,30 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,outpu
     xvar *= l_e*1e6
     yvar *= l_e*1e6
     ax.plot(xvar,yvar,'o',color='r')
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis('equal')
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     format_figure(ax)
     color_dimension = zvar
-    color_min, color_max = color_dimension.min(), color_dimension.max()
+    layer_height = layer*l_e*1e6
+    color_min, color_max = layer_height - color_dimension.min(), color_dimension.max() - layer_height
     colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
-    colorbar_max = colorbar_limit
-    colorbar_min = -1*colorbar_limit
+    colorbar_max = colorbar_limit + layer_height
+    colorbar_min = -1*colorbar_limit +layer_height
+    # color_min, color_max = color_dimension.min(), color_dimension.max()
+    # colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+    # colorbar_max = colorbar_limit
+    # colorbar_min = -1*colorbar_limit
     norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     cbar = fig.colorbar(my_cmap)
+    cbar.ax.tick_params(labelsize=20)
+    cbar.ax.set_ylabel(r'$\mu$m',rotation=270,fontsize=20)
     # plt.colorbar(sc)
-    ax.annotate(tag,xy=(0,0),xytext=(0.5,-0.15),xycoords='axes fraction',size=20)
+    ax.annotate(tag,xy=(0,0),xytext=(0.4,-0.12),xycoords='axes fraction',size=20)
     # if tag != "":
         # ax.set_title(tag)
         # tag = "_" + tag
@@ -714,7 +728,7 @@ def plot_center_cut_contour(cut_type,eq_node_posns,node_posns,particles,boundary
     Lz = eq_node_posns[:,2].max()
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     layer = int(center[cut_type_index])
-    plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag="")
+    plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,boundary_conditions,output_dir,tag)
 
 def plot_center_cuts_wireframe(eq_node_posns,node_posns,particles,l_e,output_dir,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
@@ -756,7 +770,7 @@ def plot_center_cut_surf(cut_type,eq_node_posns,node_posns,l_e,output_dir,tag=""
     Lz = eq_node_posns[:,2].max()
     center = np.round(np.array([Lx,Ly,Lz]))/2
     layer = int(center[cut_type_index])
-    plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",ax=None)
+    plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag,ax=None)
 
 def plot_center_cuts_surf_si(eq_node_posns,node_posns,l_e,particles,output_dir,plot_3D_flag=True,tag=""):
     """Plot a series of 3 cuts through the center of the simulated volume, showing the configuration of the nodes that sat at the center of the initialized system."""
@@ -1001,87 +1015,6 @@ def plot_particle_centric_cuts_surf(initialized_node_posns,current_node_posns,pa
 
 #Outer surface plots
 
-def plot_tiled_outer_surfaces_contours(eq_node_posns,node_posns,output_dir,tag=""):
-    """plot the outer surfaces of the simulated volume in a tile plot, using contours (tricontourf())"""
-    Lx = eq_node_posns[:,0].max()
-    Ly = eq_node_posns[:,1].max()
-    Lz = eq_node_posns[:,2].max()
-    fig, axs = plt.subplots(2,3)
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
-    xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
-    layers = (0,Lx,0,Ly,0,Lz)
-    for cut_type_index in range(3):
-        if cut_type_index == 0:
-            xlabel = 'Y (l_e)'
-            ylabel = 'Z (l_e)'
-            xlim = (-0.1,Ly*1.1)
-            ylim = (-0.1,Lz*1.1)
-        elif cut_type_index == 1:
-            xlabel = 'X (l_e)'
-            ylabel = 'Z (l_e)'
-            xlim = (-0.1,Lx*1.1)
-            ylim = (-0.1,Lz*1.1)
-        else:
-            xlabel = 'X (l_e)'
-            ylabel = 'Y (l_e)'
-            xlim = (-0.1,Lx*1.1)
-            ylim = (-0.1,Ly*1.1)
-        for i in range(2):
-            idx = int(layers[2*cut_type_index+i])
-            if cut_type_index == 0:
-                xvar2D = xposn_3D[idx,:,:]
-                yvar2D = yposn_3D[idx,:,:]
-                zvar2D = zposn_3D[idx,:,:]
-                # xlim = (xvar.min(),xvar.max())
-                xvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
-                yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
-                zvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
-            elif cut_type_index == 1:
-                xvar2D = xposn_3D[:,idx,:]
-                yvar2D = yposn_3D[:,idx,:]
-                zvar2D = zposn_3D[:,idx,:]
-                # ylim = (yvar.min(),yvar.max())
-                xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
-                yvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
-                zvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
-            else:
-                xvar2D = xposn_3D[:,:,idx]
-                yvar2D = yposn_3D[:,:,idx]
-                zvar2D = zposn_3D[:,:,idx]
-                # zlim = (zvar.min(),zvar.max())
-                xvar = np.reshape(xvar2D,(xvar2D.shape[0]*xvar2D.shape[1],))
-                yvar = np.reshape(yvar2D,(yvar2D.shape[0]*yvar2D.shape[1],))
-                zvar = np.reshape(zvar2D,(zvar2D.shape[0]*zvar2D.shape[1],))
-            ax = axs[i,cut_type_index]
-            # ax.scatter(xvar,yvar,color ='b',marker='o',zorder=2.5)
-            levels = np.linspace(zvar.min(),zvar.max(),20)
-            ax.scatter(xvar,yvar,marker='o',color='b',s=2.0,zorder=2.5)
-            sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
-            ax.set_xlabel(xlabel)
-            ax.set_ylabel(ylabel)
-            ax.axis('equal')
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
-            format_figure(ax)
-            color_dimension = zvar
-            color_min, color_max = color_dimension.min(), color_dimension.max()
-            colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
-            colorbar_max = colorbar_limit
-            colorbar_min = -1*colorbar_limit
-            norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
-            my_cmap = cm.ScalarMappable(norm=norm)
-            my_cmap.set_array([])
-            fig.colorbar(my_cmap,ax=ax)
-            # plt.colorbar(sc,ax=ax)
-            #don't forget to add a colorbar and limits
-    fig.tight_layout()
-    savename = output_dir + f'outersurfaces_tricontourf_tile_visualization' + tag + '.png'
-    plt.savefig(savename)
-    plt.close()
-    return 0
-
 def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     """Plot the outer surfaces of the simulated volume in a tile plot, using contours (tricontourf()), with SI units."""
     Lx = eq_node_posns[:,0].max()
@@ -1101,18 +1034,18 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
     Lz *= l_e*1e6
     for cut_type_index in range(3):
         if cut_type_index == 0:
-            xlabel = 'Y (um)'
-            ylabel = 'Z (um)'
+            xlabel = r'Y ($\mu$m)'
+            ylabel = r'Z ($\mu$m)'
             xlim = (-0.1,Ly*1.1)
             ylim = (-0.1,Lz*1.1)
         elif cut_type_index == 1:
-            xlabel = 'X (um)'
-            ylabel = 'Z (um)'
+            xlabel = r'X ($\mu$m)'
+            ylabel = r'Z ($\mu$m)'
             xlim = (-0.1,Lx*1.1)
             ylim = (-0.1,Lz*1.1)
         else:
-            xlabel = 'X (um)'
-            ylabel = 'Y (um)'
+            xlabel = r'X ($\mu$m)'
+            ylabel = r'Y ($\mu$m)'
             xlim = (-0.1,Lx*1.1)
             ylim = (-0.1,Ly*1.1)
         for i in range(2):
@@ -1144,8 +1077,12 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
             ax = axs[i,cut_type_index]
             # ax.scatter(xvar,yvar,color ='b',marker='o',zorder=2.5)
             levels = np.linspace(zvar.min(),zvar.max(),20)
-            ax.scatter(xvar,yvar,marker='o',color='b',s=2.0,zorder=2.5)
-            sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
+            # ax.scatter(xvar,yvar,marker='o',color='b',s=2.0,zorder=2.5)
+            if zvar.min() == zvar.max():
+                sc = ax.tricontourf(xvar,yvar,zvar)
+                # raise FloatingPointError('No levels can be generated as value does not vary')
+            else:
+                sc = ax.tricontourf(xvar,yvar,zvar,levels=levels)
             ax.set_xlabel(xlabel)
             ax.set_ylabel(ylabel)
             ax.axis('equal')
@@ -1153,14 +1090,21 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
             ax.set_ylim(ylim)
             format_figure(ax)
             color_dimension = zvar
-            color_min, color_max = color_dimension.min(), color_dimension.max()
+            layer_height = idx*l_e*1e6
+            color_min, color_max = layer_height - color_dimension.min(), color_dimension.max() - layer_height
             colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
-            colorbar_max = colorbar_limit
-            colorbar_min = -1*colorbar_limit
+            colorbar_max = colorbar_limit + layer_height
+            colorbar_min = -1*colorbar_limit +layer_height
+            # color_min, color_max = color_dimension.min(), color_dimension.max()
+            # colorbar_limit = np.max([np.abs(color_min),np.abs(color_max)])
+            # colorbar_max = colorbar_limit
+            # colorbar_min = -1*colorbar_limit
             norm = matplotlib.colors.Normalize(colorbar_min,colorbar_max)
             my_cmap = cm.ScalarMappable(norm=norm)
             my_cmap.set_array([])
-            fig.colorbar(my_cmap,ax=ax)
+            cbar = fig.colorbar(my_cmap,ax=ax)
+            cbar.ax.set_ylabel(r'$\mu$m',rotation=270,fontsize=20)
+            cbar.ax.tick_params(labelsize=20)
             # plt.colorbar(sc,ax=ax)
             #don't forget to add a colorbar and limits
     fig.tight_layout()
@@ -1255,9 +1199,9 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    xlabel = 'X (um)'
-    ylabel = 'Y (um)'
-    zlabel = 'Z (um)'
+    xlabel = r'X ($\mu$m)'
+    ylabel = r'Y ($\mu$m)'
+    zlabel = r'Z ($\mu$m)'
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
