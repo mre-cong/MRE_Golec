@@ -2136,6 +2136,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         # fixed_nodes = boundaries['bot']
         stressed_nodes = boundaries['top']
     i = 0
+    previously_converged = False
     while i < max_integrations:
         print(f'starting integration run {i+1}')
         for j in range(max_integration_steps):
@@ -2155,8 +2156,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                             particle_orientations[particle_counter] = rotation_matrix_generator.apply(particle_orientations[particle_counter])
                     posns = cp.array(host_posns.astype(np.float32)).reshape((host_posns.shape[0]*host_posns.shape[1],1),order='C')
             leapfrog_update(posns,velocities,step_size,size_entries)
-            whole_step_velocities = cp.copy(velocities)
-            leapfrog_update(whole_step_velocities,a_var,np.float32(step_size/2),size_entries)
+            # whole_step_velocities = cp.copy(velocities)
+            # leapfrog_update(whole_step_velocities,a_var,np.float32(step_size/2),size_entries)
             if np.mod(j+i*max_integration_steps,snapshot_stepsize) == 0:
                 host_posns = cp.asnumpy(posns)
                 host_posns = np.reshape(host_posns,(N_nodes,3))
@@ -2202,7 +2203,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,whole_step_velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             if particles.shape[0] != 0:
@@ -2225,12 +2226,16 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 rigid_body_orientation_transformation, _ = R.align_vectors(particle_orientations[particle_counter][np.newaxis,:],particle_initial_orientations[particle_counter][np.newaxis,:])
                 host_posns[particle] = rigid_body_orientation_transformation.apply(relative_to_particle_center_vectors[particle_counter]) + particle_centers[particle_counter]
         #after reseting the the particle nodes to match a rigid body
-        host_posns = np.reshape(host_posns,(3*N_nodes,))
+        host_posns = np.reshape(host_posns,(3*N_nodes,1))
         posns = cp.array(host_posns.astype(np.float32))#.reshape((host_posns.shape[0]*host_posns.shape[1],1),order='C')
         host_velocities = cp.asnumpy(velocities)
         sol = np.concatenate((host_posns,host_velocities))
         host_accel = cp.asnumpy(a_var)
         host_accel = np.reshape(host_accel,(N_nodes,3))
+        accel_comp_magnitude = np.abs(host_accel)
+        accel_comp_magnitude_avg = np.mean(accel_comp_magnitude)
+        vel_comp_magnitude = np.abs(host_velocities)
+        vel_comp_magnitude_avg = np.mean(vel_comp_magnitude)
         a_norms = np.linalg.norm(host_accel,axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         host_posns = np.reshape(host_posns,(N_nodes,3))
@@ -2239,11 +2244,17 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
         final_v = host_velocities
         v_norms = np.linalg.norm(final_v,axis=1)
         v_norm_avg = np.sum(v_norms)/N_nodes
-        if a_norm_avg < tolerance and v_norm_avg < tolerance:
-            print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
-            print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
-            return_status = 0
-            break
+        if accel_comp_magnitude_avg < tolerance and vel_comp_magnitude_avg < tolerance:#a_norm_avg < tolerance and v_norm_avg < tolerance:
+            print(f'Reached convergence criteria of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(accel_comp_magnitude_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            # print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            # print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
+            if previously_converged:
+                return_status = 0
+                print('Ending integration after reaching convergence criteria')
+                break
+            else:
+                previously_converged = True
         elif np.any(np.isnan(a_norms)):
             print(f'Integration failure mode: NaN entries in accelerations. (possible overflow error)')
             return_status = -2
@@ -2261,8 +2272,9 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             # snapshot_stepsize *= 2
             # rerun_flag = True
         else:
-            print(f'Post-Integration norms\nacceleration norm average = {a_norm_avg}\nvelocity norm average = {v_norm_avg}')
-            print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
+            print(f'Post-Integration norms\nacceleration norm average = {np.round(a_norm_avg,decimals=6)}\nvelocity norm average = {np.round(v_norm_avg,decimals=6)}')
+            print(f'Post-Integration component magnitudes\nacceleration component magnitude average = {np.round(accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            # print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
             last_velocity = final_v.copy()
@@ -2275,11 +2287,13 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
             mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
         if particles.shape[0] != 0:
-            particle_velocity = np.linalg.norm(np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0])
-            print(f'particle velocity = {particle_velocity}')
+            particle_velocity = np.zeros((particles.shape[0],3))
+            for particle_counter, particle in enumerate(particles):
+                particle_velocity[particle_counter] = np.sum(final_v[particle,:],axis=0)/particle.shape[0]#np.linalg.norm(np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0])
+            print(f'particle velocity = {np.round(particle_velocity,decimals=6)}')
         i += 1
         if i == max_integrations and particles.shape[0] != 0:
-            if particle_velocity > tolerance:#if the particles are still in motion, allow the integration to continue
+            if np.any(np.abs(particle_velocity[0]) > tolerance):#if the particles are still in motion, allow the integration to continue
                 max_integrations += 1
                 if max_integrations > hard_limit_max_integrations:
                     break
