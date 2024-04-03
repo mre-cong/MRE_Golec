@@ -514,6 +514,42 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit_v2(float[:,::1] moments, float[:,::1] particle_posns, float particle_radius, float l_e):
+    """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
+    cdef int N_particles = particle_posns.shape[0]
+    cdef np.ndarray[np.float32_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float32)
+    cdef int i
+    cdef int j
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] force = np.empty((3,),dtype=np.float32)
+    cdef float[3] wca_force = np.empty((3,),dtype=np.float32)#additional repulsive force to keep the particles from collapsing on one another
+    for i in range(N_particles):
+        for j in range(i+1,N_particles):
+            r_i[0] = particle_posns[i,0]
+            r_i[1] = particle_posns[i,1]
+            r_i[2] = particle_posns[i,2]
+            r_j[0] = particle_posns[j,0]
+            r_j[1] = particle_posns[j,1]
+            r_j[2] = particle_posns[j,2]
+            force = get_dip_dip_force_32bit(moments[i,:],moments[j,:],r_i,r_j)
+            wca_force = get_particle_wca_force_normalized_32bit(r_i,r_j,particle_radius,l_e)
+            forces[i,0] += force[0]
+            forces[i,1] += force[1]
+            forces[i,2] += force[2]
+            forces[j,0] -= force[0]
+            forces[j,1] -= force[1]
+            forces[j,2] -= force[2]
+            forces[i,0] += wca_force[0]
+            forces[i,1] += wca_force[1]
+            forces[i,2] += wca_force[2]
+            forces[j,0] -= wca_force[0]
+            forces[j,1] -= wca_force[1]
+            forces[j,2] -= wca_force[2]
+    return forces
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(float[:] r_i, float[:] r_j, float particle_radius,float l_e):
     """Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
     cdef float wca_mag

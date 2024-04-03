@@ -1,9 +1,11 @@
 import numpy as np
 import cupy as cp
+import cupyx
 import magnetism
 import matplotlib.pyplot as plt
 import os
 import scipy.special as sci
+import time
 #TODO test the calculation of magnetization, dipole fields, and dipole dipole forces. compare results to by hand calculations
 #1) magnetization response to 0 field, saturating field, subsaturating fields (resulting magnetization 0.5*Ms), and fields along and between two cardinal directions
 #2) dipole fields, directly above, directly to the right/left, directly below, and at an abritrary angle relative to the magnetization vector direction. for unit magnetization, unit distance. increment distance via doubling/halving to ensure it behaves according to the expected power law dependence
@@ -466,8 +468,8 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
 def gpu_testing():
     #choose the maximum field, number of field steps, and field angle
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.04/mu0
-    n_field_steps = 10
+    H_mag = 0.1/mu0
+    n_field_steps = 200
     if n_field_steps != 1:
         H_step = H_mag/(n_field_steps-1)
     else:
@@ -479,7 +481,8 @@ def gpu_testing():
     Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
     Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
     #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
-    Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
     Hext_series = np.zeros((len(Hext_series_magnitude),3))
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
@@ -489,14 +492,15 @@ def gpu_testing():
     particle_radius = 1.5e-6
     l_e = np.float32(1e-6)
     num_nodes_per_particle = 8
-    num_particles = 27
+    particles_per_axis = np.array([3,3,3])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
     separation = 7.8
     particle_counter = 0
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
                 particle_posns[particle_counter,0] = i * separation
                 particle_posns[particle_counter,1] = j * separation
                 particle_posns[particle_counter,2] = k * separation
@@ -509,6 +513,45 @@ def gpu_testing():
     for i, Hext in enumerate(Hext_series):
         M32bit[i] = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
         magnetic_moments[i] = get_magnetization_iterative(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e)
+
+    N_iterations = 1
+    Hext = Hext_series[int(n_field_steps/2)]
+    execution_gpu = cupyx.profiler.benchmark(get_magnetization_iterative,(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e),n_repeat=N_iterations)
+    delta_gpu_naive = np.sum(execution_gpu.gpu_times)
+
+    start = time.perf_counter()
+    for i in range(N_iterations):
+        perf_m32bit = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
+    end = time.perf_counter()
+    delta_cy = end-start
+    # try:
+    #     correctness = np.allclose(host_cupy_forces,np.float32(volume_correction_force))
+    # except Exception as inst:
+    #         print('Exception raised during calculation')
+    #         print(type(inst))
+    #         print(inst)
+    # print("GPU and CPU based calculations of forces agree?: " + str(correctness))
+    # if not correctness:
+    #     difference = np.abs(host_cupy_forces-volume_correction_force)
+    #     max_component_diff = np.max(difference)
+    #     mean_component_diff = np.mean(difference)
+    #     print(f'maximum difference in volume correction force components is {max_component_diff}')
+    #     print(f'mean difference in volume correction force components is {mean_component_diff}')
+    #     max_norm_diff = np.max(np.linalg.norm(difference,axis=1))
+    #     mean_norm_diff = np.mean(np.linalg.norm(difference,axis=1))
+    #     print(f'maximum difference in volume correction force norm is {max_norm_diff}')
+    #     print(f'mean difference in volume correction force norm is {mean_norm_diff}')
+    #     print(f'number of NaN entries in the CPU VCF {np.count_nonzero(np.isnan(volume_correction_force))}')
+    #     print(f'number of NaN entries in the GPU VCF {np.count_nonzero(np.isnan(host_cupy_forces))}')
+    #     print(f'number of NaN entries in the norm of the CPU VCF {np.count_nonzero(np.isnan(np.linalg.norm(volume_correction_force,axis=1)))}')
+    #     print(f'number of zero entries in the norm of the CPU VCF {np.count_nonzero(np.isclose(np.linalg.norm(volume_correction_force,axis=1),0))}')
+    #     max_norm_percent_diff = np.max(np.nan_to_num(np.linalg.norm(difference,axis=1)/np.linalg.norm(volume_correction_force,axis=1)))
+    #     mean_norm_percent_diff = np.mean(np.nan_to_num(np.linalg.norm(difference,axis=1)/np.linalg.norm(volume_correction_force,axis=1)))
+    #     print(f'maximum percentage difference in volume correction force norm is {max_norm_percent_diff}')
+    #     print(f'mean percentage difference in volume correction force norm is {mean_norm_percent_diff}')
+    print("CPU time is {} seconds".format(delta_cy))
+    print("GPU time is {} seconds".format(delta_gpu_naive))
+    print("GPU is {}x faster than CPU".format(delta_cy/delta_gpu_naive))
 
     magnetic_moments = magnetic_moments.reshape((Hext_series.shape[0],num_particles,3))
     magnetization = magnetic_moments/particle_volume
@@ -523,21 +566,46 @@ def gpu_testing():
         print(f'difference norm per total number of entries (field values * number particles * 3): {difference_norm/np.shape(np.ravel(magnetization))[0]}')
         print(f'mean normalized magnetization component percent difference: {np.mean((M32bit-magnetization)/M32bit)}')
         fig, ax = plt.subplots()
-        ax.plot(Hext_series_magnitude,M32bit[:,0,0],label='p1x')
-        ax.plot(Hext_series_magnitude,M32bit[:,0,1],label='p1y')
-        ax.plot(Hext_series_magnitude,M32bit[:,0,2],label='p1z')
+        ax.plot(Bext_series_magnitude,M32bit[:,0,0],label='p1x')
+        ax.plot(Bext_series_magnitude,M32bit[:,0,1],label='p1y')
+        ax.plot(Bext_series_magnitude,M32bit[:,0,2],label='p1z')
         # ax.plot(Hext_series_magnitude,M32bit[:,1,0],label='p2x')
         # ax.plot(Hext_series_magnitude,M32bit[:,1,1],label='p2y')
         # ax.plot(Hext_series_magnitude,M32bit[:,1,2],label='p2z')
-        ax.plot(Hext_series_magnitude,magnetization[:,0,0],label='gpu p1x')
-        ax.plot(Hext_series_magnitude,magnetization[:,0,1],label='gpu p1y')
-        ax.plot(Hext_series_magnitude,magnetization[:,0,2],label='gpu p1z')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,0],label='gpu p1x')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,1],label='gpu p1y')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,2],label='gpu p1z')
         # ax.plot(Hext_series_magnitude,magnetization[:,1,0],label='gpu p2x')
         # ax.plot(Hext_series_magnitude,magnetization[:,1,1],label='gpu p2y')
         # ax.plot(Hext_series_magnitude,magnetization[:,1,2],label='gpu p2z')
         fig.legend()
         plt.show()
         print('review plot')
+        
+        system_magnetization = np.sum(M32bit,axis=1)/num_particles
+        system_magnetization = np.squeeze(system_magnetization)
+        gpu_system_magnetization = np.sum(magnetization,axis=1)/num_particles
+        gpu_system_magnetization = np.squeeze(gpu_system_magnetization)
+        Bext_series = mu0*Hext_series
+        Bext_series_norm = np.linalg.norm(Bext_series,axis=1)
+        nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+        unit_Bext_series = Bext_series[nonzero_field_value_indices[0]]/Bext_series_norm[nonzero_field_value_indices[0]]
+        parallel_magnetization = np.dot(system_magnetization,unit_Bext_series)
+        gpu_parallel_magnetization = np.dot(gpu_system_magnetization,unit_Bext_series)
+
+        fig, ax = plt.subplots()
+        ax.plot(Bext_series_norm,parallel_magnetization,'.',label='CPU')
+        ax.plot(Bext_series_norm,gpu_parallel_magnetization,'.',label='GPU')
+        ax.set_xlabel('B Field (T)')
+        ax.set_ylabel('Normalized Magnetization')
+        ax.set_title(f'Magnetization versus Applied Field\n{num_particles} Particles, Separation {separation}\nTheta {Bext_theta_angle} Phi {Bext_phi_angle}')
+        fig.legend()
+        fig.show()
+        save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing/'
+        if not (os.path.isdir(save_dir)):
+            os.mkdir(save_dir)
+        savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+        plt.savefig(savename)
 if __name__ == "__main__":
     # main()
     gpu_testing()
