@@ -376,6 +376,198 @@ cpdef int get_springs(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] spri
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+# cpdef np.ndarray[np.float64_t,ndim=2] get_springs(np.ndarray[np.int8_t,ndim=1] node_type,  int max_springs, double[:] k, double[:] dim, double l_e):
+cpdef int get_springs_v2(np.ndarray[np.int8_t,ndim=1] node_type, double[:,::1] springs, int max_springs, double[:] k, double[:] dim, double l_e, double[:] k_particles):
+#used in get springs to define which adjacent nodes would be above/below/etc the current node of interest, for deciding which connections are possible based on the node type (a node on the top surface can't be connected to a node above it, there are no nodes above it)
+#below boolean arrays correspond to the adjacent_node_indices variable. where the adjacent_node_indices variable is initialized it does not consider the actual dimensions of the simulation. These boolean arrays say 'for the node listed in adjacent_node_indices, if the value is True, the adjacent node would be considered "above/below,left/right,in front/in back of" the current node of interest. Used to define unique spring variable rows without duplications
+    cdef int i
+    cdef np.ndarray[np.npy_bool, ndim=1] ABOVE = np.array([True,False,False,False,True,False,False,True,False,False,True,False,True],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] BELOW = np.array([False,False,False,True,False,False,True,False,False,True,False,True,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LEFT = np.array([False,False,False,False,False,True,False,False,False,True,True,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RIGHT = np.array([False,True,False,False,False,False,True,True,True,False,False,True,True],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] FRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] BACK = np.array([False,False,True,True,True,True,False,False,True,True,True,True,True],dtype=np.bool_)
+    #combinations of the arrays above to define above and to the left nodes, etc. for deciding which connections are possible based on node type
+    cdef np.ndarray[np.npy_bool, ndim=1] LTOP = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LBOT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RTOP = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RBOT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] TOPFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] TOPBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] BOTFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] BOTBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    #combinations of the first set of arrays to define nodes which are placed above to the let and behind, etc.
+    cdef np.ndarray[np.npy_bool, ndim=1] LTOPFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LTOPBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LBOTFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] LBOTBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RTOPFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RTOPBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RBOTFRONT = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+    cdef np.ndarray[np.npy_bool, ndim=1] RBOTBACK = np.array([False,False,False,False,False,False,False,False,False,False,False,False,False],dtype=np.bool_)
+
+    for i in range(13):
+        LTOP[i] = LEFT[i] or ABOVE[i]
+        LBOT[i] = LEFT[i] or BELOW[i]
+        LFRONT[i] = LEFT[i] or FRONT[i]
+        LBACK[i] = LEFT[i] or BACK[i]
+        RTOP[i] = RIGHT[i] or ABOVE[i]
+        RBOT[i] = RIGHT[i] or BELOW[i]
+        RFRONT[i] = RIGHT[i] or FRONT[i]
+        RBACK[i] = RIGHT[i] or BACK[i]
+        TOPFRONT[i] = ABOVE[i] or FRONT[i]
+        TOPBACK[i] = ABOVE[i] or BACK[i]
+        BOTFRONT[i] = BELOW[i] or FRONT[i]
+        BOTBACK[i] = BELOW[i] or BACK[i]
+        #combinations of the first set of arrays to define nodes which are placed above to the left and behind, etc.
+        LTOPFRONT[i] = LEFT[i] or ABOVE[i] or FRONT[i]
+        LTOPBACK[i] = LEFT[i] or ABOVE[i] or BACK[i]
+        LBOTFRONT[i] = LEFT[i] or BELOW[i] or FRONT[i]
+        LBOTBACK[i] = LEFT[i] or BELOW[i] or BACK[i]
+        RTOPFRONT[i] = RIGHT[i] or ABOVE[i] or FRONT[i]
+        RTOPBACK[i] = RIGHT[i] or ABOVE[i] or BACK[i]
+        RBOTFRONT[i] = RIGHT[i] or BELOW[i] or FRONT[i]
+        RBOTBACK[i] = RIGHT[i] or BELOW[i] or BACK[i]
+
+    cdef int j
+    cdef int Nz = np.round(dim[2]/l_e + 1).astype(np.int64)
+    cdef int Nx = np.round(dim[0]/l_e + 1).astype(np.int64)
+    cdef int nodes_per_line = Nz
+    cdef int nodes_per_plane = Nx*Nz
+    cdef double face_spring_length = sqrt(2)*l_e
+    cdef double center_diagonal_length = sqrt(3)*l_e
+    # cdef np.ndarray[np.float64_t,ndim=2] springs = np.empty((max_springs,4),dtype=np.float64)
+    cdef int spring_counter = 0
+    cdef int[13] adjacent_node_indices = np.empty((13,),dtype=np.int32)
+    for i in range(node_type.shape[0]):#there are 26 adjacent nodes that could be connected, but because i only want unique connections (i < other_node_index) and i'm iterating over i, i can ignore the 13 that would have lower node indices
+        #edge type connections
+        adjacent_node_indices[0] = i + 1
+        adjacent_node_indices[1] = i + nodes_per_line
+        adjacent_node_indices[2] = i + nodes_per_plane
+        #face type connections
+        adjacent_node_indices[3] = i + nodes_per_plane - 1
+        adjacent_node_indices[4] = i + nodes_per_plane + 1
+        adjacent_node_indices[5] = i - nodes_per_line + nodes_per_plane
+        adjacent_node_indices[6] = i + nodes_per_line - 1
+        adjacent_node_indices[7] = i + nodes_per_line + 1
+        adjacent_node_indices[8] = i + nodes_per_line + nodes_per_plane
+        #center diagonal type connections
+        adjacent_node_indices[9] = i - nodes_per_line + nodes_per_plane - 1 
+        adjacent_node_indices[10] = i - nodes_per_line + nodes_per_plane + 1 
+        adjacent_node_indices[11] = i + nodes_per_line + nodes_per_plane - 1
+        adjacent_node_indices[12] = i + nodes_per_line + nodes_per_plane + 1
+        #now i need to include the logic for checking based on the node type whether or not there would be nodes to the left, right, above, below or behind (any node in front (lower y value) will always be a lower node index and so won't need to be considered)
+        #i should group the adjacent nodes so that they are edge springs, then face springs, then center diagonal springs
+#defining which of the potential node connections involve translations above/below/etc
+#just define the connections (first two elements of the spring variable. maybe the length? and get the stiffness set later with it's own functionality?)
+        if node_type[i] == 0:
+            for j in range(3):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                springs[spring_counter,2] = k[0]
+                springs[spring_counter,3] = l_e
+                spring_counter += 1
+            for j in range(3,9):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                springs[spring_counter,2] = k[1]
+                springs[spring_counter,3] = face_spring_length
+                spring_counter += 1
+            for j in range(9,13):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                springs[spring_counter,2] = k[2]
+                springs[spring_counter,3] = center_diagonal_length
+                spring_counter += 1
+        elif node_type[i] == -1:
+            for j in range(3):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                if node_type[adjacent_node_indices[j]] == -1:
+                    springs[spring_counter,2] = k_particles[0]
+                else:
+                    springs[spring_counter,2] = k[0]#(k[0] + k_particles[0])/2
+                springs[spring_counter,3] = l_e
+                spring_counter += 1
+            for j in range(3,9):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                if node_type[adjacent_node_indices[j]] == -1:
+                    springs[spring_counter,2] = k_particles[1]
+                else:
+                    springs[spring_counter,2] = k[1]#(k[1] + k_particles[1])/2
+                springs[spring_counter,3] = face_spring_length
+                spring_counter += 1
+            for j in range(9,13):
+                springs[spring_counter,0] = i
+                springs[spring_counter,1] = adjacent_node_indices[j]
+                if node_type[adjacent_node_indices[j]] == -1:
+                    springs[spring_counter,2] = k_particles[2]
+                else:
+                    springs[spring_counter,2] = k[2]#(k[2] + k_particles[2])/2
+                springs[spring_counter,3] = center_diagonal_length
+                spring_counter += 1
+            #the logic for springs tiffness setting should be established in a separate function(s)
+        elif node_type[i] == 1:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LEFT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 2:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RIGHT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 3:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, ABOVE, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 4:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, BELOW, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 5:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, FRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 6:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, BACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 7:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LTOP, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 8:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LBOT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 9:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 10:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 11:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RTOP, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 12:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RBOT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 13:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 14:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 15:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, TOPFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 16:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, TOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 17:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, BOTFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 18:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, BOTBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 19:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LBOTFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 20:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RBOTFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 21:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LBOTBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 22:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LTOPFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 23:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RBOTBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 24:
+           spring_counter = set_connection_type_conditional(i, node_type, springs, RTOPFRONT, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 25:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, LTOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+        elif node_type[i] == 26:
+            spring_counter = set_connection_type_conditional(i, node_type, springs, RTOPBACK, adjacent_node_indices, spring_counter, l_e, face_spring_length, center_diagonal_length, k)
+    return spring_counter#springs
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef np.ndarray[np.int8_t, ndim=1] get_node_type_normalized(int n_nodes, dict boundaries, double[:] dim):
     cdef np.ndarray[np.int8_t, ndim=1] node_type = np.zeros((n_nodes,),dtype=np.int8)
     #zero represents interior nodes, first identify surface nodes, then edges, then corners (edge nodes are surface nodes, corner nodes are edge nodes)
@@ -444,6 +636,83 @@ cpdef np.ndarray[np.int8_t, ndim=1] get_node_type_normalized(int n_nodes, dict b
     node_type[corner_indices[6]] = 25#lefttopback
     node_type[corner_indices[7]] = 26#righttopback
     #i can adjust this function to return values from 0 to 26, reflecting interior, the 6 different surfaces, 12 edges, and 8 corner types, to get more detailed information about the node type for assigning spring stiffness and determining adjacent node connectivity
+    return node_type
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.int8_t, ndim=1] get_node_type_normalized_v2(int n_nodes, dict boundaries, double[:] dim, long[:,::1] particles):
+    """Provides an integer value corresponding to each node to define it's type (referring to its relative position in the simulated system, or its identity as belonging to a magnetic particle"""
+    cdef np.ndarray[np.int8_t, ndim=1] node_type = np.zeros((n_nodes,),dtype=np.int8)
+    #zero represents interior nodes, first identify surface nodes, then edges, then corners (edge nodes are surface nodes, corner nodes are edge nodes)
+    #using sets for intersection method to determine edges
+    cdef set left = set(boundaries['left'])
+    cdef set right = set(boundaries['right'])
+    cdef set top = set(boundaries['top'])
+    cdef set bottom = set(boundaries['bot'])
+    cdef set front = set(boundaries['front'])
+    cdef set back = set(boundaries['back'])
+    node_type[boundaries['left']] = 1
+    node_type[boundaries['right']] = 2
+    node_type[boundaries['top']] = 3
+    node_type[boundaries['bot']] = 4
+    node_type[boundaries['front']] = 5
+    node_type[boundaries['back']] = 6
+    #now edges
+    #unpacking the set members, as sets can't be used for magic indexing
+    *tmp_var, = left.intersection(top)
+    node_type[tmp_var] = 7
+    *tmp_var, = left.intersection(bottom)
+    node_type[tmp_var] = 8
+    *tmp_var, = left.intersection(front)
+    node_type[tmp_var] = 9
+    *tmp_var, = left.intersection(back)
+    node_type[tmp_var] = 10
+    *tmp_var, = right.intersection(top)
+    node_type[tmp_var] = 11
+    *tmp_var, = right.intersection(bottom)
+    node_type[tmp_var] = 12
+    *tmp_var, = right.intersection(front)
+    node_type[tmp_var] = 13
+    *tmp_var, = right.intersection(back)
+    node_type[tmp_var] = 14
+    *tmp_var, = top.intersection(front)
+    node_type[tmp_var] = 15
+    *tmp_var, = top.intersection(back)
+    node_type[tmp_var] = 16
+    *tmp_var, = bottom.intersection(front)
+    node_type[tmp_var] = 17
+    *tmp_var, = bottom.intersection(back)
+    node_type[tmp_var] = 18
+    cdef np.ndarray[np.float64_t, ndim=2] corners = np.zeros((8,3),dtype=np.float64)
+    corners[1][0] = dim[0]
+    corners[2][1] = dim[1]
+    corners[3][2] = dim[2]
+    corners[4][0] = dim[0]
+    corners[4][1] = dim[1]
+    corners[5][0] = dim[0]
+    corners[5][2] = dim[2]
+    corners[6][1] = dim[1]
+    corners[6][2] = dim[2]
+    corners[7][0] = dim[0]
+    corners[7][1] = dim[1]
+    corners[7][2] = dim[2]
+    cdef np.ndarray[np.int32_t, ndim=1] corner_indices = np.empty((8,),dtype=np.int32)
+    cdef double N_nodes_x = dim[0] + 1.0
+    cdef double N_nodes_z = dim[2] + 1.0
+    corner_indices = get_row_indices_normalized(corners,N_nodes_x,N_nodes_z)
+    node_type[corner_indices[0]] = 19#leftbotfront
+    node_type[corner_indices[1]] = 20#rightbotfront
+    node_type[corner_indices[2]] = 21#leftbotback
+    node_type[corner_indices[3]] = 22#lefttopfront
+    node_type[corner_indices[4]] = 23#rightbotback
+    node_type[corner_indices[5]] = 24#righttopfront
+    node_type[corner_indices[6]] = 25#lefttopback
+    node_type[corner_indices[7]] = 26#righttopback
+    #now the particle nodes
+    #cdef set particle_nodes = set(particles)
+    cdef int i
+    for i in range(particles.shape[0]):
+        node_type[particles[i,:]] = -1
     return node_type
 
 @cython.boundscheck(False)
