@@ -32,8 +32,8 @@ Created on Fri Aug 26 09:19:19 2022
 # use density values for PDMS blends and carbonyl iron to set the mass values for each node properly. DONE
 # use realistic values for the young's modulus DONE
 # consider and implement options for particle magnetization (mumax3 results are only useful for the two particle case with particle aligned field): options include froehlich-kennely, hyperbolic tangent (anhysteretic saturable models)
-
 import numpy as np
+import numpy.random as rand
 import cupy as cp
 import scipy.special as sci
 import matplotlib.pyplot as plt
@@ -96,8 +96,8 @@ def place_two_particles_normalized(radius,l_e,dimensions,separation):
     particles = np.vstack((particle_nodes,particle_nodes2))
     return particles
 
-def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation,particle_placement=None):
-    #TODO Unfinished, intention to place particles with either random distribution or regular/crystal structure like distribution.
+def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation,particle_placement=None,num_particles_along_axes=None,anisotropy_factor=None):
+    #TODO Unfinished, intention to additionally implement ability to place particles with either random distribution or regular/crystal structure like distribution with some noise.
     """Return a 2D array where each row lists the indices making up a rigid particle. radius is the size in meters, l_e is the cubic element edge length in meters, dimensions are the simulated volume size in meters, separation is the center to center particle separation in cubic elements."""
     Nel_x, Nel_y, Nel_z = dimensions
     radius_voxels = np.round(radius/l_e,decimals=1).astype(np.float32)
@@ -113,34 +113,134 @@ def place_n_particles_normalized(n_particles,radius,l_e,dimensions,separation,pa
     #check particle separation to see if it is acceptable or not for the shift in particle placement from the simulation "center" to align with the cubic element centers
     if n_particles == 1:
         centers = center
-    elif n_particles == 2:
-        shift_l_mag = np.round(separation/2)
-        shift_r_mag = separation - shift_l
-        shift_l = np.array([shift_l_mag,0,0])
-        shift_r = np.array([shift_r_mag,0,0])
-        centers = np.array([center-shift_l,center+shift_r])
-    elif n_particles == 3:
-        shift = np.array([separation,0,0])
-        centers = np.array([center-shift,center,center+shift])
+    # elif n_particles == 2:
+    #     shift_l_mag = np.round(separation/2)
+    #     shift_r_mag = separation - shift_l_mag
+    #     shift_l = np.array([shift_l_mag,0,0])
+    #     shift_r = np.array([shift_r_mag,0,0])
+    #     centers = np.array([center-shift_l,center+shift_r])
+    # elif n_particles == 3:
+    #     shift = np.array([separation,0,0])
+    #     centers = np.array([center-shift,center,center+shift])
     elif particle_placement == 'regular':
         # cubic crystal structure placement. need to find "origin" and then translate properly according to number of particles in each direction
-        num_particles_per_direction = int(np.power(n_particles,(1/3)))
-        edge_elements = Nel_x - separation*(num_particles_per_direction - 1)
-        origin = np.ones((3,))*np.round(edge_elements/2,decimals=0)
+        if num_particles_along_axes == None:
+            num_particles_along_x = int(np.power(n_particles,(1/3)))
+            num_particles_along_y = num_particles_along_x
+            num_particles_along_z = num_particles_along_x
+            edge_elements = Nel_x - separation*(num_particles_along_x - 1)
+            origin = np.ones((3,))*np.round(edge_elements/2,decimals=1)
+            if np.mod(edge_elements,2) == 0:
+                origin += 1/2
+        else:
+            num_particles_along_x = num_particles_along_axes[0]
+            num_particles_along_y = num_particles_along_axes[1]
+            num_particles_along_z = num_particles_along_axes[2]
+            edge_elements_x = Nel_x - separation*(num_particles_along_x - 1)
+            edge_elements_y = Nel_y - separation*(num_particles_along_y - 1)
+            edge_elements_z = Nel_z - separation*(num_particles_along_z - 1)
+            origin = np.ones((3,))
+            origin[0] *= np.round(edge_elements_x/2,decimals=1)
+            origin[1] *= np.round(edge_elements_y/2,decimals=1)
+            origin[2] *= np.round(edge_elements_z/2,decimals=1)
+            if np.mod(edge_elements_x,2) == 0:
+                origin[0] += 1/2
+            if np.mod(edge_elements_y,2) == 0:
+                origin[1] += 1/2
+            if np.mod(edge_elements_z,2) == 0:
+                origin[2] += 1/2
         centers = np.zeros((n_particles,3))
         counter = 0
-        for i in range(num_particles_per_direction):
-            for j in range(num_particles_per_direction):
-                for h in range(num_particles_per_direction):
+        for i in range(num_particles_along_x):
+            for j in range(num_particles_along_y):
+                for h in range(num_particles_along_z):
                     centers[counter] = origin + np.array([i*separation,j*separation,h*separation])
                     counter += 1
+    elif particle_placement == 'regular_noisy':
+        # cubic crystal structure placement. need to find "origin" and then translate properly according to number of particles in each direction, including some limited "noise" in the placement
+        ss = rand.SeedSequence()
+        seed = ss.entropy
+        print(f'seed = {seed}')
+        rng = rand.default_rng(seed)
+        if num_particles_along_axes == None:
+            num_particles_along_x = int(np.power(n_particles,(1/3)))
+            num_particles_along_y = num_particles_along_x
+            num_particles_along_z = num_particles_along_x
+            edge_elements = Nel_x - separation*(num_particles_along_x - 1)
+            origin = np.ones((3,))*np.round(edge_elements/2,decimals=1)
+            if np.mod(edge_elements,2) == 0:
+                origin += 1/2
+        else:
+            num_particles_along_x = num_particles_along_axes[0]
+            num_particles_along_y = num_particles_along_axes[1]
+            num_particles_along_z = num_particles_along_axes[2]
+            edge_elements_x = Nel_x - separation*(num_particles_along_x - 1)
+            edge_elements_y = Nel_y - separation*(num_particles_along_y - 1)
+            edge_elements_z = Nel_z - separation*(num_particles_along_z - 1)
+            origin = np.ones((3,))
+            origin[0] *= np.round(edge_elements_x/2,decimals=1)
+            origin[1] *= np.round(edge_elements_y/2,decimals=1)
+            origin[2] *= np.round(edge_elements_z/2,decimals=1)
+            if np.mod(edge_elements_x,2) == 0:
+                origin[0] += 1/2
+            if np.mod(edge_elements_y,2) == 0:
+                origin[1] += 1/2
+            if np.mod(edge_elements_z,2) == 0:
+                origin[2] += 1/2
+        centers = np.zeros((n_particles,3))
+        counter = 0
+        for i in range(num_particles_along_x):
+            for j in range(num_particles_along_y):
+                for h in range(num_particles_along_z):
+                    #rng.integers returns random integers from a discrete unifrom distribution from low(inclusive) to high (exclusive), the interval [low,high)
+                    centers[counter] = origin + np.array([i*separation,j*separation,h*separation]) + rng.integers(low=-2,high=3,size=3)
+                    counter += 1
+    elif 'regular_anisotropic' in particle_placement:
+        if 'noisy' in particle_placement:
+            ss = rand.SeedSequence()
+            seed = ss.entropy
+            print(f'seed = {seed}')
+            rng = rand.default_rng(seed)
+        anisotropic_separation = (separation*anisotropy_factor).astype(np.int64)
+        if np.any(np.less_equal(anisotropic_separation,2*radius_voxels+2)):
+            raise ValueError('anisotropy factor is such that particles would be placed too close to one another for simulation to function properly')
+        # cubic crystal structure placement, transversely isotropic?. need to find "origin" and then translate properly according to number of particles in each direction, also taking into account anisotropy factor in each direction (how much closer/further apart particles are separated)
+        num_particles_along_x = num_particles_along_axes[0]
+        num_particles_along_y = num_particles_along_axes[1]
+        num_particles_along_z = num_particles_along_axes[2]
+        edge_elements_x = Nel_x - anisotropic_separation[0]*(num_particles_along_x - 1)
+        edge_elements_y = Nel_y - anisotropic_separation[1]*(num_particles_along_y - 1)
+        edge_elements_z = Nel_z - anisotropic_separation[2]*(num_particles_along_z - 1)
+        origin = np.ones((3,))
+        origin[0] *= np.round(edge_elements_x/2,decimals=1)
+        origin[1] *= np.round(edge_elements_y/2,decimals=1)
+        origin[2] *= np.round(edge_elements_z/2,decimals=1)
+        if np.mod(edge_elements_x,2) == 0:
+            origin[0] += 1/2
+        if np.mod(edge_elements_y,2) == 0:
+            origin[1] += 1/2
+        if np.mod(edge_elements_z,2) == 0:
+            origin[2] += 1/2
+        centers = np.zeros((n_particles,3))
+        counter = 0
+        for i in range(num_particles_along_x):
+            for j in range(num_particles_along_y):
+                for h in range(num_particles_along_z):
+                    centers[counter] = origin + np.array([i*anisotropic_separation[0],j*anisotropic_separation[1],h*anisotropic_separation[2]])
+                    if 'noisy' in particle_placement:
+                        #rng.integers returns random integers from a discrete unifrom distribution from low(inclusive) to high (exclusive), the interval [low,high)
+                        centers[counter] += rng.integers(low=-2,high=3,size=3)
+                    counter += 1
     else:
-        raise NotImplementedError('placement of more than 3 particles not implemented')
+        raise NotImplementedError(f'{particle_placement} type of placement of particles not implemented')
     particles = mre.sphere_rasterization.place_spheres_normalized(radius_voxels,centers,dimensions)
     # particle_nodes = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center-np.array([shift_l,0,0]),dimensions)
     # particle_nodes2 = mre.sphere_rasterization.place_sphere_normalized(radius_voxels,center+np.array([shift_r,0,0]),dimensions)
     # particles = np.vstack((particle_nodes,particle_nodes2))
-    return particles
+    if 'noisy' in particle_placement:
+        return particles, seed
+    else:
+        return particles
 
 def placeholder_particle_placement(radius,l_e,dimensions,placement_type,volume_fraction=None,n_particles=1):
     Nel_x, Nel_y, Nel_z = dimensions
@@ -1375,10 +1475,10 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]
-    discretizations = [2]#[3,4,5,6]#[0,1,2,3,4,5]
+    discretizations = [3]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]
-    stress_types = ('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension',)#('simple_stress_shearing','simple_stress_compression','simple_stress_tension',)#('free',)#('simple_stress_compression',)
-    bc_type_strings = ('stress_shearing',)#('compression_stress','tension_stress')#('stress_shearing','compression_stress','tension_stress')#('compression_stress',)
+    stress_types = ('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)#('simple_stress_shearing','simple_stress_compression','simple_stress_tension',)#('free',)#('simple_stress_compression',)
+    bc_type_strings = ('stress_shearing',)#('free',)#('compression_stress','tension_stress')#('stress_shearing','compression_stress','tension_stress')#('compression_stress',)
     bc_directions = ((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)#((('x','x'),),)
     Hext_angles = ((np.pi/2,0),)
     parameters = dict({})
@@ -1387,8 +1487,8 @@ def batch_job_runner():
     # parameters['max_integration_steps'] = 5000
     parameters['step_size'] = np.float32(0.01/2)
     # sim_type = 'hysteresis'
-    sim_types = ('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension',)
-    bc_type = ('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
+    sim_types = ('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
+    bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     parameters['gpu_flag'] = True 
     parameters['particle_rotation_flag'] = True
     parameters['persistent_checkpointing_flag'] = True
@@ -1424,15 +1524,18 @@ def batch_job_runner():
                                 parameters['poisson_ratio'] = poisson_ratio
                                 parameters['drag'] = 1#0#20
                                 parameters['discretization_order'] = discretization_order
-                                parameters['num_particles'] = 8
-                                parameters['particle_placement'] = 'regular'
+                                parameters['num_particles_along_axes'] = [3,3,3]
+                                parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
+                                parameters['particle_placement'] = 'regular'#'regular_anisotropic'#'regular_anisotropic_noisy'#'regular_noisy'
+                                parameters['anisotropy_factor'] = np.array([0.8,1.0,1.0])
+                                parameters['anisotropy_factor'][1:] = 1/np.sqrt(parameters['anisotropy_factor'][0])
                                 parameters['particle_separation'] = 9e-6
                                 parameters['max_field'] = 0.045
                                 parameters['field_angle_theta'] = Hext_angle[0]
                                 parameters['field_angle_phi'] = Hext_angle[1]
-                                parameters['num_field_steps'] = 9
-                                parameters['boundary_condition_max_value'] = 100
-                                parameters['num_boundary_condition_steps'] = 2
+                                parameters['num_field_steps'] = 1
+                                parameters['boundary_condition_max_value'] = 0#0.01
+                                parameters['num_boundary_condition_steps'] = 1
                                 parameters['boundary_condition_type'] = bc_type[i]
                                 sim_type = sim_types[i]
                                 parameters['boundary_condition_direction'] = bc_direction
@@ -1465,13 +1568,24 @@ def initialize_simulation_variables(parameters,sim_type):
     mu0 = 4*np.pi*1e-7
     E = parameters['youngs_modulus']
     nu = parameters['poisson_ratio']
+    youngs_modulus_particles = 2.11e11
+    max_stiffness_ratio = 10000
+    if youngs_modulus_particles/E > max_stiffness_ratio:
+        youngs_modulus_particles = max_stiffness_ratio*E
+    nu_particles = 0.29
     drag = parameters['drag']
     discretization_order = parameters['discretization_order']
 
     num_particles = parameters['num_particles']
     particle_placement = parameters['particle_placement']
     particle_separation = parameters['particle_separation']
-
+    num_particles_along_axes = parameters['num_particles_along_axes']
+    if 'regular' in particle_placement:
+        num_particles_check = num_particles_along_axes[0]*num_particles_along_axes[1]*num_particles_along_axes[2]
+        if not (num_particles_check == num_particles):
+            raise ValueError('mismatch between stated number of particles in system and numbers of particles along each axis')
+    if 'anisotropic' in particle_placement:
+        anisotropy_factor = parameters['anisotropy_factor']
     max_magnetic_field_strength = parameters['max_field']/mu0
     field_angle_theta = parameters['field_angle_theta']
     field_angle_phi = parameters['field_angle_phi']
@@ -1504,45 +1618,56 @@ def initialize_simulation_variables(parameters,sim_type):
 
     l_e = (particle_diameter/2) / (discretization_order + 1/2)
 
-    separation_volume_elements = int(np.round(particle_separation / l_e,decimals=1))
-    separation_meters = l_e*separation_volume_elements
-    if num_particles < 2:
-        Lx = separation_meters + particle_diameter + 1.8*separation_meters
-        Ly = particle_diameter * 7
-        Lz = Ly
-        # raise NotImplementedError('Determination of system size for less than two particles not implemented')
-    if num_particles == 2:
-        Lx = separation_meters + particle_diameter + 1.8*separation_meters
-        Ly = particle_diameter * 7
-        Lz = Ly
-    elif num_particles == 3:
-        Lx = 2*separation_meters + particle_diameter + 1.8*separation_meters
-        Ly = particle_diameter * 7
-        Lz = Ly
+    # separation_volume_elements = int(np.round(particle_separation / l_e,decimals=1))
+    # separation_meters = l_e*separation_volume_elements
+    # if num_particles < 2:
+    #     Lx = separation_meters + particle_diameter + 1.8*separation_meters
+    #     Ly = particle_diameter * 7
+    #     Lz = Ly
+    #     # raise NotImplementedError('Determination of system size for less than two particles not implemented')
+    # if num_particles == 2:
+    #     Lx = separation_meters + particle_diameter + 1.8*separation_meters
+    #     Ly = particle_diameter * 7
+    #     Lz = Ly
+    # elif num_particles == 3:
+    #     Lx = 2*separation_meters + particle_diameter + 1.8*separation_meters
+    #     Ly = particle_diameter * 7
+    #     Lz = Ly
     # elif num_particles > 3:
     #     raise NotImplementedError('Determination of system size for more than 3 particles not implemented')
 
-    if parameters['particle_placement'] == 'regular':
+    if 'regular' in particle_placement:
         volume_fraction = 0.03 # volume_fraction = num_particles*particle_volume/total_volume
-        num_particles = 8 #going for a crystalline like arrangement, needs to be a value equal to an integer raised to the 3rd power
+        # num_particles = 8 #27 #going for a crystalline like arrangement, needs to be a value equal to an integer raised to the 3rd power
         particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
         #volume_fraction = particle_volume/total_volume
         fictional_total_volume = num_particles*particle_volume/volume_fraction
         fictional_side_length = np.power(fictional_total_volume,(1/3))
         particle_density = num_particles/fictional_total_volume
         particle_separation_metric = 1/np.power(particle_density,(1/3))
-        minimum_dimension = particle_separation_metric*(np.power(num_particles,(1/3)) - 1) + particle_diameter
-        Lx = minimum_dimension*2
-        Ly = Lx
-        Lz = Ly
-        current_total_volume = Lx*Ly*Lz
-        current_volume_fraction = num_particles*particle_volume/current_total_volume
-        Lx = fictional_side_length
-        Ly = fictional_side_length
-        Lz = fictional_side_length
+        # minimum_dimension = particle_separation_metric*(np.power(num_particles,(1/3)) - 1) + particle_diameter
+        # Lx = minimum_dimension*2
+        # Ly = Lx
+        # Lz = Ly
+        # current_total_volume = Lx*Ly*Lz
+        # current_volume_fraction = num_particles*particle_volume/current_total_volume
+        # Lx = fictional_side_length
+        # Ly = fictional_side_length
+        # Lz = fictional_side_length
+        fictional_single_particle_volume = particle_volume/volume_fraction
+        single_particle_side_length = np.power(fictional_single_particle_volume,(1/3))
+        if 'anisotropic' in particle_placement:
+            Lx = num_particles_along_axes[0]*single_particle_side_length*anisotropy_factor[0]
+            Ly = num_particles_along_axes[1]*single_particle_side_length*anisotropy_factor[1]
+            Lz = num_particles_along_axes[2]*single_particle_side_length*anisotropy_factor[2]    
+        else:
+            Lx = num_particles_along_axes[0]*single_particle_side_length
+            Ly = num_particles_along_axes[1]*single_particle_side_length
+            Lz = num_particles_along_axes[2]*single_particle_side_length
         separation_volume_elements = int(np.round(particle_separation_metric / l_e,decimals=1))
         separation_meters = l_e*separation_volume_elements
-
+    else:
+        raise NotImplementedError
 
 
     t_f = 300
@@ -1575,33 +1700,34 @@ def initialize_simulation_variables(parameters,sim_type):
     for index, value in enumerate(unique_values):
         #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
         ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
-    step_size = parameters['step_size']
-    ulp_velocity = ulp/step_size
-    weighted_ulp_velocity = ulp_velocity*unique_value_counts
-    x_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
+    #2024-03-29, commenting out the below. useful for making more granular tolerance values, but not necessary. future implementations would require checking velocity and acceleration component magnitudes against tolerance values for each cartesian axis.
+    # step_size = parameters['step_size']
+    # ulp_velocity = ulp/step_size
+    # weighted_ulp_velocity = ulp_velocity*unique_value_counts
+    # x_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
 
-    unique_values, unique_value_counts = np.unique(normalized_posns[:,1],return_counts=True)
-    ulp = np.zeros(unique_values.shape,dtype=np.float32)
-    for index, value in enumerate(unique_values):
-        #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
-        ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
-    step_size = parameters['step_size']
-    ulp_velocity = ulp/step_size
-    weighted_ulp_velocity = ulp_velocity*unique_value_counts
-    y_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
+    # unique_values, unique_value_counts = np.unique(normalized_posns[:,1],return_counts=True)
+    # ulp = np.zeros(unique_values.shape,dtype=np.float32)
+    # for index, value in enumerate(unique_values):
+    #     #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
+    #     ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
+    # step_size = parameters['step_size']
+    # ulp_velocity = ulp/step_size
+    # weighted_ulp_velocity = ulp_velocity*unique_value_counts
+    # y_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
 
-    unique_values, unique_value_counts = np.unique(normalized_posns[:,2],return_counts=True)
-    ulp = np.zeros(unique_values.shape,dtype=np.float32)
-    for index, value in enumerate(unique_values):
-        #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
-        ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
-    step_size = parameters['step_size']
-    ulp_velocity = ulp/step_size
-    weighted_ulp_velocity = ulp_velocity*unique_value_counts
-    z_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
+    # unique_values, unique_value_counts = np.unique(normalized_posns[:,2],return_counts=True)
+    # ulp = np.zeros(unique_values.shape,dtype=np.float32)
+    # for index, value in enumerate(unique_values):
+    #     #using numpy.nextafter and ensuring 32 bit floats, can determine the ulp for incrementing
+    #     ulp[index] = np.float32(np.nextafter(np.float32(value),np.float32(np.Inf))-np.float32(value))
+    # step_size = parameters['step_size']
+    # ulp_velocity = ulp/step_size
+    # weighted_ulp_velocity = ulp_velocity*unique_value_counts
+    # z_tolerance = np.float32(np.sum(weighted_ulp_velocity)/np.sum(unique_value_counts))
 
     sim_variables_dict['tolerance'] = tolerance
-
+    # get the actual system dimensions now that the number of nodes and elements has been set
     Lx = N_el_x*l_e
     Ly = N_el_y*l_e
     Lz = N_el_z*l_e
@@ -1610,19 +1736,11 @@ def initialize_simulation_variables(parameters,sim_type):
     boundaries = mre.initialize.get_boundaries(normalized_posns)
     k = mre.initialize.get_spring_constants(E, l_e)
     kappa = mre.initialize.get_kappa(E, nu)
-    dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
-    node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
-    k = np.array(k,dtype=np.float64)
-    k_e = k[0]
-    max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
-    springs_var = np.empty((max_springs,4),dtype=np.float64)
-    effective_stiffness = 2*k[0] + 8*k[1]/np.sqrt(2) + 4*k[2]
-    if gpu_flag:
-        k *= l_e
-    num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
-    springs_var = springs_var[:num_springs,:]
-    
-    if num_particles == 2:
+    k_particles = mre.initialize.get_spring_constants(youngs_modulus_particles,l_e)
+    kappa_particles = mre.initialize.get_kappa(youngs_modulus_particles,nu_particles)
+    if particle_placement == 'regular':
+        particles = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements,particle_placement,num_particles_along_axes)
+    elif num_particles == 2:
         particles = place_two_particles_normalized(particle_radius,l_e,normalized_dimensions,separation_volume_elements)
     elif num_particles == 1:
         print(f'implement single particle placement')
@@ -1631,13 +1749,36 @@ def initialize_simulation_variables(parameters,sim_type):
         particles = np.array([],dtype=np.int64)
     elif num_particles == 3:
         particles = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements)
-    elif parameters['particle_placement'] == 'regular':
-        particles = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements,particle_placement='regular')
+    elif particle_placement == 'regular_noisy':
+        particles, seed = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements,particle_placement,num_particles_along_axes)
+    elif particle_placement == 'regular_anisotropic':
+        particles = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements,particle_placement,num_particles_along_axes,anisotropy_factor)
+    elif particle_placement == 'regular_anisotropic_noisy':
+        particles,seed = place_n_particles_normalized(num_particles,particle_radius,l_e,normalized_dimensions,separation_volume_elements,particle_placement,num_particles_along_axes,anisotropy_factor)
     else:
         print(f'implement multi-particle placement')
         raise NotImplementedError(f'implement multi-particle placement')
-    chi = 131#70
-    Ms = 1.9e6
+
+    dimensions_normalized = np.array([N_nodes_x-1,N_nodes_y-1,N_nodes_z-1])
+    # node_types = springs.get_node_type_normalized(normalized_posns.shape[0],boundaries,dimensions_normalized)
+    node_types = springs.get_node_type_normalized_v2(normalized_posns.shape[0],boundaries,dimensions_normalized,particles)
+    k = np.array(k,dtype=np.float64)
+    k_particles = np.array(k_particles,dtype=np.float64)
+    k_e = k[0]
+    max_springs = N_nodes_x.astype(np.int32)*N_nodes_y.astype(np.int32)*N_nodes_z.astype(np.int32)*13
+    springs_var = np.empty((max_springs,4),dtype=np.float64)
+    effective_stiffness = 2*k[0] + 8*k[1]/np.sqrt(2) + 4*k[2]
+    if gpu_flag:
+        k *= l_e
+        k_particles *= l_e
+    # num_springs = springs.get_springs(node_types, springs_var, max_springs, k, dimensions_normalized, 1)
+    num_springs = springs.get_springs_v2(node_types, springs_var, max_springs, k, dimensions_normalized, 1, k_particles)
+    springs_var = springs_var[:num_springs,:]
+    print(f'number of unique spring constant values:{np.unique(springs_var[:,2]).shape[0]}')
+    print(f'unique spring constant values:{np.unique(springs_var[:,2].astype(np.float32))}')
+    # print(f'unique spring values for subset of springs containing at least one particle node:{np.unique(springs_var[np.equal(springs_var[:,0].astype(np.int64),particles[0,0]),2])}')
+    chi = 70#131#70
+    Ms = 1.6e6#1.9e6
 
     field_angle_theta = parameters['field_angle_theta']
     field_angle_phi = parameters['field_angle_phi']
@@ -1652,9 +1793,9 @@ def initialize_simulation_variables(parameters,sim_type):
         else:
             H_step = max_magnetic_field_strength/num_field_steps
         Hext_series_magnitude = np.arange(0.0,max_magnetic_field_strength + 1,H_step)
-        if 'hysteresis' in sim_type:
-            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
         Hext_series_magnitude[0] = near_zero_H_field
+        if 'hysteresis' in sim_type:
+            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])        
         Hext_series = np.zeros((len(Hext_series_magnitude),3))
         Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
         Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
@@ -1676,7 +1817,7 @@ def initialize_simulation_variables(parameters,sim_type):
         if max_boundary_condition_value == 0:
             stresses = np.array([0.0],dtype=np.float64)
         else:
-            stresses = np.arange(0.0,max_boundary_condition_value + 1,boundary_condition_value_step)
+            stresses = np.arange(0.0,max_boundary_condition_value*1.01,boundary_condition_value_step)
         if 'compression' in sim_type:
             stresses *= -1
         elif 'tension' in sim_type:
@@ -1725,6 +1866,8 @@ def initialize_simulation_variables(parameters,sim_type):
         field_or_bc_type_string = bc_type
     else:
         raise ValueError(f'{sim_type} is not an acceptable sim_type value')
+    if 'noisy' in particle_placement:
+        output_dir = output_dir[:-1] + f'_starttime_{time.strftime("%H-%M",time.localtime())}/'
     if gpu_flag:
         step_size = parameters['step_size']
         output_dir = output_dir[:-1] + f"_stepsize_{np.format_float_scientific(parameters['step_size'],exp_digits=1)}/"
@@ -1733,9 +1876,14 @@ def initialize_simulation_variables(parameters,sim_type):
     sim_variables_dict['output_dir'] = output_dir
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
+
+    mre.analyze.plot_particle_nodes(normalized_posns,normalized_posns,particles,output_dir,tag=f"initial_particle_placement")
+
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps,step_size,tolerance)
     my_sim.set_time(t_f)
     my_sim.write_log(output_dir)
+    if particle_placement == 'regular_noisy':
+        my_sim.append_log(f'particle placement seed: {seed}',output_dir)
     
     mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,field_or_bc_series,field_or_bc_type_string,output_dir)
 
@@ -1854,7 +2002,8 @@ def run_hysteresis_sim(sim_variables_dict):#(output_dir,Hext_series,x0,elements,
             elif particle_rotation_flag and (not gpu_flag):
                 sol, return_status = simulate.simulate_scaled_rotation(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,t_f,Hext,particle_radius,particle_mass,chi,Ms,drag,eq_posns,current_output_dir,max_integrations,max_integration_steps,tolerance,criteria_flag,plotting_flag,persistent_checkpointing_flag)
             elif gpu_flag:
-                sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+                sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+                # sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
         except Exception as inst:
             print('Exception raised during simulation')
             print(type(inst))
@@ -1931,7 +2080,8 @@ def run_stress_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=3)}, {np.round(Hext[1]*mu0,decimals=3)}, {np.round(Hext[2]*mu0,decimals=3)}) T\n')
             start = time.time()
             try:
-                sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+                sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+                # sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
             except Exception as inst:
                 print('Exception raised during simulation')
                 print(type(inst))
