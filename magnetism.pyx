@@ -553,7 +553,7 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit_v2(fl
 cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(float[:] r_i, float[:] r_j, float particle_radius,float l_e):
     """Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
     cdef float wca_mag
-    cdef float SURFACE_TO_SURFACE_SPACING = 1e-6
+    cdef float SURFACE_TO_SURFACE_SPACING = 1e-7
     cdef float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING)#/l_e#want there to be some volume/space between the particles even if they are strongly attracted
     cdef float cutoff_length = pow(2,(1/6))*sigma
     cdef float[3] rij
