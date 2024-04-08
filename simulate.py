@@ -1353,7 +1353,34 @@ void element_force(const int* elements, const float* node_posns, const float kap
         avg_vector_k[0] = (node_posns[3*index1] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index6])/4;
         avg_vector_k[1] = (node_posns[1+3*index1] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index6])/4;
         avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;
-
+        /*
+        if (isnan(avg_vector_i[0]) || isinf(avg_vector_i[0])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_i[1]) || isinf(avg_vector_i[1])){
+            printf("nan value in average vector component");
+        }                            
+        if (isnan(avg_vector_i[2]) || isinf(avg_vector_i[2])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_j[0]) || isinf(avg_vector_j[0])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_j[1]) || isinf(avg_vector_j[1])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_j[2]) || isinf(avg_vector_j[2])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_k[0]) || isinf(avg_vector_k[0])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_k[1]) || isinf(avg_vector_k[1])){
+            printf("nan value in average vector component");
+        }
+        if (isnan(avg_vector_k[2]) || isinf(avg_vector_k[2])){
+            printf("nan value in average vector component");
+        }*/
         //printf("tid = %i, avg_vector_k[0] = %f, avg_vector_k[1] = %f, avg_vector_k[2] = %f\n",tid,avg_vector_k[0],avg_vector_k[1],avg_vector_k[2]);                      
         
         //need to get cross products of average vectors, stored as variables for gradient vectors, prefactor, then atomicAdd for assignment to forces
@@ -1375,7 +1402,50 @@ void element_force(const int* elements, const float* node_posns, const float kap
         ccrossa[2] = avg_vector_k[0]*avg_vector_i[1] - avg_vector_k[1]*avg_vector_i[0];
                                 
         adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
-                                
+        /*
+        if (isnan(acrossb[0]) || isinf(acrossb[0])){
+            printf("nan value in average vector cross product\n");
+            printf("acrossb[0] = %f\n",acrossb[0]);
+        }
+        if (isnan(acrossb[1]) || isinf(acrossb[1])){
+            printf("nan value in average vector cross product\n");
+            printf("acrossb[1] = %f\n",acrossb[1]);
+        }                            
+        if (isnan(acrossb[2]) || isinf(acrossb[2])){
+            printf("nan value in average vector cross product\n");
+            printf("acrossb[2] = %f\n",acrossb[2]);
+        }
+        if (isnan(bcrossc[0]) || isinf(bcrossc[0])){
+            printf("nan value in average vector cross product\n");
+            printf("bcrossc[0] = %f\n",bcrossc[0]);
+        }
+        if (isnan(bcrossc[1]) || isinf(bcrossc[1])){
+            printf("nan value in average vector cross product\n");
+            printf("bcrossc[1] = %f\n",bcrossc[1]);
+        }
+        if (isnan(bcrossc[2]) || isinf(bcrossc[2])){
+            printf("nan value in average vector cross product\n");
+            printf("bcrossc[2] = %f\n",bcrossc[2]);
+        }
+        if (isnan(ccrossa[0]) || isinf(ccrossa[0])){
+            printf("nan value in average vector cross product\n");
+            printf("ccrossa[0] = %f\n",ccrossa[0]);
+        }
+        if (isnan(ccrossa[1]) || isinf(ccrossa[1])){
+            printf("nan value in average vector cross product\n");
+            printf("ccrossa[1] = %f\n",ccrossa[1]);
+        }
+        if (isnan(ccrossa[2]) || isinf(ccrossa[2])){
+            printf("nan value in average vector cross product\n");
+            printf("ccrossa[2] = %f\n",ccrossa[2]);
+        }                                                   
+        if (isnan(adotbcrossc)){
+            printf("nan value in adotbcrossc\n");
+            //printf("avg_vector_i[0]*bcrossc[0] = %f,\navg_vector_i[1]*bcrossc[1] = %f,\navg_vector_i[2]*bcrossc[2] = %f\n",avg_vector_i[0]*bcrossc[0],avg_vector_i[1]*bcrossc[1],avg_vector_i[2]*bcrossc[2]);
+            printf("avg_vector_i[0] = %f,\navg_vector_i[1] = %f,\navg_vector_i[2] = %f\n",avg_vector_i[0],avg_vector_i[1],avg_vector_i[2]);
+            printf("(node_posns[3*index2]= %f, node_posns[3*index0] = %f,\n node_posns[3*index3] = %f node_posns[3*index1] = %f,\n node_posns[3*index6] = %f, node_posns[3*index4] = %f,\n node_posns[3*index7] = %f, node_posns[3*index5] = %f\n",node_posns[3*index2],node_posns[3*index0],node_posns[3*index3],node_posns[3*index1],node_posns[3*index6],node_posns[3*index4],node_posns[3*index7],node_posns[3*index5]);
+            //printf("bcrossc[0] = %f,\nbcrossc[1] = %f,\nbcrossc[2] = %f\n",bcrossc[0],bcrossc[1],bcrossc[2]);
+        }*/ 
         float gradV1[3];
         float gradV8[3];
         float gradV3[3];
@@ -1557,6 +1627,121 @@ void y_update(float* y, float* dy, const float step_size, const int num_entries)
     }
     }
     ''', 'y_update')
+
+magnetization_kernel = cp.RawKernel(r'''
+extern "C" __global__                                    
+void get_magnetization(const float Ms, const float chi, const float particle_volume, const float* H, float* magnetic_moment, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                                           
+        //get magnetization based on total Hfield at each particle center
+        float H_mag = sqrtf(H[3*tid]*H[3*tid] + H[3*tid+1]*H[3*tid+1] + H[3*tid+2]*H[3*tid+2]);
+        //printf("H_mag: %f\n",H_mag);
+        //printf("particle volume: %f\n", particle_volume);
+        //printf("Ms + chi*H_mag: %f\n",Ms + chi*H_mag);
+        //printf("M/Ms: %f\n",chi*H_mag/(Ms + chi*H_mag));
+        float m_mag = particle_volume*(Ms*chi*H_mag/(Ms + chi*H_mag));
+        //printf("m_mag: %f\n",m_mag);
+        float H_hat[3];
+        H_hat[0] = H[3*tid]/H_mag;
+        H_hat[1] = H[3*tid+1]/H_mag;
+        H_hat[2] = H[3*tid+2]/H_mag;
+        //printf("H_hat: %f, %f, %f\n",H_hat[0],H_hat[1],H_hat[2]);
+        magnetic_moment[3*tid] = m_mag*H_hat[0];
+        magnetic_moment[3*tid+1] = m_mag*H_hat[1];
+        magnetic_moment[3*tid+2] = m_mag*H_hat[2];
+    }
+    }
+    ''', 'get_magnetization')
+
+separation_vectors_kernel = cp.RawKernel(r'''
+extern "C" __global__                                         
+void get_separation_vectors(const float* particle_posns, float* separation_vectors, float* separation_vectors_inv_magnitude, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                                           
+        float ri[3];
+        int separation_vector_idx;
+        int posn_idx;
+        int inv_magnitude_idx;
+        ri[0] = particle_posns[3*tid];
+        ri[1] = particle_posns[3*tid+1];
+        ri[2] = particle_posns[3*tid+2];
+        for (int i = 0; i < size_particles; i++)
+        {
+            if (i != tid)
+            {
+            separation_vector_idx = tid*3*size_particles+3*i;
+            inv_magnitude_idx = tid*size_particles + i;
+            posn_idx = 3*i;
+            separation_vectors[separation_vector_idx] = ri[0] - particle_posns[posn_idx];                                         
+            separation_vectors[separation_vector_idx+1] = ri[1] - particle_posns[posn_idx+1];                                                                
+            separation_vectors[separation_vector_idx+2] = ri[2] - particle_posns[posn_idx+2];                                                                
+            separation_vectors_inv_magnitude[inv_magnitude_idx] = rnorm3df(separation_vectors[separation_vector_idx],separation_vectors[separation_vector_idx+1],separation_vectors[separation_vector_idx+2]);
+            }
+        }
+    }
+    }
+    ''', 'get_separation_vectors')
+
+dipole_field_kernel = cp.RawKernel(r'''
+float INV_4PI = 1/(4*3.141592654f);
+extern "C" __global__
+void get_dipole_field(const float* separation_vectors, const float* separation_vectors_inv_magnitude, const float* magnetic_moment, const float inv_l_e, float* Htot, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                
+        float prefactor;
+        float r_hat[3];
+        float m_dot_r_hat;
+        int separation_vector_idx;
+        int inv_magnitude_idx;
+        //float INV_4PI = 1/(4*3.141592654f);
+        for (int i = 0; i < size_particles; i++)
+        {
+            separation_vector_idx = tid*3*size_particles+3*i;
+            inv_magnitude_idx = tid*size_particles + i;
+            r_hat[0] = separation_vectors[separation_vector_idx]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[1] = separation_vectors[separation_vector_idx+1]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[2] = separation_vectors[separation_vector_idx+2]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            m_dot_r_hat = magnetic_moment[3*i]*r_hat[0] + magnetic_moment[3*i+1]*r_hat[1] + magnetic_moment[3*i+2]*r_hat[2];
+            prefactor = INV_4PI*powf(separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e,3);
+            Htot[3*tid] += prefactor*(3*m_dot_r_hat*r_hat[0] - magnetic_moment[3*i]);
+            Htot[3*tid+1] += prefactor*(3*m_dot_r_hat*r_hat[1] - magnetic_moment[3*i+1]);
+            Htot[3*tid+2] += prefactor*(3*m_dot_r_hat*r_hat[2] - magnetic_moment[3*i+2]);
+        }
+    }
+    }
+    ''', 'get_dipole_field')
+
+def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    max_iters = 5
+    Htot_initial = cp.tile(Hext,particles.shape[0])
+    for i in range(max_iters):
+        Htot = cp.copy(Htot_initial)
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+    host_magnetic_moments = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+    return host_magnetic_moments
 
 def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_springs):
     """Combining the two kernels so that the positions only need to be transferred from host to device memory once per calculation"""
@@ -1881,6 +2066,8 @@ def composite_gpu_force_calc_v2(posns,velocities,N_nodes,cupy_elements,kappa,cup
     # if np.any(np.isnan(host_forces)):
     #     print(f'NaN entries from VCF force')
     #     print(f'Num NaN Entries{np.count_nonzero(np.isnan(host_forces))}')
+    #     print(f'max posns value: {cp.max(posns)}')
+    #     print(f'min posns value: {cp.min(posns)}')
     size_springs = int(cupy_springs.shape[0]/4)
     spring_grid_size = (int (np.ceil((int (np.ceil(size_springs/block_size)))/14)*14))
     scaled_spring_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,cupy_composite_forces,size_springs))
@@ -2053,6 +2240,388 @@ def get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_
         total_torque = None
     return accel, total_torque, host_posns, particle_centers
 
+def get_accel_scaled_GPU_v3(posns,velocities,elements,springs,particles,kappa,l_e,beta,device_beta_i,host_beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,particle_moment_of_inertia,chi,Ms,drag=10):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
+    N_nodes = int(posns.shape[0]/3)
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    accel = composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs,device_beta_i,drag)
+    accel = np.reshape(accel,(N_nodes,3))
+    if 'simple_stress' in bc[0]:
+        #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+            stressed_nodes = boundaries['right']
+            relevant_dimension_indices = [1,2]
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+            stressed_nodes = boundaries['back']
+            relevant_dimension_indices = [0,2]
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+            stressed_nodes = boundaries['top']
+            relevant_dimension_indices = [0,1]
+        accel = set_fixed_nodes(accel,fixed_nodes)
+        stress_direction = bc[1][1]
+        if stress_direction == 'x':
+            force_index = 0
+        elif stress_direction == 'y':
+            force_index = 1
+        elif stress_direction == 'z':
+            force_index = 2
+        stress = bc[2]
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+        net_force_mag = stress*surface_area
+        # working out method for stress that takes into account node type to assign forces
+        # first, find the "force per node" by considering the net force mangitude to be the sum of the forces assigned to each of the nodes, with different weights/forces dependent on node type. if the node is on the surface interior, it gets the largest force. if on the corner, 1/4 that value, on an edge, 1/2 the surface interior force value
+        #\net_force_mag = \sum_{nodes} force_per_node*weight, where weight is 1, 1/2, or 1/4. 1/4 for 4 nodes. 1/2 for num_edge_nodes. need to know num_edge_nodes. then need to assign forces properly.
+        # effective_num_nodes = fixed_nodes.shape[0] - 
+        single_node_accel = np.squeeze((net_force_mag/stressed_nodes.shape[0])*host_beta_i[stressed_nodes])
+        accel[stressed_nodes,force_index] += single_node_accel
+    elif bc[0] == 'stress_compression':
+        plate_orientation = bc[1][0]
+        stress_direction = bc[1][1]
+        stress = bc[2]
+        global_index_interacting_nodes, plate_force = distribute_plate_stress(posns,stress,stress_direction,dimensions,l_e,plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+    elif bc[0] == 'plate_compression':
+        plate_orientation = bc[1][0]
+        global_index_interacting_nodes, plate_force = get_plate_force(posns,bc[2],plate_orientation,boundaries)
+        accel[global_index_interacting_nodes] += plate_force
+        accel = set_plate_fixed_nodes(accel,global_index_interacting_nodes,plate_orientation)
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        if bc[1][0] == 'x':
+            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
+        elif bc[1][0] == 'y':
+            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
+        elif bc[1][0] == 'z':
+            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    else:
+        fixed_nodes = np.array([0])
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    if particles.shape[0] != 0:
+        #move the node positions variable from device to host memory
+        host_posns = cp.asnumpy(posns)
+        host_posns = np.reshape(host_posns,(N_nodes,3))
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
+        for i, particle in enumerate(particles):
+            particle_centers[i,:] = get_particle_center(particle,host_posns)
+        magnetic_moments = get_magnetization_iterative(Hext,particles,cp.array(particle_centers.astype(np.float32)).reshape((particle_centers.shape[0]*particle_centers.shape[1],1),order='C'),Ms,chi,particle_volume,l_e)
+        # !!! Trying to resolve issues with float32 data types. trying to use scaled positions was resulting in the returned magnetic forces being small enough that calculating the force norm before scaling by beta and dividing by the particle mass would result in a norm of zero, even for what should result in non-zero accelerations. by using SI units for the particle positions in this function call, it is possible to avoid issues with the floating point value being so small that (what i think is an underflow) some sort of error occurs where the resulting scaled acceleration is very large (components on the order of 1e19)
+        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit_v2(magnetic_moments,particle_centers*l_e,particle_radius,l_e)
+        # if np.any(np.isnan(mag_forces)):
+        #     print(f'NaN entry found in the mag_forces variable')
+        # mag_forces_si = mag_forces/np.power(l_e,4)
+        # mag_force_clipping_check = np.linalg.norm(mag_forces_si,axis=1)>max_magnetic_force_norm
+        # if np.any(mag_force_clipping_check):
+        # #     mag_forces[mag_force_clipping_check,:] *= max_magnetic_force_norm/np.power(l_e,4)/np.linalg.norm(mag_forces[mag_force_clipping_check,:],axis=1)
+        # max_mag_force_norm_si = 5.3443908e-6
+        # magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
+        # scaled_max_force = max_mag_force_norm_si*magnetic_scaling_factor*np.power(l_e,4)
+        mag_forces *= np.float32(beta/particle_mass)#np.float32(beta/(particle_mass*(np.power(l_e,4))))
+        for i, particle in enumerate(particles):
+            accel[particle] += mag_forces[i]
+        total_torque = np.zeros((particles.shape[0],3))
+        for i, particle in enumerate(particles):
+            #determine the net torque acting on the particle before the net force acting on the particle is calculated and distributed to the particle nodes
+            total_torque[i,:] = get_torque_on_particle(particle,accel,host_posns)
+            #get the net force acting on the particle and distribute to the particle nodes
+            vecsum = np.sum(accel[particle],axis=0)
+            accel[particle] = vecsum/particle.shape[0]
+    else:
+        host_posns = None
+        particle_centers = None
+        total_torque = None
+    return accel, total_torque, host_posns, particle_centers
+
+def get_accel_scaled_GPU_v4(posns,velocities,elements,springs,particles,kappa,l_e,beta,device_beta_i,host_beta_i,bc,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag=10):
+    """computes forces for the given masses, initial conditions, and can take into account boundary conditions. returns the resulting accelerations on each vertex/node"""
+    N_nodes = int(posns.shape[0]/3)
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    accel = composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs,device_beta_i,drag)
+    accel = np.reshape(accel,(N_nodes,3))
+    if 'simple_stress' in bc[0]:
+        #opposing surface to the probe surface needs to be held fixed, probe surface nodes need to have additional forces applied
+        if bc[1][0] == 'x':
+            fixed_nodes = boundaries['left']
+            stressed_nodes = boundaries['right']
+            relevant_dimension_indices = [1,2]
+        elif bc[1][0] == 'y':
+            fixed_nodes = boundaries['front']
+            stressed_nodes = boundaries['back']
+            relevant_dimension_indices = [0,2]
+        elif bc[1][0] == 'z':
+            fixed_nodes = boundaries['bot']
+            stressed_nodes = boundaries['top']
+            relevant_dimension_indices = [0,1]
+        accel = set_fixed_nodes(accel,fixed_nodes)
+        stress_direction = bc[1][1]
+        if stress_direction == 'x':
+            force_index = 0
+        elif stress_direction == 'y':
+            force_index = 1
+        elif stress_direction == 'z':
+            force_index = 2
+        stress = bc[2]
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+        net_force_mag = stress*surface_area
+        # working out method for stress that takes into account node type to assign forces
+        # first, find the "force per node" by considering the net force mangitude to be the sum of the forces assigned to each of the nodes, with different weights/forces dependent on node type. if the node is on the surface interior, it gets the largest force. if on the corner, 1/4 that value, on an edge, 1/2 the surface interior force value
+        #\net_force_mag = \sum_{nodes} force_per_node*weight, where weight is 1, 1/2, or 1/4. 1/4 for 4 nodes. 1/2 for num_edge_nodes. need to know num_edge_nodes. then need to assign forces properly.
+        # effective_num_nodes = fixed_nodes.shape[0] - 
+        single_node_accel = np.squeeze((net_force_mag/stressed_nodes.shape[0])*host_beta_i[stressed_nodes])
+        accel[stressed_nodes,force_index] += single_node_accel
+    elif bc[0] == 'tension' or bc[0] == 'compression' or bc[0] == 'shearing' or bc[0] == 'torsion':
+        #TODO better handling for fixed_nodes, what is fixed, and when. fleshing out the boundary conditions variable and boundary conditions handling
+        if bc[1][0] == 'x':
+            fixed_nodes = np.concatenate((boundaries['left'],boundaries['right']))
+        elif bc[1][0] == 'y':
+            fixed_nodes = np.concatenate((boundaries['front'],boundaries['back']))
+        elif bc[1][0] == 'z':
+            fixed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
+        accel = set_fixed_nodes(accel,fixed_nodes)
+    else:
+        pass
+        #2024-04-03. DBM. setting a single node fixed did not work as anticipated... testing how things (hysteresis sims) work if we don't hold anything fixed at all
+        # fixed_nodes = np.array([0])
+        # accel = set_fixed_nodes(accel,fixed_nodes)
+    if particles.shape[0] != 0:
+        #move the node positions variable from device to host memory
+        host_posns = cp.asnumpy(posns)
+        host_posns = np.reshape(host_posns,(N_nodes,3))
+        #for each particle, find the position of the center
+        particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
+        for i, particle in enumerate(particles):
+            particle_centers[i,:] = get_particle_center(particle,host_posns)
+        magnetic_moments = get_magnetization_iterative(Hext,particles,cp.array(particle_centers.astype(np.float32)).reshape((particle_centers.shape[0]*particle_centers.shape[1],1),order='C'),Ms,chi,particle_volume,l_e)
+        mag_forces = magnetism.get_dip_dip_forces_normalized_32bit_v2(magnetic_moments,particle_centers*l_e,particle_radius,l_e)
+        mag_forces *= np.float32(beta/particle_mass)
+        for i, particle in enumerate(particles):
+            accel[particle] += mag_forces[i]
+    else:
+        host_posns = None
+    return accel, host_posns
+
+def simulate_scaled_gpu_leapfrog_v2(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
+    """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
+    #function to be called at every sucessful integration step to get the solution output
+    solutions = []
+    def solout(t,y):
+        solutions.append([t,*y])
+    hard_limit_max_integrations = 2*max_integrations
+    #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
+    tmp_var = output_dir.split('/')
+    if tmp_var[-1] == '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
+    elif tmp_var[-1] != '':
+        checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
+    velocities = cp.zeros(posns.shape,dtype=cp.float32)
+    N_nodes = int(posns.shape[0]/3)
+    max_displacement = np.zeros((hard_limit_max_integrations,))
+    mean_displacement = np.zeros((hard_limit_max_integrations,))
+    return_status = 1
+    last_posns = cp.asnumpy(posns)
+    last_posns = np.reshape(last_posns,(N_nodes,3))
+    last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
+    #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
+    host_beta_i = cp.asnumpy(beta_i)
+    host_accel, host_posns = get_accel_scaled_GPU_v4(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+    a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
+    size_entries = int(N_nodes*3)
+    leapfrog_update(velocities,a_var,np.float32(step_size/2),size_entries)
+    #exploring issues with leapfrog. stepsize wasn't originally float32, and the division by two reset step_size to a float64 even if step_size was float32, resulting in step sizes being way off from desired values.
+    # host_velocities = cp.asnumpy(velocities)
+    # host_velocities = np.reshape(host_velocities,(N_nodes,3))
+    # print(f'particle velocities: {host_velocities[particles[0]]}\n{host_velocities[particles[1]]}')
+    # particle_center = np.zeros((2,3))
+    rerun_flag = False
+    snapshot_stepsize = 200
+    max_snapshot_count_value = int(1 + hard_limit_max_integrations*int(np.ceil(max_integration_steps/snapshot_stepsize)))
+    snapshot_count = 0
+    if particles.shape[0] != 0:
+        particle_center = np.zeros((particles.shape[0],3),dtype=np.float32)
+        snapshot_particle_posn = np.zeros((particles.shape[0],max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_velocity = np.zeros((particles.shape[0],max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_accel = np.zeros((particles.shape[0],max_snapshot_count_value,3),dtype=np.float32)
+        snapshot_particle_separation = np.zeros((max_snapshot_count_value,),dtype=np.float32)
+    snapshot_accel_norm = np.zeros((max_snapshot_count_value,),dtype=np.float32)
+    snapshot_accel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_accel_components_avg = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
+    snapshot_vel_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_vel_norm_std = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_vel_components_avg = np.zeros((max_snapshot_count_value,3),dtype=np.float32)
+    previous_soln = np.zeros((N_nodes,3),dtype=np.float32)
+    snapshot_soln_diff_norm = np.zeros(snapshot_accel_norm.shape,dtype=np.float32)
+    snapshot_boundary_posn = np.zeros(snapshot_accel_components_avg.shape,dtype=np.float32)
+    if boundary_conditions[1][0] == 'x':
+        # fixed_nodes = boundaries['left']
+        stressed_nodes = boundaries['right']
+    elif boundary_conditions[1][0] == 'y':
+        # fixed_nodes = boundaries['front']
+        stressed_nodes = boundaries['back']
+    elif boundary_conditions[1][0] == 'z':
+        # fixed_nodes = boundaries['bot']
+        stressed_nodes = boundaries['top']
+    elif boundary_conditions[1][0] == 'free':
+        stressed_nodes = np.array([],dtype=np.int64)
+    i = 0
+    previously_converged = False
+    while i < max_integrations:
+        print(f'starting integration run {i+1}')
+        for j in range(max_integration_steps):
+            leapfrog_update(posns,velocities,step_size,size_entries)
+            if np.any(np.isnan(host_posns)) or np.any(np.isnan(host_accel)):
+                print(f'found nan entries')
+                if np.any(np.isnan(host_posns)):
+                    print(f'nan entries in positions')
+                if np.any(np.isnan(host_accel)):
+                    print(f'nan entries in acceleration')
+                    print(f'{host_accel[np.isnan(host_accel)].shape[0]}')
+            if np.mod(j+i*max_integration_steps,snapshot_stepsize) == 0:
+                host_posns = cp.asnumpy(posns)
+                host_posns = np.reshape(host_posns,(N_nodes,3))
+                
+                if stressed_nodes.shape[0] !=0:
+                    snapshot_boundary_posn[snapshot_count] = np.mean(host_posns[stressed_nodes],axis=0)
+
+                host_accel_norms = np.linalg.norm(host_accel,axis=1)
+                snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
+                snapshot_accel_norm_std[snapshot_count] = np.std(host_accel_norms)
+                snapshot_accel_components_avg[snapshot_count] = np.mean(host_accel,axis=0)
+
+                host_velocities = cp.asnumpy(velocities)
+                host_velocities = np.reshape(host_velocities,(N_nodes,3))
+                host_vel_norms = np.linalg.norm(host_velocities,axis=1)
+                snapshot_vel_norm[snapshot_count] = np.mean(host_vel_norms)
+                snapshot_vel_norm_std[snapshot_count] = np.std(host_vel_norms)
+                snapshot_vel_components_avg[snapshot_count] = np.mean(host_velocities,axis=0)
+
+                if particles.shape[0] != 0:
+                    for particle_count, particle in enumerate(particles):
+                        particle_center[particle_count,:] = get_particle_center(particle,host_posns)
+                        snapshot_particle_posn[particle_count,snapshot_count,:] = particle_center[particle_count,:]*l_e
+                        snapshot_particle_velocity[particle_count,snapshot_count,:] = np.sum(host_velocities[particles[particle_count],:],axis=0)/particles[0].shape
+                        snapshot_particle_accel[particle_count,snapshot_count,:] = np.sum(host_accel[particles[particle_count],:],axis=0)/particles[0].shape
+                    snapshot_particle_separation[snapshot_count] = np.linalg.norm(particle_center[0]-particle_center[1])*l_e
+
+                if snapshot_count > 0:
+                    soln_diff = host_posns - previous_soln
+                    snapshot_soln_diff_norm[snapshot_count-1] = np.linalg.norm(np.ravel(soln_diff))
+                previous_soln = host_posns
+                snapshot_count += 1
+            host_accel, host_posns = get_accel_scaled_GPU_v4(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
+            a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
+            leapfrog_update(velocities,a_var,step_size,size_entries)
+        host_posns = cp.asnumpy(posns)
+        # host_posns = np.reshape(host_posns,(N_nodes,3))
+        # host_posns = np.reshape(host_posns,(3*N_nodes,1))
+        host_velocities = cp.asnumpy(velocities)
+        sol = np.concatenate((host_posns,host_velocities))
+        host_accel = cp.asnumpy(a_var)
+        host_accel = np.reshape(host_accel,(N_nodes,3))
+        #2024-04-04 trying out a thing where, despite not doing the vector summation and distribution of the forces acting on the particles for the node updates, I do it for determining the accelerations for convergence criteria, thereby ignoring internal forces for the particles
+        for particle in particles:
+            host_accel[particle] = np.sum(host_accel[particle],axis=0)/particle.shape[0]
+        accel_comp_magnitude = np.abs(host_accel)
+        accel_comp_magnitude_avg = np.mean(accel_comp_magnitude)
+        vel_comp_magnitude = np.abs(host_velocities)
+        vel_comp_magnitude_avg = np.mean(vel_comp_magnitude)
+        a_norms = np.linalg.norm(host_accel,axis=1)
+        a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
+        host_posns = np.reshape(host_posns,(N_nodes,3))
+        final_posns = host_posns
+        host_velocities = np.reshape(host_velocities,(N_nodes,3))
+        final_v = host_velocities
+        v_norms = np.linalg.norm(final_v,axis=1)
+        v_norm_avg = np.sum(v_norms)/N_nodes
+        if accel_comp_magnitude_avg < tolerance and vel_comp_magnitude_avg < tolerance:#a_norm_avg < tolerance and v_norm_avg < tolerance:
+            print(f'Reached convergence criteria of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(accel_comp_magnitude_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            # print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
+            # print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
+            if previously_converged:
+                return_status = 0
+                print('Ending integration after reaching convergence criteria')
+                break
+            else:
+                previously_converged = True
+        elif np.any(np.isnan(a_norms)):
+            print(f'Integration failure mode: NaN entries in accelerations. (possible overflow error)')
+            return_status = -2
+            break
+            # if rerun_flag:
+            #     print(f'halving step size and restarting still resulted in integration failure')
+            #     return_status = -2
+            #     break
+            # step_size = np.float32(0.5*step_size)
+            # max_integration_steps = int(2*max_integration_steps)
+            # posns = cp.array(last_posns.astype(np.float32)).reshape((last_posns.shape[0]*last_posns.shape[1],1),order='C')
+            # velocities = cp.array(last_velocity.astype(np.float32)).reshape((last_velocity.shape[0]*last_velocity.shape[1],1),order='C')
+            # i -= 1
+            # snapshot_count -= (int(np.round(max_integration_steps/2/snapshot_stepsize)) + 1)
+            # snapshot_stepsize *= 2
+            # rerun_flag = True
+        else:
+            print(f'Post-Integration norms\nacceleration norm average = {np.round(a_norm_avg,decimals=6)}\nvelocity norm average = {np.round(v_norm_avg,decimals=6)}')
+            print(f'Post-Integration component magnitudes\nacceleration component magnitude average = {np.round(accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            # print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
+            mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
+            last_posns = final_posns.copy()
+            last_velocity = final_v.copy()
+            if rerun_flag:
+                rerun_flag = False
+                step_size = np.float32(2*step_size)
+                max_integration_steps = int(max_integration_steps/2)
+                snapshot_stepsize *= 0.5
+        if persistent_checkpointing_flag:
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
+        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+        if particles.shape[0] != 0:
+            particle_velocity = np.zeros((particles.shape[0],3))
+            for particle_counter, particle in enumerate(particles):
+                particle_velocity[particle_counter] = np.sum(final_v[particle,:],axis=0)/particle.shape[0]#np.linalg.norm(np.sum(final_v[particles[0],:],axis=0)/particles[0].shape[0])
+            print(f'particle velocity = {np.round(particle_velocity,decimals=6)}')
+        i += 1
+        if i == max_integrations and particles.shape[0] != 0:
+            if np.any(np.abs(particle_velocity[0]) > tolerance):#if the particles are still in motion, allow the integration to continue
+                max_integrations += 1
+                if max_integrations > hard_limit_max_integrations:
+                    break
+    plot_displacement_v_integration(i,mean_displacement,max_displacement,output_dir)
+    plot_residual_vector_norms_hist(a_norms,output_dir,tag='acceleration')
+    plot_residual_vector_norms_hist(v_norms,output_dir,tag='velocity')
+    if particles.shape[0] != 0:
+        plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_separation*1e6,output_dir,tag="particle_separation(um)")
+        for particle_count in range(particles.shape[0]):
+            plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_posn[particle_count]*1e6,output_dir,tag=f"particle_{particle_count+1}_posn(um)")
+            plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_velocity[particle_count],output_dir,tag=f"particle_{particle_count+1}_velocity")
+            plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_accel[particle_count],output_dir,tag=f"particle_{particle_count+1}_accel")
+        if particles.shape[0] == 2:
+            plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_posn[0]*1e6,snapshot_particle_posn[1]*1e6,output_dir,tag=f"particle_posns(um)")
+            plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_velocity[0],snapshot_particle_velocity[1],output_dir,tag=f"particle_velocities(um)")
+            plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_accel[0],snapshot_particle_accel[1],output_dir,tag=f"particle_accelerations(um)")
+    plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_components_avg,output_dir,tag="acceleration component averages")
+    plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_components_avg,output_dir,tag="velocity component averages")
+    if stressed_nodes.shape[0] !=0:
+        plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_boundary_posn,output_dir,tag="boundary average position")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm_std,output_dir,tag="velocity norm standard deviation")
+    plot_snapshots(snapshot_stepsize,step_size,snapshot_count-1,snapshot_soln_diff_norm,output_dir,tag="position solution vector difference norm")
+    
+    return sol, return_status#returning a solution object, that can then have it's attributes inspected
+
 def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
     #function to be called at every sucessful integration step to get the solution output
@@ -2086,7 +2655,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     last_velocity = np.zeros(last_posns.shape,dtype=np.float32)
     #first do the acceleration calculation and the first update step (the initialization step), after which point all updates will be leapfrog updates
     host_beta_i = cp.asnumpy(beta_i)
-    host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+    host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v3(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
     #trying to check for deformations of the particle, which should not occur, but are currently happening in cases where the particles are close together, and more obviously for the case of smaller time step sizes, as well as stronger applied stress values (compression). this first calculation is to have a baseline to compare against as the system evolves
     relative_to_particle_center_vectors = np.zeros((particles.shape[0],particles.shape[1],3))
     particle_orientations = np.zeros((particles.shape[0],3))
@@ -2135,6 +2704,8 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     elif boundary_conditions[1][0] == 'z':
         # fixed_nodes = boundaries['bot']
         stressed_nodes = boundaries['top']
+    elif boundary_conditions[1][0] == 'free':
+        stressed_nodes = np.array([],dtype=np.int64)
     i = 0
     previously_converged = False
     while i < max_integrations:
@@ -2203,11 +2774,11 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
                 snapshot_count += 1
             # if particle_separation*l_e < 5e-6:
             #     print(f'particle separation = {particle_separation*l_e*1e6} um')
-            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v2(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
+            host_accel, particle_torques, host_posns, particle_centers = get_accel_scaled_GPU_v3(posns,velocities,elements,springs,particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,scaled_moment_of_inertia,chi,Ms,drag)
             a_var = cp.array(host_accel.astype(np.float32)).reshape((host_accel.shape[0]*host_accel.shape[1],1),order='C')
             leapfrog_update(velocities,a_var,step_size,size_entries)
             if particles.shape[0] != 0:
-                particle_angular_acceleration = particle_torques/scaled_moment_of_inertia
+                particle_angular_acceleration = particle_torques/scaled_moment_of_inertia - drag*particle_angular_velocity
                 particle_angular_velocity += particle_angular_acceleration*step_size
             # host_velocities = cp.asnumpy(velocities)
             # host_velocities = np.reshape(host_velocities,(N_nodes,3))
