@@ -195,7 +195,7 @@ def main():
     particle_radius = 1.5e-6
     l_e = 1e-6
     beta = 6.734260376702891e-09
-    particle_mass_density = 7.86 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
     particle_posns = np.array([[0,0,0]],dtype=np.float64)
     # particle_posns = np.array([[0,0,0],[9,0,0]],dtype=np.float64)
@@ -430,6 +430,158 @@ void get_dipole_field(const float* separation_vectors, const float* separation_v
     }
     ''', 'get_dipole_field')
 
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit_v2(float[:,::1] moments, float[:,::1] particle_posns, float particle_radius, float l_e):
+#     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
+#     cdef int N_particles = particle_posns.shape[0]
+#     cdef np.ndarray[np.float32_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float32)
+#     cdef int i
+#     cdef int j
+#     cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+#     cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+#     cdef float[3] force = np.empty((3,),dtype=np.float32)
+#     cdef float[3] wca_force = np.empty((3,),dtype=np.float32)#additional repulsive force to keep the particles from collapsing on one another
+#     for i in range(N_particles):
+#         for j in range(i+1,N_particles):
+#             r_i[0] = particle_posns[i,0]
+#             r_i[1] = particle_posns[i,1]
+#             r_i[2] = particle_posns[i,2]
+#             r_j[0] = particle_posns[j,0]
+#             r_j[1] = particle_posns[j,1]
+#             r_j[2] = particle_posns[j,2]
+#             force = get_dip_dip_force_32bit(moments[i,:],moments[j,:],r_i,r_j)
+#             wca_force = get_particle_wca_force_normalized_32bit(r_i,r_j,particle_radius,l_e)
+#             forces[i,0] += force[0]
+#             forces[i,1] += force[1]
+#             forces[i,2] += force[2]
+#             forces[j,0] -= force[0]
+#             forces[j,1] -= force[1]
+#             forces[j,2] -= force[2]
+#             forces[i,0] += wca_force[0]
+#             forces[i,1] += wca_force[1]
+#             forces[i,2] += wca_force[2]
+#             forces[j,0] -= wca_force[0]
+#             forces[j,1] -= wca_force[1]
+#             forces[j,2] -= wca_force[2]
+#     return forces
+
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(float[:] r_i, float[:] r_j, float particle_radius,float l_e):
+#     """Get a repulsive force between the particles that is supposed to prevent volume overlap. particle_radius is the radius of the particle in meters"""
+#     cdef float wca_mag
+#     cdef float SURFACE_TO_SURFACE_SPACING = 1e-7
+#     cdef float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING)#/l_e#want there to be some volume/space between the particles even if they are strongly attracted
+#     cdef float cutoff_length = pow(2,(1/6))*sigma
+#     cdef float[3] rij
+#     cdef int i
+#     for i in range(3):
+#         rij[i] = (r_i[i] - r_j[i])#/l_e
+#     cdef float rij_mag =  sqrt(dot_prod_32bit(rij,rij))
+#     cdef np.ndarray[np.float32_t, ndim=1] force = np.empty((3,),dtype=np.float32)
+#     cdef float eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*pi*(Ms**2)*(R**3)/72
+#     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
+#         wca_mag = get_wca_force_32bit(eps_constant,rij_mag,sigma)
+#         for i in range(3):
+#             force[i] += wca_mag * rij[i] / rij_mag
+#     return force
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# cdef float get_wca_force_32bit(float eps_constant, float r, float sigma) nogil:
+#     cdef float sigma_over_separation = sigma/r
+#     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
+#     cdef float force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
+#     return force_mag
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# cdef np.ndarray[np.float32_t, ndim=1] get_dip_dip_force_32bit(float[:] m_i, float[:] m_j, float[:] r_i, float[:] r_j):
+#     """Get the force on dipole i due to dipole j"""
+#     cdef float[3] rij
+#     cdef int i
+#     for i in range(3):
+#         rij[i] = r_i[i] - r_j[i]
+#     cdef float rij_mag = sqrt(dot_prod_32bit(rij,rij))
+#     # cdef float[3] rij_hat
+#     # for i in range(3):
+#     #     rij_hat[i] = rij[i]/rij_mag
+#     cdef np.ndarray[np.float32_t, ndim=1] force = np.empty((3,),dtype=np.float32)
+#     cdef float mi_dot_r = dot_prod_32bit(m_i,rij)
+#     cdef float mj_dot_r = dot_prod_32bit(m_j,rij)
+#     cdef float m_dot_m = dot_prod_32bit(m_i,m_j)
+#     cdef float prefactor = 3*mu0_32bit/(4*np.pi*pow(rij_mag,5))
+#     for i in range(3):
+#         force[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
+#     return force
+
+
+dipole_force_kernel = cp.RawKernel(r'''
+float INV_4PI = 1/(4*3.141592654f);
+float SURFACE_TO_SURFACE_SPACING = 1e-7;
+extern "C" __global__
+void get_dipole_force(const float* separation_vectors, const float* separation_vectors_inv_magnitude, const float* magnetic_moment, const float l_e, const float inv_l_e, float* force, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                
+        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(1.5e-6,3)/72;
+        float particle_radius = 1.5e-6;
+        float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING);
+        float cutoff_length = powf(2,(1/6))*sigma;
+        float prefactor;
+        float r_hat[3];
+        float mi_dot_r_hat;
+        float mj_dot_r_hat;
+        float m_dot_m;
+        float mi[3];
+        mi[0] = magnetic_moment[3*tid];
+        mi[1] = magnetic_moment[3*tid+1];
+        mi[2] = magnetic_moment[3*tid+2];
+        float mj[3];
+        int separation_vector_idx;
+        int inv_magnitude_idx;
+        float mu0_over_four_pi = 1e-7;
+        float force_temp_var;
+        float rijmag;
+        float sigma_over_separation;
+        for (int j = 0; j < size_particles; j++)
+        {
+            if (tid != j)
+            {
+                mj[0] = magnetic_moment[3*j];
+                mj[1] = magnetic_moment[3*j+1];
+                mj[2] = magnetic_moment[3*j+2];
+                separation_vector_idx = tid*3*size_particles+3*j;
+                inv_magnitude_idx = tid*size_particles + j;
+                r_hat[0] = separation_vectors[separation_vector_idx]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+                r_hat[1] = separation_vectors[separation_vector_idx+1]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+                r_hat[2] = separation_vectors[separation_vector_idx+2]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+                mi_dot_r_hat = mi[0]*r_hat[0] + mi[1]*r_hat[1] + mi[2]*r_hat[2];
+                mj_dot_r_hat = mj[0]*r_hat[0] + mj[1]*r_hat[1] + mj[2]*r_hat[2];
+                m_dot_m = mi[0]*mj[0] + mi[1]*mj[1] + mi[2]*mj[2];
+                prefactor = 3*mu0_over_four_pi*powf(separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e,4);
+                force_temp_var = prefactor*(mj_dot_r_hat*mi[0] + mi_dot_r_hat*mj[0] + m_dot_m*r_hat[0] - 5*r_hat[0]*mi_dot_r_hat*mj_dot_r_hat);
+                //printf("tid = %i, j = %i, force_temp_var = %f\n",tid,j,force_temp_var);
+                force[3*tid] += force_temp_var;
+                force_temp_var = prefactor*(mj_dot_r_hat*mi[1] + mi_dot_r_hat*mj[1] + m_dot_m*r_hat[1] - 5*r_hat[1]*mi_dot_r_hat*mj_dot_r_hat);
+                force[3*tid+1] += force_temp_var;
+                force_temp_var = prefactor*(mj_dot_r_hat*mi[2] + mi_dot_r_hat*mj[2] + m_dot_m*r_hat[2] - 5*r_hat[2]*mi_dot_r_hat*mj_dot_r_hat);
+                force[3*tid+2] += force_temp_var;
+                rijmag = sqrtf(separation_vectors[separation_vector_idx]*separation_vectors[separation_vector_idx] + separation_vectors[separation_vector_idx+1]*separation_vectors[separation_vector_idx+1] + separation_vectors[separation_vector_idx+2]*separation_vectors[separation_vector_idx+2])*l_e;
+                if (rijmag <= cutoff_length)
+                {
+                    sigma_over_separation = sigma*separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e;
+                    force_temp_var = 4*eps_constant*(12*powf(sigma_over_separation,13) - 6*powf(sigma_over_separation,7))/sigma;
+                    printf("inside WCA force calculation bit\ntid = %i, j = %i, force_temp_var = %f\n",tid,j,force_temp_var);
+                    force[3*tid] += force_temp_var*r_hat[0];
+                    force[3*tid+1] += force_temp_var*r_hat[1];
+                    force[3*tid+2] += force_temp_var*r_hat[2];
+                }
+            }
+        }
+    }
+    }
+    ''', 'get_dipole_force')
+
 def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
     cupy_stream = cp.cuda.get_current_stream()
@@ -458,12 +610,251 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
         cupy_stream.synchronize()
         magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
         cupy_stream.synchronize()
-    host_magnetic_moments = cp.asnumpy(magnetic_moment)
+    host_magnetic_moments = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
     # host_element_forces = cp.asnumpy(cupy_element_forces)
     # host_spring_forces = cp.asnumpy(cupy_spring_forces)
     # host_composite_element_spring_forces = cp.asnumpy(cupy_composite_element_spring_forces)
     # return host_composite_element_spring_forces# host_element_forces, host_spring_forces
     return host_magnetic_moments
+
+def get_magnetization_iterative_v2(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moments = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    # normalized_magnetization_kernel((grid_size,),(block_size,),(Ms,chi,Hext_vector,magnetic_moment,size_particles))
+    # magnetization_kernel used the particle volume to return the magnetic moment. the normalized approach normalizes by the saturation magnetization. the issue with using the particle volume to convert from magnetization to magnetic moment was that the result for low field values evaluated to zero.
+    #the issue may have actually been that i didn't use 32 bit floats for chi, Ms, and l_e
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moments,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    max_iters = 5
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moments,size_particles))
+        cupy_stream.synchronize()
+    return magnetic_moments
+
+def get_magnetic_forces_composite(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moments = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    # normalized_magnetization_kernel((grid_size,),(block_size,),(Ms,chi,Hext_vector,magnetic_moment,size_particles))
+    # magnetization_kernel used the particle volume to return the magnetic moment. the normalized approach normalizes by the saturation magnetization. the issue with using the particle volume to convert from magnetization to magnetic moment was that the result for low field values evaluated to zero.
+    #the issue may have actually been that i didn't use 32 bit floats for chi, Ms, and l_e
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moments,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    max_iters = 5
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moments,size_particles))
+        cupy_stream.synchronize()
+    raise NotImplementedError
+
+def get_magnetic_forces(particles,separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,l_e,beta,particle_mass):
+    """Return magnetic forces"""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    inv_l_e = np.float32(1/l_e)
+    force = cp.zeros((3*size_particles,1),dtype=cp.float32,order='C')
+    dipole_force_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,l_e,inv_l_e,force,size_particles))
+    force *= np.float32(beta/particle_mass)
+    return force
+
+def gpu_testing_force_calc():
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.1/mu0
+    n_field_steps = 200
+    if n_field_steps != 1:
+        H_step = H_mag/(n_field_steps-1)
+    else:
+        H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = 0#np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = 1.5e-6
+    l_e = np.float32(1e-6)
+    beta = 6.734260376702891e-09
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    num_nodes_per_particle = 8
+    particles_per_axis = np.array([2,1,1])#np.array([3,3,3])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = 7.8
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation
+                particle_posns[particle_counter,1] = j * separation
+                particle_posns[particle_counter,2] = k * separation
+                particle_counter += 1
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+
+    mag_forces32bit = np.zeros((num_particles,3),dtype=np.float32)
+    magnetic_moments = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
+    for i, Hext in enumerate(Hext_series):
+        magnetic_moments[i] = get_magnetization_iterative(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e)
+    
+    
+    field_idx = int(n_field_steps/2)
+    Hext = Hext_series[int(n_field_steps/2)]
+
+    host_magnetic_moments = magnetic_moments[field_idx]
+    device_magnetic_moments = cp.asarray(cp.reshape(magnetic_moments[field_idx],(3*num_particles,1)),dtype=cp.float32,order='C')
+
+    num_streaming_multiprocessors = 14
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(device_particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+
+    N_iterations = 11
+    execution_gpu = cupyx.profiler.benchmark(get_magnetic_forces,(particles,separation_vectors,separation_vectors_inv_magnitude,device_magnetic_moments,l_e,beta,particle_mass),n_repeat=N_iterations)
+    # execution_gpu = cupyx.profiler.benchmark(get_magnetization_iterative,(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e),n_repeat=N_iterations)
+    delta_gpu_naive = np.sum(execution_gpu.gpu_times)
+
+    start = time.perf_counter()
+    for i in range(N_iterations):
+        mag_forces32bit = magnetism.get_dip_dip_forces_normalized_32bit_v2(host_magnetic_moments,np.float32(particle_posns*l_e),np.float32(particle_radius),np.float32(l_e))
+        mag_forces32bit *= np.float32(beta/particle_mass)#np.float32(beta/(particle_mass*(np.power(l_e,4))))
+        # perf_m32bit = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
+    end = time.perf_counter()
+    delta_cy = end-start
+
+    gpu_mag_force = get_magnetic_forces(particles,separation_vectors,separation_vectors_inv_magnitude,device_magnetic_moments,l_e,beta,particle_mass)
+    gpu_mag_force = cp.asnumpy(gpu_mag_force)
+    gpu_mag_force = np.reshape(gpu_mag_force,(particles.shape[0],3))
+    # try:
+    #     correctness = np.allclose(host_cupy_forces,np.float32(volume_correction_force))
+    # except Exception as inst:
+    #         print('Exception raised during calculation')
+    #         print(type(inst))
+    #         print(inst)
+    # print("GPU and CPU based calculations of forces agree?: " + str(correctness))
+    # if not correctness:
+    #     difference = np.abs(host_cupy_forces-volume_correction_force)
+    #     max_component_diff = np.max(difference)
+    #     mean_component_diff = np.mean(difference)
+    #     print(f'maximum difference in volume correction force components is {max_component_diff}')
+    #     print(f'mean difference in volume correction force components is {mean_component_diff}')
+    #     max_norm_diff = np.max(np.linalg.norm(difference,axis=1))
+    #     mean_norm_diff = np.mean(np.linalg.norm(difference,axis=1))
+    #     print(f'maximum difference in volume correction force norm is {max_norm_diff}')
+    #     print(f'mean difference in volume correction force norm is {mean_norm_diff}')
+    #     print(f'number of NaN entries in the CPU VCF {np.count_nonzero(np.isnan(volume_correction_force))}')
+    #     print(f'number of NaN entries in the GPU VCF {np.count_nonzero(np.isnan(host_cupy_forces))}')
+    #     print(f'number of NaN entries in the norm of the CPU VCF {np.count_nonzero(np.isnan(np.linalg.norm(volume_correction_force,axis=1)))}')
+    #     print(f'number of zero entries in the norm of the CPU VCF {np.count_nonzero(np.isclose(np.linalg.norm(volume_correction_force,axis=1),0))}')
+    #     max_norm_percent_diff = np.max(np.nan_to_num(np.linalg.norm(difference,axis=1)/np.linalg.norm(volume_correction_force,axis=1)))
+    #     mean_norm_percent_diff = np.mean(np.nan_to_num(np.linalg.norm(difference,axis=1)/np.linalg.norm(volume_correction_force,axis=1)))
+    #     print(f'maximum percentage difference in volume correction force norm is {max_norm_percent_diff}')
+    #     print(f'mean percentage difference in volume correction force norm is {mean_norm_percent_diff}')
+    print("CPU time is {} seconds".format(delta_cy))
+    print("GPU time is {} seconds".format(delta_gpu_naive))
+    print("GPU is {}x faster than CPU".format(delta_cy/delta_gpu_naive))
+
+    magnetic_moments = magnetic_moments.reshape((Hext_series.shape[0],num_particles,3))
+    magnetization = magnetic_moments/particle_volume
+    if np.allclose(M32bit,magnetization):
+        print('seems to work')
+    else:
+        print('mismatch between gpu calculated magnetization and cpu calculated magnetization')
+        M32bit /= Ms
+        magnetization /= Ms
+        difference_norm = np.linalg.norm(M32bit-magnetization)
+        print(f'difference norm of normalized magnetizations (all particles, all fields, all components): {difference_norm}')
+        print(f'difference norm per total number of entries (field values * number particles * 3): {difference_norm/np.shape(np.ravel(magnetization))[0]}')
+        print(f'mean normalized magnetization component percent difference: {np.mean((M32bit-magnetization)/M32bit)}')
+        fig, ax = plt.subplots()
+        ax.plot(Bext_series_magnitude,M32bit[:,0,0],label='p1x')
+        ax.plot(Bext_series_magnitude,M32bit[:,0,1],label='p1y')
+        ax.plot(Bext_series_magnitude,M32bit[:,0,2],label='p1z')
+        # ax.plot(Hext_series_magnitude,M32bit[:,1,0],label='p2x')
+        # ax.plot(Hext_series_magnitude,M32bit[:,1,1],label='p2y')
+        # ax.plot(Hext_series_magnitude,M32bit[:,1,2],label='p2z')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,0],label='gpu p1x')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,1],label='gpu p1y')
+        ax.plot(Bext_series_magnitude,magnetization[:,0,2],label='gpu p1z')
+        # ax.plot(Hext_series_magnitude,magnetization[:,1,0],label='gpu p2x')
+        # ax.plot(Hext_series_magnitude,magnetization[:,1,1],label='gpu p2y')
+        # ax.plot(Hext_series_magnitude,magnetization[:,1,2],label='gpu p2z')
+        fig.legend()
+        plt.show()
+        print('review plot')
+        
+        system_magnetization = np.sum(M32bit,axis=1)/num_particles
+        system_magnetization = np.squeeze(system_magnetization)
+        gpu_system_magnetization = np.sum(magnetization,axis=1)/num_particles
+        gpu_system_magnetization = np.squeeze(gpu_system_magnetization)
+        Bext_series = mu0*Hext_series
+        Bext_series_norm = np.linalg.norm(Bext_series,axis=1)
+        nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+        unit_Bext_series = Bext_series[nonzero_field_value_indices[0]]/Bext_series_norm[nonzero_field_value_indices[0]]
+        parallel_magnetization = np.dot(system_magnetization,unit_Bext_series)
+        gpu_parallel_magnetization = np.dot(gpu_system_magnetization,unit_Bext_series)
+
+        fig, ax = plt.subplots()
+        ax.plot(Bext_series_norm,parallel_magnetization,'.',label='CPU')
+        ax.plot(Bext_series_norm,gpu_parallel_magnetization,'.',label='GPU')
+        ax.set_xlabel('B Field (T)')
+        ax.set_ylabel('Normalized Magnetization')
+        ax.set_title(f'Magnetization versus Applied Field\n{num_particles} Particles, Separation {separation}\nTheta {Bext_theta_angle} Phi {Bext_phi_angle}')
+        fig.legend()
+        fig.show()
+        save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing/'
+        if not (os.path.isdir(save_dir)):
+            os.mkdir(save_dir)
+        savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+        plt.savefig(savename)
 
 def gpu_testing():
     #choose the maximum field, number of field steps, and field angle
@@ -492,7 +883,10 @@ def gpu_testing():
     particle_radius = 1.5e-6
     l_e = np.float32(1e-6)
     num_nodes_per_particle = 8
-    particles_per_axis = np.array([3,3,3])
+    beta = 6.734260376702891e-09
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,1,1])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
@@ -509,13 +903,36 @@ def gpu_testing():
     num_particles = particle_posns.shape[0]
     particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
     M32bit = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
-    magnetic_moments = np.zeros((Hext_series.shape[0],3*num_particles,1),dtype=np.float32)
+    magnetic_moments = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
     for i, Hext in enumerate(Hext_series):
         M32bit[i] = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
         magnetic_moments[i] = get_magnetization_iterative(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e)
 
-    N_iterations = 1
+
+    field_idx = int(n_field_steps/2)
     Hext = Hext_series[int(n_field_steps/2)]
+
+    host_magnetic_moments = magnetic_moments[field_idx]
+    #testing new and old CPU bound magnetic force calculations
+    mag_forces32bit_new = np.zeros((num_particles,3),dtype=np.float32)
+    mag_forces32bit_old = np.zeros((num_particles,3),dtype=np.float32)
+    mag_forces32bit_new = magnetism.get_dip_dip_forces_normalized_32bit_v2(host_magnetic_moments,np.float32(particle_posns*l_e),np.float32(particle_radius),np.float32(l_e))
+    mag_forces32bit_new *= np.float32(beta/particle_mass)#np.float32(beta/(particle_mass*(np.power(l_e,4))))
+
+
+    magnetization_32bit = host_magnetic_moments/particle_volume
+    mag_forces32bit_old = magnetism.get_dip_dip_forces_normalized_32bit(magnetization_32bit,np.float32(particle_posns),np.float32(particle_radius),np.float32(l_e))
+    #  mag_forces32bit_old = magnetism.get_dip_dip_forces_normalized_32bit(M32bit[field_idx],np.float32(particle_posns),np.float32(particle_radius),np.float32(l_e))
+    # magnetic_scaling_factor = beta/(particle_mass*(np.power(l_e,4)))
+    mag_forces32bit_old *= np.float32(beta/(particle_mass*(np.power(l_e,4))))
+
+    if not (np.allclose(mag_forces32bit_new,mag_forces32bit_old)):
+        print('mismatch between new and old force calculations on cpu')
+        print(f'old calculation values:{mag_forces32bit_old}\nnew calculation values:{mag_forces32bit_new}')
+    else:
+        print('agreement between new and old force calculations on cpu')
+
+    N_iterations = 1    
     execution_gpu = cupyx.profiler.benchmark(get_magnetization_iterative,(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e),n_repeat=N_iterations)
     delta_gpu_naive = np.sum(execution_gpu.gpu_times)
 
@@ -608,4 +1025,5 @@ def gpu_testing():
         plt.savefig(savename)
 if __name__ == "__main__":
     # main()
-    gpu_testing()
+    # gpu_testing()
+    gpu_testing_force_calc()
