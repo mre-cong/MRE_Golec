@@ -297,7 +297,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force(double[:] r_i, doub
     for i in range(3):
         rij[i] = r_i[i] - r_j[i]
     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
-    cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
     cdef eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*4*(pi**2)*(Ms**2)*(R**3)/72
     if rij_mag <= cutoff_length:#if the spring has shrunk to 2^(1/6)*10% or less of it's equilibrium length, we want to introduce an additional repulsive force to prevent volume collapse/inversion of the volume elements
         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
@@ -317,7 +317,7 @@ cdef np.ndarray[np.float64_t, ndim=1] get_particle_wca_force_normalized(double[:
     for i in range(3):
         rij[i] = r_i[i] - r_j[i]
     cdef double rij_mag =  sqrt(dot_prod(rij,rij))
-    cdef np.ndarray[np.float64_t, ndim=1] force = np.empty((3,),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] force = np.zeros((3,),dtype=np.float64)
     cdef double eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*pi*(Ms**2)*(R**3)/72
     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
         wca_mag = get_wca_force(eps_constant,rij_mag,sigma)
@@ -446,13 +446,19 @@ cdef np.ndarray[np.float32_t, ndim=1] get_dip_dip_force_32bit(float[:] m_i, floa
     cdef float mj_dot_r = dot_prod_32bit(m_j,rij)
     cdef float m_dot_m = dot_prod_32bit(m_i,m_j)
     cdef float prefactor = 3*mu0_32bit/(4*np.pi*pow(rij_mag,5))
+    # print('cpu results')
+    # print(f'prefactor*rij_mag = {prefactor*rij_mag}')
+    # print(f'mi_dot_r_hat *1e6 = {mi_dot_r/rij_mag*1e6}')
+    # print(f'mj_dot_r_hat*1e6 = {mj_dot_r/rij_mag*1e6}')
+    # print(f'm_dot_m*1e6 = {m_dot_m*1e6}')
     for i in range(3):
         force[i] = prefactor*(mj_dot_r*m_i[i] + mi_dot_r*m_j[i] + m_dot_m*rij[i] - 5*rij[i]*mi_dot_r*mj_dot_r/pow(rij_mag,2))
+        # print(f'force component {i} = {force[i]}')
     return force
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float[:,::1] M, float[:,::1] particle_posns, float particle_radius, float l_e, float Ms):
+cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit(float[:,::1] M, float[:,::1] particle_posns, float particle_radius, float l_e):
     """Get the dipole-dipole interaction forces for each particle pair, returning the vector sum of the dipole forces acting on each dipole"""
     cdef int N_particles = particle_posns.shape[0]
     cdef np.ndarray[np.float32_t, ndim=2] forces = np.zeros((N_particles,3),dtype=np.float32)
@@ -561,7 +567,7 @@ cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(fl
     for i in range(3):
         rij[i] = (r_i[i] - r_j[i])#/l_e
     cdef float rij_mag =  sqrt(dot_prod_32bit(rij,rij))
-    cdef np.ndarray[np.float32_t, ndim=1] force = np.empty((3,),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1] force = np.zeros((3,),dtype=np.float32)
     cdef float eps_constant = (1e-7)*4*pow(np.pi,2)*pow(1.9e6,2)*pow(1.5e-6,3)/72#mu0*pi*(Ms**2)*(R**3)/72
     if rij_mag <= cutoff_length:#if the distance between particles has shrunk to 2^(1/6)*10% or less of their combined radii, we want to introduce an additional repulsive force to prevent volume collapse of the particles on top of one another
         wca_mag = get_wca_force_32bit(eps_constant,rij_mag,sigma)
