@@ -1351,9 +1351,13 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     xlabel = 'X (l_e)'
     ylabel = 'Y (l_e)'
     zlabel = 'Z (l_e)'
-    xlim = (-0.1,Lx*1.1)
-    ylim = (-0.1,Ly*1.1)
-    zlim = (-0.1,Lz*1.1)
+    axis_limit_max = np.max(np.array([Lx,Ly,Lz]))*1.1
+    # xlim = (-0.1,Lx*1.1)
+    # ylim = (-0.1,Ly*1.1)
+    # zlim = (-0.1,Lz*1.1)
+    xlim = (-0.1,axis_limit_max)
+    ylim = (-0.1,axis_limit_max)
+    zlim = (-0.1,axis_limit_max)
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -1363,15 +1367,26 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
-    ax.axis('equal')
+    # ax.axis('equal')
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    # ax.axis('equal')
     format_figure_3D(ax)
     if tag != "":
         ax.set_title(tag)
         tag = "_" + tag
     savename = output_dir + f'particle_nodes_'+ tag +'.png'
+    plt.savefig(savename)
+    #set the view angles to capture the different perspectives
+    ax.view_init(90,-90,0)
+    savename = output_dir + f'particle_nodes_'+ tag +'_xy.png'
+    plt.savefig(savename)
+    ax.view_init(0,-90,0)
+    savename = output_dir + f'particle_nodes_'+ tag +'_xz.png'
+    plt.savefig(savename)
+    ax.view_init(0,0,0)
+    savename = output_dir + f'particle_nodes_'+ tag +'_yz.png'
     plt.savefig(savename)
     plt.close()
 
