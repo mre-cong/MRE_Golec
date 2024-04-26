@@ -1829,7 +1829,7 @@ void get_dipole_force(const float* separation_vectors, const float* separation_v
                 {
                     sigma_over_separation = sigma*separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e;
                     force_temp_var = 4*eps_constant*(12*powf(sigma_over_separation,13) - 6*powf(sigma_over_separation,7))/sigma;
-                    printf("inside WCA force calculation bit\ntid = %i, j = %i, wca_force = %f,%f,%f e-6\n",tid,j,force_temp_var*r_hat[0]*1e6,force_temp_var*r_hat[1]*1e6,force_temp_var*r_hat[2]*1e6);
+                    //printf("inside WCA force calculation bit\ntid = %i, j = %i, wca_force = %f,%f,%f e-6\n",tid,j,force_temp_var*r_hat[0]*1e6,force_temp_var*r_hat[1]*1e6,force_temp_var*r_hat[2]*1e6);
                     force[3*tid] += force_temp_var*r_hat[0];
                     force[3*tid+1] += force_temp_var*r_hat[1];
                     force[3*tid+2] += force_temp_var*r_hat[2];
@@ -3319,7 +3319,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         stress_direction = 0
         stress_node_force = 0
     elif boundary_conditions[0] == 'hysteresis':
-        fixed_nodes = boundaries['bot']
+        fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
         stress_direction = 0
