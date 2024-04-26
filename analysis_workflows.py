@@ -4,6 +4,8 @@
 
 import numpy as np
 import scipy.special as sci
+import scipy.optimize
+import scipy.linalg
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import cm
@@ -315,8 +317,22 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
     #get the particle separations and overall magnetizations and plot them
-    if particles.shape[0] != 0:
-        plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+    plot_particle_behavior_flag = True
+    if plot_particle_behavior_flag and particles.shape[0] != 0:
+        particle_separations = plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+        num_particles = particles.shape[0]
+        clustering_distance = 4
+        particle_separations *= l_e*1e6
+        particle_separations_matrix = np.zeros((num_output_files,num_particles,num_particles))
+        for output_file_count in np.arange(num_output_files):
+            counter = 0
+            for i in np.arange(num_particles):
+                for j in np.arange(i+1,num_particles):
+                    particle_separations_matrix[output_file_count,i,j] = particle_separations[output_file_count,counter]
+                    counter += 1
+            particle_separations_matrix[output_file_count] += np.transpose(particle_separations_matrix[output_file_count])
+    else:
+        particle_separations_matrix = None
 
 #   in a loop, output files are read in and manipulated
 #       node positions and boundary conditions are used to calculate forces happening at relevant fixed boundaries
@@ -327,13 +343,133 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     #TODO effective modulus calculations for field dependent simulations
     if 'strain' in sim_dir:
         effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
+        bc_values = strain
+        bc_type = 'strain'
     elif 'stress' in sim_dir:
-        effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
+        effective_modulus, differential_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
+        differential_modulus[np.isinf(differential_modulus)] = 0
+        bc_values = stress
+        bc_type = 'stress'
+    #how many cluster pairs formed?
+    for output_file_count in np.arange(num_output_files):
+        cluster_counter = 0
+        for i in np.arange(num_particles):
+            temp_separations = particle_separations_matrix[output_file_count,i,:]
+            cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
+            #if we know some particle clustering has ocdurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
+        cluster_counter /= 2
+        if cluster_counter != 0:
+            print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {bc_type} {bc_values[output_file_count]} the total number of clusters: {cluster_counter}')
+    #on a field by field basis, fit the stress-strain curve to a linear function to extract the effective modulus, ignoring the (0,0) point
+    unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
+    num_fields = unique_fields.shape[0]
+    linear_fit_modulus = np.zeros((num_fields,))
+    linear_fit_modulus_error = np.zeros((num_fields,))
+    if 'tension' in sim_dir or 'compression' in sim_dir:
+        modulus_fit_guess = E
+    elif 'shearing' in sim_dir:
+        modulus_fit_guess = shear_modulus
+    for i, field in enumerate(unique_fields):
+        relevant_indices = np.isclose(field,np.linalg.norm(Bext_series,axis=1))
+        single_field_stress = stress[relevant_indices]
+        single_field_strain = strain[relevant_indices]
+        if 'stress' in sim_dir:
+            fitting_indices = np.nonzero(single_field_stress)
+        elif 'strain' in sim_dir:
+            fitting_indices = np.nonzero(single_field_strain)
+        single_field_stress = single_field_stress[fitting_indices]
+        single_field_strain = single_field_strain[fitting_indices]
+        if fitting_indices[0].shape[0] >= 2:
+            popt, pcov = scipy.optimize.curve_fit(linear_fit_func,single_field_strain,single_field_stress,p0=np.array([modulus_fit_guess,0]))
+            linear_fit_modulus[i] = popt[0]
+            linear_fit_modulus_error[i] = np.sqrt(np.diag(pcov))[0]
+    component_to_index_dict = {'x':0,'y':1,'z':2}
+    #strain measure from a quasi average strain tensor by "integrating" the strain tensor components over the volume and dividing by the system volume
+    average_strain_tensor = np.zeros((num_output_files,3,3))
+    # relevant_eig_val_avg = np.zeros((num_output_files,))
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+#       node positions are used to calculate nodal displacement
+        displacement_field = get_displacement_field(initial_node_posns,final_posns)
+#       nodal displacement is used to calculated displacement gradient
+        gradu = get_gradu(displacement_field,num_nodes)
+#       displacement gradient is used to calculate linear strain tensors
+        strain_tensor = get_strain_tensor(gradu)
+        average_strain_tensor[i] = get_average_tensor_value(strain_tensor,elements,initial_node_posns,tag='strain')
+        # 2024-04-11 DBM: in general, can find eigenvalue/eigenvector decomposition of the symmetric matrix to get the strain in the principal directions local for the matrix. in the case where bending is occurring, I am getting unusual strain values (negative, and not small) for what should be small positive tensile strains (due to small positive tensile stresses as boundary conditions). here i am exploring if the volume average of the local principal direction strains along the analagous direction provide useful strain information for moduls calculations
+        # my_sum = 0
+        # for row in np.arange(strain_tensor.shape[0]):
+        #     for col in np.arange(strain_tensor.shape[1]):
+        #         for page in np.arange(strain_tensor.shape[2]):
+        #             w = scipy.linalg.eigvalsh(strain_tensor[row,col,page,:,:])
+        #             relevant_eig_val = w[component_to_index_dict[boundary_conditions[1][1]]]
+        #             my_sum += relevant_eig_val
+        # relevant_eig_val_avg[i] = my_sum/(strain_tensor.shape[0]*strain_tensor.shape[1]*strain_tensor.shape[2])
+
+    Bext_series = mu0*Hext_series
+    Bext_series_magnitude = np.round(np.linalg.norm(mu0*Hext_series,axis=1)*1e3,decimals=3)
+    num_unique_fields = np.unique(Bext_series_magnitude).shape[0]
+    relative_strain_tensor = np.zeros(np.shape(average_strain_tensor))
+    relative_strain_eigvals = np.zeros((num_output_files,))
+    for i in range(num_output_files):
+        relative_configuration_index = np.mod(i,num_unique_fields)
+        relative_strain_tensor[i] = average_strain_tensor[i] - average_strain_tensor[relative_configuration_index]
+        # relative_strain_eigvals[i] = relevant_eig_val_avg[i] - relevant_eig_val_avg[relative_configuration_index]
+    # if 'stress' in sim_dir:
+    #     for i in range(num_output_files):
+    #         relative_configuration_index = np.mod(i,num_unique_fields)
+    #         relative_strain_tensor[i] = average_strain_tensor[i] - average_strain_tensor[relative_configuration_index]
+    #         relative_strain_eigvals[i] = relevant_eig_val_avg[i] - relevant_eig_val_avg[relative_configuration_index]
+    # elif 'strain' in sim_dir:
+    #     relative_strain_tensor = average_strain_tensor
+    #     relative_strain_eigvals = relevant_eig_val_avg
+    # else:
+    #     raise NotImplementedError
+    rve_strain_average = relative_strain_tensor[:,component_to_index_dict[boundary_conditions[1][0]],component_to_index_dict[boundary_conditions[1][1]]]
+    strain_comparisons = rve_strain_average - strain
+    fig, axs = plt.subplots(2)
+    axs[0].plot(np.arange(num_output_files),strain_comparisons)
+    percent_strain_difference = 100*strain_comparisons/strain
+    axs[1].plot(np.arange(num_output_files),percent_strain_difference)
+    axs[0].set_xlabel('output file number')
+    axs[0].set_ylabel('strain metric difference')
+    axs[1].set_ylabel('strain metric percentage difference')
+    plt.show()
+    linear_fit_modulus_from_rve_strain_avg = np.zeros((num_fields,))
+    linear_fit_modulus_from_rve_strain_avg_error = np.zeros((num_fields,))
+    # linear_fit_modulus_from_eigval_strain_avg = np.zeros((num_fields,))
+    # linear_fit_modulus_from_eigval_strain_avg_error = np.zeros((num_fields,))
+    for i, field in enumerate(unique_fields):
+        relevant_indices = np.isclose(field,np.linalg.norm(Bext_series,axis=1))
+        single_field_stress = stress[relevant_indices]
+        single_field_strain = rve_strain_average[relevant_indices]
+        if 'stress' in sim_dir:
+            fitting_indices = np.nonzero(single_field_stress)
+        elif 'strain' in sim_dir:
+            fitting_indices = np.nonzero(single_field_strain)
+        single_field_stress = single_field_stress[fitting_indices]
+        single_field_strain = single_field_strain[fitting_indices]
+        # single_field_eigval_strain = relative_strain_eigvals[relevant_indices]
+        # single_field_eigval_strain = single_field_eigval_strain[fitting_indices]
+        if fitting_indices[0].shape[0] >= 2:
+            popt, pcov = scipy.optimize.curve_fit(linear_fit_func,single_field_strain,single_field_stress,p0=np.array([modulus_fit_guess,0]))
+            linear_fit_modulus_from_rve_strain_avg[i] = popt[0]
+            linear_fit_modulus_from_rve_strain_avg_error[i] = np.sqrt(np.diag(pcov))[0]
+            # popt, pcov = scipy.optimize.curve_fit(linear_fit_func,single_field_eigval_strain,single_field_stress,p0=np.array([modulus_fit_guess,0]))
+            # linear_fit_modulus_from_eigval_strain_avg[i] = popt[0]
+            # linear_fit_modulus_from_eigval_strain_avg_error[i] = np.sqrt(np.diag(pcov))[0]
 #   outside the loop:
 #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
     subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+    if 'stress' in sim_dir:
+        subplot_stress_field_differentialmodulus(stress,strain,differential_modulus,Bext_series,output_dir+'modulus/',tag="differential_modulus")
+        subplot_stress_strain_differentialmodulus_by_field(stress,strain,differential_modulus,Bext_series,output_dir+'modulus/',tag="differential_modulus")
     subplot_stress_strain_modulus_by_field(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+    subplot_stress_strain_linear_fit_modulus_by_field(stress,strain,linear_fit_modulus,linear_fit_modulus_error,Bext_series,output_dir+'modulus/',tag="",particle_separations=particle_separations_matrix)
+    subplot_stress_strain_linear_fit_modulus_by_field(stress,rve_strain_average,linear_fit_modulus_from_rve_strain_avg,linear_fit_modulus_from_rve_strain_avg_error,Bext_series,output_dir+'modulus/',tag="rve_strain_avg",particle_separations=particle_separations_matrix)
+    # subplot_stress_strain_linear_fit_modulus_by_field(stress,relative_strain_eigvals,linear_fit_modulus_from_eigval_strain_avg,linear_fit_modulus_from_eigval_strain_avg_error,Bext_series,output_dir+'modulus/',tag="eigval_strain_avg")
     # subplot_stress_field_modulus(alternative_stress_measure,strain,strain_direction,alternative_effective_modulus,Bext_series,output_dir+'modulus/',tag="alternative_measures")
 
 #   in a loop, output files are read in and manipulated
@@ -391,7 +527,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
                 tag = surface+'_surface_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
                 # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
                 # # below, used for plotting the per node effective modulus using stress and strain tensor components. a review of the analytical expressions for the stress and strain tensor components (and looking over figures that were generated) shows that the effective modulus calculated this way will not vary over the surface, or with changes in the applied field, due to their (seemingly entirely) linear relationship (between stress and strain components, through the Lame parameters)
                 # if surface == 'right':
                 #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,effective_modulus_tensor,surf_idx,output_dir+'modulus/',tag=tag+'quasi-modulus')
@@ -399,39 +535,187 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
             for cut_type,center_idx in zip(cut_types,center_indices):
                 tag = 'center_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
-                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
+                # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
     #       if particles present:
     #          stress and strain tensors are visualized for cuts through particle centers and edges if particles present
-            if particles.shape[0] != 0:
-                centers = np.zeros((particles.shape[0],3))
-                for i, particle in enumerate(particles):
-                    tag=f"particle{i+1}_edge_" + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
-                    centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
-                    particle_node_posns = initial_node_posns[particle,:]
-                    x_max = np.max(particle_node_posns[:,0])
-                    y_max = np.max(particle_node_posns[:,1])
-                    z_max = np.max(particle_node_posns[:,2])
-                    x_min = np.min(particle_node_posns[:,0])
-                    y_min = np.min(particle_node_posns[:,1])
-                    z_min = np.min(particle_node_posns[:,2])
-                    edge_indices = ((z_max,z_min),(y_max,y_min),(x_max,x_min))
-                    #TODO switchover to plotting tensorfields from this surf plot, but utilize the appropriate indices, cut types, and generate useful tags
-                    # for cut_type,layer_indices in zip(cut_types,edge_indices):
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'strain')
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'strain')
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
-                    #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
-                tag='particle_centers_'+ f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
-                layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
-                for cut_type,layer in zip(cut_types,layers):
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
-                    subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/particle/',tag=tag+'stress')
+            # if particles.shape[0] != 0:
+            #     centers = np.zeros((particles.shape[0],3))
+            #     for i, particle in enumerate(particles):
+            #         tag=f"particle{i+1}_edge_" + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            #         centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
+            #         particle_node_posns = initial_node_posns[particle,:]
+            #         x_max = np.max(particle_node_posns[:,0])
+            #         y_max = np.max(particle_node_posns[:,1])
+            #         z_max = np.max(particle_node_posns[:,2])
+            #         x_min = np.min(particle_node_posns[:,0])
+            #         y_min = np.min(particle_node_posns[:,1])
+            #         z_min = np.min(particle_node_posns[:,2])
+            #         edge_indices = ((z_max,z_min),(y_max,y_min),(x_max,x_min))
+            #         #TODO switchover to plotting tensorfields from this surf plot, but utilize the appropriate indices, cut types, and generate useful tags
+            #         # for cut_type,layer_indices in zip(cut_types,edge_indices):
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'strain')
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'strain')
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[0]),output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
+            #         #     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
+            #     tag='particle_centers_'+ f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            #     layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
+            #     for cut_type,layer in zip(cut_types,layers):
+            #         subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
+            #         # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'nonlinearstrain')
+            #         # subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,layer,output_dir+'stress/particle/',tag=tag+'stress')
 #   outside the loop:
 #   table or csv file with stress, strain, and effective modulus values are saved out for potential reconstruction or modification of figures
+
+def linear_fit_func(x,m,b):
+    """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from stress-strain curves"""
+    return m*x + b
+
+def analysis_average_stress_strain(sim_dir,gpu_flag=False):
+    """Given the folder containing simulation output, calculate relevant quantities and generate figures.
+    
+    For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
+    #   if a directory to save the visualizations doesn't exist, make it
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    figure_types = ['modulus','particle_behavior','stress','strain','cuts','outer_surfaces']
+    figure_subtypes = ['center', 'particle', 'outer_surface']
+    for figure_type in figure_types:
+        if not (os.path.isdir(output_dir+figure_type+'/')):
+          os.mkdir(output_dir+figure_type+'/')
+        if figure_type == 'stress' or figure_type =='strain' or figure_type == 'cuts':
+            for figure_subtype in figure_subtypes:
+                if not (figure_type == 'cuts' and figure_subtype == 'outer_surface'):
+                    if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                        os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
+#   user provides directory containing simulation files, including init.h5, output_i.h5 files
+#   init.h5 is read in and simulation parameters are extracted
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    if gpu_flag:
+        initial_node_posns = np.float64(initial_node_posns)
+        beta_i = np.float64(beta_i)
+        springs_var = np.float64(springs_var)
+        kappa = np.float64(kappa)
+        beta = np.float64(beta)
+        l_e = np.float64(l_e)
+        particle_mass = np.float64(particle_mass)
+        particle_radius = np.float64(particle_radius)
+        Ms = np.float64(Ms)
+        chi = np.float64(chi)
+#   lambda and mu (Lame parameters) are calculated from Young's modulus and Poisson's ratio variables from the init.h5 file
+    #see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
+
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+#   in a loop, output files are read in and manipulated
+#       node positions and boundary conditions are used to calculate forces happening at relevant fixed boundaries
+#       forces are scaled to SI units
+#       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
+#       effective modulus is calculated from stress and strain
+#       effective modulus and stress are saved to respective array variables
+#     #TODO effective modulus calculations for field dependent simulations
+    if 'strain' in sim_dir:
+        effective_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus(sim_dir)
+    elif 'stress' in sim_dir:
+        effective_modulus, differential_modulus, stress, strain, Bext_series, strain_direction = get_field_dependent_effective_modulus_stress_sim(sim_dir)
+# #   outside the loop:
+# #   strains are gotten from init.h5 and/or the boundary_conditions variable in every output_i.h5 file in the loop
+# #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
+#     subplot_stress_field_modulus(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+#     subplot_stress_strain_modulus_by_field(stress,strain,strain_direction,effective_modulus,Bext_series,output_dir+'modulus/',tag="")
+#     # subplot_stress_field_modulus(alternative_stress_measure,strain,strain_direction,alternative_effective_modulus,Bext_series,output_dir+'modulus/',tag="alternative_measures")
+
+#   in a loop, output files are read in and manipulated
+    average_strain_tensor = np.zeros((num_output_files,3,3))
+    average_stress_tensor = np.zeros((num_output_files,3,3))
+    average_stiffness_matrix = np.zeros((num_output_files,6,6))
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+#       node positions are used to calculate nodal displacement
+        displacement_field = get_displacement_field(initial_node_posns,final_posns)
+#       nodal displacement is used to calculated displacement gradient
+        gradu = get_gradu(displacement_field,num_nodes)
+#       displacement gradient is used to calculate linear and nonlinear strain tensors
+        strain_tensor = get_strain_tensor(gradu)
+        # green_strain_tensor = get_green_strain_tensor(gradu)
+#       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
+        stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+
+        average_stress_tensor[i] = get_average_tensor_value(stress_tensor,elements,initial_node_posns,tag='stress')
+        average_strain_tensor[i] = get_average_tensor_value(strain_tensor,elements,initial_node_posns,tag='strain')
+        average_stiffness_matrix[i,3,3] = average_stress_tensor[i,0,1]/average_strain_tensor[i,0,1]
+        average_stiffness_matrix[i,4,4] = average_stress_tensor[i,0,2]/average_strain_tensor[i,0,2]
+        average_stiffness_matrix[i,5,5] = average_stress_tensor[i,1,2]/average_strain_tensor[i,1,2]
+        get_average_stiffness_tensor(average_strain_tensor[i],average_stress_tensor[i])
+    Bext_series = mu0*Hext_series
+    Bext_series_magnitude = np.round(np.linalg.norm(mu0*Hext_series,axis=1)*1e3,decimals=1)
+    num_unique_fields = np.unique(Bext_series_magnitude).shape[0]
+    relative_strain_tensor = np.zeros(np.shape(average_strain_tensor))
+    relative_stress_tensor = np.zeros(np.shape(average_strain_tensor))
+    for i in range(num_output_files):
+        #2024-04-10 DBM:
+        #i need to prove to myself that this is finding/using the correct reference configuration.
+        #for any applied field, I want to compare to the zero stress case. i increment in field first, then stress. i'm pretty sure this was not done correctly
+        #am i doing this correctly elsewhere? Update, yes it is working correctly.
+        relative_configuration_index = np.mod(i,num_unique_fields)
+        # print(f'step index: {i}; relative configuration index: {relative_configuration_index}')
+        relative_strain_tensor[i] = average_strain_tensor[i] - average_strain_tensor[relative_configuration_index]
+        relative_stress_tensor[i] = average_stress_tensor[i] - average_stress_tensor[relative_configuration_index]
+        print(relative_stress_tensor[i,1,0])
+    fig, axs = plt.subplots(2)
+    axs[0].plot(relative_strain_tensor[:,1,0],average_stress_tensor[:,1,0])#axs[0].plot(average_strain_tensor[:,1,0],average_stress_tensor[:,1,0])
+    axs[0].set_xlabel('strain')
+    axs[0].set_ylabel('stress')
+    apparent_shearing_modulus = np.abs(average_stress_tensor[:,1,0]/relative_strain_tensor[:,1,0])#apparent_shearing_modulus = average_stress_tensor[:,1,0]/average_strain_tensor[:,1,0]
+    axs[1].plot(Bext_series_magnitude,apparent_shearing_modulus)
+    axs[1].set_xlabel('B-Field (mT)')
+    axs[1].set_ylabel('Modulus')
+    plt.show()
+    plt.close()
+    fig, axs = plt.subplots(2)
+    axs[0].plot(relative_strain_tensor[:,1,0],relative_stress_tensor[:,1,0])#axs[0].plot(average_strain_tensor[:,1,0],average_stress_tensor[:,1,0])
+    axs[0].set_xlabel('strain')
+    axs[0].set_ylabel('stress')
+    apparent_shearing_modulus = np.abs(relative_stress_tensor[:,1,0]/relative_strain_tensor[:,1,0])#apparent_shearing_modulus = average_stress_tensor[:,1,0]/average_strain_tensor[:,1,0]
+    axs[1].plot(Bext_series_magnitude,apparent_shearing_modulus)
+    axs[1].set_xlabel('B-Field (mT)')
+    axs[1].set_ylabel('Modulus')
+    plt.show()
+    plt.close()
+    fig, axs = plt.subplots(2)
+    axs[0].plot(relative_strain_tensor[:,1,0],stress[:,0])#axs[0].plot(average_strain_tensor[:,1,0],average_stress_tensor[:,1,0])
+    axs[0].set_xlabel('strain')
+    axs[0].set_ylabel('stress')
+    apparent_shearing_modulus = np.abs(stress[:,0]/relative_strain_tensor[:,1,0])#apparent_shearing_modulus = average_stress_tensor[:,1,0]/average_strain_tensor[:,1,0]
+    axs[1].plot(Bext_series_magnitude,apparent_shearing_modulus)
+    axs[1].set_xlabel('B-Field (mT)')
+    axs[1].set_ylabel('Modulus')
+    plt.show()
+    plt.close()
+
+def get_average_tensor_value(tensor,elements,initial_node_posns,tag=""):
+    """Calculate the average stress/strain tensor for the RVE/system and compare the results."""
+    simplest_average = np.zeros((3,3))
+    for i in range(3):
+        for j in range(i,3):
+            simplest_average[i,j] = np.mean(np.ravel(tensor[:,:,:,i,j]))
+    simplest_average[1,0] = simplest_average[0,1]
+    simplest_average[2,0] = simplest_average[0,2]
+    simplest_average[2,1] = simplest_average[1,2]
+    return simplest_average
+
+def get_average_stiffness_tensor(strain_tensor,stress_tensor):
+    strain_inverse = np.linalg.inv(strain_tensor)
+    some_result =  np.tensordot(stress_tensor,strain_inverse,axes=0)
+    # print(some_result.shape)
+    return some_result
 
 def main():
     print('main')
@@ -516,7 +800,7 @@ def get_field_dependent_effective_modulus(sim_dir):
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     strain_type = boundary_conditions[0]
     strain_direction = boundary_conditions[1]
-    if strain_type == 'tension' or strain_type == 'compression' or strain_type == 'plate_compression' or strain_type == 'plate_compre':
+    if strain_type == 'tension' or strain_type == 'compression' or strain_type == 'plate_compression' or strain_type == 'plate_compre' or 'tension' in strain_type:
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
     elif strain_type == 'shearing':
         effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
@@ -536,9 +820,29 @@ def get_field_dependent_effective_modulus_stress_sim(sim_dir):
     #     effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,bc_direction)
     elif bc_type == 'shearing' or ('shearing' in bc_type):
         effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,bc_direction)
+                # differential modulus should have the same shape as effective modulus (maybe it could be a different shape, but i need to make new plotting functions for the differential modulus). I need to take into account that i am iterating over the applied field avlue and the applied stress values
+                # if j < num_fields-1:
+                #     differential_modulus[i,j] = (single_field_stress[i+1] - single_field_stress[i])/(single_field_strain[i+1] - single_field_strain[i])
+        # differential_modulus = (stress[1:] - stress[0:-1]) / (strain[1:] - strain[0:-1])
     # elif bc_type == 'torsion':
     #     get_torsion_modulus(sim_dir,bc_direction)
-    return effective_modulus, stress, strain, Bext_series, bc_direction#, alternative_stress_measure, alternative_effective_modulus
+    unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
+    num_fields = unique_fields.shape[0]
+    differential_modulus = np.zeros((num_fields,np.unique(stress).shape[0]))
+    counter = 0
+    for i, field in enumerate(unique_fields):
+        relevant_indices = np.isclose(field,np.linalg.norm(Bext_series,axis=1))
+        single_field_stress = stress[relevant_indices]
+        single_field_strain = strain[relevant_indices]
+        for j in range(single_field_stress.shape[0]):
+            if j == (single_field_stress.shape[0] - 1):
+                differential_modulus[i,j] = (single_field_stress[j] - single_field_stress[j-1])/(single_field_strain[j] - single_field_strain[j-1])
+            elif j == 0:
+                differential_modulus[i,j] = (single_field_stress[j+1] - single_field_stress[j])/(single_field_strain[j+1] - single_field_strain[j])
+            else:
+                differential_modulus[i,j] = ((single_field_stress[j+1] - single_field_stress[j])/(single_field_strain[j+1] - single_field_strain[j]) + (single_field_stress[j] - single_field_stress[j-1])/(single_field_strain[j] - single_field_strain[j-1]))/2
+            counter += 1
+    return effective_modulus, differential_modulus, stress, strain, Bext_series, bc_direction#, alternative_stress_measure, alternative_effective_modulus
 
 def get_strain_dependent_tension_compression_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
@@ -559,15 +863,25 @@ def get_field_dependent_tension_compression_modulus(sim_dir,bc_direction,output_
     Bext_series = mu0*Hext_series
     num_unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1)).shape[0]
     n_series_steps = np.shape(Bext_series)[0]
-    stress = np.zeros((n_series_steps,3))
+    stress = np.zeros((n_series_steps,))
     strain = np.zeros((n_series_steps,))
     effective_modulus = np.zeros((n_series_steps,))
-    zero_stress_comparison_values = np.zeros((num_unique_fields,))
+    if 'stress' in sim_dir:
+        zero_stress_comparison_values = np.zeros((num_unique_fields,),dtype=np.float32)
+    elif 'strain' in sim_dir:
+        stress = np.zeros((n_series_steps,),dtype=np.float32)
+        strain = np.zeros((n_series_steps,),dtype=np.float32)
+        zero_strain_comparison_forces = np.zeros((num_unique_fields,3),dtype=np.float32)
+        springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+        elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+        device_beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+        kappa = cp.float32(kappa*(l_e**2))
     for i in range(num_unique_fields):
         final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        assert(np.isclose(np.linalg.norm(mu0*applied_field),np.linalg.norm(Bext_series[i])))
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         if not np.isclose(boundary_conditions[2],0):
-            raise ValueError('Unexpected non-zero value for boundary condition while calculating comparison system configuration metric used to define strain')
+            raise ValueError('Unexpected non-zero value for boundary condition while calculating comparison system configuration metric used to define strain or comparison force used to define stress')
         if bc_direction[0] == 'x':
             relevant_boundary = 'right'
         elif bc_direction[0] == 'y':
@@ -581,12 +895,23 @@ def get_field_dependent_tension_compression_modulus(sim_dir,bc_direction,output_
         elif bc_direction[1] == 'z':
             coordinate_index = 2
         if 'simple_stress' in boundary_conditions[0]:
-            zero_stress_comparison_values[i] = np.mean(final_posns[boundaries[relevant_boundary],coordinate_index])
+            zero_stress_comparison_values[i] = np.mean(final_posns[boundaries[relevant_boundary],coordinate_index],dtype=np.float32)
+        elif 'strain' in boundary_conditions[0]:
+            final_posns, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+            posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+            velocities = cp.zeros(posns.shape,order='C',dtype=cp.float32)
+            N_nodes = int(posns.shape[0]/3)
+            accel = simulate.composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs_var,device_beta_i,drag)
+            accel = np.reshape(accel,(N_nodes,3))
+            zero_strain_comparison_forces[i] = np.sum(-1*accel[boundaries[relevant_boundary]]/beta_i[boundaries[relevant_boundary],np.newaxis],axis=0)
     for i in range(n_series_steps):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
-        effective_modulus[i], stress[i], strain[i], _ = get_tension_compression_modulus_v2(sim_dir,i,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions,zero_stress_comparison_values,output_dir)
+        if 'simple_stress' in boundary_conditions[0]:
+            effective_modulus[i], stress[i], strain[i], _ = get_tension_compression_modulus_v2(sim_dir,i,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions,zero_stress_comparison_values,output_dir)
+        elif 'strain' in boundary_conditions[0]:
+            effective_modulus[i], stress[i], strain[i], _ = get_tension_compression_modulus_v2(sim_dir,i,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions,zero_strain_comparison_forces=zero_strain_comparison_forces,output_dir=output_dir)
     return effective_modulus, stress, strain, Bext_series
 
-def get_tension_compression_modulus_v2(sim_dir,output_file_number,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions,zero_stress_comparison_values=None,output_dir=None):
+def get_tension_compression_modulus_v2(sim_dir,output_file_number,bc_direction,beta_i,springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions,zero_stress_comparison_values=None,zero_strain_comparison_forces=None,output_dir=None):
     """For a given configuration of nodes and particles, calculate the effective modulus, effective stress on the probe surface, and return those values."""
     force_component = {'x':0,'y':1,'z':2}
     final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
@@ -619,6 +944,24 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,bc_direction,b
             effective_modulus = E
         else:
             effective_modulus = np.abs(stress[force_component[bc_direction[1]]]/strain)
+    elif 'strain' in boundary_conditions[0]:
+        device_beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+        posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+        velocities = cp.zeros(posns.shape,order='C',dtype=cp.float32)
+        N_nodes = int(posns.shape[0]/3)
+        accel = simulate.composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs_var,device_beta_i,drag)
+        accel = np.reshape(accel,(N_nodes,3))
+        boundary_forces = np.sum(-1*accel[boundaries[relevant_boundaries[0]]]/beta_i[boundaries[relevant_boundaries[0]],np.newaxis],axis=0)
+        output_file_number_for_comparison = int(np.mod(output_file_number,zero_strain_comparison_forces.shape[0]))
+        relative_boundary_forces = boundary_forces - zero_strain_comparison_forces[output_file_number_for_comparison] 
+        relative_boundary_stress = relative_boundary_forces[force_component[boundary_conditions[1][1]]]/(dimensions[dimension_indices[0]]*dimensions[dimension_indices[1]])
+        stress = relative_boundary_stress
+        strain = boundary_conditions[2]
+        secondary_stress = None
+        if strain == 0:
+            effective_modulus = E
+        else:
+            effective_modulus = np.abs(stress/strain)
     else:
     #if the boundary conditions are stress based, need to consider the forces acting on the boundary nodes and the enforced stress boundary conditions
         if bc_direction[0] == 'x':
@@ -717,12 +1060,13 @@ def get_field_dependent_shearing_modulus(sim_dir,bc_direction):
     Bext_series = mu0*Hext_series
     num_unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1)).shape[0]
     n_series_steps = np.shape(Bext_series)[0]
-    stress = np.zeros((n_series_steps,3))
+    stress = np.zeros((n_series_steps,))
     strain = np.zeros((n_series_steps,))
     effective_modulus = np.zeros((n_series_steps,))
     zero_stress_comparison_values = np.zeros((num_unique_fields,2))
     for i in range(num_unique_fields):
         final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        assert(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Bext_series[i])))
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         coordinate_index = [0,0]
         if not np.isclose(boundary_conditions[2],0):
@@ -1279,7 +1623,8 @@ def subplot_stress_field_modulus(stress,strains,strain_direction,effective_modul
     stress = stress[plotting_indices]
     Bext_magnitude = Bext_magnitude[plotting_indices]
     effective_modulus = effective_modulus[plotting_indices]
-    axs[0].plot(Bext_magnitude,np.abs(stress[:,force_component[strain_direction[1]]]),'-o')
+    axs[0].plot(Bext_magnitude,np.abs(stress),'-o')
+    # axs[0].plot(Bext_magnitude,np.abs(stress[:,force_component[strain_direction[1]]]),'-o')
     axs[0].set_title('Stress vs Applied Field')
     axs[0].set_xlabel('Applied Field (T)')
     axs[0].set_ylabel('Stress')
@@ -1289,6 +1634,25 @@ def subplot_stress_field_modulus(stress,strains,strain_direction,effective_modul
     axs[1].set_ylabel('Effective Modulus')
     format_figure(axs[0])
     format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
+    savename = output_dir + f'subplots_stress-field_effective_modulus_'+tag+'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def subplot_stress_field_differentialmodulus(stress,strains,differential_modulus,Bext_series,output_dir,tag=""):
+    """Generate figure with subplots of stress-field curve and effective modulus versus field."""
+    fig, ax = plt.subplots()
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    Bext_magnitude = np.unique(np.linalg.norm(Bext_series,axis=1))
+    for i in range(differential_modulus.shape[0]):
+        ax.plot(Bext_magnitude[i]*np.ones((differential_modulus.shape[1],)),differential_modulus[i],'-o')
+    ax.set_title('Effective Modulus vs Applied Field')
+    ax.set_xlabel('Applied Field (T)')
+    ax.set_ylabel('Effective Modulus')
+    format_figure(ax)
     # plt.show()
     fig.tight_layout()
     savename = output_dir + f'subplots_stress-field_effective_modulus_'+tag+'.png'
@@ -1315,8 +1679,15 @@ def subplot_stress_strain_modulus_by_field(stress,strains,strain_direction,effec
         plotting_strains = strains[plotting_indices]
         plotting_stresses = stress[plotting_indices]
         plotting_effective_modulus = effective_modulus[plotting_indices]
-        axs[0].plot(plotting_strains,np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),'-o',label=f'{np.round(unique_value*1000)} (mT)')
-        axs[1].plot(np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),plotting_effective_modulus,'-o')
+        if unique_value != 0:
+            marker = 'o'
+        else:
+            marker = 's'
+        linestyle = '-'
+        axs[0].plot(plotting_strains,np.abs(plotting_stresses),marker=marker,linestyle=linestyle,label=f'{np.round(unique_value*1000,decimals=2)} (mT)')
+        axs[1].plot(np.abs(plotting_stresses),plotting_effective_modulus,marker=marker,linestyle=linestyle)
+        # axs[0].plot(plotting_strains,np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),'-o',label=f'{np.round(unique_value*1000)} (mT)')
+        # axs[1].plot(np.abs(plotting_stresses[:,force_component[strain_direction[1]]]),plotting_effective_modulus,'-o')
     axs[0].set_title('Stress vs Strain')
     axs[0].set_xlabel('Strain')
     axs[0].set_ylabel('Stress')
@@ -1329,6 +1700,80 @@ def subplot_stress_strain_modulus_by_field(stress,strains,strain_direction,effec
     fig.tight_layout()
     fig.legend()
     savename = output_dir + f'subplots_stress-strain_effective_modulus_labeled_lines'+tag+'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def subplot_stress_strain_differentialmodulus_by_field(stress,strains,differential_modulus,Bext_series,output_dir,tag=""):
+    """Generate figure with subplots of stress-strain curve and differential modulus versus field."""
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    Bext_magnitude = np.linalg.norm(Bext_series,axis=1)
+    unique_field_values = np.unique(Bext_magnitude)
+    for i, unique_value in enumerate(unique_field_values):
+        relevant_indices = np.isclose(unique_value,np.linalg.norm(Bext_series,axis=1))
+        plotting_stresses = stress[relevant_indices]
+        plotting_strains = strains[relevant_indices]
+        plotting_differential_modulus = differential_modulus[i]
+        if i == 0:
+            marker = '-x'
+        else:
+            marker = '-o'
+        axs[0].plot(plotting_strains,np.abs(plotting_stresses),marker,label=f'{np.round(unique_value*1000)} (mT)')
+        axs[1].plot(np.abs(plotting_stresses),plotting_differential_modulus[:plotting_stresses.shape[0]],marker)
+    axs[0].set_title('Stress vs Strain')
+    axs[0].set_xlabel('Strain')
+    axs[0].set_ylabel('Stress')
+    axs[1].set_title('Effective Modulus vs Stress')
+    axs[1].set_xlabel('Stress (Pa)')
+    axs[1].set_ylabel('Effective Modulus')
+    ylimits = (0.9*np.min(differential_modulus),1.1*np.max(differential_modulus))
+    axs[1].set_ylim(ylimits)
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
+    fig.legend()
+    savename = output_dir + f'subplots_stress-strain_effective_modulus_labeled_lines'+tag+'.png'
+    plt.savefig(savename)
+    plt.close()
+
+def subplot_stress_strain_linear_fit_modulus_by_field(stress,strains,linear_fit_modulus,linear_fit_modulus_error,Bext_series,output_dir,tag="",particle_separations=None):
+    """Generate figure with subplots of stress-strain curve and modulus found by linear fit of the stress-strain curve versus field."""
+    fig, axs = plt.subplots(2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    Bext_magnitude = np.linalg.norm(Bext_series,axis=1)
+    unique_field_values = np.unique(Bext_magnitude)
+    for i, unique_value in enumerate(unique_field_values):
+        relevant_indices = np.isclose(unique_value,np.linalg.norm(Bext_series,axis=1))
+        plotting_stresses = stress[relevant_indices]
+        plotting_indices = np.nonzero(plotting_stresses)
+        plotting_stresses = plotting_stresses[plotting_indices]
+        plotting_strains = strains[relevant_indices]
+        plotting_strains = plotting_strains[plotting_indices]
+        if i == 0:
+            marker = 's'
+        else:
+            marker = 'o'
+        axs[0].plot(plotting_strains,np.abs(plotting_stresses),marker=marker,linestyle='-',label=f'{np.round(unique_value*1000)} (mT)')
+    axs[1].errorbar(np.round(1000*np.unique(Bext_magnitude),decimals=2),linear_fit_modulus,marker=marker,linestyle='-',yerr=linear_fit_modulus_error)
+    axs[0].set_title('Stress vs Strain')
+    axs[0].set_xlabel('Strain')
+    axs[0].set_ylabel('Stress')
+    axs[1].set_title('Effective Modulus vs Field')
+    axs[1].set_xlabel('B Field (mT)')
+    axs[1].set_ylabel('Effective Modulus')
+    ylimits = (0.9*np.min(linear_fit_modulus),1.1*np.max(linear_fit_modulus))
+    axs[1].set_ylim(ylimits)
+    format_figure(axs[0])
+    format_figure(axs[1])
+    # plt.show()
+    fig.tight_layout()
+    fig.legend()
+    savename = output_dir + f'subplots_stress-strain_linear_fit_modulus_labeled_lines'+tag+'.png'
     plt.savefig(savename)
     plt.close()
 
@@ -1411,7 +1856,22 @@ def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
     overall_magnetization = np.sum(normalized_magnetizations,axis=0)/magnetizations.shape[0]
     return overall_magnetization
 
-def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
+def get_magnetization_gpu(posns,particles,Hext,Ms,chi,particle_volume,l_e):
+    particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
+    for i, particle in enumerate(particles):
+        particle_centers[i,:] = simulate.get_particle_center(particle,posns)
+    particle_volume = np.float32(particle_volume)
+    l_e = np.float32(l_e)
+    Ms = np.float32(Ms)
+    chi = np.float32(chi)
+    Hext = Hext.astype(np.float32)
+    magnetic_moments = simulate.get_magnetization_iterative(Hext,particles,cp.array(particle_centers.astype(np.float32)).reshape((particle_centers.shape[0]*particle_centers.shape[1],1),order='C'),Ms,chi,particle_volume,l_e)
+    particle_magnetizations = magnetic_moments/particle_volume
+    normalized_magnetizations = particle_magnetizations/Ms
+    overall_magnetization = np.sum(normalized_magnetizations,axis=0)/particle_magnetizations.shape[0]
+    return overall_magnetization
+
+def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series,gpu_flag=True):
     """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
     num_particles = particles.shape[0]
     num_separations = int(sci.binom(num_particles,2))
@@ -1419,14 +1879,18 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-        #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
-        Hext = np.float64(Hext)
         separations[i,:] = get_particle_separation(final_posns,particles)
-        #for each particle, find the position of the center
-        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-        for j, particle in enumerate(particles):
-            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
-        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        if gpu_flag:
+            particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+            magnetization[i,:] = get_magnetization_gpu(final_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        else:
+            #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
+            Hext = np.float64(Hext)
+            #for each particle, find the position of the center
+            particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+            for j, particle in enumerate(particles):
+                particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
+                magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
     fig, axs = plt.subplots(2)
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -1449,6 +1913,7 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
     plt.savefig(savename)
     plt.close()
+    return separations
 
 def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
     """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
@@ -1473,10 +1938,10 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     # fig.tight_layout()
     B_field_norms = np.linalg.norm(mu0*Hext_series,axis=1)
     turning_point_index = np.argwhere(np.max(B_field_norms)==B_field_norms)[0][0]
-    upward_leg, = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1]*l_e,'o-')
-    upward_leg.set_label('Upward Leg')
-    downward_leg, = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:]*l_e,'x--')
-    downward_leg.set_label('Downward Leg')
+    upward_leg = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1]*l_e,'o-')
+    upward_leg[0].set_label('Upward Leg')
+    downward_leg = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:]*l_e,'x--')
+    downward_leg[0].set_label('Downward Leg')
     axs[0].set_xlabel('Applied Field (T)')
     axs[0].set_ylabel('Particle Separation (m)')
     axs[0].legend()
@@ -1792,42 +2257,27 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
     plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
 
 # #   in a loop, output files are read in and manipulated
-#     for i in range(num_output_files):#range(6,num_output_files):
-#         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-#         boundary_conditions = format_boundary_conditions(boundary_conditions)
-#         # mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
-#         #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
-#         #plotting the force components acting on the probed surface
-#         if boundary_conditions[0] == 'plate_compression':
-#             force_plate_flag = True
-#         else:
-#             force_plate_flag = False
-#         # plot_surface_node_force_vector(sim_dir,output_dir,i,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag)
-# #       node positions are scaled to SI units using l_e variable for visualization
-#         si_final_posns = final_posns*l_e
-# #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
-# #TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
-#         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
-#         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
-#             try:
-#                 mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
-#             except:
-#                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
-# #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-#         mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
-# #       visualizations of cuts through the center of the volume are generated and saved out
-#         mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{mu0*Hext}")
-#         mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
-#         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
-#         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
-#             try:
-#                 mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_conditions[2]}_field_{mu0*Hext}")
-#             except:
-#                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
-# #       visualizations of cuts through the particle centers and edges are generated and saved out
-#         if particles.shape[0] != 0:
-#             mre.analyze.plot_particle_centric_cuts_wireframe(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/particle/',tag=f"series_{i}")
-#             mre.analyze.plot_particle_centric_cuts_surf(initial_node_posns,final_posns,particles,output_dir+'cuts/particle/',tag=f"series_{i}")
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+            except:
+                print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+#       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+#       visualizations of cuts through the center of the volume are generated and saved out
+        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+        # mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+        if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+            except:
+                print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
 
 def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     """Plot a histogram of the boundary node positions. Intended for analyzing the variation in boundary surface position relevant to the strain calculation."""
@@ -1840,8 +2290,6 @@ def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
     fig.set_dpi(200)
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(2*default_width,2*default_height)
     ax.hist(boundary_node_posns,bins=30)
     # ax.hist(bins[:-1], bins, weights=counts)
     sigma = np.std(boundary_node_posns)
@@ -1870,29 +2318,29 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-29_field_dependent_modulus_strain_compression_direction('y', 'y')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('z', 'z')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-10_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_1_E_30000.0_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-10_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_1_E_30000.0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-22_field_dependent_modulus_strain_plate_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-22_field_dependent_modulus_strain_plate_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #cpu case that was profiled
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-27_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #gpu case (calculation of elastic and vcf forces) that was profiled
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-26_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #rerunning simulation that was used for profiling the cpu and gpu approaches on the 27th and 26th respectively, to see if the changes to the codebase since then have introduced any bugs/errors
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
     #gpu simulations with simple stress
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-02_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-02_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations
-    sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
+    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the particle rotations turned off
     # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_False_tf_300/"
     # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_True_tf_300/"
@@ -1907,13 +2355,13 @@ if __name__ == "__main__":
     # cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two)
     
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation with "random" particle placement (but only two particles)
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used for hysteresis simulation, with new (partially implemented) batch job driving function and simulation running function
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)
     # ran a series of different discretization orders doing the hysteresis simulation. for this set of results the particle placement was not working as expected... so the initial particle separation was not always the 9 microns that was desired. that has since been fixed (as of 2024-02-13)
@@ -1921,73 +2369,185 @@ if __name__ == "__main__":
     #     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_{i}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     #     temp_hysteresis_analysis(sim_dir,gpu_flag=False)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
-    sim_dir_one = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
-    sim_dir_two = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir_one = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir_two = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # compare_fixed_time_step_solutions_hysteresis(sim_dir_one,sim_dir_two)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_4_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_4_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     # shearing stress simulation at multiple fields
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-18_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-18_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # shearing stress simulation at a 2 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-22_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-22_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # shearing stress simulation at a 5 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases. 3 particle chain
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-23_3_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-23_3_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
 
     # shearing/tension without particles.
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_0_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_None_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_0_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_None_gpu_True_stepsize_5.e-3/"
 
     # shearing, two particles, incomplete run, but long run time/simulation time elapsed
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     
     #tension, two particles, attractive
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-27_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-27_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #compression, two particles, attractive, no particle rotations
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #compression, two particles, attractive, particle rotations via scipy.transform.Rotation, 3 different time step sizes
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_1.25e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_1.25e-3/"
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-01_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-01_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # adjustment to the treatment of particle as rigid body. track particle orientation and relative to particle center vectors poinmting to particle nodes. at the end of an integration round, use the orientation and particle center, as well as the relative to particle center vectors to adjust the particle node positions, to maintain the rigid body shape
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # high order of discretization test run to determine run times and test behavior
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     #tension case
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-14_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-14_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
+    # 8 particles, cubic crystal lattice arrangement, 3% volume ratio. Error in particle placement lead to a configuration that was not exactly a cubic lattice, but the results here are interesting, since the particle clusters do not all form at once (at a single field value), but rather occur at different field values, causing multiple "phase transitions". the collective behavior of the particle clustering is important, seemingly the small differences in the value at which clustering occurs plays a role in both the hysteresis and the effective stiffness behavior. this will need to be reran with the fixed particle placement, but also suggests that adding noise to the placement, or intentionally altering separation along different axes, would produce interesting results for comparison.
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-18_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
-    analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #27 particles, cubic crystal lattice arrangement, 3% volume ratio. particle placement very broken, but still interesting to see the impact. looks a bit like a periodic boundary structure simulation might look, but handling periodic boundary conditions if there are particles crossing the boundaries is something i haven't considered, and I have not figured out how to handle the magnetic interactions if using periodic boudnary conditions.
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-19_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_4_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #8 particles, cubic lattice, 3% volume ratio, fixed particle placement. only 0 stress applied, just looking at the field dependent particle behavior
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #8 particles, cubic lattice, 3% volume ratio, fixed particle placement. multiple stress values applied to analyze effective modulus
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #27 particles, cubic lattice, 3% volume ratio, fixed particle placement. multiple stress values applied to analyze effective modulus
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-21_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+    # analysis_average_stress_strain(sim_dir,gpu_flag=True)
+
+    #27 particles, up to +/-2 volume elements as noise added to periodic particle placement, two different RNG seeds
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_14-17_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_23-23_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #27 particles, no noise, hysteresis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-02_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #2 particles, no noise, hysteresis, no scipy.Rotation or rigid body attempts, instead setting particle-particle node springs to have stiffness based on the particle modulus (actually just 100*polymer modulus because the actual ratio was so large it broke things, as small displacements led to huge accelerations)
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #2 particles, no noise, hysteresis, no scipy.Rotation or rigid body attempts, instead setting particle-particle node springs to have stiffness based on the particle modulus (actually 10000*polymer modulus because the actual ratio was so large it broke things, as small displacements led to huge accelerations). had originally set polymer-particle connections to be the average of the stiffness of the two types, but now set to polymer stiffness. could be adjusted to something like 10* polymer stiffness... maybe. issue was with the acceleration calculations used for checking convergence criteria. higher stiffness meant even small displacements from equilbibrium length lead to outsized accelerations that didn't actually influence particle displacement or polymer displacement... just vibration. polymer-particle connections were also high stiffness, so despite trying to "remove" the particle vibrations from the convergence check, the stiffer polymer around the particles left higher residual accelerations/vibrations
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #27 particles, noise, hysteresis. particle-particle nodes have stiffer connections, no scipy.Rotation. no fixed nodes
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-41_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #27 particles, no noise, hysteresis. cutoff for WCA set to particle diameter + 100 nm. no fixed nodes. anisotropy_factor = [0.7,1.3,1.3]
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-05_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #45 particles [5,3,3], noise, hysteresis. cutoff for WCA set to particle diameter + 100 nm. no fixed nodes. anisotropy_factor = [0.8,1.13ish,1.13ish]
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-05_45_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_15-34_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #45 particles [5,3,3], regular no noise, shear stress xy, was supposed to be only 0.01 stress, but implementation errors with setting stress boundary conditions during initialization led to stress values up to 1.01 in steps of 0.01. stopped early. may end up removing some of the dataset
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-06_45_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, tension in x direction, field along x. small stress values. is the zero field modulus still higher than the field on, despite intuition suggesting that it should be stiffer with the field on?
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-08_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, tension in x direction, field along x. small stress values. no field
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_None_gpu_True_stepsize_5.e-3/"
+
+    #2 particle along x, tension in x direction, field along x. smallish stress values. non zero fields field
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #64 particle (4,4,4), regular, no noise, tension in x direction, field along x. smallish stress values. non zero fields field
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_64_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, field along x, tension along z
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, field along z, tension along x
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, field along z, tension along y
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, field along z, tension along z
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-11_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle along x, field along z, tension along x, strain based simulation. only attempted to implement new strain based calculation of modulus for tension/compression cases, and it still needs to be modified
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    # 2 particle stress, field along z, tension along x, double the maximum number of integration rounds
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    # 8 particle (2x2x2), regular. field along z, tension along x
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-14_8_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #27 particles (3x3x3), regular, field along x, tension along x
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-14_27_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+    #125 particles (5x5x5), regular, field along x, tension along x. Results prior to fully testing the new gpu implementations of distributing the magnetic force, setting fixed nodes, and (not relevant to this sim) applying stress to boundary nodes
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-22_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle, field along x, tension along x, still haven't fully tested new implementations of gpu kernels
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-23_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
