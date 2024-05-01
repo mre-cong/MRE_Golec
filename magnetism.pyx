@@ -546,6 +546,7 @@ cpdef np.ndarray[np.float32_t, ndim=2] get_dip_dip_forces_normalized_32bit_v2(fl
             forces[j,0] -= force[0]
             forces[j,1] -= force[1]
             forces[j,2] -= force[2]
+            # print(f'i={i},j={j}')
             forces[i,0] += wca_force[0]
             forces[i,1] += wca_force[1]
             forces[i,2] += wca_force[2]
@@ -573,6 +574,7 @@ cdef np.ndarray[np.float32_t, ndim=1] get_particle_wca_force_normalized_32bit(fl
         wca_mag = get_wca_force_32bit(eps_constant,rij_mag,sigma)
         for i in range(3):
             force[i] += wca_mag * rij[i] / rij_mag
+        # print(f'wca_force={force}')
     return force
 
 @cython.boundscheck(False)
