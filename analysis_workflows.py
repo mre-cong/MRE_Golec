@@ -1915,7 +1915,7 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     plt.close()
     return separations
 
-def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
+def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series,gpu_flag=True):
     """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
     num_particles = particles.shape[0]
     num_separations = int(sci.binom(num_particles,2))
@@ -1924,13 +1924,17 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
-        Hext = np.float64(Hext)
         separations[i,:] = get_particle_separation(final_posns,particles)
-        #for each particle, find the position of the center
-        particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-        for j, particle in enumerate(particles):
-            particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
-        magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        if gpu_flag:
+            particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+            magnetization[i,:] = get_magnetization_gpu(final_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        else:
+            Hext = np.float64(Hext)
+            #for each particle, find the position of the center
+            particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
+            for j, particle in enumerate(particles):
+                particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
+            magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
     fig, axs = plt.subplots(2)
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -2550,4 +2554,32 @@ if __name__ == "__main__":
 
     #2 particle, field along x, tension along x, still haven't fully tested new implementations of gpu kernels
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-23_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #2 particle, field along x, hystersis, after testing/debugging and fixing new implementations of gpu kernels
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-26_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #125 particle, field along z, hysteresis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #125 particle, field along x, hysteresis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-26_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #125 particles, noisy placement (+/-1 volume elements off regular possible in each direction), field along x, hysteresis. not guaranteed that all steps reached convergence, but still probably "close enough." Need more refined convergence criteria for these noisy systems, that seem to need more time to settle. that means potentially segregating out the accelerations and velocities of the particles from the rest of the system, and checking the convergence of the rest of the system, then the particle level accelerations and velocities (or changes in position) for convergence testing.
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-40_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #125 particles, noisy placement (+/-1 volume elements off regular possible in each direction), field along z, hysteresis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-28_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_04-27_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #125 particles, regular, field along x, tension along x, strain bc
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular, field along x, tension along x, strain bc
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
