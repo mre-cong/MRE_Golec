@@ -3463,7 +3463,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
                 particle_velocity[particle_counter] = np.sum(final_v[particle,:],axis=0)/particle.shape[0]
             print(f'particle velocity = {np.round(particle_velocity,decimals=6)}')
         i += 1
-        if i == max_integrations and num_particles != 0:
+        if i == max_integrations and num_particles != 0 and num_particles < 8:
             if np.any(np.abs(particle_velocity[0]) > tolerance):#if the particles are still in motion, allow the integration to continue
                 max_integrations += 1
                 if max_integrations > hard_limit_max_integrations:
