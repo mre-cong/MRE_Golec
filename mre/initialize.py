@@ -368,7 +368,7 @@ class Simulation(object):
     Lz : length in z direction of the object [m]
     """
     #TODO flesh out this class based approach to the simulation interface
-    def __init__(self,E=1,nu=0.49,kappa=0,k=np.zeros((3,)),drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4,particle_radius=1.5e-6,particle_mass=-1,particle_Ms=1.9e6,particle_chi=131,scaling_factor=-1,characteristic_mass=-1,characteristic_time=-1,max_integrations=10,max_integration_steps=200,time_step=None,tolerance=None):
+    def __init__(self,E=1,nu=0.49,kappa=0,k=np.zeros((3,)),drag=10,l_e=0.1,Lx=0.4,Ly=0.4,Lz=0.4,particle_radius=1.5e-6,particle_mass=-1,particle_Ms=1.9e6,particle_chi=131,scaling_factor=-1,characteristic_mass=-1,characteristic_time=-1,max_integrations=10,max_integration_steps=200,time_step=None,tolerance=None,anisotropy_factor=None):
         """Initializes simulation with default values if they are not passed.
         E: Young's Modulus (Pa)
         nu: Poisson Ratio (unitless)
@@ -410,6 +410,7 @@ class Simulation(object):
         self.scaling_factor = scaling_factor
         self.characteristic_mass = characteristic_mass
         self.characteristic_time = characteristic_time
+        self.anisotropy_factor = anisotropy_factor
             
     def set_time(self,time):
         self.t_f = time
