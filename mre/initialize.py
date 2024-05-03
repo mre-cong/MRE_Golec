@@ -446,26 +446,29 @@ class Simulation(object):
 
 class SimulationTable(tb.IsDescription):
     """Used to define a table with named fields and type information that can be saved to a hdf5 format file using PyTables"""
-    young_modulus = tb.Float64Col()
-    poisson_ratio = tb.Float64Col()
-    spring_stiffness = tb.Float64Col(shape=(3,))
-    kappa = tb.Float64Col()#additional bulk modulus
-    drag = tb.Float64Col()
-    element_length = tb.Float64Col()
-    num_elements = tb.Float64Col(shape=(3,))#number of volume elements in each direction
-    particle_Ms = tb.Float64Col()
-    particle_chi = tb.Float64Col()
-    particle_radius = tb.Float64Col()
-    max_integrations = tb.Int32Col()
-    max_integration_steps = tb.Int32Col()
-    tolerance = tb.Float64Col()
-    scaling_factor = tb.Float64Col()
-    particle_mass = tb.Float64Col()
-    characteristic_mass = tb.Float64Col()
-    characteristic_time = tb.Float64Col()
+    sim_type = tb.StringCol(itemsize=30, shape=(), dflt='',pos=0)
+    young_modulus = tb.Float64Col(pos=1)
+    poisson_ratio = tb.Float64Col(pos=2)
+    anisotropy_factor = tb.Float64Col(pos=3)
+    spring_stiffness = tb.Float64Col(shape=(3,),pos=4)
+    kappa = tb.Float64Col(pos=5)#additional bulk modulus
+    drag = tb.Float64Col(pos=6)
+    element_length = tb.Float64Col(pos=7)
+    num_elements = tb.Float64Col(shape=(3,),pos=8)#number of volume elements in each direction
+    particle_Ms = tb.Float64Col(pos=9)
+    particle_chi = tb.Float64Col(pos=10)
+    particle_radius = tb.Float64Col(pos=11)
+    particle_mass = tb.Float64Col(pos=12)
+    max_integrations = tb.Int32Col(pos=13)
+    max_integration_steps = tb.Int32Col(pos=14)
+    step_size = tb.Float64Col(pos=15)
+    tolerance = tb.Float64Col(pos=16)
+    scaling_factor = tb.Float64Col(pos=17)
+    characteristic_mass = tb.Float64Col(pos=18)
+    characteristic_time = tb.Float64Col(pos=19)
 
     #TODO make functionality that converts the boundaries variable data into a format that can be stored in hdf5 format and functionality that reads in from the hdf5 format to the typical boundaries variable format
-def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationObject,field_or_strain_series,field_or_strain_type_string,output_dir):
+def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationObject,field_series,boundary_condition_series,sim_type,output_dir):
     """Write out the node positions, springs are N_springs by 4, first two columns are row indices in posns for nodes connected by springs, 3rd column is stiffness, 4th is equilibrium separation, and the nodes that make up each cubic element as .csv files (or HDF5 files). To be modified in the future, to handle large systems (which will require sparse matrix representations due to memory limits)"""
     f = tb.open_file(output_dir+'init.h5','w')
     f.create_array('/','node_posns',posns)
@@ -476,9 +479,11 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationO
     for key in boundaries.keys():
         f.create_array('/boundaries',key,boundaries[key])
     f.create_array('/','particles',particles)
-    f.create_array('/','field_or_strain_series',field_or_strain_series,field_or_strain_type_string)
+    f.create_array('/','field_series',field_series)
+    f.create_array('/','boundary_condition_series',boundary_condition_series)
     table = f.create_table('/','parameters',SimulationTable,"Simulation Parameters")
     parameters = table.row
+    parameters['sim_type'] = sim_type
     parameters['young_modulus'] = simulationObject.E
     parameters['poisson_ratio'] = simulationObject.nu
     parameters['spring_stiffness'] = simulationObject.stiffness
@@ -495,7 +500,9 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationO
     parameters['characteristic_time'] = simulationObject.characteristic_time
     parameters['max_integrations'] = simulationObject.max_integrations
     parameters['max_integration_steps'] = simulationObject.max_integration_steps
+    parameters['step_size'] = simulationObject.time_step
     parameters['tolerance'] = simulationObject.tolerance
+    parameters['anisotropy_factor'] = simulationObject.anisotropy_factor
     # injects the parameter values to the table
     parameters.append()
     # flushes the table buffers
@@ -503,7 +510,7 @@ def write_init_file(posns,mass,springs,elements,particles,boundaries,simulationO
     f.close()
 
 def read_init_file(fn):
-    """Read hdf5 format file and return initialized node positions, node masses, springs variable, elements, boundaries dict, particles variable, parameters tuple,the series of fields or strains applied, and a string description of the field series or strain series type"""
+    """Read hdf5 format file and return initialized node positions, node masses, springs variable, elements, boundaries dict, particles variable, parameters tuple,the series of fields and boundary conditions applied, and a string description of the simulation type"""
     f = tb.open_file(fn,'r')
     node_object = f.get_node('/','node_posns')
     node_posns = node_object.read()
@@ -520,11 +527,13 @@ def read_init_file(fn):
         boundaries[leaf.name] = leaf.read()
     param_table = f.root.parameters
     parameters = param_table.read()
-    field_strain_series_object = f.get_node('/','field_or_strain_series')
-    field_strain_series = field_strain_series_object.read()
-    field_strain_type = field_strain_series_object.title
+    field_series_object = f.get_node('/','field_series')
+    field_series = field_series_object.read()
+    boundary_condition_series_object = f.get_node('/','boundary_condition_series')
+    boundary_condition_series = boundary_condition_series_object.read()
+    sim_type = str(parameters[0][0])[2:-1]
     f.close()
-    return node_posns, mass, springs, elements, boundaries, particles, parameters, field_strain_series, field_strain_type
+    return node_posns, mass, springs, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type
 
 def write_criteria_file(criteria_obj,output_dir):
     """write out a file containing the simulation criteria at each integration step. intended for reproducing figures/plots"""
