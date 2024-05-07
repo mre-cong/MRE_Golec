@@ -1478,9 +1478,9 @@ def batch_job_runner():
     youngs_modulus = [9e3]
     discretizations = [3]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]
-    bc_directions = ((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
-    Hext_angles = ((np.pi/2,0),(0,0))#((0,0),)#((0,0),(np.pi/2,0),)#
-    sim_types = ('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_tension',)#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
+    bc_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
+    Hext_angles = ((np.pi/2,0),(0,0))#((np.pi/2,0),)#((0,0),)#((0,0),(np.pi/2,0),)#
+    sim_types = ('strain_tension',)#('simple_stress_tension',)#('hysteresis',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
 
     total_sim_num = 0
@@ -1493,10 +1493,13 @@ def batch_job_runner():
                     for step_size,integration_steps in zip(step_sizes,max_integration_steps):
                         for bc_direction in bc_directions[i]:
                             for Hext_angle in Hext_angles:
+                                # this may not always be correct, but for some simulations not every combination of field angle + boundary condition direction is necessary
+                                # for an isotropic  MRE, there are two configurations for a strain/stress simulation: field + boundary condition parallel, field + boundary condition perpendicular
+                                # for an anisotropic MRE, there are 5 configurations: field + anisotropy + bc parallel, field + anisotropy parallel with bc perpendicular, field + bc parallel with anisotropy perpendicular, anisotropy + bc parallel with field perpendicular, field perpendicular to anisotropy perpendicular to bc 
                                 if np.isclose(Hext_angle[0],np.pi/2) and bc_direction[0] == 'y':
                                     break
                                 parameters = dict({})
-                                parameters['max_integrations'] = 40
+                                parameters['max_integrations'] = 20
                                 # parameters['step_size'] = np.float32(0.01/2)
                                 parameters['max_integration_steps'] = integration_steps
                                 parameters['step_size'] = step_size
@@ -1510,20 +1513,20 @@ def batch_job_runner():
                                 parameters['poisson_ratio'] = poisson_ratio
                                 parameters['drag'] = 1#0#20
                                 parameters['discretization_order'] = discretization_order
-                                parameters['num_particles_along_axes'] = [2,1,1]#[5,5,5]
+                                parameters['num_particles_along_axes'] = [5,5,5]#[2,1,1]#
                                 parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
-                                parameters['particle_placement'] = 'regular'#'regular_anisotropic_noisy'#'regular_anisotropic'#'regular_noisy'
+                                parameters['particle_placement'] = 'regular'#'regular_noisy'#'regular_anisotropic_noisy'#'regular_anisotropic'
                                 parameters['anisotropy_factor'] = np.array([0.8,1.0,1.0])
                                 parameters['anisotropy_factor'][1:] = 1/np.sqrt(parameters['anisotropy_factor'][0])
                                 parameters['particle_separation'] = 9e-6
-                                parameters['max_field'] = 0.25
+                                parameters['max_field'] = 0.15
                                 parameters['field_angle_theta'] = Hext_angle[0]
                                 parameters['field_angle_phi'] = Hext_angle[1]
-                                parameters['num_field_steps'] = 5
+                                parameters['num_field_steps'] = 15
                                 if 'stress' in sim_type:
                                     parameters['boundary_condition_value_series'] = np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
                                 parameters['boundary_condition_max_value'] = 0.0010
-                                parameters['num_boundary_condition_steps'] = 6
+                                parameters['num_boundary_condition_steps'] = 5
                                 parameters['boundary_condition_type'] = bc_type[i]
                                 parameters['boundary_condition_direction'] = bc_direction
                                 print(f'sim type = {sim_type}\nbc_direction = {bc_direction}\n')
@@ -1553,6 +1556,14 @@ def run_sim(parameters,sim_type):
         return -1
     print(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n')
     sim_logger.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
+
+def continue_interrupted_sim(sim_dir):
+    """Takes the directory of the initialized and started, but interrupted simulation, and continues the simulation until completed"""
+    #first figure out the simulation type
+    node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    # figure out the field sequence and stress/strain sequence if necessary
+    # figure out where things were interrupted
+    # read in the checkpoint file and continue the simulation
 
 def initialize_simulation_variables(parameters,sim_type):
     start = time.time()
@@ -1931,8 +1942,7 @@ def initialize_simulation_variables(parameters,sim_type):
     my_sim.write_log(output_dir)
     if particle_placement == 'regular_noisy':
         my_sim.append_log(f'particle placement seed: {seed}',output_dir)
-    
-    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,field_or_bc_series,field_or_bc_type_string,output_dir)
+    mre.initialize.write_init_file(normalized_posns,m,springs_var,elements,particles,boundaries,my_sim,Hext_series,field_or_bc_series,sim_type,output_dir)
 
     if gpu_flag:
         x0 = cp.array(normalized_posns.astype(np.float32)).reshape((normalized_posns.shape[0]*normalized_posns.shape[1],1),order='C')
@@ -2040,7 +2050,7 @@ def run_hysteresis_sim(sim_variables_dict):#(output_dir,Hext_series,x0,elements,
     eq_posns = x0.copy()
     total_delta = 0
     for count, Hext in enumerate(Hext_series):
-        boundary_conditions = ('free',('free','free'),0) 
+        boundary_conditions = ('hysteresis',('free','free'),0) 
         if output_dir[-1] != '/':
             current_output_dir = output_dir + f'/field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
         elif output_dir[-1] == '/':
@@ -2215,9 +2225,12 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
     total_delta = 0
     reuse_solution_flag = False
     eq_posns = x0.copy()
+    #2024-05-03 D Marchfield:if i am allowing the boundary to move as a whole when the strain is zero, how do i ensure i set the boundary position properly for non-zero strain, using the correct reference configuration?
+    output_file_num_for_reference_configuration = 0
     for count, strain in enumerate(strains):
         #if we are applying our first strain, we aren't reusing a previously found solution. when we are reusing a previous solution we need to apply the new strain after we read that solution further down
         if count == 0:
+            #if the first strain is zero, and it should be in all cases, this won't actually do anything to the position values, but it does return the boundary conditions variable and the x0 variable as a cupy array on device memory
             x0, boundary_conditions = apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,dimensions,l_e,gpu_flag)
         for i, Hext in enumerate(Hext_series):
             if output_dir[-1] != '/':
@@ -2227,6 +2240,7 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
             if reuse_solution_flag:
+                #here i need to ensure what the "eq_posns" variable is more carefully now that I am trying to use simulation results as reference configurations for non-zero applied strains
                 x0, boundary_conditions = apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,dimensions,l_e,gpu_flag)
             print(f'Running simulation with external magnetic field: {np.round(Hext*mu0,decimals=4)} T\nApplied strain {boundary_conditions[1]} {np.round(strain,decimals=5)}\n')
             start = time.time()
@@ -2248,12 +2262,19 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             print('took %.2f seconds to simulate' % delta)
             output_file_number = count*Hext_series.shape[0]+i
             mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
-            #if we have already run a particular simulation with zero stress/strain and at some field, use that as the starting point for the solution
+            #if we have already run a particular simulation with zero (or non-zero) strain and at some field we have a configuration solution for, use that as the starting point for the next simulation
             if Hext_series.shape[0] > 1 and (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*strains.shape[0]-1):
                 output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
                 x0, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
                 print(f'reusing previously calculated solution with B_ext = {np.round(mu0*output_file_Hext,decimals=4)}')
                 reuse_solution_flag = True
+
+                print(f'using output_{output_file_num_for_reference_configuration}.h5 for reference configuration')
+                eq_posns, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_for_reference_configuration}.h5')
+                output_file_num_for_reference_configuration += 1
+                if output_file_num_for_reference_configuration > Hext_series.shape[0] - 1:
+                    output_file_num_for_reference_configuration = 0
+                #the eq_posns variable is used to set the new, fixed positions of the strained boundary are, and i'm using the reference configuration of the system at the same external field to do so.
                 # x0 = cp.array(x0.astype(np.float32)).reshape((x0.shape[0]*x0.shape[1],1),order='C')
             else:#use the last solution vector of positions as the starting set of positions for the next step
                 x0 = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
