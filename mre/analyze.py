@@ -4,6 +4,7 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 import numpy as np
 import simulate
+import os
 
 # SMALL_FONT_SIZE = 8
 # MEDIUM_FONT_SIZE = 14
@@ -1348,9 +1349,9 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    xlabel = 'X (l_e)'
-    ylabel = 'Y (l_e)'
-    zlabel = 'Z (l_e)'
+    xlabel = '\nX (l_e)'
+    ylabel = '\nY (l_e)'
+    zlabel = '\nZ (l_e)'
     axis_limit_max = np.max(np.array([Lx,Ly,Lz]))*1.1
     # xlim = (-0.1,Lx*1.1)
     # ylim = (-0.1,Ly*1.1)
@@ -1363,6 +1364,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     fig.set_size_inches(3*default_width,3*default_height)
     fig.set_dpi(200)
     particles = np.ravel(particles)
+    # my_cmap = matplotlib.colormaps['Blues']
     ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -1379,17 +1381,114 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     savename = output_dir + f'particle_nodes_'+ tag +'.png'
     plt.savefig(savename)
     #set the view angles to capture the different perspectives
+    #reset axis and do scatter plot using a blue colormap, so that particle nodes are colored based on position value coming out of the page
+    ax.cla()
+    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues',c=node_posns[particles,2])
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    format_figure_3D(ax)
+    if tag != "":
+        ax.set_title(tag)
     ax.view_init(90,-90,0)
+    ax.set_zlabel('')
+    my_zticks = ax.get_zticks()
+    ax.set_zticks([])
+    ax.set_aspect('equal')
     savename = output_dir + f'particle_nodes_'+ tag +'_xy.png'
     plt.savefig(savename)
+
+    ax.cla()
+    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues_r',c=node_posns[particles,1])
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    format_figure_3D(ax)
+    if tag != "":
+        ax.set_title(tag)
     ax.view_init(0,-90,0)
+    ax.set_zlabel(zlabel)
+    ax.set_zticks(my_zticks[1:-1])
+    ax.set_ylabel('')
+    my_yticks = ax.get_yticks()
+    ax.set_yticks([])
+    ax.set_aspect('equal')
     savename = output_dir + f'particle_nodes_'+ tag +'_xz.png'
     plt.savefig(savename)
+
+    ax.cla()
+    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues',c=node_posns[particles,0])
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_zlabel(zlabel)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ax.set_zlim(zlim)
+    format_figure_3D(ax)
+    if tag != "":
+        ax.set_title(tag)
     ax.view_init(0,0,0)
+    ax.set_ylabel(ylabel)
+    ax.set_yticks(my_yticks[1:-1])
+    ax.set_xlabel('')
+    ax.set_xticks([])
+    ax.set_aspect('equal')
     savename = output_dir + f'particle_nodes_'+ tag +'_yz.png'
     plt.savefig(savename)
     plt.close()
+    #TODO just do 2D plots for these views. grab the necessary components, make a new figure, and you'll have figures that look genuinely better
+    # fig, ax = plt.subplots()
+    # default_width,default_height = fig.get_size_inches()
+    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_dpi(200)
+    # ax.scatter(node_posns[particles,0],node_posns[particles,1])
+    # ax.set_xlim(xlim)
+    # ax.set_ylim(ylim)
+    # ax.set_xlabel(xlabel)
+    # ax.set_ylabel(ylabel)
+    # format_figure(ax)
+    # savename = output_dir + f'particle_nodes_'+ tag +'_xy_2D.png'
+    # plt.savefig(savename)
+    # ax.clear()
+    # ax.scatter(node_posns[particles,0],node_posns[particles,2])
+    # ax.set_xlim(xlim)
+    # ax.set_ylim(zlim)
+    # ax.set_xlabel(xlabel)
+    # ax.set_ylabel(zlabel)
+    # format_figure(ax)
+    # savename = output_dir + f'particle_nodes_'+ tag +'_xz_2D.png'
+    # plt.savefig(savename)
+    # ax.clear()
+    # ax.scatter(node_posns[particles,1],node_posns[particles,2])
+    # ax.set_xlim(ylim)
+    # ax.set_ylim(zlim)
+    # ax.set_xlabel(ylabel)
+    # ax.set_ylabel(zlabel)
+    # format_figure(ax)
+    # savename = output_dir + f'particle_nodes_'+ tag +'_yz_2D.png'
+    # plt.savefig(savename)
+    # plt.close()
 
+def get_num_output_files(sim_dir):
+    """Get the number of output files, since the series variable in current implementations will only contain the applied strains, and not the applied fields. used for properly reading in output files during analysis, and naming figures"""
+    with os.scandir(sim_dir) as dirIterator:
+        output_files = [f.path for f in dirIterator if f.is_file() and f.name.startswith('output')]
+    num_output_files = len(output_files)
+    return num_output_files
+
+def get_num_named_files(sim_dir,file_name):
+    """Get the number of files starting with some file name. used for properly reading in output files during analysis and continuing interrupted simulations"""
+    assert type(file_name) == type('')
+    with os.scandir(sim_dir) as dirIterator:
+        output_files = [f.path for f in dirIterator if f.is_file() and f.name.startswith(file_name)]
+    num_files = len(output_files)
+    return num_files
 def main():
     pass
 
