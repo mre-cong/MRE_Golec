@@ -1347,6 +1347,21 @@ void fix_boundary_node(const int* boundary_node_idx, float* force, const int num
     }
     ''', 'fix_boundary_node')
 
+strained_boundary_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void set_boundary_force(const int* boundary_nodes, float* node_force, const float* boundary_force, const int num_boundary_nodes) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < num_boundary_nodes)
+    {                
+        int node_force_idx = boundary_nodes[tid];
+
+        node_force[3*node_force_idx] = boundary_force[0];
+        node_force[3*node_force_idx+1] = boundary_force[1];
+        node_force[3*node_force_idx+2] = boundary_force[2];
+    }
+    }
+    ''', 'set_boundary_force')
+
 scaled_element_kernel = cp.RawKernel(r'''
 extern "C" __global__
 void element_force(const int* elements, const float* node_posns, const float kappa, float* forces, const int size_elements) {
@@ -2323,7 +2338,7 @@ def composite_gpu_force_calc_v3(posns,velocities,N_nodes,cupy_elements,kappa,cup
     cupy_stream.synchronize()
     return cupy_composite_forces
 
-def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cupy_springs,stressed_boundary,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
+def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cupy_springs,stressed_boundary,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary,host_moving_boundary):
     """Combining gpu kernels to calculate different forces and perform scaling"""
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
@@ -2358,6 +2373,16 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
     if fixed_nodes_size != 0:
         fixed_node_grid_size = (int (np.ceil((int (np.ceil(fixed_nodes_size/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
         fixed_boundary_kernel((fixed_node_grid_size,),(block_size,),(fixed_nodes,cupy_composite_forces,fixed_nodes_size))
+        cupy_stream.synchronize()
+
+    size_strained_boundary = moving_boundary.shape[0]
+    #if the strain is zero, allow the boundary to move as a unit
+    if size_strained_boundary != 0:
+        host_forces = cp.asnumpy(cupy_composite_forces).reshape((int(N_nodes),3))
+        net_force = np.sum(host_forces[host_moving_boundary],axis=0)
+        individual_force = cp.asarray(net_force/size_strained_boundary,dtype=cp.float32,order='C')
+        strained_boundary_grid_size = (int (np.ceil((int (np.ceil(size_strained_boundary/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+        strained_boundary_kernel((strained_boundary_grid_size,),(block_size,),(moving_boundary,cupy_composite_forces,individual_force,size_strained_boundary))
         cupy_stream.synchronize()
 
     magnetic_forces = get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
@@ -3295,7 +3320,6 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             stressed_nodes = cp.asarray(boundaries['top'],dtype=cp.int32,order='C')
             host_stressed_nodes = boundaries['top']
             relevant_dimension_indices = [0,1]
-        accel = set_fixed_nodes(accel,fixed_nodes)
         stress_direction_char = boundary_conditions[1][1]
         if stress_direction_char == 'x':
             stress_direction = 0
@@ -3307,13 +3331,29 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
         net_force_mag = stress*surface_area
         stress_node_force = np.squeeze(net_force_mag/stressed_nodes.shape[0])
+        moving_boundary_nodes = cp.array([],dtype=np.int32)
+        host_moving_boundary_nodes = np.array([],dtype=np.int64)
     elif 'strain' in boundary_conditions[0]:
-        if boundary_conditions[1][0] == 'x':
-            fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'])),dtype=cp.int32,order='C')
-        elif boundary_conditions[1][0] == 'y':
-            fixed_nodes = cp.asarray(np.concatenate((boundaries['front'],boundaries['back'])),dtype=cp.int32,order='C')
-        elif boundary_conditions[1][0] == 'z':
-            fixed_nodes = cp.asarray(np.concatenate((boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
+        if boundary_conditions[2] == 0:
+            if boundary_conditions[1][0] == 'x':
+                fixed_nodes = cp.asarray(boundaries['left'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['right']
+            elif boundary_conditions[1][0] == 'y':
+                fixed_nodes = cp.asarray(boundaries['front'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['back']
+            elif boundary_conditions[1][0] == 'z':
+                fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['top']
+            moving_boundary_nodes = cp.asarray(host_moving_boundary_nodes,dtype=cp.int32,order='C')
+        else:
+            if boundary_conditions[1][0] == 'x':
+                fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'])),dtype=cp.int32,order='C')
+            elif boundary_conditions[1][0] == 'y':
+                fixed_nodes = cp.asarray(np.concatenate((boundaries['front'],boundaries['back'])),dtype=cp.int32,order='C')
+            elif boundary_conditions[1][0] == 'z':
+                fixed_nodes = cp.asarray(np.concatenate((boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
+            moving_boundary_nodes = cp.array([],dtype=np.int32)
+            host_moving_boundary_nodes = np.array([],dtype=np.int64)
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
         stress_direction = 0
@@ -3322,12 +3362,14 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
+        moving_boundary_nodes = cp.array([],dtype=np.int32)
+        host_moving_boundary_nodes = np.array([],dtype=np.int64)
         stress_direction = 0
         stress_node_force = 0
     num_particles = host_particles.shape[0]
     particle_posns = get_particle_posns(host_particles,last_posns)
     particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-    a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+    a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,host_moving_boundary_nodes)
 
     size_entries = int(N_nodes*3)
     leapfrog_update(velocities,a_var,np.float32(step_size/2),size_entries)
@@ -3370,6 +3412,8 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
                 
                 if host_stressed_nodes.shape[0] !=0:
                     snapshot_boundary_posn[snapshot_count] = np.mean(host_posns[host_stressed_nodes],axis=0)
+                elif host_moving_boundary_nodes.shape[0] != 0:
+                    snapshot_boundary_posn[snapshot_count] = np.mean(host_posns[host_moving_boundary_nodes],axis=0)
 
                 host_accel_norms = np.linalg.norm(host_accel,axis=1)
                 snapshot_accel_norm[snapshot_count] = np.mean(host_accel_norms)
@@ -3396,7 +3440,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
                     snapshot_soln_diff_norm[snapshot_count-1] = np.linalg.norm(np.ravel(soln_diff))
                 previous_soln = host_posns
                 snapshot_count += 1
-            a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+            a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,host_moving_boundary_nodes)
             leapfrog_update(velocities,a_var,step_size,size_entries)
         host_posns = cp.asnumpy(posns)
         host_velocities = cp.asnumpy(velocities)
@@ -3425,13 +3469,18 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             boundary_accel_comp_magnitude_avg = np.mean(boundary_accel_comp_magnitude)
             boundary_vel_comp_magnitude = vel_comp_magnitude[host_stressed_nodes]
             boundary_vel_comp_magnitude_avg = np.mean(boundary_vel_comp_magnitude)
+        elif host_moving_boundary_nodes.shape[0] != 0:
+            boundary_accel_comp_magnitude = accel_comp_magnitude[host_moving_boundary_nodes]
+            boundary_accel_comp_magnitude_avg = np.mean(boundary_accel_comp_magnitude)
+            boundary_vel_comp_magnitude = vel_comp_magnitude[host_moving_boundary_nodes]
+            boundary_vel_comp_magnitude_avg = np.mean(boundary_vel_comp_magnitude)
         else:
             boundary_accel_comp_magnitude_avg = 0
             boundary_vel_comp_magnitude_avg = 0            
         if accel_comp_magnitude_avg < tolerance and vel_comp_magnitude_avg < tolerance and boundary_accel_comp_magnitude_avg < tolerance and boundary_vel_comp_magnitude_avg < tolerance:#a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(accel_comp_magnitude_avg,decimals=6)}')
             print(f'Reached convergence criteria of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(vel_comp_magnitude_avg,decimals=6)}')
-            if host_stressed_nodes.shape[0] != 0:
+            if host_stressed_nodes.shape[0] != 0 or host_moving_boundary_nodes.shape[0] != 0:
                 print(f'Reached convergence criteria for stressed boundary of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(boundary_accel_comp_magnitude_avg,decimals=6)}')
                 print(f'Reached convergence criteria for stressed boundary of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}')
             # print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
@@ -3449,7 +3498,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         else:
             print(f'Post-Integration norms\nacceleration norm average = {np.round(a_norm_avg,decimals=6)}\nvelocity norm average = {np.round(v_norm_avg,decimals=6)}')
             print(f'Post-Integration component magnitudes\nacceleration component magnitude average = {np.round(accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(vel_comp_magnitude_avg,decimals=6)}')
-            if host_stressed_nodes.shape[0] != 0:
+            if host_stressed_nodes.shape[0] != 0 or host_moving_boundary_nodes.shape[0] != 0:
                 print(f'Post-Integration component magnitudes on stressed boundary\nacceleration component magnitude average = {np.round(boundary_accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}')
             # print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
@@ -3483,7 +3532,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,snapshot_count,snapshot_particle_accel[0],snapshot_particle_accel[1],output_dir,tag=f"particle_accelerations(um)")
     plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_components_avg,output_dir,tag="acceleration component averages")
     plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_components_avg,output_dir,tag="velocity component averages")
-    if host_stressed_nodes.shape[0] != 0:
+    if host_stressed_nodes.shape[0] != 0 or host_moving_boundary_nodes.shape[0] != 0:
         plot_snapshots_vector_components(snapshot_stepsize,step_size,snapshot_count,snapshot_boundary_posn,output_dir,tag="boundary average position")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm,output_dir,tag="acceleration norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_accel_norm_std,output_dir,tag="acceleration norm standard deviation")
