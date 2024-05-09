@@ -3284,7 +3284,7 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
-def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
+def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False,starting_velocities=None,checkpoint_offset=0):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
     #function to be called at every sucessful integration step to get the solution output
     hard_limit_max_integrations = 2*max_integrations
@@ -3294,7 +3294,10 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         checkpoint_output_dir = output_dir[:-1*len(tmp_var[-2])-1]
     elif tmp_var[-1] != '':
         checkpoint_output_dir = output_dir[:-1*len(tmp_var[-1])-1]
-    velocities = cp.zeros(posns.shape,dtype=cp.float32)
+    if type(starting_velocities) != type(None):
+        velocities = starting_velocities
+    else:
+        velocities = cp.zeros(posns.shape,dtype=cp.float32)
     N_nodes = int(posns.shape[0]/3)
     max_displacement = np.zeros((hard_limit_max_integrations,))
     mean_displacement = np.zeros((hard_limit_max_integrations,))
@@ -3504,7 +3507,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
         if persistent_checkpointing_flag:
-            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i}')
+            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i+checkpoint_offset}')
         mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
         if num_particles != 0 and num_particles < 8:
             particle_velocity = np.zeros((num_particles,3))
