@@ -1479,7 +1479,7 @@ def batch_job_runner():
     discretizations = [3]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]
     bc_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
-    Hext_angles = ((np.pi/2,0),(0,0))#((np.pi/2,0),)#((0,0),)#((0,0),(np.pi/2,0),)#
+    Hext_angles = ((0,0),)#((np.pi/2,0),(0,0))#((0,0),(np.pi/2,0),)#
     sim_types = ('strain_tension',)#('simple_stress_tension',)#('hysteresis',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
 
@@ -1499,7 +1499,7 @@ def batch_job_runner():
                                 if np.isclose(Hext_angle[0],np.pi/2) and bc_direction[0] == 'y':
                                     break
                                 parameters = dict({})
-                                parameters['max_integrations'] = 20
+                                parameters['max_integrations'] = 30
                                 # parameters['step_size'] = np.float32(0.01/2)
                                 parameters['max_integration_steps'] = integration_steps
                                 parameters['step_size'] = step_size
@@ -1515,7 +1515,7 @@ def batch_job_runner():
                                 parameters['discretization_order'] = discretization_order
                                 parameters['num_particles_along_axes'] = [5,5,5]#[2,1,1]#
                                 parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
-                                parameters['particle_placement'] = 'regular'#'regular_noisy'#'regular_anisotropic_noisy'#'regular_anisotropic'
+                                parameters['particle_placement'] = 'regular_noisy'#'regular'#'regular_anisotropic_noisy'#'regular_anisotropic'
                                 parameters['anisotropy_factor'] = np.array([0.8,1.0,1.0])
                                 parameters['anisotropy_factor'][1:] = 1/np.sqrt(parameters['anisotropy_factor'][0])
                                 parameters['particle_separation'] = 9e-6
@@ -1557,13 +1557,395 @@ def run_sim(parameters,sim_type):
     print(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n')
     sim_logger.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
+def reinitialize_sim(sim_dir):
+    #first figure out the simulation type
+    node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    # figure out the field sequence and stress/strain sequence if necessary
+    # figure out where things were interrupted
+    num_output_files = mre.analyze.get_num_output_files(sim_dir)
+    continuation_index = num_output_files
+
+    #extract argument values from the parameters variable
+    young_modulus = parameters[1]
+    poisson_ratio = parameters[2]
+    anisotropy_factor = parameters[3]
+    spring_stiffness = parameters[4]
+    kappa = parameters[5]
+    drag = parameters[6]
+    l_e = parameters[7]
+    Ms = parameters[9]
+    chi = parameters[10]
+    particle_radius = parameters[11]
+    particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+    particle_mass = parameters[12]
+    max_integration_rounds = parameters[13]
+    max_integration_steps = parameters[14]
+    time_step = parameters[15]
+    tolerance = parameters[16]
+    beta = parameters[17]
+    beta_i = beta/mass
+    characteristic_mass = parameters[18]
+    characteristic_time = parameters[19]
+    dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+    Hext_series = field_series
+
+    _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
+    boundary_condition = format_boundary_conditions(boundary_condition)
+    print(boundary_condition)
+    bc_direction = boundary_condition[1]
+
+    # convert all the necessary variables to the appropriate types (32 bit floats, or integers) and move necessary variables to gpu memory
+    #this requires reading in the variables from the parameters variable, and repacking the sim_variables_dict
+    x0 = cp.array(node_posns.astype(np.float32)).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+    beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    if 'stress' in sim_type:
+        stresses = np.float32(boundary_condition_series)
+    if 'strain' in sim_type:
+        strains = np.float32(boundary_condition_series)
+    Hext_series = np.float32(Hext_series)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = cp.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_volume = np.float32(particle_volume)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    step_size = cp.float32(time_step)#cp.float32(0.01)
+
+    #pack into sim_variables_dict for passing to the run_*_sim() function. those functions need flags for knowing if a simulation is being continued or extended
+    sim_variables_dict = dict({})
+    sim_variables_dict['output_dir'] = sim_dir
+    sim_variables_dict['initial_posns'] = x0
+
+    sim_variables_dict['Hext_series'] = Hext_series
+
+    sim_variables_dict['springs'] = springs_var
+    sim_variables_dict['elements'] = elements
+    sim_variables_dict['dimensions'] = dimensions
+    sim_variables_dict['boundaries'] = boundaries
+    sim_variables_dict['kappa'] = kappa
+    sim_variables_dict['element_length'] = l_e
+    sim_variables_dict['beta'] = beta
+    sim_variables_dict['beta_i'] = beta_i
+    sim_variables_dict['drag'] = drag
+
+    sim_variables_dict['particles'] = particles
+    sim_variables_dict['particle_radius'] = particle_radius
+    sim_variables_dict['particle_volume'] = particle_volume
+    sim_variables_dict['particle_mass'] = particle_mass
+    sim_variables_dict['chi'] = chi
+    sim_variables_dict['Ms'] = Ms
+
+    if 'strain' in sim_type:
+        sim_variables_dict['strains'] = strains
+    elif 'stress' in sim_type:
+        sim_variables_dict['stresses'] = stresses
+
+    sim_variables_dict['boundary_condition_type'] = sim_type
+    sim_variables_dict['boundary_condition_direction'] = bc_direction
+
+    sim_variables_dict['max_integrations'] = max_integration_rounds
+    sim_variables_dict['max_integration_steps'] = max_integration_steps
+    sim_variables_dict['tolerance'] = tolerance
+    sim_variables_dict['step_size'] = step_size
+
+    sim_variables_dict['gpu_flag'] = True 
+    sim_variables_dict['particle_rotation_flag'] = True
+    sim_variables_dict['persistent_checkpointing_flag'] = True
+    sim_variables_dict['plotting_flag'] = False
+    sim_variables_dict['criteria_flag'] = False
+
+    sim_variables_dict['continuation_index'] = continuation_index
+
+    my_sim = mre.initialize.Simulation(young_modulus,poisson_ratio,kappa,spring_stiffness,drag,l_e,dimensions[0],dimensions[1],dimensions[2],particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integration_rounds,max_integration_steps,step_size,tolerance,anisotropy_factor)
+
+    return sim_variables_dict, my_sim
+
+def jumpstart_sim(sim_dir,jumpstart_type):
+    """Restart an interrupted simulation, extend a particular simulation step (field + b.c.) from a checkpoint, or re-run a (set of) simulation steps (field + b.c.). Pass the simulation directory, the desired behavior as a string ('restart','extend','rerun'), and for extending or re-running an optional argument of the simulation steps to extend or re-run as a list of strings of absolute paths to the relevant directories"""
+    sim_variables_dict, sim_logger = reinitialize_sim(sim_dir)
+
+    if 'restart' in jumpstart_type:
+        sim_restart_flag = True
+        sim_extend_flag = False
+        sim_rerun_flag = False
+    elif 'extend' in jumpstart_type:
+        sim_restart_flag = False
+        sim_extend_flag = True
+        sim_rerun_flag = False
+    elif 'rerun' in jumpstart_type:
+        sim_restart_flag = False
+        sim_extend_flag = False
+        sim_rerun_flag = True
+    sim_type = sim_variables_dict['boundary_condition_type']
+
+    if 'hysteresis' in sim_type:
+        simulation_run_time, return_status = run_hysteresis_sim(sim_variables_dict,sim_restart_flag,sim_extend_flag,sim_rerun_flag)
+    elif 'stress' in sim_type:
+        simulation_run_time, return_status = run_stress_sim(sim_variables_dict,sim_restart_flag,sim_extend_flag,sim_rerun_flag)
+    elif 'strain' in sim_type:
+        simulation_run_time, return_status = run_strain_sim(sim_variables_dict,sim_restart_flag,sim_extend_flag,sim_rerun_flag)
+    else:
+        print(f'simulation of type: {sim_type} is not defined\n Exiting Program')
+        return -1
+    sim_logger.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',sim_dir)
+
 def continue_interrupted_sim(sim_dir):
     """Takes the directory of the initialized and started, but interrupted simulation, and continues the simulation until completed"""
     #first figure out the simulation type
     node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
     # figure out the field sequence and stress/strain sequence if necessary
     # figure out where things were interrupted
-    # read in the checkpoint file and continue the simulation
+    num_output_files = mre.analyze.get_num_output_files(sim_dir)
+    continuation_index = num_output_files
+
+    #extract argument values from the parameters variable
+    young_modulus = parameters[1]
+    poisson_ratio = parameters[2]
+    anisotropy_factor = parameters[3]
+    spring_stiffness = parameters[4]
+    kappa = parameters[5]
+    drag = parameters[6]
+    l_e = parameters[7]
+    Ms = parameters[9]
+    chi = parameters[10]
+    particle_radius = parameters[11]
+    particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+    particle_mass = parameters[12]
+    max_integration_rounds = parameters[13]
+    max_integration_steps = parameters[14]
+    time_step = parameters[15]
+    tolerance = parameters[16]
+    beta = parameters[17]
+    beta_i = beta/mass
+    characteristic_mass = parameters[18]
+    characteristic_time = parameters[19]
+    dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+    Hext_series = field_series
+
+    _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
+    boundary_condition = format_boundary_conditions(boundary_condition)
+    print(boundary_condition)
+    bc_direction = boundary_condition[1]
+
+    # convert all the necessary variables to the appropriate types (32 bit floats, or integers) and move necessary variables to gpu memory
+    #this requires reading in the variables from the parameters variable, and repacking the sim_variables_dict
+    x0 = cp.array(node_posns.astype(np.float32)).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+    beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    if 'stress' in sim_type:
+        stresses = np.float32(boundary_condition_series)
+    if 'strain' in sim_type:
+        strains = np.float32(boundary_condition_series)
+    Hext_series = np.float32(Hext_series)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = cp.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_volume = np.float32(particle_volume)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    step_size = cp.float32(time_step)#cp.float32(0.01)
+
+    #pack into sim_variables_dict for passing to the run_*_sim() function. those functions need flags for knowing if a simulation is being continued or extended
+    sim_variables_dict = dict({})
+    sim_variables_dict['output_dir'] = sim_dir
+    sim_variables_dict['initial_posns'] = x0
+
+    sim_variables_dict['Hext_series'] = Hext_series
+
+    sim_variables_dict['springs'] = springs_var
+    sim_variables_dict['elements'] = elements
+    sim_variables_dict['dimensions'] = dimensions
+    sim_variables_dict['boundaries'] = boundaries
+    sim_variables_dict['kappa'] = kappa
+    sim_variables_dict['element_length'] = l_e
+    sim_variables_dict['beta'] = beta
+    sim_variables_dict['beta_i'] = beta_i
+    sim_variables_dict['drag'] = drag
+
+    sim_variables_dict['particles'] = particles
+    sim_variables_dict['particle_radius'] = particle_radius
+    sim_variables_dict['particle_volume'] = particle_volume
+    sim_variables_dict['particle_mass'] = particle_mass
+    sim_variables_dict['chi'] = chi
+    sim_variables_dict['Ms'] = Ms
+
+    if 'strain' in sim_type:
+        sim_variables_dict['strains'] = strains
+    elif 'stress' in sim_type:
+        sim_variables_dict['stresses'] = stresses
+
+    sim_variables_dict['boundary_condition_type'] = sim_type
+    sim_variables_dict['boundary_condition_direction'] = bc_direction
+
+    sim_variables_dict['max_integrations'] = max_integration_rounds
+    sim_variables_dict['max_integration_steps'] = max_integration_steps
+    sim_variables_dict['tolerance'] = tolerance
+    sim_variables_dict['step_size'] = step_size
+
+    sim_variables_dict['gpu_flag'] = True 
+    sim_variables_dict['particle_rotation_flag'] = True
+    sim_variables_dict['persistent_checkpointing_flag'] = True
+    sim_variables_dict['plotting_flag'] = False
+    sim_variables_dict['criteria_flag'] = False
+
+    sim_restart_flag = True
+    sim_extend_flag = False
+    if sim_restart_flag:
+        sim_variables_dict['continuation_index'] = continuation_index
+
+    my_sim = mre.initialize.Simulation(young_modulus,poisson_ratio,kappa,spring_stiffness,drag,l_e,dimensions[0],dimensions[1],dimensions[2],particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integration_rounds,max_integration_steps,step_size,tolerance,anisotropy_factor)
+    if 'hysteresis' in sim_type:
+        simulation_run_time, return_status = run_hysteresis_sim(sim_variables_dict,sim_restart_flag)
+    elif 'stress' in sim_type:
+        simulation_run_time, return_status = run_stress_sim(sim_variables_dict,sim_restart_flag)
+    elif 'strain' in sim_type:
+        simulation_run_time, return_status = run_strain_sim(sim_variables_dict,sim_restart_flag)
+    else:
+        print(f'simulation of type: {sim_type} is not defined\n Exiting Program')
+        return -1
+    my_sim.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',sim_dir)
+
+def extend_sim(sim_dir,sim_checkpoint_dir):
+    """Allows a single simulation field + b.c. step to be extended, used when the allowed time for integration did not end with the convergence criteria being met. Takes the simulation directory and the subdirectory of the particular simulation step to extend"""
+        #first figure out the simulation type
+    node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    # figure out the field sequence and stress/strain sequence if necessary
+    # figure out where things were interrupted
+    num_output_files = mre.analyze.get_num_output_files(sim_dir)
+    continuation_index = num_output_files
+
+    #extract argument values from the parameters variable
+    young_modulus = parameters[1]
+    poisson_ratio = parameters[2]
+    anisotropy_factor = parameters[3]
+    spring_stiffness = parameters[4]
+    kappa = parameters[5]
+    drag = parameters[6]
+    l_e = parameters[7]
+    Ms = parameters[9]
+    chi = parameters[10]
+    particle_radius = parameters[11]
+    particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+    particle_mass = parameters[12]
+    max_integration_rounds = parameters[13]
+    max_integration_steps = parameters[14]
+    time_step = parameters[15]
+    tolerance = parameters[16]
+    beta = parameters[17]
+    beta_i = beta/mass
+    characteristic_mass = parameters[18]
+    characteristic_time = parameters[19]
+    dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+    Hext_series = field_series
+
+    _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
+    boundary_condition = format_boundary_conditions(boundary_condition)
+    print(boundary_condition)
+    bc_direction = boundary_condition[1]
+
+    # convert all the necessary variables to the appropriate types (32 bit floats, or integers) and move necessary variables to gpu memory
+    #this requires reading in the variables from the parameters variable, and repacking the sim_variables_dict
+    x0 = cp.array(node_posns.astype(np.float32)).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+    beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    if 'stress' in sim_type:
+        stresses = np.float32(boundary_condition_series)
+    if 'strain' in sim_type:
+        strains = np.float32(boundary_condition_series)
+    Hext_series = np.float32(Hext_series)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = cp.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_volume = np.float32(particle_volume)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    step_size = cp.float32(time_step)#cp.float32(0.01)
+
+    #pack into sim_variables_dict for passing to the run_*_sim() function. those functions need flags for knowing if a simulation is being continued or extended
+    sim_variables_dict = dict({})
+    sim_variables_dict['output_dir'] = sim_dir
+    sim_variables_dict['checkpoint_dir'] = sim_checkpoint_dir
+    sim_variables_dict['initial_posns'] = x0
+
+    sim_variables_dict['Hext_series'] = Hext_series
+
+    sim_variables_dict['springs'] = springs_var
+    sim_variables_dict['elements'] = elements
+    sim_variables_dict['dimensions'] = dimensions
+    sim_variables_dict['boundaries'] = boundaries
+    sim_variables_dict['kappa'] = kappa
+    sim_variables_dict['element_length'] = l_e
+    sim_variables_dict['beta'] = beta
+    sim_variables_dict['beta_i'] = beta_i
+    sim_variables_dict['drag'] = drag
+
+    sim_variables_dict['particles'] = particles
+    sim_variables_dict['particle_radius'] = particle_radius
+    sim_variables_dict['particle_volume'] = particle_volume
+    sim_variables_dict['particle_mass'] = particle_mass
+    sim_variables_dict['chi'] = chi
+    sim_variables_dict['Ms'] = Ms
+
+    if 'strain' in sim_type:
+        sim_variables_dict['strains'] = strains
+    elif 'stress' in sim_type:
+        sim_variables_dict['stresses'] = stresses
+
+    sim_variables_dict['boundary_condition_type'] = sim_type
+    sim_variables_dict['boundary_condition_direction'] = bc_direction
+
+    sim_variables_dict['max_integrations'] = max_integration_rounds
+    sim_variables_dict['max_integration_steps'] = max_integration_steps
+    sim_variables_dict['tolerance'] = tolerance
+    sim_variables_dict['step_size'] = step_size
+
+    sim_variables_dict['gpu_flag'] = True 
+    sim_variables_dict['particle_rotation_flag'] = True
+    sim_variables_dict['persistent_checkpointing_flag'] = True
+    sim_variables_dict['plotting_flag'] = False
+    sim_variables_dict['criteria_flag'] = False
+
+    sim_restart_flag = False
+    sim_extend_flag = True
+    if sim_restart_flag:
+        sim_variables_dict['continuation_index'] = continuation_index
+
+    my_sim = mre.initialize.Simulation(young_modulus,poisson_ratio,kappa,spring_stiffness,drag,l_e,dimensions[0],dimensions[1],dimensions[2],particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integration_rounds,max_integration_steps,step_size,tolerance,anisotropy_factor)
+    if 'hysteresis' in sim_type:
+        simulation_run_time, return_status = run_hysteresis_sim(sim_variables_dict,sim_extend_flag=sim_extend_flag)
+    elif 'stress' in sim_type:
+        simulation_run_time, return_status = run_stress_sim(sim_variables_dict,sim_extend_flag=sim_extend_flag)
+    elif 'strain' in sim_type:
+        simulation_run_time, return_status = run_strain_sim(sim_variables_dict,sim_extend_flag=sim_extend_flag)
+    else:
+        print(f'simulation of type: {sim_type} is not defined\n Exiting Program')
+        return -1
+    my_sim.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',sim_dir)
 
 def initialize_simulation_variables(parameters,sim_type):
     start = time.time()
@@ -1954,7 +2336,6 @@ def initialize_simulation_variables(parameters,sim_type):
         if 'strain' in sim_type:
             strains = np.float32(strains)
         Hext_series = np.float32(Hext_series)
-        particles = np.int32(particles)
         for key in boundaries:
             boundaries[key] = np.int32(boundaries[key])
         dimensions = np.float32(dimensions)
@@ -2174,7 +2555,7 @@ def run_stress_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
                 x0 = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
     return total_delta, return_status
 
-def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
+def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=False,sim_rerun_flag=False):#(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation applying a series of a particular type of stress/strain to the volume with a series of applied external magnetic fields, by passing the boundary condition type as a string (one of the following: tension, compression, shearing, torsion, or simple_stress_* where * is one of tension/compression/shearing), the stress/strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the stress/strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing strain the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
     output_dir = sim_variables_dict['output_dir']
     x0 = sim_variables_dict['initial_posns']
@@ -2222,21 +2603,105 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
     else:
         t_f = sim_variables_dict['t_f']
 
-    total_delta = 0
-    reuse_solution_flag = False
-    eq_posns = x0.copy()
+    if sim_restart_flag:
+        continuation_index = sim_variables_dict['continuation_index']
+        #if i've got as many output files as unique applied fields, I've completed the first set of rounds with a strain of 0, etc.
+        strain_start_index = int(np.floor_divide(continuation_index,Hext_series.shape[0]))
+        #by subtracting I end up with the number of output files for simulations at the current strain value, so i know what field step i am on
+        field_start_index = int(continuation_index-strain_start_index*Hext_series.shape[0])
+
+        #if we are past the zero-strain simulations, we need to know the reference configuration we should be using
+        if strain_start_index != 0:
+            output_file_num_for_reference_configuration = field_start_index
+            eq_posns, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_for_reference_configuration}.h5')
+        else:
+            output_file_num_for_reference_configuration = 0
+            eq_posns = x0.copy()
+        total_delta = 0
+        #need to track total simulation time, so read in how long the other sims took
+        for i in range(continuation_index):
+            _, _, _, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
+            total_delta += sim_time
+        # find the correct subdirectory to load in the checkpoint file
+        strain = strains[strain_start_index]
+        Hext = Hext_series[field_start_index]
+        if output_dir[-1] != '/':
+            current_output_dir = output_dir + f'/strain_{strain_start_index}_{bc_type}_{np.round(strain,decimals=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+        elif output_dir[-1] == '/':
+            current_output_dir = output_dir + f'strain_{strain_start_index}_{bc_type}_{np.round(strain,decimals=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+        if not (os.path.isdir(current_output_dir)):
+            os.mkdir(current_output_dir)
+        # read in the checkpoint file and continue the simulation
+        num_checkpoint_files = mre.analyze.get_num_named_files(current_output_dir,'checkpoint')
+        #if there are checkpoint files, use them, if not...
+        if num_checkpoint_files != 0:
+            checkpoint_offset = num_checkpoint_files
+            solution, _, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
+            boundary_conditions = format_boundary_conditions(boundary_conditions)
+            posn_soln = solution[:3*N_nodes]
+            x0 = cp.array(posn_soln.astype(np.float32)).reshape((posn_soln.shape[0]*posn_soln.shape[1],1),order='C')
+            reuse_solution_flag = False
+            starting_velocities = solution[3*N_nodes:]
+            starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
+        else:
+            checkpoint_offset = 0
+            posns, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{continuation_index-1}.h5')
+            x0 = posns 
+            reuse_solution_flag = True
+            starting_velocities = None
+        print(f'Restarting interrupted simulation at step {continuation_index+1} out of {Hext_series.shape[0]*strains.shape[0]}.')
+    elif sim_extend_flag:
+        current_output_dir = sim_variables_dict['checkpoint_dir']
+        # read in the checkpoint file and continue the simulation
+        num_checkpoint_files = mre.analyze.get_num_named_files(current_output_dir,'checkpoint')
+        #if there are checkpoint files, use them, if not...
+        if num_checkpoint_files != 0:
+            checkpoint_offset = num_checkpoint_files
+            solution, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
+            boundary_conditions = format_boundary_conditions(boundary_conditions)
+            strain_start_index = np.nonzero(np.isclose(boundary_conditions[2],strains))[0][0]
+            field_start_index = np.nonzero(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Hext_series,axis=1)))[0][0]
+            posn_soln = solution[:3*N_nodes]
+            x0 = cp.array(posn_soln.astype(np.float32)).reshape((posn_soln.shape[0]*posn_soln.shape[1],1),order='C')
+            reuse_solution_flag = False
+            starting_velocities = solution[3*N_nodes:]
+            starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
+        total_delta = 0
+        num_output_files = mre.analyze.get_num_named_files(output_dir,'output')
+        #need to track total simulation time, so read in how long the other sims took
+        for i in range(num_output_files):
+            _, _, _, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
+            total_delta += sim_time
+            if i == strain_start_index*Hext_series.shape[0]+field_start_index:
+                extension_time_offset = sim_time
+    else:
+        strain_start_index = 0
+        field_start_index = 0
+        checkpoint_offset = 0
+        eq_posns = x0.copy()
+        output_file_num_for_reference_configuration = 0
+        total_delta = 0
+        reuse_solution_flag = False
+        starting_velocities = None
     #2024-05-03 D Marchfield:if i am allowing the boundary to move as a whole when the strain is zero, how do i ensure i set the boundary position properly for non-zero strain, using the correct reference configuration?
-    output_file_num_for_reference_configuration = 0
-    for count, strain in enumerate(strains):
+    # output_file_num_for_reference_configuration = 0
+    for count in range(strain_start_index,strains.shape[0]):#for count, strain in enumerate(strains):
+        strain = strains[count]
         #if we are applying our first strain, we aren't reusing a previously found solution. when we are reusing a previous solution we need to apply the new strain after we read that solution further down
-        if count == 0:
+        if count == 0 and checkpoint_offset == 0:#if the checkpoint offset is non-zero, we already have x0 and boundary conditions set up, having read them in from a checkpoint file
             #if the first strain is zero, and it should be in all cases, this won't actually do anything to the position values, but it does return the boundary conditions variable and the x0 variable as a cupy array on device memory
             x0, boundary_conditions = apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,dimensions,l_e,gpu_flag)
-        for i, Hext in enumerate(Hext_series):
+        #if we are restarting a simulation, when we have completed a set of sims for a given strain value, we need to start counting the fields from 0 again
+        if sim_restart_flag and count == strain_start_index + 1:
+            field_start_index = 0
+        for i in range(field_start_index,Hext_series.shape[0]):#for i, Hext in enumerate(Hext_series):
+            Hext = Hext_series[i]
             if output_dir[-1] != '/':
                 current_output_dir = output_dir + f'/strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             elif output_dir[-1] == '/':
                 current_output_dir = output_dir + f'strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            if sim_extend_flag:
+                current_output_dir = current_output_dir[:-1] + '_extension/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
             if reuse_solution_flag:
@@ -2245,7 +2710,10 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             print(f'Running simulation with external magnetic field: {np.round(Hext*mu0,decimals=4)} T\nApplied strain {boundary_conditions[1]} {np.round(strain,decimals=5)}\n')
             start = time.time()
             try:
-                sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v3(x0,elements,host_particles,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
+                sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v3(x0,elements,host_particles,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag,starting_velocities,checkpoint_offset)
+                #if there was a continuation, after that first simulation I don't want to seed starting velocities erroneously or have an offset the checkpoint numbering
+                starting_velocities = None
+                checkpoint_offset = 0
                 # sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v2(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
                 # sol, return_status = simulate.simulate_scaled_gpu_leapfrog(x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
             except Exception as inst:
@@ -2256,12 +2724,17 @@ def run_strain_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             end = time.time()
             delta = end - start
             total_delta += delta
+            if sim_extend_flag:
+                delta += extension_time_offset
             final_posns = sol[:int(sol.shape[0]/2)]
             N_nodes = int(sol.shape[0]/6)
             final_posns = np.reshape(final_posns,(N_nodes,3))
             print('took %.2f seconds to simulate' % delta)
             output_file_number = count*Hext_series.shape[0]+i
             mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
+            #if there was an extension, want to stop after the one step
+            if sim_extend_flag:
+                return total_delta, return_status
             #if we have already run a particular simulation with zero (or non-zero) strain and at some field we have a configuration solution for, use that as the starting point for the next simulation
             if Hext_series.shape[0] > 1 and (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*strains.shape[0]-1):
                 output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
@@ -2448,9 +2921,20 @@ def run_test_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresses,
                 x0 = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
     return total_delta, return_status
 
+def format_boundary_conditions(boundary_conditions):
+    boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
+    boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
+    return boundary_conditions
 
 if __name__ == "__main__":
-    batch_job_runner()
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-07_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
+    # continue_interrupted_sim(sim_dir)
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_checkpoint_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/strain_0_strain_tension_0.0_field_9_Bext_[0.09 0.   0.  ]/"
+    extend_sim(sim_dir,sim_checkpoint_dir)
+    # extend_sim(sim_dir,sim_checkpoint_dir)
+    # batch_job_runner()
     # radius = 1.5e-6
     # l_e = 1e-6
     # dimensions = [10,10,10]
