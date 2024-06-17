@@ -17,7 +17,7 @@ import get_spring_force_cy
 import magnetism
 import mre.initialize
 import mre.analyze
-
+mu0 = 4*np.pi*1e-7
 # plt.switch_backend('TkAgg')
 
 #given a spring network and boundary conditions, determine the equilibrium displacements/configuration of the spring network
@@ -459,6 +459,7 @@ def plot_residual_vector_norms_hist(a_norms,output_dir,tag=""):
     mre.analyze.format_figure(ax)
     plt.savefig(savename)
     plt.close()
+    np.save(output_dir+'node_residual_'+tag+'_hist',a_norms)
 
 def get_displacement_norms(final_posns,start_posns):
     """Given the final and starting positions, return the mean and maximum node displacement."""
@@ -482,6 +483,8 @@ def plot_displacement_v_integration(num_integration_rounds,mean_displacement,max
         ax.label_outer()
     plt.savefig(output_dir+'displacement.png')
     plt.close()
+    np.save(output_dir+'mean_displacement',mean_displacement)
+    np.save(output_dir+'max_displacement',max_displacement)
     
 def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
@@ -502,31 +505,66 @@ def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,out
     mre.analyze.format_figure(axs[1])
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
+    np.save(output_dir+'simulation_time',simulation_time)
+    np.save(output_dir+f'{tag}_snapshots',snapshot_values)
 
 def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
-    fig, axs = plt.subplots(2)
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
-    fig.set_dpi(200)
     simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
     snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
-    axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,0],'o-',label=f'{tag} x')
-    axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,1],'o-',label=f'{tag} y')
-    axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
-    axs[0].set_xlabel('simulation time')
-    axs[0].set_ylabel(f'{tag}')
-    mre.analyze.format_figure(axs[0])
-    midpoint = int(total_entries/2)
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-')
-    axs[1].set_xlabel('simulation time')
-    axs[1].set_ylabel(f'{tag}')
-    fig.legend(fontsize=20)
-    mre.analyze.format_figure(axs[1])
+    if 'boundary' in tag:
+        fig, axs = plt.subplots(2,3)
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_dpi(200)
+        axs[0,0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,0],'o-',label=f'{tag} x')
+        axs[0,1].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,1],'o-',label=f'{tag} y')
+        axs[0,2].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
+        axs[0,0].set_xlabel('simulation time')
+        axs[0,0].set_ylabel(f'{tag}')
+        axs[0,1].set_xlabel('simulation time')
+        axs[0,1].set_ylabel(f'{tag}')
+        axs[0,2].set_xlabel('simulation time')
+        axs[0,2].set_ylabel(f'{tag}')
+        mre.analyze.format_figure(axs[0,0])
+        mre.analyze.format_figure(axs[0,1])
+        mre.analyze.format_figure(axs[0,2])
+        midpoint = int(total_entries/2)
+        axs[1,0].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-')
+        axs[1,1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-')
+        axs[1,2].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-')
+        axs[1,0].set_xlabel('simulation time')
+        axs[1,0].set_ylabel(f'{tag}')
+        axs[1,1].set_xlabel('simulation time')
+        axs[1,1].set_ylabel(f'{tag}')
+        axs[1,2].set_xlabel('simulation time')
+        axs[1,2].set_ylabel(f'{tag}')
+        fig.legend(fontsize=20)
+        mre.analyze.format_figure(axs[1,0])
+        mre.analyze.format_figure(axs[1,1])
+        mre.analyze.format_figure(axs[1,2])
+    else:
+        fig, axs = plt.subplots(2)
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_dpi(200)
+        axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,0],'o-',label=f'{tag} x')
+        axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,1],'o-',label=f'{tag} y')
+        axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
+        axs[0].set_xlabel('simulation time')
+        axs[0].set_ylabel(f'{tag}')
+        mre.analyze.format_figure(axs[0])
+        midpoint = int(total_entries/2)
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-')
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-')
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-')
+        axs[1].set_xlabel('simulation time')
+        axs[1].set_ylabel(f'{tag}')
+        fig.legend(fontsize=20)
+        mre.analyze.format_figure(axs[1])
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
+    np.save(output_dir+f'{tag}_snapshots',snapshot_values)
 
 def plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,total_entries,snapshot_values_one,snapshot_values_two,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
@@ -1320,6 +1358,166 @@ def distribute_plate_stress(node_posns,stress,stress_direction,dimensions,beta_i
 
 ###### GPU Kernels and Functions
 
+### ENERGY CALCULATIONS
+
+scaled_element_energy_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void element_energy(const int* elements, const float* node_posns, const float kappa, float* energies, const int size_elements) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_elements)
+    {
+        int index0 = elements[8*tid+0];
+        int index1 = elements[8*tid+1];
+        int index2 = elements[8*tid+2];
+        int index3 = elements[8*tid+3];
+        int index4 = elements[8*tid+4];
+        int index5 = elements[8*tid+5];
+        int index6 = elements[8*tid+6];
+        int index7 = elements[8*tid+7];
+        //printf("element tid = %i, size_elements = %i\n",tid,size_elements);                   
+        //printf("tid = %i, index0 = %i, index1 = %i, index2 = %i, index3 = %i, index4 = %i, index5 = %i, index6 = %i, index7 = %i\n",tid,index0,index1,index2,index3,index4,index5,index6,index7);
+        //printf("tid = %i, node_posns[3*index2] = %f, node_posns[3*index0]= %f\n",tid,node_posns[3*index2],node_posns[3*index0]);                     
+        //for(int i = 0; i < 24; i++){
+        //    printf("node_posns[%i] = %f\n",i,node_posns[i]);
+        //}
+        //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
+        float avg_vector_i[3];
+        float avg_vector_j[3];
+        float avg_vector_k[3];
+                                
+        avg_vector_i[0] = (node_posns[3*index2] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index1] + node_posns[3*index6] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index5])/4;
+        avg_vector_i[1] = (node_posns[1+3*index2] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index1] + node_posns[1+3*index6] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index5])/4;
+        avg_vector_i[2] = (node_posns[2+3*index2] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index1] + node_posns[2+3*index6] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index5])/4;
+
+        //printf("tid = %i, avg_vector_i[0] = %f, avg_vector_i[1] = %f, avg_vector_i[2] = %f\n",tid,avg_vector_i[0],avg_vector_i[1],avg_vector_i[2]);
+                                
+        avg_vector_j[0] = (node_posns[3*index4] - node_posns[3*index0] + node_posns[3*index6] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index1] + node_posns[3*index7] - node_posns[3*index3])/4;
+        avg_vector_j[1] = (node_posns[1+3*index4] - node_posns[1+3*index0] + node_posns[1+3*index6] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index1] + node_posns[1+3*index7] - node_posns[1+3*index3])/4;
+        avg_vector_j[2] = (node_posns[2+3*index4] - node_posns[2+3*index0] + node_posns[2+3*index6] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index1] + node_posns[2+3*index7] - node_posns[2+3*index3])/4;
+                                
+        //printf("tid = %i, avg_vector_j[0] = %f, avg_vector_j[1] = %f, avg_vector_j[2] = %f\n",tid,avg_vector_j[0],avg_vector_j[1],avg_vector_j[2]);
+
+        avg_vector_k[0] = (node_posns[3*index1] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index6])/4;
+        avg_vector_k[1] = (node_posns[1+3*index1] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index6])/4;
+        avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;                    
+        
+        //float acrossb[3];
+        float bcrossc[3];
+        //float ccrossa[3];
+        float adotbcrossc;
+        /*                        
+        acrossb[0] = avg_vector_i[1]*avg_vector_j[2] - avg_vector_i[2]*avg_vector_j[1];
+        acrossb[1] = avg_vector_i[2]*avg_vector_j[0] - avg_vector_i[0]*avg_vector_j[2];
+        acrossb[2] = avg_vector_i[0]*avg_vector_j[1] - avg_vector_i[1]*avg_vector_j[0];
+        */                        
+        bcrossc[0] = avg_vector_j[1]*avg_vector_k[2] - avg_vector_j[2]*avg_vector_k[1];
+        bcrossc[1] = avg_vector_j[2]*avg_vector_k[0] - avg_vector_j[0]*avg_vector_k[2];
+        bcrossc[2] = avg_vector_j[0]*avg_vector_k[1] - avg_vector_j[1]*avg_vector_k[0];
+        /*                        
+        ccrossa[0] = avg_vector_k[1]*avg_vector_i[2] - avg_vector_k[2]*avg_vector_i[1];
+        ccrossa[1] = avg_vector_k[2]*avg_vector_i[0] - avg_vector_k[0]*avg_vector_i[2];
+        ccrossa[2] = avg_vector_k[0]*avg_vector_i[1] - avg_vector_k[1]*avg_vector_i[0];
+        */                        
+        adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
+
+        float energy = (1./2.)*kappa*powf(adotbcrossc-1,2);
+        energies[tid] = energy;
+    }
+    }
+    ''', 'element_energy')
+
+scaled_spring_energy_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void spring_energy(const float* edges, const float* node_posns, float* energies, const int size_edges) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    //printf("entered the kernel");
+    if (tid < size_edges)
+    {
+        //printf("entered the if block");
+        //printf("spring tid = %i, size_springs = %i\n",tid,size_edges);  
+        int iid = edges[4*tid];
+        int jid = edges[4*tid+1];
+        float rij[3];
+        rij[0] = node_posns[3*iid]-node_posns[3*jid];
+        rij[1] = node_posns[3*iid+1]-node_posns[3*jid+1];
+        rij[2] = node_posns[3*iid+2]-node_posns[3*jid+2];
+
+        float mag = sqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+        float energy = (1./2.)*edges[4*tid+2]*powf(mag-edges[4*tid+3],2);
+        energies[tid] = energy;
+    }
+    }
+    ''', 'spring_energy')
+
+dipole_energy_kernel = cp.RawKernel(r'''
+float PI = 3.141592654f;
+extern "C" __global__
+void get_dipole_energy(const float* magnetic_moment, const float* Htot, const float* Hext, float* energies, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                
+        float mi[3];
+        mi[0] = magnetic_moment[3*tid];
+        mi[1] = magnetic_moment[3*tid+1];
+        mi[2] = magnetic_moment[3*tid+2];
+        float Bdip[3];
+        float mu0 = 4.*PI*1e-7;
+        Bdip[0] = mu0*(Htot[3*tid] - Hext[0]);
+        Bdip[1] = mu0*(Htot[3*tid+1] - Hext[1]);
+        Bdip[2] = mu0*(Htot[3*tid+2] - Hext[2]);
+        float energy = 0;
+
+        energy += -1.*mi[0]*Bdip[0];
+        energy += -1.*mi[1]*Bdip[1];
+        energy += -1.*mi[2]*Bdip[2];
+        
+        energies[tid] = energy;
+    }
+    }
+    ''', 'get_dipole_energy')
+
+
+wca_energy_kernel = cp.RawKernel(r'''
+float INV_4PI = 1/(4*3.141592654f);
+float SURFACE_TO_SURFACE_SPACING = 1e-7;
+extern "C" __global__
+void get_wca_energy(const float* separation_vectors, const float* separation_vectors_inv_magnitude, const float particle_radius, const float l_e, const float inv_l_e, float* energies, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                
+        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(1.5e-6,3)/72;
+        //printf("eps_constant = %f e-13\n",eps_constant*1e13);
+        float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING);
+        float cutoff_length = powf(2.f,(1.f/6.f))*sigma;
+        //printf("2^(1/6) = %f\n",powf(2.f,(1.f/6.f)));
+        int separation_vector_idx;
+        int inv_magnitude_idx;
+        float mu0_over_four_pi = 1e-7;
+        float rijmag;
+        float sigma_over_separation;
+        for (int j = 0; j < size_particles; j++)
+        {
+            if (tid != j)
+            {
+                separation_vector_idx = tid*3*size_particles+3*j;
+                inv_magnitude_idx = tid*size_particles + j;
+                //printf("tid = %i, j = %i, r_hat = %f, %f, %f\n",tid,j,r_hat[0],r_hat[1],r_hat[2]);
+                rijmag = norm3df(separation_vectors[separation_vector_idx],separation_vectors[separation_vector_idx+1],separation_vectors[separation_vector_idx+2])*l_e;
+                //printf("rij magnitude = %f e-6, cutoff_length = %f e-6\n",rijmag*1e6,cutoff_length*1e6);
+                if (rijmag <= cutoff_length)
+                {
+                    sigma_over_separation = sigma*separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e;
+                    energies[tid] += 4*eps_constant*(powf(sigma_over_separation,12) - powf(sigma_over_separation,6)) + eps_constant;
+                    //printf("inside WCA force calculation bit\ntid = %i, j = %i, wca_force = %f,%f,%f e-6\n",tid,j,force_temp_var*r_hat[0]*1e6,force_temp_var*r_hat[1]*1e6,force_temp_var*r_hat[2]*1e6);
+                }
+            }
+        }
+    }
+    }
+    ''', 'get_wca_energy')
+
+### Force calculation and distribution
+
 boundary_stress_kernel = cp.RawKernel(r'''
 extern "C" __global__
 void apply_boundary_stress(const int* boundary_node_idx, const int boundary_force_direction, const float force_magnitude, float* force, const int num_nodes) {
@@ -1640,6 +1838,8 @@ void beta_scaling(const float* beta_i, float* forces, const int num_nodes) {
     }
     ''', 'beta_scaling')
 
+### Integration Kernels
+
 leapfrog_velocity_kernel = cp.RawKernel(r'''
 extern "C" __global__
 void velocity_update(float* velocity, float* acceleration, float step_size, const int num_entries) {
@@ -1676,6 +1876,8 @@ void y_update(float* y, float* dy, const float step_size, const int num_entries)
     }
     }
     ''', 'y_update')
+
+### Magnetization and magnetic field kernels
 
 magnetization_kernel = cp.RawKernel(r'''
 extern "C" __global__                                    
@@ -1909,6 +2111,37 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
         cupy_stream.synchronize()
     host_magnetic_moments = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
     return host_magnetic_moments
+
+def get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    max_iters = 5
+    Htot_initial = cp.tile(Hext,particles.shape[0])
+    for i in range(max_iters):
+        Htot = cp.copy(Htot_initial)
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+    Htot = cp.copy(Htot_initial)
+    dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+    cupy_stream.synchronize()
+    return magnetic_moment, Htot
 
 def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
@@ -3284,10 +3517,14 @@ def simulate_scaled_gpu_leapfrog(posns,elements,particles,boundaries,dimensions,
     
     return sol, return_status#returning a solution object, that can then have it's attributes inspected
 
-def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False,starting_velocities=None,checkpoint_offset=0):
+def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False,starting_velocities=None,checkpoint_offset=0,sim_extend_flag=False):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
     #function to be called at every sucessful integration step to get the solution output
     hard_limit_max_integrations = 2*max_integrations
+    if max_integrations < 4:
+        minimum_integration_rounds = max_integrations
+    else:
+        minimum_integration_rounds = 4
     #getting the parent directory. split the output directory string by the backslash delimiter, find the length of the child directory name (the last or second to last string in the list returned by output_dir.split('/')), and use that to get a substring for the parent directory
     tmp_var = output_dir.split('/')
     if tmp_var[-1] == '':
@@ -3482,13 +3719,15 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             boundary_vel_comp_magnitude_avg = 0            
         if accel_comp_magnitude_avg < tolerance and vel_comp_magnitude_avg < tolerance and boundary_accel_comp_magnitude_avg < tolerance and boundary_vel_comp_magnitude_avg < tolerance:#a_norm_avg < tolerance and v_norm_avg < tolerance:
             print(f'Reached convergence criteria of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(accel_comp_magnitude_avg,decimals=6)}')
-            print(f'Reached convergence criteria of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            print(f'Reached convergence criteria of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(vel_comp_magnitude_avg,decimals=6)}\n')
             if host_stressed_nodes.shape[0] != 0 or host_moving_boundary_nodes.shape[0] != 0:
                 print(f'Reached convergence criteria for stressed boundary of average acceleration component magnitude < {tolerance}\n average acceleration component magnitude: {np.round(boundary_accel_comp_magnitude_avg,decimals=6)}')
-                print(f'Reached convergence criteria for stressed boundary of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}')
+                print(f'Reached convergence criteria for stressed boundary of average velocity component magnitude < {tolerance}\n average velocity component magnitude: {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}\n')
             # print(f'Reached convergence criteria of average acceleration norm < {tolerance}\n average acceleration norm: {np.round(a_norm_avg,decimals=6)}')
             # print(f'Reached convergence criteria of average velocity norm < {tolerance}\n average velocity norm: {np.round(v_norm_avg,decimals=6)}')
-            if previously_converged:
+            #2024-05-20 additional checks: if the field is low (1 Gauss, or 0 mT) and the boundary condition value is zero, the simulation can end early. Otherwise, a minimum number of integration rounds should have occurred. The solution vector difference norm should also be decreasing
+            print(f'snapshot solution vector difference norm and most recent change in value:{snapshot_soln_diff_norm[snapshot_count-2]}, {snapshot_soln_diff_norm[snapshot_count-2] - snapshot_soln_diff_norm[snapshot_count-3]}')
+            if (previously_converged and (i >= minimum_integration_rounds-1) and (snapshot_soln_diff_norm[snapshot_count-2] - snapshot_soln_diff_norm[snapshot_count-3]) <= 0) or ((np.isclose(np.linalg.norm(Hext*mu0),1e-4) or np.isclose(np.linalg.norm(Hext*mu0),0)) and boundary_conditions[2] == 0):
                 return_status = 0
                 print('Ending integration after reaching convergence criteria')
                 break
@@ -3499,10 +3738,11 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             return_status = -2
             break
         else:
+            previously_converged = False
             print(f'Post-Integration norms\nacceleration norm average = {np.round(a_norm_avg,decimals=6)}\nvelocity norm average = {np.round(v_norm_avg,decimals=6)}')
-            print(f'Post-Integration component magnitudes\nacceleration component magnitude average = {np.round(accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(vel_comp_magnitude_avg,decimals=6)}')
+            print(f'Post-Integration component magnitudes\nacceleration component magnitude average = {np.round(accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(vel_comp_magnitude_avg,decimals=6)}\n')
             if host_stressed_nodes.shape[0] != 0 or host_moving_boundary_nodes.shape[0] != 0:
-                print(f'Post-Integration component magnitudes on stressed boundary\nacceleration component magnitude average = {np.round(boundary_accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}')
+                print(f'Post-Integration component magnitudes on stressed boundary\nacceleration component magnitude average = {np.round(boundary_accel_comp_magnitude_avg,decimals=6)}\nvelocity component magnitude average = {np.round(boundary_vel_comp_magnitude_avg,decimals=6)}\n')
             # print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
