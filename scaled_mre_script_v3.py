@@ -1475,7 +1475,7 @@ def reinforce_particle_particle_spring(springs,particles):
 
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
-    youngs_modulus = [9e3]
+    youngs_modulus = [1e6]#[9e3]
     discretizations = [3]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]
     bc_directions = ((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
@@ -1499,7 +1499,7 @@ def batch_job_runner():
                                 if np.isclose(Hext_angle[0],np.pi/2) and bc_direction[0] == 'y':
                                     break
                                 parameters = dict({})
-                                parameters['max_integrations'] = 30
+                                parameters['max_integrations'] = 40
                                 # parameters['step_size'] = np.float32(0.01/2)
                                 parameters['max_integration_steps'] = integration_steps
                                 parameters['step_size'] = step_size
@@ -1513,18 +1513,20 @@ def batch_job_runner():
                                 parameters['poisson_ratio'] = poisson_ratio
                                 parameters['drag'] = 1#0#20
                                 parameters['discretization_order'] = discretization_order
-                                parameters['num_particles_along_axes'] = [5,5,5]#[2,1,1]#
+                                parameters['num_particles_along_axes'] = [5,5,5]#[8,8,8]#[2,1,1]#
                                 parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
                                 parameters['particle_placement'] = 'regular_noisy'#'regular'#'regular_anisotropic_noisy'#'regular_anisotropic'
                                 parameters['anisotropy_factor'] = np.array([0.8,1.0,1.0])
                                 parameters['anisotropy_factor'][1:] = 1/np.sqrt(parameters['anisotropy_factor'][0])
                                 parameters['particle_separation'] = 9e-6
+                                parameters['Hext_series'] = (1/mu0)*np.array([[1e-4,0,0],[1e-2,0,0],[2e-2,0,0],[3e-2,0,0],[5e-2,0,0],[8e-2,0,0],[1e-1,0,0],[1.2e-1,0,0],[1.4e-1,0,0],[1.5e-1,0,0],],dtype=np.float32)
                                 parameters['max_field'] = 0.15
                                 parameters['field_angle_theta'] = Hext_angle[0]
                                 parameters['field_angle_phi'] = Hext_angle[1]
                                 parameters['num_field_steps'] = 15
                                 if 'stress' in sim_type:
                                     parameters['boundary_condition_value_series'] = np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
+                                parameters['boundary_condition_value_series'] = np.concatenate((np.linspace(0,2e-4,5),np.linspace(4e-4,1e-3,4),np.array([2e-3,5e-3,1e-2,1.5e-2,2e-2,3e-2,4e-2])))
                                 parameters['boundary_condition_max_value'] = 0.0010
                                 parameters['num_boundary_condition_steps'] = 5
                                 parameters['boundary_condition_type'] = bc_type[i]
@@ -2234,12 +2236,12 @@ def run_hysteresis_sim(sim_variables_dict):#(output_dir,Hext_series,x0,elements,
         if not gpu_flag:
             end_result = sol
             x0 = np.reshape(end_result[:eq_posns.shape[0]*eq_posns.shape[1]],eq_posns.shape)
-            mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,np.array([delta]),output_dir)
+            mre.initialize.write_output_file(count,x0,Hext,boundary_conditions,delta,output_dir)
         else:
             final_posns = sol[:int(sol.shape[0]/2)]
             N_nodes = int(sol.shape[0]/6)
             final_posns = np.reshape(final_posns,(N_nodes,3))
-            mre.initialize.write_output_file(count,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
+            mre.initialize.write_output_file(count,final_posns,Hext,boundary_conditions,delta,output_dir)
             x0 = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
     return total_delta, return_status
 
@@ -2278,7 +2280,7 @@ def run_stress_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresse
             final_posns = np.reshape(final_posns,(N_nodes,3))
             print('took %.2f seconds to simulate' % delta)
             output_file_number = count*Hext_series.shape[0]+i
-            mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
+            mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,delta,output_dir)
             #if we have already run a particular simulation with zero stress/strain and at some field, use that as the starting point for the solution
             if Hext_series.shape[0] > 1 and (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*len(stresses)-1):
                 output_file_num_to_reuse = output_file_number-(Hext_series.shape[0]-1)
@@ -2320,7 +2322,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         #need to track total simulation time, so read in how long the other sims took
         for i in range(continuation_index):
             _, _, _, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
-            total_delta += sim_time
+            total_delta += sim_time[0]
         # find the correct subdirectory to load in the checkpoint file
         strain = strains[strain_start_index]
         Hext = Hext_series[field_start_index]
@@ -2365,21 +2367,40 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
             reuse_solution_flag = False
             starting_velocities = solution[3*N_nodes:]
             starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
-        total_delta = 0
-        num_output_files = mre.analyze.get_num_named_files(output_dir,'output')
-        #need to track total simulation time, so read in how long the other sims took
-        for i in range(num_output_files):
-            _, _, _, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
-            total_delta += sim_time
-            if i == strain_start_index*Hext_series.shape[0]+field_start_index:
-                extension_time_offset = sim_time
+        else:
+            raise NotImplementedError
     elif sim_rerun_flag:
         #if i am rerunning, i need to read in the appropriate output file. trying to enumerate the cases... assume that the entire simulation has "completed."
-        # 1) first sim step, which means using the initial system, and so not using any output files at all, just the init file, or the init file contents.
+        # 1) first sim step, which means using the initial system, and so not using any output files at all, just the init file, or the init file contents, except that would be, in most cases, 0 strain/stress and zero field. i suppose for future proofing, I might as well do this
         # 2) zero strain sim step, which means reading in the output from the prior magnetic field, but still at zero strain.
-        # 3) non-zero strain sim step, which means reading in the output from the same magnetic field, but the prior strain.
+        # 3) non-zero strain sim step, which means reading in the output from the same magnetic field, but the prior strain, and setting the correct eq_posns based on the correct reference configuration
         # these three cases should constitute all possibilities, but i will think on this to be sure
-        raise NotImplementedError
+        current_output_dir = sim_variables_dict['checkpoint_dir']
+        checkpoint_offset = 0
+        starting_velocities = None
+        solution, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint0.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        strain_start_index = np.nonzero(np.isclose(boundary_conditions[2],strains))[0][0]
+        field_start_index = np.nonzero(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Hext_series,axis=1)))[0][0]
+        output_file_number = strain_start_index*Hext_series.shape[0]+field_start_index
+        if output_file_number == 0:
+            eq_posns = x0.copy()
+            output_file_num_for_reference_configuration = 0
+            total_delta = 0
+            reuse_solution_flag = False
+        elif boundary_conditions[2] == 0:
+            eq_posns = x0.copy()
+            posns, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_number-1}.h5')
+            x0 = posns 
+            reuse_solution_flag = True
+        else:
+            output_file_num_for_reference_configuration = field_start_index
+            eq_posns, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_for_reference_configuration}.h5')
+            output_file_num_to_reuse = output_file_number-Hext_series.shape[0]
+            posns, output_file_Hext, _, _ = mre.initialize.read_output_file(output_dir+f'output_{output_file_num_to_reuse}.h5')
+            print(f'Rerunning simulation step {output_file_number} reusing previously calculated solution with B_ext = {np.round(mu0*output_file_Hext,decimals=4)}')
+            x0 = posns 
+            reuse_solution_flag = True
     else:
         strain_start_index = 0
         field_start_index = 0
@@ -2389,6 +2410,23 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         total_delta = 0
         reuse_solution_flag = False
         starting_velocities = None
+    if sim_extend_flag or sim_rerun_flag:
+        total_delta = 0
+        num_output_files = mre.analyze.get_num_named_files(output_dir,'output')
+        #need to track total simulation time, so read in how long the other sims took
+        for i in range(num_output_files):
+            _, _, _, sim_time = mre.initialize.read_output_file(output_dir+f'output_{i}.h5')
+            try:
+                total_delta += sim_time
+            except:
+                if sim_time.shape == (1,):
+                    total_delta += sim_time[0]
+                elif sim_time.shape == (1,1):
+                    total_delta += sim_time[0][0]
+                elif sim_time.shape == (1,1,1):
+                    total_delta += sim_time[0][0][0]
+            if i == strain_start_index*Hext_series.shape[0]+field_start_index and sim_extend_flag:
+                extension_time_offset = sim_time
     #2024-05-03 D Marchfield:if i am allowing the boundary to move as a whole when the strain is zero, how do i ensure i set the boundary position properly for non-zero strain, using the correct reference configuration?
     # output_file_num_for_reference_configuration = 0
     for count in range(strain_start_index,strains.shape[0]):#for count, strain in enumerate(strains):
@@ -2437,9 +2475,9 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
             final_posns = np.reshape(final_posns,(N_nodes,3))
             print('took %.2f seconds to simulate' % delta)
             output_file_number = count*Hext_series.shape[0]+i
-            mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,np.array([delta]),output_dir)
+            mre.initialize.write_output_file(output_file_number,final_posns,Hext,boundary_conditions,delta,output_dir)
             #if there was an extension, want to stop after the one step
-            if sim_extend_flag:
+            if sim_extend_flag or sim_rerun_flag:
                 return total_delta, return_status
             #if we have already run a particular simulation with zero (or non-zero) strain and at some field we have a configuration solution for, use that as the starting point for the next simulation
             if Hext_series.shape[0] > 1 and (output_file_number >= (Hext_series.shape[0]-1)) and (output_file_number < Hext_series.shape[0]*strains.shape[0]-1):
@@ -2544,43 +2582,9 @@ def apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,
 
 def run_test_sim(sim_variables_dict):#(output_dir,bc_type,bc_direction,stresses,Hext_series,x0,elements,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,particle_radius,particle_mass,chi,Ms,drag=10,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation applying a series of a particular type of stress/strain to the volume with a series of applied external magnetic fields for the purpose of testing new implementations of functions against old, accepted implementations. Works by passing the boundary condition type as a string (one of the following: tension, compression, shearing, torsion, or simple_stress_* where * is one of tension/compression/shearing), the stress/strain direction as a tuple of strings e.g. ('x','x') from the choice of ('x','y','z') for any non-torsion strains and ('CW','CCW') for torsion, the stress/strains as a list of floating point values (for compression, strain must not exceed 1.0 (100%), for torsion the value is an angle in radians, for shearing strain the value is an angle in radians and should not be equal to or exceed pi/2), the external magnetic field vector, initialized node positions, list of elements, particles, boundary nodes stored in a dictionary, scaled dimensions of the system, the list of springs, the additional bulk modulus kappa, the volume element edge length, the scaling coefficient beta, the node specific scaling coefficients beta_i, the total time to integrate in a single integration step, the particle radius in meters, the particle mass, the particle magnetic suscpetibility chi, the particle magnetization saturation Ms, the drag coefficient, the maximum number of integration runs per strain value, and the maximum number of integration steps within an integration run."""
-    output_dir = sim_variables_dict['output_dir']
-    x0 = sim_variables_dict['initial_posns']
+    output_dir, x0, bc_type, bc_direction, Hext_series, springs_var, elements, dimensions, boundaries, kappa, l_e, beta, beta_i, drag, particles, host_particles, particle_radius, particle_volume, particle_mass, chi, Ms, max_integrations, max_integration_steps, tolerance, gpu_flag, particle_rotation_flag, persistent_checkpointing_flag, plotting_flag, criteria_flag, step_size = unpack_sim_variables(sim_variables_dict)
 
-    Hext_series = sim_variables_dict['Hext_series']
     stresses = sim_variables_dict['stresses']
-
-    bc_type = sim_variables_dict['boundary_condition_type']
-    bc_direction = sim_variables_dict['boundary_condition_direction']
-
-    springs_var = sim_variables_dict['springs']
-    elements = sim_variables_dict['elements']
-    dimensions = sim_variables_dict['dimensions']
-    boundaries = sim_variables_dict['boundaries']
-    kappa = sim_variables_dict['kappa']
-    l_e = sim_variables_dict['element_length']
-    beta = sim_variables_dict['beta']
-    beta_i = sim_variables_dict['beta_i']
-    drag = sim_variables_dict['drag']
-
-    particles = sim_variables_dict['particles']
-    host_particles = sim_variables_dict['particles']
-    particles = cp.asarray(cp.reshape(host_particles,(host_particles.shape[0]*host_particles.shape[1],1)),dtype=cp.int32,order='C')
-    particle_radius = sim_variables_dict['particle_radius']
-    particle_volume = sim_variables_dict['particle_volume']
-    particle_mass = sim_variables_dict['particle_mass']
-    chi = sim_variables_dict['chi']
-    Ms = sim_variables_dict['Ms']
-
-    max_integrations = sim_variables_dict['max_integrations']
-    max_integration_steps = sim_variables_dict['max_integration_steps']
-    tolerance = sim_variables_dict['tolerance']
-
-    gpu_flag = sim_variables_dict['gpu_flag']
-    particle_rotation_flag = sim_variables_dict['particle_rotation_flag']
-    persistent_checkpointing_flag = sim_variables_dict['persistent_checkpointing_flag']
-    plotting_flag = sim_variables_dict['plotting_flag']
-    criteria_flag = sim_variables_dict['criteria_flag']
 
     if gpu_flag:
         step_size = sim_variables_dict['step_size']
@@ -2636,12 +2640,30 @@ if __name__ == "__main__":
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-07_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
     # continue_interrupted_sim(sim_dir)
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
-    sim_checkpoint_dir = ["/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/strain_0_strain_tension_0.0_field_9_Bext_[0.09 0.   0.  ]/"]
-    jumpstart_type = 'extend'
-    jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dir)
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-20_512_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_17-40_stepsize_5.e-3/"
+    # # sim_checkpoint_dir = [sim_dir+"strain_0_strain_tension_0.0_field_2_Bext_[0.05 0.   0.  ]/",sim_dir+"strain_0_strain_tension_0.0_field_3_Bext_[0.1 0.  0. ]/"]
+    # sim_checkpoint_dir = []
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-09_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-55_stepsize_5.e-3/"
+    # node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    # max_boundary_condition_value = 1e-3
+    # boundary_condition_value_step = max_boundary_condition_value/5
+    # strains = np.float32(boundary_condition_series)
+    # # strains = np.arange(0.0,max_boundary_condition_value*1.01,boundary_condition_value_step)
+    # strain_start_index = 1
+    # field_start_index = 7
+    # Bext_series = np.zeros((16,3),dtype=np.float32)
+    # for i in range(16):
+    #     Bext_series[i,0] = i*1e-2
+    # Hext_series = Bext_series/mu0
+    # for count in range(strain_start_index,strains.shape[0]):#for count, strain in enumerate(strains):
+    #     strain = strains[count]
+    #     for i in range(field_start_index,field_start_index+1):#Hext_series.shape[0]):#for i, Hext in enumerate(Hext_series):
+    #         Hext = Hext_series[i]
+    #         sim_checkpoint_dir.append(sim_dir + f'strain_{count}_strain_tension_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/')
+    # jumpstart_type = 'rerun'#'extend'#
+    # jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dir)
     # extend_sim(sim_dir,sim_checkpoint_dir)
-    # batch_job_runner()
+    batch_job_runner()
     # radius = 1.5e-6
     # l_e = 1e-6
     # dimensions = [10,10,10]
