@@ -151,7 +151,7 @@ def analysis_case1(sim_dir):
                         os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
 #   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
     surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
     surf_type = ('left','right','front','back','bottom','top')
@@ -176,7 +176,7 @@ def analysis_case1(sim_dir):
 #   figure with 2 subplots showing the stress-strain curve of the simulated volume and the effective modulus as a function of strain is generated and saved out
     subplot_stress_strain_modulus(stress,strains,strain_direction,effective_modulus,output_dir+'modulus/',tag="")
 #   in a loop, output files are read in and manipulated
-    for i in range(series.shape[0]):
+    for i in range(boundary_condition_series.shape[0]):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 #       node positions are scaled to SI units using l_e variable for visualization
@@ -186,19 +186,19 @@ def analysis_case1(sim_dir):
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_condition_series[i]}")
             except:
                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{series[i]}")
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"strain_{boundary_condition_series[i]}")
 #       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"3D_strain_{series[i]}")
+        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"3D_strain_{boundary_condition_series[i]}")
         # mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{series[i]}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"strain_{boundary_condition_series[i]}")
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{series[i]}")
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,boundary_conditions,output_dir+'cuts/center/',tag=f"strain_{boundary_condition_series[i]}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
 #       visualizations of cuts through the particle centers and edges are generated and saved out
@@ -222,13 +222,13 @@ def analysis_case1(sim_dir):
                 cut_type = 'xz'
             elif surface == 'top' or surface == 'bottom':
                 cut_type = 'xy'
-            tag = surface+'_surface_strain_' + f'{series[i]}_'
+            tag = surface+'_surface_strain_' + f'{boundary_condition_series[i]}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'nonlinearstrain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,surf_idx,output_dir+'stress/outer_surface/',tag=tag+'stress')
 #       stress and strain tensors are visualized for cuts through the center of the volume
         for cut_type,center_idx in zip(cut_types,center_indices):
-            tag = 'center_'  f'{series[i]}_'
+            tag = 'center_'  f'{boundary_condition_series[i]}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'nonlinearstrain')
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,center_idx,output_dir+'stress/center/',tag=tag+'stress')
@@ -237,7 +237,7 @@ def analysis_case1(sim_dir):
         if particles.shape[0] != 0:
             centers = np.zeros((particles.shape[0],3))
             for i, particle in enumerate(particles):
-                tag=f"particle{i+1}_edge_" + f'strain_{series[i]}_'
+                tag=f"particle{i+1}_edge_" + f'strain_{boundary_condition_series[i]}_'
                 centers[i,:] = simulate.get_particle_center(particle,initial_node_posns)
                 particle_node_posns = initial_node_posns[particle,:]
                 x_max = np.max(particle_node_posns[:,0])
@@ -255,7 +255,7 @@ def analysis_case1(sim_dir):
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,green_strain_tensor,int(layer_indices[1]),output_dir+'strain/particle/',tag='second'+tag+'nonlinearstrain')
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[0]),output_dir+'stress/particle/',tag=tag+'stress')
                     subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,stress_tensor,int(layer_indices[1]),output_dir+'stress/particle/',tag='second'+tag+'stress')
-            tag='particle_centers_'+ f'strain_{series[i]}_'
+            tag='particle_centers_'+ f'strain_{boundary_condition_series[i]}_'
             layers = (int((centers[0,2]+centers[1,2])/2),int((centers[0,1]+centers[1,1])/2),int((centers[0,0]+centers[1,0])/2))
             for cut_type,layer in zip(cut_types,layers):
                 subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,layer,output_dir+'strain/particle/',tag=tag+'strain')
@@ -291,7 +291,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
                         os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     if gpu_flag:
         initial_node_posns = np.float64(initial_node_posns)
         beta_i = np.float64(beta_i)
@@ -356,7 +356,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
         for i in np.arange(num_particles):
             temp_separations = particle_separations_matrix[output_file_count,i,:]
             cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
-            #if we know some particle clustering has ocdurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
+            #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
         cluster_counter /= 2
         if cluster_counter != 0:
             print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {bc_type} {bc_values[output_file_count]} the total number of clusters: {cluster_counter}')
@@ -573,6 +573,15 @@ def linear_fit_func(x,m,b):
     """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from stress-strain curves"""
     return m*x + b
 
+def quadratic_fit_func(x,a,b,c):
+    """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from energy density vs strain curves"""
+    # return a*x + c
+    return (1./2.)*a*np.power(x,2) + b*x + c
+
+def quadratic_no_linear_term_fit_func(x,a,c):
+    """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from energy density vs strain curves"""
+    return (1./2.)*a*np.power(x,2) + c
+
 def analysis_average_stress_strain(sim_dir,gpu_flag=False):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
@@ -593,7 +602,7 @@ def analysis_average_stress_strain(sim_dir,gpu_flag=False):
                         os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     if gpu_flag:
         initial_node_posns = np.float64(initial_node_posns)
         beta_i = np.float64(beta_i)
@@ -721,34 +730,33 @@ def main():
     print('main')
 
 def read_in_simulation_parameters(sim_dir):
-    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, series, series_descriptor = mre.initialize.read_init_file(sim_dir+'init.h5')
-
-    for i in range(len(params[0])):
+    initial_node_posns, node_mass, springs_var, elements, boundaries, particles, params, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    for i in range(len(params)):
         if params.dtype.descr[i][0] == 'num_elements':
-            num_elements = params[0][i]
+            num_elements = params[i]
             num_nodes = num_elements + 1
         if params.dtype.descr[i][0] == 'poisson_ratio':
-            nu = params[0][i]
+            nu = params[i]
         if params.dtype.descr[i][0] == 'young_modulus':
-            E = params[0][i]
+            E = params[i]
         if params.dtype.descr[i][0] == 'kappa':
-            kappa = params[0][i]
+            kappa = params[i]
         if params.dtype.descr[i][0] == 'scaling_factor':
-            beta = params[0][i]
+            beta = params[i]
         if params.dtype.descr[i][0] == 'element_length':
-            l_e = params[0][i]
+            l_e = params[i]
         if params.dtype.descr[i][0] == 'particle_mass':
-            particle_mass = params[0][i]
+            particle_mass = params[i]
         if params.dtype.descr[i][0] == 'particle_radius':
-            particle_radius = params[0][i]
+            particle_radius = params[i]
         if params.dtype.descr[i][0] == 'particle_Ms':
-            Ms = params[0][i]
+            Ms = params[i]
         if params.dtype.descr[i][0] == 'particle_chi':
-            chi = params[0][i]
+            chi = params[i]
         if params.dtype.descr[i][0] == 'drag':
-            drag = params[0][i]
+            drag = params[i]
         if params.dtype.descr[i][0] == 'characteristic_time':
-            characteristic_time = params[0][i]
+            characteristic_time = params[i]
 
     dimensions = (l_e*np.max(initial_node_posns[:,0]),l_e*np.max(initial_node_posns[:,1]),l_e*np.max(initial_node_posns[:,2]))
     beta_i = beta/node_mass
@@ -756,7 +764,7 @@ def read_in_simulation_parameters(sim_dir):
     k = mre.initialize.get_spring_constants(E, l_e)
     k = np.array(k)
 
-    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions
+    return initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions
 
 def format_boundary_conditions(boundary_conditions):
     boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
@@ -846,19 +854,19 @@ def get_field_dependent_effective_modulus_stress_sim(sim_dir):
 
 def get_strain_dependent_tension_compression_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
-    strains = series
-    n_strain_steps = len(series)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = boundary_condition_series
+    n_strain_steps = len(boundary_condition_series)
     stress = np.zeros((n_strain_steps,3))
     secondary_stress = np.zeros((n_strain_steps,3))
     effective_modulus = np.zeros((n_strain_steps,))
-    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+    for i in range(len(boundary_condition_series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         effective_modulus[i], stress[i], strains[i], secondary_stress[i] = get_tension_compression_modulus_v2(sim_dir,i,strain_direction,beta_i, springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
     return effective_modulus, stress, strains, secondary_stress
 
 def get_field_dependent_tension_compression_modulus(sim_dir,bc_direction,output_dir=None):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of applied field values."""
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     Hext_series = get_applied_field_series(sim_dir)
     Bext_series = mu0*Hext_series
     num_unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1)).shape[0]
@@ -1004,15 +1012,15 @@ def get_tension_compression_modulus_v2(sim_dir,output_file_number,bc_direction,b
 
 def get_tension_compression_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied."""
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
-    strains = series
-    n_strain_steps = len(series)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = boundary_condition_series
+    n_strain_steps = len(boundary_condition_series)
     stress = np.zeros((n_strain_steps,3))
     secondary_stress = np.zeros((n_strain_steps,3))
     effective_modulus = np.zeros((n_strain_steps,))
     force_component = {'x':0,'y':1,'z':2}
     y = np.zeros((6*total_num_nodes,))
-    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+    for i in range(len(boundary_condition_series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         Hext = applied_field
         y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
@@ -1043,19 +1051,19 @@ def get_tension_compression_modulus(sim_dir,strain_direction):
 
 def get_strain_dependent_shearing_modulus(sim_dir,strain_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of strain values."""
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
-    strains = series
-    n_strain_steps = len(series)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    strains = boundary_condition_series
+    n_strain_steps = len(boundary_condition_series)
     stress = np.zeros((n_strain_steps,3))
     secondary_stress = np.zeros((n_strain_steps,3))
     effective_modulus = np.zeros((n_strain_steps,))
-    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+    for i in range(len(boundary_condition_series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         effective_modulus[i], stress[i], strains[i], secondary_stress[i] = get_shearing_modulus_v2(sim_dir,i,strain_direction,beta_i, springs_var,elements,boundaries,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,dimensions)
     return effective_modulus, stress, strains, secondary_stress
 
 def get_field_dependent_shearing_modulus(sim_dir,bc_direction):
     """Calculate a tension/compression modulus (Young's modulus), considering the stress on both surfaces that would be necessary to achieve the strain applied for a series of applied field values."""
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     Hext_series = get_applied_field_series(sim_dir)
     Bext_series = mu0*Hext_series
     num_unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1)).shape[0]
@@ -1169,16 +1177,16 @@ def get_shearing_modulus_v2(sim_dir,output_file_number,bc_direction,beta_i,sprin
 def get_shearing_modulus(sim_dir,strain_direction):
     #TODO finish this function. shearing in different directions from the same surface is a different modulus (there is anisotropy, or should assume there is). use the direction of the shearing for title, labels, and save name for the figures generated (though that may not occur in this function)
     """Calculate a shear modulus, using the shear strain (shearing angle) and the force applied to the sheared surface in the shearing direction to get a shear stress."""
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     #nonlinear shear strains are defined as tangent of the angle opened up by the shearing. linear shear strain is the linear, small angle approximation of tan theta ~= theta
-    strains = np.tan(series)
-    n_strain_steps = len(series)
+    strains = np.tan(boundary_condition_series)
+    n_strain_steps = len(boundary_condition_series)
     stress = np.zeros((n_strain_steps,3))
     secondary_stress = np.zeros((n_strain_steps,3))
     effective_modulus = np.zeros((n_strain_steps,))
     force_component = {'x':0,'y':1,'z':2}
     y = np.zeros((6*total_num_nodes,))
-    for i in range(len(series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
+    for i in range(len(boundary_condition_series)):# should be for i in range(len(series)):, but i had incorrectly saved out the strain series magnitudes and instead saved a field series
         final_posns, applied_field, boundary_conditions, sim_time = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         Hext = applied_field
         y[:3*total_num_nodes] = np.reshape(final_posns,(3*total_num_nodes,))
@@ -1221,7 +1229,7 @@ def get_shearing_modulus(sim_dir,strain_direction):
 def get_torsion_modulus(sim_dir,strain_direction):
     #TODO Implement a calculation of a torsion modulus. May not be used in thesis, and so while the ability to do torsion strain simulations has been implemented, this may not be addressed
     """Calculate a torsion modulus, in analogy to the shearing modulus, where strain is defined by the twist angle. torsion forces don't quite make sense, so instead the correct calculation is the torque applied to the surface divided by the twist angle (or the derivative of torque wrt the twist angle)"""
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     if strain_direction[1] == 'CW':
         pass
     elif strain_direction[1] == 'CCW':
@@ -1998,6 +2006,127 @@ def plot_surface_node_force_vector(sim_dir,output_dir,file_number,initial_node_p
         plate_forces[global_index_interacting_nodes] = plate_force
         subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,plate_forces,index,output_dir+'modulus/',tag=f"probe_plate_force_series{i}")
 
+def get_zero_strain_reference_forces(sim_dir):
+    """Return the forces acting on the relevant boundary for each applied field value at zero strain."""
+    _, _, _, _, boundaries, _, _, field_series, _, _ = mre.initialize.read_init_file(sim_dir+'init.h5')
+
+    sim_variables_dict, _ = reinitialize_sim(sim_dir)
+
+    beta_i = sim_variables_dict['beta_i']
+    host_beta_i = cp.asnumpy(beta_i)
+    elements = sim_variables_dict['elements']
+    kappa = sim_variables_dict['kappa']
+    springs = sim_variables_dict['springs']
+    drag = sim_variables_dict['drag']
+    boundaries = sim_variables_dict['boundaries']
+
+    num_unique_fields = field_series.shape[0]
+    Bext_series = mu0*field_series
+
+    _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
+    boundary_conditions = format_boundary_conditions(boundary_conditions)
+    bc_direction = boundary_conditions[1]
+    if bc_direction[0] == 'x':
+        relevant_boundary = 'right'
+    elif bc_direction[0] == 'y':
+        relevant_boundary = 'back'
+    elif bc_direction[0] == 'z':
+        relevant_boundary = 'top'
+    num_boundary_nodes = boundaries[relevant_boundary].shape[0]
+    zero_strain_comparison_forces = np.zeros((num_unique_fields,num_boundary_nodes,3),dtype=np.float32)
+
+    for i in range(num_unique_fields):
+        final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        assert(np.isclose(np.linalg.norm(mu0*applied_field),np.linalg.norm(Bext_series[i])))
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        bc_direction = boundary_conditions[1]
+        if not np.isclose(boundary_conditions[2],0):
+            raise ValueError('Unexpected non-zero value for boundary condition while calculating comparison system configuration metric used to define strain or comparison force used to define stress')
+        final_posns, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+        velocities = cp.zeros(posns.shape,order='C',dtype=cp.float32)
+        N_nodes = int(posns.shape[0]/3)
+        accel = simulate.composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs,beta_i,drag)
+        accel = np.reshape(accel,(N_nodes,3))
+        zero_strain_comparison_forces[i] = -1*accel[boundaries[relevant_boundary]]/host_beta_i[boundaries[relevant_boundary]]
+    
+    return zero_strain_comparison_forces
+
+def plot_full_sim_surface_forces(sim_dir):
+    """Given the simulation directory, plot the required force vector components at each node on the strained surface to keep the surface fixed (for non-zero strain values)"""
+    host_initial_node_posns, mass, _, _, boundaries, _, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    sim_variables_dict, _ = reinitialize_sim(sim_dir)
+
+    l_e = sim_variables_dict['element_length']
+
+    num_output_files = get_num_output_files(sim_dir)
+
+    output_dir = sim_dir + 'figures/surface_forces/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+
+    zero_strain_comparison_forces = get_zero_strain_reference_forces(sim_dir)
+
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+
+        plot_surface_forces(output_dir,i,host_initial_node_posns,sim_variables_dict,final_posns,boundary_conditions,zero_strain_comparison_forces)
+
+def plot_surface_forces(output_dir,output_file_number,initial_node_posns,sim_variables_dict,final_posns,boundary_conditions,reference_forces):
+    """Calculate the forces acting on the "probed" boundary nodes and plot the force vector components and norm in a subplot."""
+    #TODO get the zero-strain value forces. plot both the total force values and the total minus reference (zero-strain) forces for non-zero strain simulations. separate figures for the two.
+    dimensions = sim_variables_dict['dimensions']
+    l_e = sim_variables_dict['element_length']
+    Lx = dimensions[0]/l_e
+    Ly = dimensions[0]/l_e
+    Lz = dimensions[0]/l_e
+    layers = (Lx,Ly,Lz)
+
+    beta_i = sim_variables_dict['beta_i']
+    host_beta_i = cp.asnumpy(beta_i)
+    elements = sim_variables_dict['elements']
+    kappa = sim_variables_dict['kappa']
+    springs = sim_variables_dict['springs']
+    drag = sim_variables_dict['drag']
+    boundaries = sim_variables_dict['boundaries']
+    bc_direction = boundary_conditions[1]
+
+    if bc_direction[0] == 'x':
+        #forces that must act on the boundaries for them to be in this position
+        relevant_boundaries = ('right','left')
+    elif bc_direction[0] == 'y':
+        relevant_boundaries = ('back','front')
+    elif bc_direction[0] == 'z':
+        relevant_boundaries = ('top','bot')
+
+    posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+    velocities = cp.zeros(posns.shape,order='C',dtype=cp.float32)
+    N_nodes = int(posns.shape[0]/3)
+    accel = simulate.composite_gpu_force_calc_v2(posns,velocities,N_nodes,elements,kappa,springs,beta_i,drag)
+    accel = np.reshape(accel,(N_nodes,3))
+    boundary_forces = -1*accel[boundaries[relevant_boundaries[0]]]/host_beta_i[boundaries[relevant_boundaries[0]]]
+    all_forces = np.zeros(accel.shape)
+    all_forces[boundaries[relevant_boundaries[0]]] = boundary_forces
+    
+    if boundary_conditions[1][0] == 'x':
+        index = int(np.round(Lx))
+        cut_type = 'yz'
+    elif boundary_conditions[1][0] == 'y':
+        index = int(np.round(Ly))
+        cut_type = 'xz'
+    elif boundary_conditions[1][0] == 'z':
+        index = int(np.round(Lz))
+        cut_type = 'xy'
+    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir,tag=f"strained_surface_forces_series{output_file_number}")
+
+    output_file_number_for_comparison = int(np.mod(output_file_number,reference_forces.shape[0]))
+    relative_boundary_forces = boundary_forces - reference_forces[output_file_number_for_comparison]
+    all_forces = np.zeros(accel.shape)
+    all_forces[boundaries[relevant_boundaries[0]]] = relative_boundary_forces
+    subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir,tag=f"strained_surface_relative_forces_series{output_file_number}")
+
 def time_step_comparison(dir_one,dir_two):
     with open(dir_one + 'timesteps.npy','rb') as data:
         delta_t_one = np.load(data)
@@ -2063,7 +2192,7 @@ def cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two):
             # plt.show()
 
 def get_per_step_acceleration_norms(sim_dir,subfolder,output_file_number):
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
     scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
     with open(sim_dir + subfolder + '/solutions.npy','rb') as data:
@@ -2099,7 +2228,7 @@ def get_per_step_acceleration_norms(sim_dir,subfolder,output_file_number):
     return acceleration_norm
 
 def compare_per_step_acceleration_vectors(sim_dir_one,sim_dir_two,subfolder,output_file_number):
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir_one)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir_one)
     particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
     scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
     with open(sim_dir_one + subfolder + '/solutions.npy','rb') as data:
@@ -2164,7 +2293,7 @@ def compare_per_step_solution_vectors(sim_dir_one,sim_dir_two,subfolder):
             print(f'mean solution component difference is:{np.mean(np.abs(solutions_difference))}')
 
 def compare_repeat_calculation_gpu_acceleration_vectors(sim_dir,subfolder,output_file_number):
-    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, series, _, dimensions = read_in_simulation_parameters(sim_dir)
+    _, beta_i, springs_var, elements, boundaries, particles, _, total_num_nodes, E, _, _, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, _, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     particle_moment_of_inertia = np.float32((2/5)*particle_mass*np.power(particle_radius,2))
     scaled_moment_of_inertia = np.float32(particle_moment_of_inertia/(particle_mass/particles.shape[1])/(np.power(l_e,2)))
     n_repititions = 10
@@ -2232,7 +2361,7 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
                         os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
 #   user provides directory containing simulation files, including init.h5, output_i.h5 files
 #   init.h5 is read in and simulation parameters are extracted
-    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, series, series_descriptor, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
     if gpu_flag:
         initial_node_posns = np.float64(initial_node_posns)
         beta_i = np.float64(beta_i)
@@ -2305,6 +2434,347 @@ def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     mre.analyze.format_figure(ax)
     plt.savefig(savename)
     plt.close()
+
+def plot_particles_scatter_sim(sim_dir):
+    """Makes 3D scatter plots of the particle nodes for each field + bc combo step output file."""
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    if not (os.path.isdir(output_dir+'particle_behavior/')):
+        os.mkdir(output_dir+'particle_behavior/')
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+
+def get_energies(sim_dir):
+    """For the configurations in the output files, calculate the different energies, and the total energy."""
+    # initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    sim_variables_dict, _ = reinitialize_sim(sim_dir)
+    elements = sim_variables_dict['elements']
+    kappa = sim_variables_dict['kappa']
+    springs = sim_variables_dict['springs']
+
+    particles = sim_variables_dict['particles']
+    num_particles = particles.shape[0]
+    Ms = sim_variables_dict['Ms']
+    chi = sim_variables_dict['chi']
+    particle_volume = sim_variables_dict['particle_volume']
+
+    l_e = sim_variables_dict['element_length']
+
+    num_output_files = get_num_output_files(sim_dir)
+    total_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    spring_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    element_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    dipole_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    wca_energy = np.zeros((num_output_files,1),dtype=np.float32)
+
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+
+        particle_posns = simulate.get_particle_posns(particles,final_posns)
+        particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
+        total_energy[i], spring_energy[i], element_energy[i], dipole_energy[i], wca_energy[i] = composite_gpu_energy_calc(device_posns,elements,kappa,springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e)
+    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy
+
+def plot_energy_figures(sim_dir):
+    """Given the energies, plot them versus the applied strains and external fields, etc."""
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    if not (os.path.isdir(output_dir+'energy/')):
+        os.mkdir(output_dir+'energy/')
+    fig_output_dir = output_dir + 'energy/'
+    node_posns, _, _, _, _, _, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    l_e = parameters[7]
+    dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+    total_sim_volume = dimensions[0]*dimensions[1]*dimensions[2]
+    if 'stress' in sim_type:
+        xlabel = 'stress (Pa)'
+        xscale_factor = 1
+    elif 'strain' in sim_type:
+        xlabel = 'strain (%)'
+        xscale_factor = 100
+    elif 'hysteresis' in sim_type:
+        pass
+
+    total_energy, spring_energy, element_energy, dipole_energy, wca_energy = get_energies(sim_dir)
+
+    num_output_files = get_num_output_files(sim_dir)
+    applied_field = np.zeros((num_output_files,3),dtype=np.float32)
+    applied_bc = np.zeros((num_output_files,),dtype=np.float32)
+    for i in range(num_output_files):
+        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        applied_field[i] = Hext*mu0
+        applied_bc[i] = boundary_conditions[2]
+    applied_bc *= xscale_factor
+    #which figures do i want? I want plots of the total energy, and the individual energies as a function of the boundary condition value, with each line representing a different applied field. I may also want the inverse, (each line a different strain), and I may also want to plot different energies separately, but lets just start
+    Bext_magnitude = np.linalg.norm(applied_field,axis=1)
+    unique_field_values = np.unique(Bext_magnitude)
+    energy_density_fit_modulus = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_fit_modulus = np.zeros((unique_field_values.shape[0],))
+    energy_density_fit_error = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_fit_error = np.zeros((unique_field_values.shape[0],))
+    energy_density_fit_linear_term = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_fit_linear_term = np.zeros((unique_field_values.shape[0],))
+    energy_density_fit_linear_term_error = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_fit_linear_term_error = np.zeros((unique_field_values.shape[0],))
+    for i, unique_value in enumerate(unique_field_values):
+        fig, axs = plt.subplots(2,3)
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_dpi(200)
+        relevant_indices = np.isclose(unique_value,np.linalg.norm(applied_field,axis=1))
+        plotting_total_energy = total_energy[relevant_indices]
+        plotting_spring_energy = spring_energy[relevant_indices]
+        plotting_element_energy = element_energy[relevant_indices]
+        plotting_dipole_energy = dipole_energy[relevant_indices]
+        plotting_wca_energy = wca_energy[relevant_indices]
+        plotting_bc = applied_bc[relevant_indices]
+        axs[0,0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
+        axs[0,1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
+        axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='d',linestyle='-',label=f'WCA: {np.round(unique_value*1000)} (mT)')
+        axs[1,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element: {np.round(unique_value*1000)} (mT)')
+        axs[1,1].plot(plotting_bc,plotting_spring_energy,marker='x',linestyle='-',label=f'Spring: {np.round(unique_value*1000)} (mT)')
+        axs[1,2].plot(plotting_bc,plotting_dipole_energy,marker='v',linestyle='-',label=f'Dipole: {np.round(unique_value*1000)} (mT)')
+        axs[0,0].set_title('System Energy')
+        axs[0,0].set_ylabel('Energy (J)')
+        format_figure(axs[0,0])
+        axs[1,0].set_xlabel(xlabel)
+        axs[1,1].set_xlabel(xlabel)
+        axs[1,2].set_xlabel(xlabel)
+        axs[1,0].set_ylabel('Energy (J)')
+        format_figure(axs[0,1])
+        format_figure(axs[1,0])
+        format_figure(axs[1,1])
+        # plt.show()
+        # fig.tight_layout()
+        fig.legend()
+        modulus_fit_guess = 9e3
+        energy_density = np.ravel(plotting_total_energy)/total_sim_volume
+        energy_plus_wca_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices])/total_sim_volume
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0,0]))
+        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0]))
+        energy_density_fit_modulus[i] = popt[0]
+        energy_density_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        # energy_density_fit_linear_term[i] = popt[1]
+        # energy_density_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
+        axs[0,0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        plt.annotate(f'modulus from fit: {energy_density_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc[1:]/xscale_factor,energy_plus_wca_density[1:],p0=np.array([modulus_fit_guess,0,0]))
+        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_density,p0=np.array([modulus_fit_guess,0]))
+        energy_density_plus_wca_fit_modulus[i] = popt[0]
+        energy_density_plus_wca_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        # energy_density_plus_wca_fit_linear_term[i] = popt[1]
+        # energy_density_plus_wca_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
+        plt.annotate(f'modulus from fit to total with WCA: {energy_density_plus_wca_fit_modulus[i]}',xy=(1500,10),xycoords='figure pixels')
+        axs[0,1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        savename = fig_output_dir + f'all_energies_{np.round(unique_value*1000)}_mT.png'
+        plt.savefig(savename)
+        plt.close()
+    fig, ax = plt.subplots()
+    ax.errorbar(unique_field_values*1000,energy_density_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
+    ax.set_xlabel(f'Applied Field (mT)')
+    ax.set_ylabel(f'Modulus (Pa)')
+    plt.annotate(f'modulus minimum: {np.min(energy_density_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
+    savename = fig_output_dir + 'energy_density_fit_modulus.png'
+    plt.savefig(savename)
+    plt.close()
+
+    # fig, ax = plt.subplots()
+    # ax.errorbar(unique_field_values*1000,energy_density_fit_linear_term,linestyle='-',marker='o',yerr=energy_density_fit_linear_term_error)
+    # ax.set_xlabel(f'Applied Field (mT)')
+    # ax.set_ylabel(f'Modulus (Pa)')
+    # savename = fig_output_dir + 'energy_density_fit_linear_term.png'
+    # plt.savefig(savename)
+    # plt.close()
+
+    fig, ax = plt.subplots()
+    ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
+    ax.set_xlabel(f'Applied Field (mT)')
+    ax.set_ylabel(f'Modulus (Pa)')
+    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
+    savename = fig_output_dir + 'energy_plus_wca_density_fit_modulus.png'
+    plt.savefig(savename)
+    plt.close()
+
+    # fig, ax = plt.subplots()
+    # ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_linear_term,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_linear_term_error)
+    # ax.set_xlabel(f'Applied Field (mT)')
+    # ax.set_ylabel(f'Modulus (Pa)')
+    # savename = fig_output_dir + 'energy_plus_wca_density_fit_linear_term.png'
+    # plt.savefig(savename)
+    # plt.close()
+
+
+def reinitialize_sim(sim_dir):
+    #first figure out the simulation type
+    node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    # figure out the field sequence and stress/strain sequence if necessary
+    # figure out where things were interrupted
+    num_output_files = mre.analyze.get_num_output_files(sim_dir)
+    continuation_index = num_output_files
+
+    #extract argument values from the parameters variable
+    young_modulus = parameters[1]
+    poisson_ratio = parameters[2]
+    anisotropy_factor = parameters[3]
+    spring_stiffness = parameters[4]
+    kappa = parameters[5]
+    drag = parameters[6]
+    l_e = parameters[7]
+    Ms = parameters[9]
+    chi = parameters[10]
+    particle_radius = parameters[11]
+    particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+    particle_mass = parameters[12]
+    max_integration_rounds = parameters[13]
+    max_integration_steps = parameters[14]
+    time_step = parameters[15]
+    tolerance = parameters[16]
+    beta = parameters[17]
+    beta_i = beta/mass
+    characteristic_mass = parameters[18]
+    characteristic_time = parameters[19]
+    dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+    Hext_series = field_series
+
+    _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
+    boundary_condition = format_boundary_conditions(boundary_condition)
+    print(boundary_condition)
+    bc_direction = boundary_condition[1]
+
+    # convert all the necessary variables to the appropriate types (32 bit floats, or integers) and move necessary variables to gpu memory
+    #this requires reading in the variables from the parameters variable, and repacking the sim_variables_dict
+    x0 = cp.array(node_posns.astype(np.float32)).reshape((node_posns.shape[0]*node_posns.shape[1],1),order='C')
+    beta_i = cp.array(beta_i.astype(np.float32)).reshape((beta_i.shape[0],1),order='C')
+    beta = np.float32(beta)
+    drag = np.float32(drag)
+    if 'stress' in sim_type:
+        stresses = np.float32(boundary_condition_series)
+    if 'strain' in sim_type:
+        strains = np.float32(boundary_condition_series)
+    Hext_series = np.float32(Hext_series)
+    particles = np.int32(particles)
+    for key in boundaries:
+        boundaries[key] = np.int32(boundaries[key])
+    dimensions = np.float32(dimensions)
+    kappa = cp.float32(kappa*(l_e**2))
+    l_e = np.float32(l_e)
+    particle_radius = np.float32(particle_radius)
+    particle_volume = np.float32(particle_volume)
+    particle_mass = np.float32(particle_mass)
+    chi = np.float32(chi)
+    Ms = np.float32(Ms)
+    elements = cp.array(elements.astype(np.int32)).reshape((elements.shape[0]*elements.shape[1],1),order='C')
+    springs_var = cp.array(springs_var.astype(np.float32)).reshape((springs_var.shape[0]*springs_var.shape[1],1),order='C')
+    step_size = cp.float32(time_step)#cp.float32(0.01)
+
+    #pack into sim_variables_dict for passing to the run_*_sim() function. those functions need flags for knowing if a simulation is being continued or extended
+    sim_variables_dict = dict({})
+    sim_variables_dict['output_dir'] = sim_dir
+    sim_variables_dict['initial_posns'] = x0
+
+    sim_variables_dict['Hext_series'] = Hext_series
+
+    sim_variables_dict['springs'] = springs_var
+    sim_variables_dict['elements'] = elements
+    sim_variables_dict['dimensions'] = dimensions
+    sim_variables_dict['boundaries'] = boundaries
+    sim_variables_dict['kappa'] = kappa
+    sim_variables_dict['element_length'] = l_e
+    sim_variables_dict['beta'] = beta
+    sim_variables_dict['beta_i'] = beta_i
+    sim_variables_dict['drag'] = drag
+
+    sim_variables_dict['particles'] = particles
+    sim_variables_dict['particle_radius'] = particle_radius
+    sim_variables_dict['particle_volume'] = particle_volume
+    sim_variables_dict['particle_mass'] = particle_mass
+    sim_variables_dict['chi'] = chi
+    sim_variables_dict['Ms'] = Ms
+
+    if 'strain' in sim_type:
+        sim_variables_dict['strains'] = strains
+    elif 'stress' in sim_type:
+        sim_variables_dict['stresses'] = stresses
+
+    sim_variables_dict['boundary_condition_type'] = sim_type
+    sim_variables_dict['boundary_condition_direction'] = bc_direction
+
+    sim_variables_dict['max_integrations'] = max_integration_rounds
+    sim_variables_dict['max_integration_steps'] = max_integration_steps
+    sim_variables_dict['tolerance'] = tolerance
+    sim_variables_dict['step_size'] = step_size
+
+    sim_variables_dict['gpu_flag'] = True 
+    sim_variables_dict['particle_rotation_flag'] = True
+    sim_variables_dict['persistent_checkpointing_flag'] = True
+    sim_variables_dict['plotting_flag'] = False
+    sim_variables_dict['criteria_flag'] = False
+
+    sim_variables_dict['continuation_index'] = continuation_index
+
+    my_sim = mre.initialize.Simulation(young_modulus,poisson_ratio,kappa,spring_stiffness,drag,l_e,dimensions[0],dimensions[1],dimensions[2],particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integration_rounds,max_integration_steps,step_size,tolerance,anisotropy_factor)
+
+    return sim_variables_dict, my_sim
+
+def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e):
+    """Combining gpu kernels to calculate different energies"""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_elements = int(cupy_elements.shape[0]/8)
+    block_size = 128
+    element_grid_size = (int (np.ceil((int (np.ceil(size_elements/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    element_energies = cp.zeros((size_elements,1),dtype=cp.float32)
+    simulate.scaled_element_energy_kernel((element_grid_size,),(block_size,),(cupy_elements,posns,kappa,element_energies,size_elements))
+    cupy_stream.synchronize()
+
+    size_springs = int(cupy_springs.shape[0]/4)
+    spring_grid_size = (int (np.ceil((int (np.ceil(size_springs/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    spring_energies = cp.zeros((size_springs,1),dtype=cp.float32)
+
+    simulate.scaled_spring_energy_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,spring_energies,size_springs))
+    cupy_stream.synchronize()
+
+    magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
+    dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    dipole_energies = cp.zeros((num_particles,1),dtype=cp.float32)
+    Hext = cp.array(Hext,dtype=cp.float32,order='C')
+    simulate.dipole_energy_kernel((dipole_grid_size,),(block_size,),(magnetic_moments,Htot,Hext,dipole_energies,num_particles))
+    cupy_stream.synchronize()
+
+    #get separation vectors for wca energy
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    simulate.separation_vectors_kernel((dipole_grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+    cupy_stream.synchronize()
+
+    wca_energies = cp.zeros((num_particles,1),dtype=cp.float32)
+    particle_radius = np.float32(np.power((3./4)*(1/np.pi)*particle_volume,1/3))
+    inv_l_e = np.float32(1/l_e)
+    simulate.wca_energy_kernel((dipole_grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,particle_radius,l_e,inv_l_e,wca_energies,num_particles))
+    cupy_stream.synchronize()
+
+    #sum energies, and scale back to SI units as necessary
+    element_energy = cp.asnumpy(cp.sum(element_energies,0))
+    element_energy *= l_e#multiply by l_e^3, the volume of the undeformed unit cell, and divide by l_e^2 to rescale the constant kappa#np.power(l_e,3)/np.power(l_e,2)
+
+    spring_energy = cp.asnumpy(cp.sum(spring_energies,0))
+    spring_energy *= l_e
+
+    #factor of two because we count the interaction of each dipole with each other dipole, which results in a double counting of the interaction energy for each pair
+    dipole_energy = cp.asnumpy(cp.sum(dipole_energies,0))/2
+
+    wca_energy = cp.asnumpy(cp.sum(wca_energies,0))/2
+
+    total_energy = element_energy + spring_energy + dipole_energy
+    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy
 
 if __name__ == "__main__":
     main()
@@ -2580,6 +3050,49 @@ if __name__ == "__main__":
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
-    #125 particles, regular, field along x, tension along x, strain bc
+    #125 particles, regular, field along z, tension along x, strain bc
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular noisy, field along x, tension along x, strain bc
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-01_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-53_stepsize_5.e-3/"
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #2 particles along x, field along x, tension along x, strain bc with boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #2 particles along x, field along z, tension along x, strain bc with boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular, field along z, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-07_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-09_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-55_stepsize_5.e-3/"
+    # plot_full_sim_surface_forces(sim_dir)
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular noisy, field along z, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    #both smaller and larger strains, for exploring fitting to energy density vs strain for effective modulus vs field analysis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
+    # plot_full_sim_surface_forces(sim_dir)
+    plot_energy_figures(sim_dir)
     analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+    print('Exiting')
