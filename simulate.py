@@ -2623,7 +2623,7 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
     #if the strain is zero, allow the boundary to move as a unit
     if size_strained_boundary != 0:
         net_force = cp.asarray([cp.sum(cp.take(cupy_composite_forces,3*moving_boundary)),cp.sum(cp.take(cupy_composite_forces,3*moving_boundary+1)),cp.sum(cp.take(cupy_composite_forces,3*moving_boundary+2))],dtype=cp.float32,order='C')
-        individual_force = cp_net_force/size_strained_boundary
+        individual_force = net_force/size_strained_boundary
         # host_forces = cp.asnumpy(cupy_composite_forces).reshape((int(N_nodes),3))
         # net_force = np.sum(host_forces[host_moving_boundary],axis=0)
         # individual_force = cp.asarray(net_force/size_strained_boundary,dtype=cp.float32,order='C')

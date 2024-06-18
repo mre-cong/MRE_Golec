@@ -147,12 +147,19 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
     v2 = np.array([0,1,0])*basis_vec_len
     v3 = np.array([0,0,1])*basis_vec_len
     voxel_diameter = np.max(grid_points) + 1
+    if voxel_diameter == 1:
+        raise NotImplementedError#if the diameter is 1, i only have the 8 nodes, but i do need to deal with the way np.unique will sort the values
+    else:#I need to find the center point of the grid, which is voxels, not nodes, so if i know the diameter, i know the midpoint
+        middle_voxel_grid_point = np.floor(voxel_diameter/2)
+        middle_voxel = np.array([middle_voxel_grid_point,middle_voxel_grid_point,middle_voxel_grid_point])
     # print(f'maximum and minimum x grid point:{np.max(grid_points[:,0])}, {np.min(grid_points[:,0])}')
     # print(f'maximum and minimum y grid point:{np.max(grid_points[:,1])}, {np.min(grid_points[:,1])}')
     # print(f'maximum and minimum z grid point:{np.max(grid_points[:,2])}, {np.min(grid_points[:,2])}')
     adjusted_translation = translation - (voxel_diameter-1)/2
     nodes = np.zeros((1,3))
-    for point in grid_points:
+    for voxel_count, point in enumerate(grid_points):
+        if np.allclose(middle_voxel,point):
+            middle_voxel_count = voxel_count
         center = (np.array([point[0], point[1], point[2]])*l_e) + adjusted_translation #+ basis_vec_len
         # center = np.array([point[0]*l_e, point[1]*l_e, point[2]*l_e])
         node0 = center + v1 + v2 + v3
@@ -166,6 +173,20 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
         points = np.vstack((node0[np.newaxis,:],node1[np.newaxis,:],node2[np.newaxis,:],node3[np.newaxis,:],node4[np.newaxis,:],node5[np.newaxis,:],node6[np.newaxis,:],node7[np.newaxis,:]))
         nodes = np.concatenate((nodes,points))
     unique_nodes = np.unique(nodes[1:,:],axis=0)
+    #I have no idea which of the grid_points will be the center, but that is what i need to find and grab
+    # found using middle_voxel_count and the voxel diameter
+    center_nodes = nodes[8*middle_voxel_count+1:8*middle_voxel_count+9,:]
+    for count, point in enumerate(center_nodes):
+        #now i need to find the rows corresponding to the center voxel nodes and swap them so that they make up the first 8 rows of the returned array
+        x_bool_array = np.isclose(point[0],unique_nodes[:,0])
+        y_bool_array = np.isclose(point[1],unique_nodes[:,1])
+        z_bool_array = np.isclose(point[2],unique_nodes[:,2])
+        row_vector_match = np.logical_and(np.logical_and(x_bool_array,y_bool_array),z_bool_array)
+        row_index = np.nonzero(row_vector_match)
+        desired_row_val = unique_nodes[row_index,:]
+        tmp_val = unique_nodes[count,:]
+        unique_nodes[count,:] = desired_row_val
+        unique_nodes[row_index,:] = tmp_val
     # fig = plt.figure()
     # ax = plt.axes(projection='3d')
     # ax.scatter3D(*np.transpose(unique_nodes))
