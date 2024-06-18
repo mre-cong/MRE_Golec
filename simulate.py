@@ -1905,6 +1905,17 @@ void get_magnetization(const float Ms, const float chi, const float particle_vol
     }
     ''', 'get_magnetization')
 
+particle_positions_kernel = cp.RawKernel(r'''
+extern "C" __global__                                         
+void get_particle_posns(const float* node_posns, float* particle_posns, const int* particle_nodes, nodes_per_particle, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                                           
+
+    }
+    }
+    ''', 'get_particle_posns')
+
 separation_vectors_kernel = cp.RawKernel(r'''
 extern "C" __global__                                         
 void get_separation_vectors(const float* particle_posns, float* separation_vectors, float* separation_vectors_inv_magnitude, const int size_particles) {
@@ -2611,9 +2622,17 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
     size_strained_boundary = moving_boundary.shape[0]
     #if the strain is zero, allow the boundary to move as a unit
     if size_strained_boundary != 0:
-        host_forces = cp.asnumpy(cupy_composite_forces).reshape((int(N_nodes),3))
-        net_force = np.sum(host_forces[host_moving_boundary],axis=0)
-        individual_force = cp.asarray(net_force/size_strained_boundary,dtype=cp.float32,order='C')
+        net_force = cp.asarray([cp.sum(cp.take(cupy_composite_forces,3*moving_boundary)),cp.sum(cp.take(cupy_composite_forces,3*moving_boundary+1)),cp.sum(cp.take(cupy_composite_forces,3*moving_boundary+2))],dtype=cp.float32,order='C')
+        individual_force = cp_net_force/size_strained_boundary
+        # host_forces = cp.asnumpy(cupy_composite_forces).reshape((int(N_nodes),3))
+        # net_force = np.sum(host_forces[host_moving_boundary],axis=0)
+        # individual_force = cp.asarray(net_force/size_strained_boundary,dtype=cp.float32,order='C')
+        
+        # net_force_agreement_check = np.allclose(cp.asnumpy(cp_net_force),net_force)
+        # # print(f'Do the net forces agree?:{net_force_agreement_check}')
+        # if not net_force_agreement_check:
+        #     print(f'Forces did not agree, begin debugging!')
+
         strained_boundary_grid_size = (int (np.ceil((int (np.ceil(size_strained_boundary/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
         strained_boundary_kernel((strained_boundary_grid_size,),(block_size,),(moving_boundary,cupy_composite_forces,individual_force,size_strained_boundary))
         cupy_stream.synchronize()
