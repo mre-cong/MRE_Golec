@@ -182,9 +182,9 @@ def get_nodes_from_grid_voxels(grid_points,l_e,translation):
         y_bool_array = np.isclose(point[1],unique_nodes[:,1])
         z_bool_array = np.isclose(point[2],unique_nodes[:,2])
         row_vector_match = np.logical_and(np.logical_and(x_bool_array,y_bool_array),z_bool_array)
-        row_index = np.nonzero(row_vector_match)
-        desired_row_val = unique_nodes[row_index,:]
-        tmp_val = unique_nodes[count,:]
+        row_index = np.nonzero(row_vector_match)[0]
+        desired_row_val = np.copy(unique_nodes[row_index,:],order='C')
+        tmp_val = np.copy(unique_nodes[count,:],order='C')
         unique_nodes[count,:] = desired_row_val
         unique_nodes[row_index,:] = tmp_val
     # fig = plt.figure()
