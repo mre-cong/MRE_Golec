@@ -808,9 +808,9 @@ def get_field_dependent_effective_modulus(sim_dir):
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     strain_type = boundary_conditions[0]
     strain_direction = boundary_conditions[1]
-    if strain_type == 'tension' or strain_type == 'compression' or strain_type == 'plate_compression' or strain_type == 'plate_compre' or 'tension' in strain_type:
+    if strain_type == 'tension' or strain_type == 'compression' or strain_type == 'plate_compression' or strain_type == 'plate_compre' or 'tension' in strain_type or 'compression' in strain_type:
         effective_modulus, stress, strain, Bext_series = get_field_dependent_tension_compression_modulus(sim_dir,strain_direction)
-    elif strain_type == 'shearing':
+    elif strain_type == 'shearing' or 'shearing' in strain_type:
         effective_modulus, stress, strain, Bext_series = get_field_dependent_shearing_modulus(sim_dir,strain_direction)
     elif strain_type == 'torsion':
         get_torsion_modulus(sim_dir,strain_direction)
@@ -1074,7 +1074,7 @@ def get_field_dependent_shearing_modulus(sim_dir,bc_direction):
     zero_stress_comparison_values = np.zeros((num_unique_fields,2))
     for i in range(num_unique_fields):
         final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-        assert(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Bext_series[i])))
+        assert(np.isclose(np.linalg.norm(applied_field*mu0),np.linalg.norm(Bext_series[i])))
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         coordinate_index = [0,0]
         if not np.isclose(boundary_conditions[2],0):
@@ -2512,6 +2512,8 @@ def plot_energy_figures(sim_dir):
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         applied_field[i] = Hext*mu0
         applied_bc[i] = boundary_conditions[2]
+    # if 'shearing' in sim_type and 'strain' in sim_type:
+    #     applied_bc = np.tan(applied_bc)
     applied_bc *= xscale_factor
     #which figures do i want? I want plots of the total energy, and the individual energies as a function of the boundary condition value, with each line representing a different applied field. I may also want the inverse, (each line a different strain), and I may also want to plot different energies separately, but lets just start
     Bext_magnitude = np.linalg.norm(applied_field,axis=1)
@@ -2775,6 +2777,177 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     total_energy = element_energy + spring_energy + dipole_energy
     return total_energy, spring_energy, element_energy, dipole_energy, wca_energy
+
+def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
+    """Given the folder containing simulation output, generate figures of the outer surfaces and cuts through the center from each output file."""
+    #   if a directory to save the visualizations doesn't exist, make it
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    figure_types = ['particle_behavior','cuts','outer_surfaces']
+    figure_subtypes = ['center','particle', 'outer_surface']
+    for figure_type in figure_types:
+        if not (os.path.isdir(output_dir+figure_type+'/')):
+          os.mkdir(output_dir+figure_type+'/')
+        if figure_type == 'stress' or figure_type =='strain' or figure_type == 'cuts':
+            for figure_subtype in figure_subtypes:
+                if not (figure_type == 'cuts' and figure_subtype == 'outer_surface'):
+                    if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                        os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
+#   user provides directory containing simulation files, including init.h5, output_i.h5 files
+#   init.h5 is read in and simulation parameters are extracted
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    if gpu_flag:
+        initial_node_posns = np.float64(initial_node_posns)
+        beta_i = np.float64(beta_i)
+        springs_var = np.float64(springs_var)
+        kappa = np.float64(kappa)
+        beta = np.float64(beta)
+        l_e = np.float64(l_e)
+        particle_mass = np.float64(particle_mass)
+        particle_radius = np.float64(particle_radius)
+        Ms = np.float64(Ms)
+        chi = np.float64(chi)
+#   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
+    surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
+    surf_type = ('left','right','front','back','bottom','top')
+#   find indices corresponding to the "center" of the simulated volume for plotting and visualization, corresponding to cut_types values
+    center_indices = (int((num_nodes[2]-1)/2),int((num_nodes[1]-1)/2),int((num_nodes[0]-1)/2))
+#   lambda and mu (Lame parameters) are calculated from Young's modulus and Poisson's ratio variables from the init.h5 file
+    #see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
+
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+    #get the particle separations and overall magnetizations and plot them
+    plot_particle_behavior_flag = True
+    if plot_particle_behavior_flag and particles.shape[0] != 0:
+        particle_separations = plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
+        num_particles = particles.shape[0]
+        clustering_distance = 4
+        particle_separations *= l_e*1e6
+        particle_separations_matrix = np.zeros((num_output_files,num_particles,num_particles))
+        for output_file_count in np.arange(num_output_files):
+            counter = 0
+            for i in np.arange(num_particles):
+                for j in np.arange(i+1,num_particles):
+                    particle_separations_matrix[output_file_count,i,j] = particle_separations[output_file_count,counter]
+                    counter += 1
+            particle_separations_matrix[output_file_count] += np.transpose(particle_separations_matrix[output_file_count])
+    else:
+        particle_separations_matrix = None
+
+    #how many cluster pairs formed?
+    for output_file_count in np.arange(num_output_files):
+        cluster_counter = 0
+        for i in np.arange(num_particles):
+            temp_separations = particle_separations_matrix[output_file_count,i,:]
+            cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
+            #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
+        cluster_counter /= 2
+        if cluster_counter != 0:
+            print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {sim_type} {boundary_condition_series[np.floor_divide(output_file_count,field_series.shape[0])]} the total number of clusters: {cluster_counter}')
+
+#   in a loop, output files are read in and manipulated
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+#       node positions are scaled to SI units using l_e variable for visualization
+#       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
+#TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
+        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+        if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+            except:
+                print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+#       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+#       visualizations of cuts through the center of the volume are generated and saved out
+        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+        if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+            try:
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+            except:
+                print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+
+def plot_strain_tensor_field(sim_dir):
+    """Given the folder containing simulation output, calculate relevant quantities and generate figures.
+    
+    For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
+    #   if a directory to save the visualizations doesn't exist, make it
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    figure_types = ['particle_behavior','strain']
+    figure_subtypes = ['center', 'outer_surface']
+    for figure_type in figure_types:
+        if not (os.path.isdir(output_dir+figure_type+'/')):
+          os.mkdir(output_dir+figure_type+'/')
+        if figure_type =='strain':
+            for figure_subtype in figure_subtypes:
+                if not (os.path.isdir(output_dir+figure_type+'/'+figure_subtype+'/')):
+                    os.mkdir(output_dir+figure_type+'/'+figure_subtype+'/')
+#   user provides directory containing simulation files, including init.h5, output_i.h5 files
+#   init.h5 is read in and simulation parameters are extracted
+    initial_node_posns, beta_i, springs_var, elements, boundaries, particles, num_nodes, total_num_nodes, E, nu, k, kappa, beta, l_e, particle_mass, particle_radius, Ms, chi, drag, characteristic_time, field_series, boundary_condition_series, sim_type, dimensions = read_in_simulation_parameters(sim_dir)
+    initial_node_posns = np.float64(initial_node_posns)
+    beta_i = np.float64(beta_i)
+    springs_var = np.float64(springs_var)
+    kappa = np.float64(kappa)
+    beta = np.float64(beta)
+    l_e = np.float64(l_e)
+    particle_mass = np.float64(particle_mass)
+    particle_radius = np.float64(particle_radius)
+    Ms = np.float64(Ms)
+    chi = np.float64(chi)
+#   find the indices corresponding to the outer surfaces of the simulated volume for plotting and visualization
+    surf_indices = (0,int(num_nodes[0]-1),0,int(num_nodes[1]-1),0,int(num_nodes[2]-1))
+    surf_type = ('left','right','front','back','bottom','top')
+#   find indices corresponding to the "center" of the simulated volume for plotting and visualization, corresponding to cut_types values
+    center_indices = (int((num_nodes[2]-1)/2),int((num_nodes[1]-1)/2),int((num_nodes[0]-1)/2))
+#   lambda and mu (Lame parameters) are calculated from Young's modulus and Poisson's ratio variables from the init.h5 file
+    #see en.wikipedia.org/wiki/Lame_parameters
+    lame_lambda = E*nu/((1+nu)*(1-2*nu))
+    shear_modulus = E/(2*(1+nu))
+
+    #get the the applied field associated with each output file
+    Hext_series = get_applied_field_series(sim_dir)
+    num_output_files = get_num_output_files(sim_dir)
+
+#   in a loop, output files are read in and manipulated
+    for i in range(num_output_files):#range(6,num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+#       node positions are used to calculate nodal displacement
+        displacement_field = get_displacement_field(initial_node_posns,final_posns)
+#       nodal displacement is used to calculated displacement gradient
+        gradu = get_gradu(displacement_field,num_nodes)
+#       displacement gradient is used to calculate linear and nonlinear strain tensors
+        strain_tensor = get_strain_tensor(gradu)
+        green_strain_tensor = get_green_strain_tensor(gradu)
+#       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
+        stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+#       stress and strain tensors are visualized for the outer surfaces
+        for surf_idx,surface in zip(surf_indices,surf_type):
+            if surface == 'left' or surface == 'right':
+                cut_type = 'yz'
+            elif surface == 'front' or surface == 'back':
+                cut_type = 'xz'
+            elif surface == 'top' or surface == 'bottom':
+                cut_type = 'xy'
+            tag = surface+'_surface_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+#       stress and strain tensors are visualized for cuts through the center of the volume
+        for cut_type,center_idx in zip(cut_types,center_indices):
+            tag = 'center_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
 
 if __name__ == "__main__":
     main()
@@ -3093,6 +3266,69 @@ if __name__ == "__main__":
     #both smaller and larger strains, for exploring fitting to energy density vs strain for effective modulus vs field analysis
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
     # plot_full_sim_surface_forces(sim_dir)
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particles, 1MPa polymer (closer to natural rubber), regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
+    #both smaller and larger strains, for exploring fitting to energy density vs strain for effective modulus vs field analysis
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-15_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_18-05_stepsize_5.e-3/"
+    # plot_full_sim_surface_forces(sim_dir)
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particle, regular noisy, 9e3 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. fewer small strains, more large strains. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-19_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_17-56_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+
+    #125 particle, regular noisy, 1e6 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. fewer small strains, more large strains. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-20_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_14-49_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+
+    #2 particle, 9e3 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. .post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #2 particle, 9e3 Pa modulus, field along x, shearing xy, strain bc. boudnary motion allowed at 0 strain. .post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_3_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #125 particle, regular placement, 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #125 particle, regular noisy placement, 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-25_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_20-48_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-27_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+
+    #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along z, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along x, hysteresis, bottom fixed bc. post-imlpementation of gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-01_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
+
+    #20 particle (5x2x2), anisotropic regular noisy placement [0.8,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_regular_anisotropic_noisy_vol_frac_0.1_starttime_12-19_stepsize_1.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    #20 particle (5x2x2), anisotropic regular noisy placement [0.8,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc, 0 field only (actually zero, not just near zero). boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_anisotropic_noisy_vol_frac_0.1_starttime_16-28_stepsize_1.e-3/"
     plot_energy_figures(sim_dir)
-    analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
+    plot_strain_tensor_field(sim_dir)
+
     print('Exiting')
