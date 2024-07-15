@@ -2,6 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
+import matplotlib.animation as animation
 import numpy as np
 import simulate
 import os
@@ -1193,7 +1194,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
     plt.savefig(savename)
     plt.close()
 
-def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
+def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animation_flag=False):
     """Plot the outer surfaces of the simulated volume as a surface plot.
     
     tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
@@ -1234,9 +1235,11 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag=""):
     format_figure_3D(ax)
     # if tag != "":
     #     ax.set_title(tag)
-    savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'
-    plt.savefig(savename)
-    plt.close()
+    if not animation_flag:
+        savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'
+        plt.savefig(savename)
+        plt.close()
+    return fig, ax
 
 def transform_to_3D_array(array,dimensions):
     """Given a 1D vector of node positions, or similarly structured per node values, and convert to a 3D array mapped to the grid of initial node positions for plotting and analysis. Dimensions is tuple or array of number of nodes along each direction (x,y,z)."""
