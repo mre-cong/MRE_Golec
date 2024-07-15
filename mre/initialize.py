@@ -449,7 +449,7 @@ class SimulationTable(tb.IsDescription):
     sim_type = tb.StringCol(itemsize=30, shape=(), dflt='',pos=0)
     young_modulus = tb.Float64Col(pos=1)
     poisson_ratio = tb.Float64Col(pos=2)
-    anisotropy_factor = tb.Float64Col(pos=3)
+    anisotropy_factor = tb.Float64Col(shape=(3,),pos=3)
     spring_stiffness = tb.Float64Col(shape=(3,),pos=4)
     kappa = tb.Float64Col(pos=5)#additional bulk modulus
     drag = tb.Float64Col(pos=6)
@@ -526,12 +526,12 @@ def read_init_file(fn):
     for leaf in f.root.boundaries._f_walknodes('Leaf'):
         boundaries[leaf.name] = leaf.read()
     param_table = f.root.parameters
-    parameters = param_table.read()
+    parameters = param_table.read()[0]
     field_series_object = f.get_node('/','field_series')
     field_series = field_series_object.read()
     boundary_condition_series_object = f.get_node('/','boundary_condition_series')
     boundary_condition_series = boundary_condition_series_object.read()
-    sim_type = str(parameters[0][0])[2:-1]
+    sim_type = str(parameters[0])[2:-1]
     f.close()
     return node_posns, mass, springs, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type
 
@@ -562,7 +562,7 @@ def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,out
     # f.create_group('/','boundary_conditions','Applied Boundary Conditions')
     # f.create_group('/','applied_field')
     f.create_array('/','applied_field',applied_field)
-    dt = np.dtype([('bc_type','S25'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    dt = np.dtype([('bc_type','S30'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
@@ -589,7 +589,7 @@ def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir
     f.create_array('/','solution',sol)
     f.create_array('/','applied_field',applied_field)
     f.create_array('/','count',count)
-    dt = np.dtype([('bc_type','S12'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
+    dt = np.dtype([('bc_type','S30'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
     f.create_table('/','boundary_conditions',dt)
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
@@ -608,6 +608,11 @@ def read_checkpoint_file(fn):
     count = count_object.read()
     f.close()
     return solution, applied_field, boundary_condition, count
+
+def format_boundary_conditions(boundary_conditions):
+    boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
+    boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
+    return boundary_conditions
 
 def test_element_setting():
     import time
