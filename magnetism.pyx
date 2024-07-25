@@ -361,6 +361,22 @@ cdef np.ndarray[np.float32_t, ndim=1] get_magnetization_32bit(float[:] H, float 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+#carbonyl iron parameters Ms = 1990 kA/m, chi_initial = 131
+cdef np.ndarray[np.float32_t, ndim=1] get_normalized_magnetization_32bit(float[:] H, float chi, float Ms):
+    cdef float H_mag = sqrt(dot_prod_32bit(H,H))
+    if H_mag == 0:
+        return np.zeros((3,),dtype=np.float32)
+    cdef float M_mag = chi*H_mag/(Ms + chi*H_mag)
+    cdef np.ndarray[np.float32_t, ndim=1] M = np.empty((3,),dtype=np.float32)
+    cdef int i
+    cdef float[3] H_hat
+    for i in range(3):
+        H_hat[i] = H[i]/H_mag
+        M[i] = M_mag*H_hat[i]
+    return M
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cpdef np.ndarray[np.float32_t, ndim=2] get_magnetization_iterative_normalized_32bit(float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e):
     """Get the magnetization of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
     cdef int i
@@ -584,3 +600,357 @@ cdef float get_wca_force_32bit(float eps_constant, float r, float sigma) nogil:
     # potential = 4*eps_constant*(pow(sigma_over_separation,12) - pow(sigma_over_separation,6))
     cdef float force_mag = 4*eps_constant*(12*pow(sigma_over_separation,13)/sigma - 6* pow(sigma_over_separation,7)/sigma)
     return force_mag
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] get_magnetic_moment_frohlich_kennelly_normalized_posns_32bit(float[:] magnetic_moments, float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e):
+    """Get the magnetic moment of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float32_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] m_j = np.empty((3,),dtype=np.float32)
+    cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef float[3] H_tot = np.empty((3,),dtype=np.float32)
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = magnetic_moments[3*j]
+                m_j[1] = magnetic_moments[3*j+1]
+                m_j[2] = magnetic_moments[3*j+2]
+                H_dip[i,:] += get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+        H_tot[:] = Hext[:] + H_dip[i,:]
+        M[i,:] = get_magnetization_32bit(H_tot,chi,Ms)
+    new_mag_moments = np.reshape(M*particle_V,(magnetic_moments.shape[0],))
+    return new_mag_moments
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] get_normalized_magnetic_moment_frohlich_kennelly_normalized_posns_32bit(float[:] normalized_magnetic_moments, float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e):
+    """Get the magnetic moment of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float32_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] m_j = np.empty((3,),dtype=np.float32)
+    cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef float[3] H_tot = np.empty((3,),dtype=np.float32)
+    cdef float MsV = Ms*particle_V
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                H_dip[i,:] += get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+        H_tot[:] = Hext[:] + H_dip[i,:]
+        M[i,:] = get_normalized_magnetization_32bit(H_tot,chi,Ms)
+    new_normalized_mag_moments = np.reshape(M,(normalized_magnetic_moments.shape[0],))
+    return new_normalized_mag_moments
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] get_Hdipole_field_normalized_32bit(float[:] r_i, float[:] r_j,  float[:] m, float l_e):
+    """Get the H-Field at a point i due to a dipole at point j"""
+    cdef float[3] rij
+    cdef int i
+    for i in range(3):
+        rij[i] = r_i[i] - r_j[i]
+    cdef float rij_mag = sqrt(dot_prod_32bit(rij,rij))
+    cdef float[3] rij_hat
+    for i in range(3):
+        rij_hat[i] = rij[i]/rij_mag
+    cdef float m_dot_r_hat = dot_prod_32bit(m,rij_hat)
+    cdef np.ndarray[np.float32_t, ndim=1] H = np.empty((3,),dtype=np.float32)
+    cdef float prefactor = 1./(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
+    for i in range(3):
+        H[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
+    return H
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] root_finding_frohlich_kennelly_normalized_posns_32bit(float[:] magnetic_moments, float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e):
+    """Rewritten frohlich-kennelly magnetization law expression used with root finding numerical methods to solve for the magnetic moments of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float32_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] m_j = np.empty((3,),dtype=np.float32)
+    cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef np.ndarray[np.float32_t, ndim=2] H_tot = np.empty((particle_posns.shape[0],3),dtype=np.float32)
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = magnetic_moments[3*j]
+                m_j[1] = magnetic_moments[3*j+1]
+                m_j[2] = magnetic_moments[3*j+2]
+                H_dip[i,:] = get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+        H_tot[i,:] = Hext[:] + H_dip[i,:]
+    cdef np.ndarray[np.float32_t, ndim=1] H_mag = np.linalg.norm(H_tot,axis=1)
+    cdef np.ndarray[np.float32_t, ndim=1] H_mag_tiled = np.stack((H_mag,H_mag,H_mag),axis=-1).reshape((particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float32_t, ndim=1] H_tot_vec = np.reshape(H_tot,(particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float32_t, ndim=1] result = magnetic_moments - Ms*chi*particle_V*H_tot_vec/(Ms + chi*H_mag_tiled)
+    return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] get_Hdipole_field_normalized_64bit(double[:] r_i, double[:] r_j,  double[:] m, double l_e):
+    """Get the H-Field at a point i due to a dipole at point j"""
+    cdef double[3] rij
+    cdef int i
+    for i in range(3):
+        rij[i] = r_i[i] - r_j[i]
+    cdef double rij_mag = sqrt(dot_prod(rij,rij))
+    cdef double[3] rij_hat
+    for i in range(3):
+        rij_hat[i] = rij[i]/rij_mag
+    cdef double m_dot_r_hat = dot_prod(m,rij_hat)
+    cdef np.ndarray[np.float64_t, ndim=1] H = np.empty((3,),dtype=np.float64)
+    cdef double prefactor = 1./(4*np.pi*pow(rij_mag,3)*pow(l_e,3))
+    for i in range(3):
+        H[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
+    return H
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] root_finding_frohlich_kennelly_normalized_posns_64bit(double[:] magnetic_moments, double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e):
+    """Rewritten frohlich-kennelly magnetization law expression used with root finding numerical methods to solve for the magnetic moments of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] m_j = np.empty((3,),dtype=np.float64)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef np.ndarray[np.float64_t, ndim=2] H_tot = np.empty((particle_posns.shape[0],3),dtype=np.float64)
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = magnetic_moments[3*j]
+                m_j[1] = magnetic_moments[3*j+1]
+                m_j[2] = magnetic_moments[3*j+2]
+                H_dip[i,:] = get_Hdipole_field_normalized_64bit(r_i,r_j,m_j,l_e)
+        H_tot[i,:] = Hext[:] + H_dip[i,:]
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag = np.linalg.norm(H_tot,axis=1)
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag_tiled = np.stack((H_mag,H_mag,H_mag),axis=-1).reshape((particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] H_tot_vec = np.reshape(H_tot,(particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] result = magnetic_moments - Ms*chi*particle_V*H_tot_vec/(Ms + chi*H_mag_tiled)
+    return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] root_finding_normalized_frohlich_kennelly_normalized_posns_64bit(double[:] normalized_magnetic_moments, double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e):
+    """Rewritten frohlich-kennelly magnetization law expression used with root finding numerical methods to solve for the magnetic moments of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] m_j = np.empty((3,),dtype=np.float64)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef np.ndarray[np.float64_t, ndim=2] H_tot = np.empty((particle_posns.shape[0],3),dtype=np.float64)
+    cdef float MsV = Ms*particle_V
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                H_dip[i,:] = get_Hdipole_field_normalized_64bit(r_i,r_j,m_j,l_e)
+        H_tot[i,:] = Hext[:] + H_dip[i,:]
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag = np.linalg.norm(H_tot,axis=1)
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag_tiled = np.stack((H_mag,H_mag,H_mag),axis=-1).reshape((particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] H_tot_vec = np.reshape(H_tot,(particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] result = normalized_magnetic_moments - chi*H_tot_vec/(Ms + chi*H_mag_tiled)
+    return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=1] root_finding_normalized_frohlich_kennelly_normalized_posns_pbc_64bit(double[:] normalized_magnetic_moments, double[:] Hext, double[:,::1] particle_posns, double particle_radius, double chi, double Ms, double l_e, int[:] num_images, double[:] image_translation_vector):
+    """Rewritten frohlich-kennelly magnetization law expression used with root finding numerical methods to solve for the magnetic moments of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int image_countx
+    cdef int image_county
+    cdef int image_countz
+    cdef int count
+    cdef np.ndarray[np.float64_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float64)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef double[3] r_i = np.empty((3,),dtype=np.float64)
+    cdef double[3] r_j = np.empty((3,),dtype=np.float64)
+    cdef double[3] m_j = np.empty((3,),dtype=np.float64)
+    cdef double particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef double system_V = image_translation_vector[0]*image_translation_vector[1]*image_translation_vector[2]*np.power(l_e,3)
+    cdef np.ndarray[np.float64_t, ndim=2] H_tot = np.empty((particle_posns.shape[0],3),dtype=np.float64)
+    cdef double MsV = Ms*particle_V
+    cdef np.ndarray[np.float64_t, ndim=1] system_M = np.zeros((3,),dtype=np.float64)
+    for i in range(particle_posns.shape[0]):
+        system_M[0] += normalized_magnetic_moments[3*i]
+        system_M[1] += normalized_magnetic_moments[3*i+1]
+        system_M[2] += normalized_magnetic_moments[3*i+2]
+    cdef np.ndarray[np.float64_t, ndim=1] system_demag = np.zeros((3,),dtype=np.float64)
+    system_demag[0] = system_M[0]*(-1./3.)*MsV/system_V
+    system_demag[1] = system_M[1]*(-1./3.)*MsV/system_V
+    system_demag[2] = system_M[2]*(-1./3.)*MsV/system_V
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        r_i[0] = particle_posns[i,0]
+        r_i[1] = particle_posns[i,1]
+        r_i[2] = particle_posns[i,2]
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                H_dip[i,:] += get_Hdipole_field_normalized_64bit(r_i,r_j,m_j,l_e)
+            for image_countx in range(-1*num_images[0],num_images[0]+1):
+                for image_county in range(-1*num_images[1],num_images[1]+1):
+                    for image_countz in range(-1*num_images[2],num_images[2]+1):
+                        if image_countx == 0 and image_county == 0 and image_countz == 0:
+                            pass
+                        else:
+                            r_j[0] = particle_posns[j,0] + image_countx*image_translation_vector[0]
+                            r_j[1] = particle_posns[j,1] + image_county*image_translation_vector[1]
+                            r_j[2] = particle_posns[j,2] + image_countz*image_translation_vector[2]
+                            m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                            m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                            m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                            H_dip[i,:] += get_Hdipole_field_normalized_64bit(r_i,r_j,m_j,l_e)
+        H_tot[i,:] = Hext[:] + H_dip[i,:] +system_demag[:]
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag = np.linalg.norm(H_tot,axis=1)
+    cdef np.ndarray[np.float64_t, ndim=1] H_mag_tiled = np.stack((H_mag,H_mag,H_mag),axis=-1).reshape((particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] H_tot_vec = np.reshape(H_tot,(particle_posns.shape[0]*3,))
+    cdef np.ndarray[np.float64_t, ndim=1] result = normalized_magnetic_moments - chi*H_tot_vec/(Ms + chi*H_mag_tiled)
+    return result
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] get_normalized_magnetic_moment_frohlich_kennelly_normalized_posns_pbc_32bit(float[:] normalized_magnetic_moments, float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e, int[:] num_images, float[:] image_translation_vector):
+    """Get the magnetic moment of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int image_countx
+    cdef int image_county
+    cdef int image_countz
+    cdef int count
+    cdef np.ndarray[np.float32_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] m_j = np.empty((3,),dtype=np.float32)
+    cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef float system_V = image_translation_vector[0]*image_translation_vector[1]*image_translation_vector[2]*np.power(l_e,3)
+    cdef float[3] H_tot = np.empty((3,),dtype=np.float32)
+    cdef float MsV = Ms*particle_V
+    cdef np.ndarray[np.float32_t, ndim=1] system_M = np.zeros((3,),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=1] system_demag = np.zeros((3,),dtype=np.float32)
+    for i in range(particle_posns.shape[0]):
+        system_M[0] += normalized_magnetic_moments[3*i]
+        system_M[1] += normalized_magnetic_moments[3*i+1]
+        system_M[2] += normalized_magnetic_moments[3*i+2]
+    system_demag[0] = system_M[0]*(-1./3.)*MsV/system_V
+    system_demag[1] = system_M[1]*(-1./3.)*MsV/system_V
+    system_demag[2] = system_M[2]*(-1./3.)*MsV/system_V
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_i[0] = particle_posns[i,0]
+                r_i[1] = particle_posns[i,1]
+                r_i[2] = particle_posns[i,2]
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                H_dip[i,:] += get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+            for image_countx in range(-1*num_images[0],num_images[0]+1):
+                for image_county in range(-1*num_images[1],num_images[1]+1):
+                    for image_countz in range(-1*num_images[2],num_images[2]+1):
+                        if image_countx == 0 and image_county == 0 and image_countz == 0:
+                            pass
+                        else:
+                            r_j[0] = particle_posns[j,0] + image_countx*image_translation_vector[0]
+                            r_j[1] = particle_posns[j,1] + image_county*image_translation_vector[1]
+                            r_j[2] = particle_posns[j,2] + image_countz*image_translation_vector[2]
+                            m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                            m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                            m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                            H_dip[i,:] += get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+        H_tot[:] = Hext[:] + H_dip[i,:] + system_demag[:]
+        M[i,:] = get_normalized_magnetization_32bit(H_tot,chi,Ms)
+    new_normalized_mag_moments = np.reshape(M,(normalized_magnetic_moments.shape[0],))
+    return new_normalized_mag_moments

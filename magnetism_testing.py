@@ -5,6 +5,7 @@ import magnetism
 import matplotlib.pyplot as plt
 import os
 import scipy.special as sci
+import scipy.optimize
 import time
 import numpy.random as rand
 import simulate
@@ -654,6 +655,256 @@ def get_magnetization_iterative_iteration_testing(Hext,particles,particle_posns,
 
     return host_magnetic_moments
 
+def get_magnetization_iterative_iteration_testing_w_outputflipping(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    magnetic_moment_history = cp.zeros((3,particles.shape[0],3),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    host_magnetic_field = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    min_iterations = 3
+    absolute_tolerance = particle_volume*Ms*5e-3
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        magnetic_moments_flipped = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
+        # we want to let the system iterate a few times before checking for oscillations so that the zero initialization doesn't somehow trigger something
+        if i >= min_iterations:
+            #when we do check for oscillations, because of the way we are recording the history on a running basis (storing the past 3 results) and overwriting results using modulo math for indexing the historical array, we need to ensure we index the correct parts of the historical array so we are comparing the right sets of results to look for oscillations
+            #see 2024-07-17 in progress work on linear magnetization solving and magnetizing solving in general.txt line 99-110 to see how the pattern was derived (reproduced below)
+            #three histories plus current, numbers represnt iteration number, X's are compared, O's are compared, O is always used for the current value, what is the pattern?
+            # 0,1,2 3
+            # X,O,X,O
+            # 3,1,2 4
+            # X,X,O,O
+            # 3,4,2 5
+            # O,X,X,O
+            # 3,4,5 6
+            # X,O,X,O -> pattern starts over
+            # compare current to history[1], then [2], then [0] (so np.mod(i+1,3))
+            #compare history[0] to [2], [1] to [0], [2] to [1], so np.mod(i,3) and np.mod(i+2,3)
+            comparison_indices = [np.mod(i+1,3),np.mod(i,3),np.mod(i+2,3)]
+            if cp.allclose(magnetic_moment_history[comparison_indices[1]],magnetic_moment_history[comparison_indices[2]],atol=absolute_tolerance) and cp.allclose(magnetic_moments_flipped,magnetic_moment_history[comparison_indices[0]],atol=absolute_tolerance):
+                avg_magnetic_moments = (cp.sum(magnetic_moment_history,axis=0)+magnetic_moments_flipped)/4
+                host_magnetic_moments[i:] = cp.asnumpy(avg_magnetic_moments).reshape((particles.shape[0],3))
+                break
+        magnetic_moment_history[np.mod(i,3)] = magnetic_moments_flipped
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moments_flipped).reshape((particles.shape[0],3))
+        host_magnetic_field[i] = cp.asnumpy(Htot).reshape((size_particles,3))
+
+    # magnetic_moment = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
+    # host_magnetic_moments[-1] = cp.asnumpy(magnetic_moment)
+
+    return host_magnetic_moments, host_magnetic_field
+
+def get_magnetization_iterative_iteration_testing_w_drag(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    drag = 0.5
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    old_magnetic_moment = cp.copy(magnetic_moment)
+    max_allowed_change = Ms*particle_volume*0.05
+    min_of_max_allowed_change = Ms*particle_volume*1e-5
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        delta_magnetic_moment = magnetic_moment-old_magnetic_moment
+        sign_of_delta = cp.sign(delta_magnetic_moment)
+        mask = cp.nonzero(cp.abs(delta_magnetic_moment) > max_allowed_change)[0]
+        delta_magnetic_moment[mask] = max_allowed_change*sign_of_delta[mask]
+        max_allowed_change *= 0.9
+        if max_allowed_change < min_of_max_allowed_change:
+            max_allowed_change == min_of_max_allowed_change
+        # cp.put(delta_magnetic_moment,mask,max_allowed_change*cp.sign(delta_magnetic_moment))
+        magnetic_moment = old_magnetic_moment + delta_magnetic_moment#drag
+        old_magnetic_moment = cp.copy(magnetic_moment)
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+
+    return host_magnetic_moments
+
+def get_magnetization_iterative_new_drag(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    old_magnetic_moment = cp.copy(magnetic_moment)
+    max_allowed_change = Ms*particle_volume*0.5
+    min_of_max_allowed_change = Ms*particle_volume*1e-2
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        delta_magnetic_moment = magnetic_moment-old_magnetic_moment
+        sign_of_delta = cp.sign(delta_magnetic_moment)
+        mask = cp.nonzero(cp.abs(delta_magnetic_moment) > max_allowed_change)[0]
+        delta_magnetic_moment[mask] = max_allowed_change*sign_of_delta[mask]
+        max_allowed_change *= 0.9
+        if max_allowed_change < min_of_max_allowed_change:
+            max_allowed_change == min_of_max_allowed_change
+        magnetic_moment = old_magnetic_moment + delta_magnetic_moment
+        old_magnetic_moment = cp.copy(magnetic_moment)
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+
+    return host_magnetic_moments
+
+def get_magnetization_iterative_iteration_testing_w_averaging(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    old_magnetic_moment = cp.zeros((max_iters,particles.shape[0]*3,1),dtype=cp.float32)
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        old_magnetic_moment[i] = cp.copy(magnetic_moment)
+        if np.mod(i,5) == 0 and i != 0:
+            magnetic_moment = cp.reshape(cp.mean(cp.reshape(old_magnetic_moment,(max_iters,particles.shape[0],3))[i-5:i],axis=0),(particles.shape[0]*3,1))
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+
+    return host_magnetic_moments
+
+def get_magnetization_iterative_iteration_testing_w_seeded_values(linear_magnetic_moments,Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    # magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    
+    magnetic_moment = cp.array(np.reshape(linear_magnetic_moments,(3*size_particles,)))
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        magnetic_moment = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((size_particles,3))
+        magnetic_moment.reshape((size_particles*3,))
+
+    return host_magnetic_moments
+
+def get_magnetization_iterative_iteration_testing_w_seeded_values_and_outputflipping(linear_magnetic_moments,Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    # magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    
+    magnetic_moment = cp.array(np.reshape(linear_magnetic_moments,(3*size_particles,)))
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        magnetic_moments_flipped = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moments_flipped).reshape((particles.shape[0],3))
+
+    return host_magnetic_moments
+
 def get_magnetization_iterative_v2(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
     cupy_stream = cp.cuda.get_current_stream()
@@ -1082,7 +1333,7 @@ def calc_A(rij,inv_rij_mag,num_particles,l_e,chi,particle_volume):
 
     inv_rij_mag = cp.reshape(inv_rij_mag,(num_particles,num_particles),order='C')
     
-    denom = chi_v/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)
+    denom = chi_v/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#particle_volume/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#
 
     A[0::3,0::3] = -1*(3*nij_x*nij_x-1)*denom
     A[1::3,1::3] = -1*(3*nij_y*nij_y-1)*denom
@@ -1093,7 +1344,7 @@ def calc_A(rij,inv_rij_mag,num_particles,l_e,chi,particle_volume):
     A[2::3,0::3] = A[0::3,2::3]
     A[1::3,2::3] = -1*(3*nij_z)*nij_y*denom
     A[2::3,1::3] = A[1::3,2::3]
-    A += cp.eye(num_particles*3,dtype=cp.float32)
+    A += cp.eye(num_particles*3,dtype=cp.float32)#/chi
 
     #if you wanted a matrix that you could multiply by a vector of the magnetic moments of the particles to get the dipole fields, an experssion like the one below would transform the final A matrix to the "gamma" matrix
     # gamma_from_A = -1*(A - eye(size(A)))/chi/V;
@@ -1106,8 +1357,123 @@ def calc_A(rij,inv_rij_mag,num_particles,l_e,chi,particle_volume):
     # tempyz = -1*(3*nij_z)*nij_y*denom
     return A
 
-def linear_magnetization_solver(particle_posns,Hext,chi,particle_volume,l_e):
+def linear_magnetization_solver(particle_posns,Hext,chi,Ms,particle_volume,l_e):
     """Assuming a linear magnetization response, find the magnetic moments of a set of mutually magnetizing dipoles in an external magnetic field"""
+    num_particles = np.int64(particle_posns.shape[0]/3)
+    assert particle_posns.shape[0] == 3*num_particles
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_particles = num_particles
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+    # chi = 3*chi/(3+chi)
+    A = calc_A(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,chi,particle_volume)
+    Hext_vector = cp.tile(Hext,num_particles)
+    chi_v = chi*particle_volume
+    b = Hext_vector*chi_v#*particle_volume#
+    # b = cp.ones((particle_posns.shape[0]*3,),dtype=cp.float32)*chi*particle_volume
+    magnetic_moments = cp.linalg.solve(A,b)
+    # correctness_check = cp.dot(A,magnetic_moments)
+    # temp = b - correctness_check
+    # absolute_tolerance = 1.6e6*particle_volume*0.005
+    # print(f'consistent answer from linsolve and Ax=b using magnetic moment result?:{cp.allclose(correctness_check,b,atol=absolute_tolerance)}')
+
+    # magnetic_moments = realign_and_scale_magnetic_moments(magnetic_moments,Hext,particle_volume,Ms,num_particles)
+
+    Ainv = cp.linalg.inv(A)
+    AinvA = cp.matmul(Ainv,A)
+    trace_check = cp.trace(AinvA)
+    det_check = cp.linalg.det(AinvA)
+    # print(f'Trace of A^-1 A is {trace_check}')
+    # print(f'Determinant of A^-1 A is {det_check}')
+
+    magnetic_moments = cp.asnumpy(magnetic_moments).reshape((num_particles,3))
+    return magnetic_moments, trace_check, det_check
+
+def realign_and_scale_magnetic_moments(magnetic_moments,Hext,particle_volume,Ms,num_particles):
+    """Checks if magnetic moment values are anti-aligned with the external field and flips them, then constrains magnetic moment vector magnitude to saturation value for oversaturated or flipped magnetic moments and returns the resulting magnetic moment components"""
+    new_magnetic_moments = cp.copy(cp.reshape(magnetic_moments,(num_particles,3)))
+
+    #check if the magnetic moment is anti-parallel (at least partially) to the external field
+    
+    Hext_magnitude = cp.linalg.norm(Hext)
+    Hext_hat = Hext/Hext_magnitude
+    
+    alignment_check = cp.einsum('ij,j->i',new_magnetic_moments,Hext_hat)
+    alignment_mask = alignment_check < 0
+    new_magnetic_moments[alignment_mask] *= -1
+
+    mag_moment_magnitude = cp.linalg.norm(new_magnetic_moments,axis=1)
+    max_mag_moment = particle_volume*Ms
+    # oversaturated_mask = mag_moment_magnitude/particle_volume/Ms>1
+    oversaturated_mask = cp.greater(mag_moment_magnitude/particle_volume/Ms,1)
+    scaling_mask = cp.logical_or(alignment_mask,oversaturated_mask)
+    if np.any(scaling_mask):
+        new_magnetic_moments[scaling_mask] *= max_mag_moment/mag_moment_magnitude[scaling_mask][:,cp.newaxis]
+    return new_magnetic_moments
+
+def calc_A_chi_scaled(rij,inv_rij_mag,num_particles,l_e,chi,particle_volume):
+    """Return matrix A containing information about relative dipole positions for calculating dipolar fields, used to solve the system Ax=b for the magnetic moments of the dipoles."""
+    A = cp.zeros((num_particles*3,num_particles*3),dtype=cp.float32)
+    chi_v = chi*particle_volume
+
+    nij_x = rij[0::3]*inv_rij_mag
+    nij_y = rij[1::3]*inv_rij_mag
+    nij_z = rij[2::3]*inv_rij_mag
+
+    nij_x = cp.reshape(nij_x,(num_particles,num_particles),order='C')
+    nij_y = cp.reshape(nij_y,(num_particles,num_particles),order='C')
+    nij_z = cp.reshape(nij_z,(num_particles,num_particles),order='C')
+
+    inv_rij_mag = cp.reshape(inv_rij_mag,(num_particles,num_particles),order='C')
+    
+    denom = particle_volume/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#
+
+    A[0::3,0::3] = -1*(3*nij_x*nij_x-1)*denom
+    A[1::3,1::3] = -1*(3*nij_y*nij_y-1)*denom
+    A[2::3,2::3] = -1*(3*nij_z*nij_z-1)*denom
+    A[0::3,1::3] = -1*(3*nij_y)*nij_x*denom
+    A[1::3,0::3] = A[0::3,1::3]
+    A[0::3,2::3] = -1*(3*nij_z)*nij_x*denom
+    A[2::3,0::3] = A[0::3,2::3]
+    A[1::3,2::3] = -1*(3*nij_z)*nij_y*denom
+    A[2::3,1::3] = A[1::3,2::3]
+    A += cp.eye(num_particles*3,dtype=cp.float32)#/chi
+    return A
+
+def linear_magnetization_solver_chi_scaled(particle_posns,Hext,chi,particle_volume,l_e):
+    """Assuming a linear magnetization response, find the magnetic moments of a set of mutually magnetizing dipoles in an external magnetic field"""
+    num_particles = np.int64(particle_posns.shape[0]/3)
+    assert particle_posns.shape[0] == 3*num_particles
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_particles = num_particles
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    A = calc_A_chi_scaled(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,chi,particle_volume)
+    Hext_vector = cp.tile(Hext,num_particles)
+    chi_v = chi*particle_volume
+    b = Hext_vector*particle_volume#
+    # b = cp.ones((particle_posns.shape[0]*3,),dtype=cp.float32)*chi*particle_volume
+    magnetic_moments = cp.linalg.solve(A,b)
+    # correctness_check = cp.dot(A,magnetic_moments)
+    # print(f'consistent answer from linsolve and Ax=b using magnetic moment result?:{cp.allclose(correctness_check,b)}')
+    magnetic_moments = cp.asnumpy(magnetic_moments).reshape((num_particles,3))*chi
+    return magnetic_moments
+
+def linear_magnetization_comparison(magnetic_moments,particle_posns,Hext,chi,particle_volume,l_e):
+    """Assuming a linear magnetization response, given the magnetic moments of a set of mutually magnetizing dipoles in an external magnetic field, see if it matches the result of a linear magnetization response"""
     num_particles = np.int64(particle_posns.shape[0]/3)
     assert particle_posns.shape[0] == 3*num_particles
     cupy_stream = cp.cuda.get_current_stream()
@@ -1124,20 +1490,20 @@ def linear_magnetization_solver(particle_posns,Hext,chi,particle_volume,l_e):
     A = calc_A(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,chi,particle_volume)
     Hext_vector = cp.tile(Hext,num_particles)
     chi_v = chi*particle_volume
-    b = Hext_vector*chi_v
-    # b = cp.ones((particle_posns.shape[0]*3,),dtype=cp.float32)*chi*particle_volume
-    magnetic_moments = cp.linalg.solve(A,b)
+    b = Hext_vector*chi_v#*particle_volume#
+    # magnetic_moments = cp.linalg.solve(A,b)
     correctness_check = cp.dot(A,magnetic_moments)
-    print(f'consistent answer from linsolve and Ax=b using magnetic moment result?:{cp.allclose(correctness_check,b)}')
-    magnetic_moments = cp.asnumpy(magnetic_moments).reshape((num_particles,3))
-    return magnetic_moments
+    temp = b - correctness_check
+    absolute_tolerance = 1.6e6*particle_volume*0.005
+    print(f'consistent answer from linsolve and Ax=b using magnetic moment result?:{cp.allclose(correctness_check,b,atol=absolute_tolerance)}')
+
 
 def iterative_magnetization_testing():
     """Plot the magnetization vector components vs iteration number to see how iteration number effects values. Do values converge? How much does microstructure/particle placement impact results?"""
     #choose the maximum field, number of field steps, and field angle
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.01/mu0
-    n_field_steps = 10
+    H_mag = 0.001/mu0
+    n_field_steps = 1
     H_step = H_mag/(n_field_steps)
     # if n_field_steps != 1:
     #     H_step = H_mag/(n_field_steps-1)
@@ -1159,11 +1525,11 @@ def iterative_magnetization_testing():
     chi = np.float32(70)
     Ms = np.float32(1.6e6)
     particle_radius = 1.5e-6
-    l_e = np.float32(1e-6)
+    l_e = np.float32(1e-7)
     num_nodes_per_particle = 8
     particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    particles_per_axis = np.array([2,1,1])
+    particles_per_axis = np.array([2,2,2])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
@@ -1175,31 +1541,58 @@ def iterative_magnetization_testing():
     for i in range(particles_per_axis[0]):
         for j in range(particles_per_axis[1]):
             for k in range(particles_per_axis[2]):
-                particle_posns[particle_counter,0] = i * separation# + rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,1] = j * separation# + rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,2] = k * separation# + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,0] = i * separation #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation #+ rng.integers(low=-1,high=2,size=1)*l_e
                 particle_counter += 1
     particle_posns /= l_e
     device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
     num_particles = particle_posns.shape[0]
     particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
-    max_iters = 20
+    max_iters = 40
+    max_iters_w_drag = 80
+    max_iters_modified = 8
     magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    magnetic_moments_w_flipping = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    total_field = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
     linear_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    linear_magnetization_w_chi_scaled = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    seeded_iterative_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    seeded_iterative_magnetic_moments_w_output_flipping = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    averaging_iterative_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
     for i, Hext in enumerate(Hext_series):
         magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
-        linear_magnetic_moments[i] = linear_magnetization_solver(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,particle_volume,l_e)
+        magnetic_moments_w_flipping[i], total_field[i] = get_magnetization_iterative_iteration_testing_w_outputflipping(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        linear_magnetic_moments[i], _, _ = linear_magnetization_solver(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,Ms,particle_volume,l_e)
+        # linear_magnetization_w_chi_scaled[i] = linear_magnetization_solver_chi_scaled(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,particle_volume,l_e)
+        seeded_iterative_magnetic_moments[i] = get_magnetization_iterative_iteration_testing_w_seeded_values(linear_magnetic_moments[i,0],cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        seeded_iterative_magnetic_moments_w_output_flipping[i] = get_magnetization_iterative_iteration_testing_w_seeded_values_and_outputflipping(linear_magnetic_moments[i,0],cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+        averaging_iterative_magnetic_moments[i] = get_magnetization_iterative_iteration_testing_w_averaging(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
 
 
 
 
     # magnetic_moments = magnetic_moments.reshape((Hext_series.shape[0],num_particles,3))
     magnetization = magnetic_moments/particle_volume
+    magnetization_w_flipping = magnetic_moments_w_flipping/particle_volume
     linear_magnetization = linear_magnetic_moments/particle_volume
+    linear_magnetization_w_chi_scaled = linear_magnetization_w_chi_scaled/particle_volume
+    seeded_iterative_magnetization = seeded_iterative_magnetic_moments/particle_volume
+    seeded_iterative_magnetization_w_output_flipping = seeded_iterative_magnetic_moments_w_output_flipping/particle_volume
+    magnetization_w_drag = magnetic_moments_w_drag/particle_volume
+    magnetization_w_averaging = averaging_iterative_magnetic_moments/particle_volume
 
     magnetization /= Ms
+    magnetization_w_flipping /= Ms
+    seeded_iterative_magnetization /= Ms
+    seeded_iterative_magnetization_w_output_flipping /= Ms
+    magnetization_w_drag /= Ms
+    magnetization_w_averaging /= Ms
 
     linear_magnetization /= Ms
+    linear_magnetization_w_chi_scaled /= Ms
     
     iter_number = np.arange(max_iters)
     field_index = 0
@@ -1220,7 +1613,25 @@ def iterative_magnetization_testing():
     # axs[2].set_title('Z')
     # axs[0].set_ylabel('normalized particle magnetization')
 
-    fig, axs = plt.subplots(2,3)
+    # fig, axs = plt.subplots(2,3)
+    # for count in range(particles.shape[0]):
+    #     axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+    #     axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+    #     axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+    #     axs[1,0].plot(iter_number,linear_magnetization[field_index,:,count,0])
+    #     axs[1,1].plot(iter_number,linear_magnetization[field_index,:,count,1])
+    #     axs[1,2].plot(iter_number,linear_magnetization[field_index,:,count,2])
+
+    # axs[1,0].set_xlabel('iteration number')
+    # axs[1,1].set_xlabel('iteration number')
+    # axs[1,2].set_xlabel('iteration number')
+    # axs[0,0].set_title('X')
+    # axs[0,1].set_title('Y')
+    # axs[0,2].set_title('Z')
+    # axs[0,0].set_ylabel('normalized particle magnetization')
+    # axs[1,0].set_ylabel('normalized particle magnetization (linear)')
+
+    fig, axs = plt.subplots(3,3)
     for count in range(particles.shape[0]):
         axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
         axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
@@ -1228,6 +1639,30 @@ def iterative_magnetization_testing():
         axs[1,0].plot(iter_number,linear_magnetization[field_index,:,count,0])
         axs[1,1].plot(iter_number,linear_magnetization[field_index,:,count,1])
         axs[1,2].plot(iter_number,linear_magnetization[field_index,:,count,2])
+        axs[2,0].plot(iter_number,linear_magnetization_w_chi_scaled[field_index,:,count,0])
+        axs[2,1].plot(iter_number,linear_magnetization_w_chi_scaled[field_index,:,count,1])
+        axs[2,2].plot(iter_number,linear_magnetization_w_chi_scaled[field_index,:,count,2])
+
+    axs[2,0].set_xlabel('iteration number')
+    axs[2,1].set_xlabel('iteration number')
+    axs[2,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (linear)')
+    axs[2,0].set_ylabel('normalized particle magnetization (linear but scaled)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,seeded_iterative_magnetization[field_index,:,count,0])
+        axs[1,1].plot(iter_number,seeded_iterative_magnetization[field_index,:,count,1])
+        axs[1,2].plot(iter_number,seeded_iterative_magnetization[field_index,:,count,2])
 
     axs[1,0].set_xlabel('iteration number')
     axs[1,1].set_xlabel('iteration number')
@@ -1236,12 +1671,114 @@ def iterative_magnetization_testing():
     axs[0,1].set_title('Y')
     axs[0,2].set_title('Z')
     axs[0,0].set_ylabel('normalized particle magnetization')
-    axs[1,0].set_ylabel('normalized particle magnetization (linear)')
+    axs[1,0].set_ylabel('normalized particle magnetization (seeded)')
 
-    plt.show()
+    plt.show(block=False)
 
-    
-    system_magnetization = np.sum(magnetic_moments[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,seeded_iterative_magnetization_w_output_flipping[field_index,:,count,0])
+        axs[1,1].plot(iter_number,seeded_iterative_magnetization_w_output_flipping[field_index,:,count,1])
+        axs[1,2].plot(iter_number,seeded_iterative_magnetization_w_output_flipping[field_index,:,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (seeded w output flipping)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,magnetization_w_flipping[field_index,:,count,0])
+        axs[1,1].plot(iter_number,magnetization_w_flipping[field_index,:,count,1])
+        axs[1,2].plot(iter_number,magnetization_w_flipping[field_index,:,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (w_flipping)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,total_field[field_index,:,count,0])
+        axs[0,1].plot(iter_number,total_field[field_index,:,count,1])
+        axs[0,2].plot(iter_number,total_field[field_index,:,count,2])
+        axs[1,0].plot(iter_number,magnetization_w_flipping[field_index,:,count,0])
+        axs[1,1].plot(iter_number,magnetization_w_flipping[field_index,:,count,1])
+        axs[1,2].plot(iter_number,magnetization_w_flipping[field_index,:,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('Magnetic Field (A/m)')
+    axs[1,0].set_ylabel('normalized particle magnetization (w_flipping)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,0])
+        axs[1,1].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,1])
+        axs[1,2].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (w drag)')
+
+    plt.show(block=False)
+    # comparison_mag_moments = cp.asarray(magnetic_moments_w_drag[field_index,-1]).reshape((num_particles*3,1))
+    # linear_magnetization_comparison(comparison_mag_moments,device_particle_posns,cp.asarray(Hext_series[field_index],dtype=cp.float32),chi,particle_volume,l_e)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,magnetization_w_averaging[field_index,:,count,0])
+        axs[1,1].plot(iter_number,magnetization_w_averaging[field_index,:,count,1])
+        axs[1,2].plot(iter_number,magnetization_w_averaging[field_index,:,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (w averaging)')
+
+    plt.show(block=False)
+
+    iter_number = np.arange(max_iters_w_drag)
+    system_magnetization = np.sum(magnetic_moments_w_drag[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
     fig, ax = plt.subplots()
     ax.plot(iter_number,system_magnetization[:,:])
     ax.set_xlabel('iteration number')
@@ -1249,31 +1786,585 @@ def iterative_magnetization_testing():
         
 
     # fig.legend()
+    plt.show(block=False)
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax.set_title('Normalized Magnetic Moment vectors (iterative)')
+    ax.set_xlabel('X (l_e)')
+    ax.set_ylabel('Y (l_e)')
+    ax.set_zlabel('Z (l_e)')
+    ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],magnetization_w_flipping[field_index,-1,:,0],magnetization_w_flipping[field_index,-1,:,1],magnetization_w_flipping[field_index,-1,:,2],pivot='middle',length=10.0)
+    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],seeded_iterative_magnetization[field_index,-1,:,0],seeded_iterative_magnetization[field_index,-1,:,1],seeded_iterative_magnetization[field_index,-1,:,2],pivot='middle',units='width')
+    plt.show(block=False)
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax.set_title('Normalized Magnetic Moment vectors (linear)')
+    ax.set_xlabel('X (l_e)')
+    ax.set_ylabel('Y (l_e)')
+    ax.set_zlabel('Z (l_e)')
+    ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],linear_magnetization[field_index,-1,:,0],linear_magnetization[field_index,-1,:,1],linear_magnetization[field_index,-1,:,2],pivot='middle',length=3.0)
+
     plt.show()
     print('review plot')
-    
-    # gpu_system_magnetization = np.sum(magnetization,axis=1)/num_particles
-    # gpu_system_magnetization = np.squeeze(gpu_system_magnetization)
-    # Bext_series = mu0*Hext_series
-    # Bext_series_norm = np.linalg.norm(Bext_series,axis=1)
-    # nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
-    # unit_Bext_series = Bext_series[nonzero_field_value_indices[0]]/Bext_series_norm[nonzero_field_value_indices[0]]
-    # gpu_parallel_magnetization = np.dot(gpu_system_magnetization,unit_Bext_series)
 
+def linear_magnetization_testing():
+    """Plot the magnetization vector components vs separation for two particles to see how separation effects values, also chi. At what separation do we see anti-parallel alignment with the external field? At what field value do we see alignment with the external field even at surface-surface separations?"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.001/mu0
+    n_field_steps = 1
+    H_step = H_mag/(n_field_steps)
+    # if n_field_steps != 1:
+    #     H_step = H_mag/(n_field_steps-1)
+    # else:
+    #     H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = np.float32(70)#np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = 1.5e-6
+    l_e = np.float32(1e-6)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,2,1])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = 3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+    min_separation = 3.1e-6
+    max_separation = 8e-6
+    separations = np.linspace(min_separation,max_separation,num=500)
+    num_separations = separations.shape[0]
+    linear_magnetic_moments = np.zeros((Hext_series.shape[0],num_separations,num_particles,3),dtype=np.float32)
+    traceA = np.zeros((Hext_series.shape[0],num_separations),dtype=np.float32)
+    detA = np.zeros((Hext_series.shape[0],num_separations),dtype=np.float32)
+    for separation_counter, separation in enumerate(separations):
+        particle_counter = 0
+        for i in range(particles_per_axis[0]):
+            for j in range(particles_per_axis[1]):
+                for k in range(particles_per_axis[2]):
+                    particle_posns[particle_counter,0] = i * separation# + rng.integers(low=-1,high=2,size=1)*l_e
+                    particle_posns[particle_counter,1] = j * separation# + rng.integers(low=-1,high=2,size=1)*l_e
+                    particle_posns[particle_counter,2] = k * separation# + rng.integers(low=-1,high=2,size=1)*l_e
+                    particle_counter += 1
+        particle_posns /= l_e
+        device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+        for i, Hext in enumerate(Hext_series):
+            linear_magnetic_moments[i,separation_counter], traceA[i,separation_counter], detA[i,separation_counter] = linear_magnetization_solver(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,Ms,particle_volume,l_e)
+        # linear_magnetization_w_chi_scaled[i] = linear_magnetization_solver_chi_scaled(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,particle_volume,l_e)
+
+    linear_magnetization = linear_magnetic_moments/particle_volume
+    linear_magnetization /= Ms
+
+    iter_number = np.arange(max_iters)
+    field_index = 0
+    
+    fig, axs = plt.subplots(1,3)
+    for count in range(particles.shape[0]):
+        axs[0].plot(separations,linear_magnetization[field_index,:,count,0],'.')
+        axs[1].plot(separations,linear_magnetization[field_index,:,count,1],'.')
+        axs[2].plot(separations,linear_magnetization[field_index,:,count,2],'.')
+    axs[0].set_xlabel('separation (m)')
+    axs[1].set_xlabel('separation (m)')
+    axs[2].set_xlabel('separation (m)')
+    axs[0].set_title(r'm_x')
+    axs[1].set_title(r'm_y')
+    axs[2].set_title(r'm_z')
+    axs[0].set_ylabel('normalized particle magnetization')
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(1,3)
+    for count in range(particles.shape[0]):
+        axs[0].plot(separations,linear_magnetization[field_index,:,count,0]/linear_magnetization[field_index,:,count,1],'.')
+        axs[1].plot(separations,linear_magnetization[field_index,:,count,0]/linear_magnetization[field_index,:,count,2],'.')
+        axs[2].plot(separations,linear_magnetization[field_index,:,count,1]/linear_magnetization[field_index,:,count,2],'.')
+    axs[0].set_xlabel('separation (m)')
+    axs[1].set_xlabel('separation (m)')
+    axs[2].set_xlabel('separation (m)')
+    axs[0].set_title(r'ratio m_x/m_y')
+    axs[1].set_title(r'ratio m_x/m_z')
+    axs[2].set_title(r'ratio m_y_/m_z')
+    axs[0].set_ylabel('normalized particle magnetization ratio')
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(1,3)
+    for count in range(particles.shape[0]):
+        axs[0].plot(separations,linear_magnetization[field_index,:,count,0],'.')
+        axs[1].plot(separations,detA[field_index,:],'.')
+        axs[2].plot(separations,traceA[field_index,:],'.')
+    axs[0].set_xlabel('separation (m)')
+    axs[1].set_xlabel('separation (m)')
+    axs[2].set_xlabel('separation (m)')
+    axs[0].set_title(r'm_x')
+    axs[1].set_title(r'det $A^-1$A')
+    axs[2].set_title(r'trace $A^-1$A')
+    axs[0].set_ylabel('normalized particle magnetization')
+    plt.show(block=False)
+    print('End of linear magnetization finding testing')
+
+def iterative_magnetization_w_drag_testing():
+    """Plot the magnetization vector components vs iteration number to see how iteration number effects values for different methods, including the basic iterative method, and variants of quasi-drag based methods. Do values converge? How much does microstructure/particle placement impact results?"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.01/mu0
+    n_field_steps = 1
+    H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = 1.5e-6
+    discretization_order = 3
+    l_e = np.float32(2*particle_radius/(2*discretization_order + 1))
+    # l_e = np.float32(1e-7)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([5,5,5])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = [3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_counter += 1
+    particle_posns /= l_e
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+    max_iters_w_drag = 300
+
+    magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+
+    magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+    magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+
+    for i, Hext in enumerate(Hext_series):
+        magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+        magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+
+    magnetization = magnetic_moments/particle_volume
+    magnetization_w_drag = magnetic_moments_w_drag/particle_volume
+    magnetization_new_drag = magnetic_moments_new_drag/particle_volume
+
+    magnetization /= Ms
+    magnetization_w_drag /= Ms
+    magnetization_new_drag /= Ms
+
+    
+    iter_number = np.arange(max_iters)
+    field_index = 0
+
+    fig, axs = plt.subplots(3,4)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,0])
+        axs[1,1].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,1])
+        axs[1,2].plot(np.arange(max_iters_w_drag),magnetization_w_drag[field_index,:,count,2])
+        axs[2,0].plot(np.arange(max_iters_w_drag),magnetization_new_drag[field_index,:,count,0])
+        axs[2,1].plot(np.arange(max_iters_w_drag),magnetization_new_drag[field_index,:,count,1])
+        axs[2,2].plot(np.arange(max_iters_w_drag),magnetization_new_drag[field_index,:,count,2])
+        axs[2,3].plot(np.arange(max_iters_w_drag),np.linalg.norm(magnetization_new_drag[field_index,:,count],axis=1))
+
+    axs[2,0].set_xlabel('iteration number')
+    axs[2,1].set_xlabel('iteration number')
+    axs[2,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (w drag)')
+    axs[2,0].set_ylabel('normalized particle magnetization (new drag)')
+
+    plt.show(block=False)
+
+    iter_number = np.arange(max_iters_w_drag)
+    system_magnetization = np.sum(magnetic_moments_new_drag[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
+    fig, ax = plt.subplots()
+    ax.plot(iter_number,system_magnetization[:,:])
+    ax.set_xlabel('iteration number')
+    ax.set_ylabel('normalized system magnetization')
+        
+    plt.show(block=False)
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax.set_title('Normalized Magnetic Moment vectors (iterative w new drag)')
+    ax.set_xlabel('X (l_e)')
+    ax.set_ylabel('Y (l_e)')
+    ax.set_zlabel('Z (l_e)')
+    ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],magnetization_new_drag[field_index,-1,:,0],magnetization_new_drag[field_index,-1,:,1],magnetization_new_drag[field_index,-1,:,2],pivot='middle',length=15.0)
+
+    plt.show()
+    print('review plot')
+
+def nonlinear_magnetization_fsolve():
+    """Plot the magnetization vector components from using scipy.optimize.fsolve() or scipy.optimize.broyden1(). Test how it behaves with and without symmetry, with more particles. Wishlist for PBC on magnetization, so that you have "image" volumes around the real simulated volume that are copies of the real simulated volume (and include a demagnetization field due to an infinite surrounding medium with a continuous magnetization equal to the magnetic moment vector sum of the real volume divided by the system volume, with a shape factor for a sphere (or a cube, but it is infinite in extent in both cases)). See how symmetry, particle number, and separation/presence or absence of noise causes the method to work or fail"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.001/mu0
+    n_field_steps = 1
+    H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = np.float32(1.5e-6)
+    discretization_order = 3
+    l_e = np.float32(2*particle_radius/(2*discretization_order + 1))
+    # l_e = np.float32(1e-7)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,2,2])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7.8e-6,7.8e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_counter += 1
+    particle_posns /= l_e
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+    max_iters_w_drag = 300
+
+    # frohlich_kennelly_root_finding(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e)
+    Hext = np.float32(Hext_series[0])
+    # initial_guess = particle_volume*chi*Hext
+    # initial_guess = np.tile(initial_guess,num_particles)
+    # initial_guess = np.reshape(initial_guess,(num_particles*3,))
+    initial_guess_normalized_magnetization = np.zeros((num_particles*3,))
+    initial_guess_normalized_magnetization = chi*Hext/Ms
+    initial_guess_normalized_magnetization = np.tile(initial_guess_normalized_magnetization,num_particles)
+    fixed_point_magnetization = np.zeros((3*num_particles,))
+    fixed_point_magnetization = scipy.optimize.fixed_point(frohlich_kennelly_fixed_point,x0=np.float32(initial_guess_normalized_magnetization),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,Hext,l_e))
+    fsolve_magnetization = scipy.optimize.fsolve(frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)))
+
+
+    magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+
+    # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+    # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+
+    for i, Hext in enumerate(Hext_series):
+        magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        # magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+        # magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+
+    magnetization = magnetic_moments/particle_volume
+    # magnetization_w_drag = magnetic_moments_w_drag/particle_volume
+    # magnetization_new_drag = magnetic_moments_new_drag/particle_volume
+
+    magnetization /= Ms
+    # magnetization_w_drag /= Ms
+    # magnetization_new_drag /= Ms
+
+    # fsolve_magnetization = np.reshape(fsolve_mag_moments,(num_particles,3))/particle_volume
+    # fixed_point_magnetization = np.reshape(fixed_point_mag_moments,(num_particles,3))/particle_volume
+
+    # fsolve_magnetization /= Ms
+    # fixed_point_magnetization /= Ms
+
+    fsolve_magnetization = np.reshape(fsolve_magnetization,(num_particles,3))
+    fixed_point_magnetization = np.reshape(fixed_point_magnetization,(num_particles,3))
+    
+    iter_number = np.arange(max_iters)
+    field_index = 0
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,0])
+        axs[1,1].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,1])
+        axs[1,2].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,2])
+        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,0])
+        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,1])
+        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,2])
+
+    axs[2,0].set_xlabel('iteration number')
+    axs[2,1].set_xlabel('iteration number')
+    axs[2,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (fsolve)')
+    axs[2,0].set_ylabel('normalized particle magnetization (fixed_point)')
+
+    plt.show(block=False)
+
+    # iter_number = np.arange(max_iters_w_drag)
+    # system_magnetization = np.sum(magnetic_moments_new_drag[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
     # fig, ax = plt.subplots()
-    # ax.plot(Bext_series_norm,gpu_parallel_magnetization,'.',label='GPU')
-    # ax.set_xlabel('B Field (T)')
-    # ax.set_ylabel('Normalized Magnetization')
-    # ax.set_title(f'Magnetization versus Applied Field\n{num_particles} Particles, Separation {separation}\nTheta {Bext_theta_angle} Phi {Bext_phi_angle}')
-    # fig.legend()
-    # fig.show()
-    # save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing/'
-    # if not (os.path.isdir(save_dir)):
-    #     os.mkdir(save_dir)
-    # savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
-    # plt.savefig(savename)
+    # ax.plot(iter_number,system_magnetization[:,:])
+    # ax.set_xlabel('iteration number')
+    # ax.set_ylabel('normalized system magnetization')
+        
+    # plt.show(block=False)
+
+    # fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    # default_width,default_height = fig.get_size_inches()
+    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_dpi(200)
+    # ax.set_title('Normalized Magnetic Moment vectors (iterative w new drag)')
+    # ax.set_xlabel('X (l_e)')
+    # ax.set_ylabel('Y (l_e)')
+    # ax.set_zlabel('Z (l_e)')
+    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],magnetization_new_drag[field_index,-1,:,0],magnetization_new_drag[field_index,-1,:,1],magnetization_new_drag[field_index,-1,:,2],pivot='middle',length=15.0)
+
+    # plt.show()
+    print('review plot')
+
+def pbc_nonlinear_magnetization_fsolve():
+    """Plot the magnetization vector components from using scipy.optimize.fsolve() or scipy.optimize.broyden1(). Test how it behaves with and without symmetry, with more particles. Wishlist for PBC on magnetization, so that you have "image" volumes around the real simulated volume that are copies of the real simulated volume (and include a demagnetization field due to an infinite surrounding medium with a continuous magnetization equal to the magnetic moment vector sum of the real volume divided by the system volume, with a shape factor for a sphere (or a cube, but it is infinite in extent in both cases)). See how symmetry, particle number, and separation/presence or absence of noise causes the method to work or fail"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.001/mu0
+    n_field_steps = 1
+    H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = np.float32(1.5e-6)
+    discretization_order = 3
+    l_e = np.float32(2*particle_radius/(2*discretization_order + 1))
+    # l_e = np.float32(1e-7)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,1,1])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7e-6,7e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_counter += 1
+    particle_posns /= l_e
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+    max_iters_w_drag = 300
+
+    # frohlich_kennelly_root_finding(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e)
+    Hext = np.float32(Hext_series[0])
+    # initial_guess = particle_volume*chi*Hext
+    # initial_guess = np.tile(initial_guess,num_particles)
+    # initial_guess = np.reshape(initial_guess,(num_particles*3,))
+    num_images = np.array([2,2,2],dtype=np.int32)
+    translation_vector = np.array(separation,dtype=np.float64)*particles_per_axis/l_e
+    initial_guess_normalized_magnetization = np.zeros((num_particles*3,))
+    initial_guess_normalized_magnetization = chi*Hext/Ms
+    initial_guess_normalized_magnetization = np.tile(initial_guess_normalized_magnetization,num_particles)
+    fixed_point_magnetization = np.zeros((3*num_particles,))
+    # fixed_point_magnetization = scipy.optimize.fixed_point(pbc_frohlich_kennelly_fixed_point,x0=np.float32(initial_guess_normalized_magnetization),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,Hext,l_e,num_images,np.float32(translation_vector)),maxiter=3000,)#method='iteration'
+    fsolve_magnetization = scipy.optimize.fsolve(pbc_frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e),num_images,translation_vector))
+    broyden_magnetization = scipy.optimize.root(pbc_frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e),num_images,translation_vector),method='broyden1')
+
+    broyden_magnetization = np.reshape(broyden_magnetization.x,(num_particles,3))
+
+    magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+
+    # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+    # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+
+    for i, Hext in enumerate(Hext_series):
+        magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        # magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+        # magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+
+    magnetization = magnetic_moments/particle_volume
+    # magnetization_w_drag = magnetic_moments_w_drag/particle_volume
+    # magnetization_new_drag = magnetic_moments_new_drag/particle_volume
+
+    magnetization /= Ms
+    # magnetization_w_drag /= Ms
+    # magnetization_new_drag /= Ms
+
+    # fsolve_magnetization = np.reshape(fsolve_mag_moments,(num_particles,3))/particle_volume
+    # fixed_point_magnetization = np.reshape(fixed_point_mag_moments,(num_particles,3))/particle_volume
+
+    # fsolve_magnetization /= Ms
+    # fixed_point_magnetization /= Ms
+
+    fsolve_magnetization = np.reshape(fsolve_magnetization,(num_particles,3))
+    fixed_point_magnetization = np.reshape(fixed_point_magnetization,(num_particles,3))
+    
+    iter_number = np.arange(max_iters)
+    field_index = 0
+
+    fig, axs = plt.subplots(4,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,0])
+        axs[1,1].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,1])
+        axs[1,2].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,2])
+        axs[3,0].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[count,0])
+        axs[3,1].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[count,1])
+        axs[3,2].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[count,2])
+        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,0])
+        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,1])
+        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,2])
+
+    axs[2,0].set_xlabel('iteration number')
+    axs[2,1].set_xlabel('iteration number')
+    axs[2,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('normalized particle magnetization (fsolve)')
+    axs[3,0].set_ylabel('normalized particle magnetization (broyden)')
+    axs[2,0].set_ylabel('normalized particle magnetization (fixed_point)')
+
+    plt.show(block=False)
+
+    # iter_number = np.arange(max_iters_w_drag)
+    # system_magnetization = np.sum(magnetic_moments_new_drag[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
+    # fig, ax = plt.subplots()
+    # ax.plot(iter_number,system_magnetization[:,:])
+    # ax.set_xlabel('iteration number')
+    # ax.set_ylabel('normalized system magnetization')
+        
+    # plt.show(block=False)
+
+    # fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    # default_width,default_height = fig.get_size_inches()
+    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_dpi(200)
+    # ax.set_title('Normalized Magnetic Moment vectors (iterative w new drag)')
+    # ax.set_xlabel('X (l_e)')
+    # ax.set_ylabel('Y (l_e)')
+    # ax.set_zlabel('Z (l_e)')
+    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],magnetization_new_drag[field_index,-1,:,0],magnetization_new_drag[field_index,-1,:,1],magnetization_new_drag[field_index,-1,:,2],pivot='middle',length=15.0)
+
+    # plt.show()
+    print('review plot')
+
+def frohlich_kennelly_fixed_point(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e):
+    mag_moments = magnetism.get_normalized_magnetic_moment_frohlich_kennelly_normalized_posns_32bit(magnetic_moments,Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    return mag_moments
+
+def frohlich_kennelly_root_finding(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e):
+    result = magnetism.root_finding_normalized_frohlich_kennelly_normalized_posns_64bit(magnetic_moments,Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    return result
+
+def pbc_frohlich_kennelly_fixed_point(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e,num_images,translation_vector):
+    """with periodic boundary conditions (image volumes)"""
+    mag_moments = magnetism.get_normalized_magnetic_moment_frohlich_kennelly_normalized_posns_pbc_32bit(magnetic_moments,Hext,particle_posns,particle_radius,chi,Ms,l_e,num_images,translation_vector)
+    return mag_moments
+
+def pbc_frohlich_kennelly_root_finding(magnetic_moments,particle_posns,chi,particle_radius,Ms,Hext,l_e,num_images,translation_vector):
+    """with periodic boundary conditions (image volumes)"""
+    result = magnetism.root_finding_normalized_frohlich_kennelly_normalized_posns_pbc_64bit(magnetic_moments,Hext,particle_posns,particle_radius,chi,Ms,l_e,num_images,translation_vector)
+    return result
+
 if __name__ == "__main__":
     # main()
     # gpu_testing()
     # gpu_testing_force_calc()
-    iterative_magnetization_testing()
+    # linear_magnetization_testing()
+    # iterative_magnetization_w_drag_testing()
+    # iterative_magnetization_testing()
+
+    # nonlinear_magnetization_fsolve()
+    pbc_nonlinear_magnetization_fsolve()
