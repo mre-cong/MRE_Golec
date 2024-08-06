@@ -386,6 +386,64 @@ void get_separation_vectors(const float* particle_posns, float* separation_vecto
     }
     ''', 'get_separation_vectors')
 
+separation_vectors_pbc_kernel = cp.RawKernel(r'''
+extern "C" __global__                                         
+void get_separation_vectors(const float* particle_posns, float* separation_vectors, float* separation_vectors_inv_magnitude, const int size_particles, const int* num_images, const float* image_translation_vector, float* image_separation_vectors, float* image_separation_vectors_inv_magnitude) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                                           
+        float ri[3];
+        int separation_vector_idx;
+        int posn_idx;
+        int inv_magnitude_idx;
+        int num_image_volumes = (2*num_images[0] + 1) * (2*num_images[1] + 1) * (2*num_images[2] + 1) - 1;
+        int num_image_particles = size_particles*num_image_volumes;
+        int image_counter = 0;
+        int image_separation_vector_idx;
+        int image_inv_magnitude_idx;
+        ri[0] = particle_posns[3*tid];
+        ri[1] = particle_posns[3*tid+1];
+        ri[2] = particle_posns[3*tid+2];
+        for (int i = 0; i < size_particles; i++)
+        {
+            posn_idx = 3*i;
+            if (i != tid)
+            {
+            separation_vector_idx = tid*3*size_particles+3*i;
+            inv_magnitude_idx = tid*size_particles + i;
+            //posn_idx = 3*i;
+            separation_vectors[separation_vector_idx] = ri[0] - particle_posns[posn_idx];                                         
+            separation_vectors[separation_vector_idx+1] = ri[1] - particle_posns[posn_idx+1];                                                                
+            separation_vectors[separation_vector_idx+2] = ri[2] - particle_posns[posn_idx+2];                                                                
+            separation_vectors_inv_magnitude[inv_magnitude_idx] = rnorm3df(separation_vectors[separation_vector_idx],separation_vectors[separation_vector_idx+1],separation_vectors[separation_vector_idx+2]);
+            }
+            for (int image_count_x = -1*num_images[0]; image_count_x < num_images[0]+1; image_count_x++)
+            {
+                for (int image_count_y = -1*num_images[1]; image_count_y < num_images[1]+1; image_count_y++)
+                {
+                    for (int image_count_z = -1*num_images[2]; image_count_z < num_images[2]+1; image_count_z++)
+                    {
+                        if ((image_count_x == 0) && (image_count_y == 0) && (image_count_z == 0))
+                        {
+                        }
+                        else
+                        {
+                            image_separation_vector_idx = tid*3*num_image_particles + 3*image_counter;
+                            image_inv_magnitude_idx = tid*num_image_particles + image_counter;
+                            image_separation_vectors[image_separation_vector_idx] = ri[0] - (particle_posns[posn_idx] + image_count_x*image_translation_vector[0]);
+                            image_separation_vectors[image_separation_vector_idx+1] = ri[1] - (particle_posns[posn_idx+1] + image_count_y*image_translation_vector[1]);
+                            image_separation_vectors[image_separation_vector_idx+2] = ri[2] - (particle_posns[posn_idx+2] + image_count_z*image_translation_vector[2]);
+                            image_separation_vectors_inv_magnitude[image_inv_magnitude_idx] = rnorm3df(image_separation_vectors[image_separation_vector_idx],image_separation_vectors[image_separation_vector_idx+1],image_separation_vectors[image_separation_vector_idx+2]);
+                            image_counter++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    }
+    ''', 'get_separation_vectors')
+
 # cpdef np.ndarray[np.float32_t, ndim=1] get_dipole_field_normalized_32bit(float[:] r_i, float[:] r_j,  float[:] m, float l_e):
 #     """Get the B-Field at a point i due to a dipole at point j"""
 #     cdef float[3] rij
@@ -402,6 +460,54 @@ void get_separation_vectors(const float* particle_posns, float* separation_vecto
 #     for i in range(3):
 #         B[i] = prefactor*(3*m_dot_r_hat*rij_hat[i] - m[i])
 #     return B
+
+dipole_field_pbc_kernel = cp.RawKernel(r'''
+float INV_4PI = 1/(4*3.141592654f);
+extern "C" __global__
+void get_dipole_field(const float* separation_vectors, const float* separation_vectors_inv_magnitude, const float* magnetic_moment, const float inv_l_e, float* Htot, const int size_particles, const float* image_separation_vectors, const float* image_separation_vectors_inv_magnitude, const int* num_images) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                
+        float prefactor;
+        float r_hat[3];
+        float m_dot_r_hat;
+        int separation_vector_idx;
+        int inv_magnitude_idx;
+        int num_image_volumes = (2*num_images[0] + 1) * (2*num_images[1] + 1) * (2*num_images[2] + 1) - 1;
+        int num_image_particles = size_particles*num_image_volumes;
+        int image_mag_moment_idx;
+        //float INV_4PI = 1/(4*3.141592654f);
+        for (int i = 0; i < size_particles; i++)
+        {
+            separation_vector_idx = tid*3*size_particles+3*i;
+            inv_magnitude_idx = tid*size_particles + i;
+            r_hat[0] = separation_vectors[separation_vector_idx]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[1] = separation_vectors[separation_vector_idx+1]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[2] = separation_vectors[separation_vector_idx+2]*separation_vectors_inv_magnitude[inv_magnitude_idx];
+            m_dot_r_hat = magnetic_moment[3*i]*r_hat[0] + magnetic_moment[3*i+1]*r_hat[1] + magnetic_moment[3*i+2]*r_hat[2];
+            prefactor = INV_4PI*powf(separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e,3);
+            Htot[3*tid] += prefactor*(3*m_dot_r_hat*r_hat[0] - magnetic_moment[3*i]);
+            Htot[3*tid+1] += prefactor*(3*m_dot_r_hat*r_hat[1] - magnetic_moment[3*i+1]);
+            Htot[3*tid+2] += prefactor*(3*m_dot_r_hat*r_hat[2] - magnetic_moment[3*i+2]);
+        }
+        for (int i = 0; i < num_image_particles; i++)
+        {
+            separation_vector_idx = tid*3*num_image_particles+3*i;
+            inv_magnitude_idx = tid*num_image_particles + i;
+            image_mag_moment_idx = i / num_image_volumes;
+            //printf("image mag moment index:%i",image_mag_moment_idx);
+            r_hat[0] = image_separation_vectors[separation_vector_idx]*image_separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[1] = image_separation_vectors[separation_vector_idx+1]*image_separation_vectors_inv_magnitude[inv_magnitude_idx];
+            r_hat[2] = image_separation_vectors[separation_vector_idx+2]*image_separation_vectors_inv_magnitude[inv_magnitude_idx];
+            m_dot_r_hat = magnetic_moment[3*image_mag_moment_idx]*r_hat[0] + magnetic_moment[3*image_mag_moment_idx+1]*r_hat[1] + magnetic_moment[3*image_mag_moment_idx+2]*r_hat[2];
+            prefactor = INV_4PI*powf(image_separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e,3);
+            Htot[3*tid] += prefactor*(3*m_dot_r_hat*r_hat[0] - magnetic_moment[3*image_mag_moment_idx]);
+            Htot[3*tid+1] += prefactor*(3*m_dot_r_hat*r_hat[1] - magnetic_moment[3*image_mag_moment_idx+1]);
+            Htot[3*tid+2] += prefactor*(3*m_dot_r_hat*r_hat[2] - magnetic_moment[3*image_mag_moment_idx+2]);
+        }
+    }
+    }
+    ''', 'get_dipole_field')
 
 dipole_field_kernel = cp.RawKernel(r'''
 float INV_4PI = 1/(4*3.141592654f);
@@ -625,8 +731,10 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
     # return host_composite_element_spring_forces# host_element_forces, host_spring_forces
     return host_magnetic_moments
 
-def get_magnetization_iterative_iteration_testing(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=5):
+def get_magnetization_iterative_iteration_testing(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=20,atol=None,rtol=1e-4):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    if atol == None:
+        atol = particle_volume*Ms*1e-3
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
     magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
@@ -652,6 +760,57 @@ def get_magnetization_iterative_iteration_testing(Hext,particles,particle_posns,
         magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
         cupy_stream.synchronize()
         host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+        if i > 0:
+            difference = host_magnetic_moments[i] - host_magnetic_moments[i-1]
+            if np.all(np.abs(np.ravel(difference)) < atol):
+                host_magnetic_moments[i:] = host_magnetic_moments[i]
+                break
+
+    return host_magnetic_moments
+
+def get_magnetization_iterative_pbc_iteration_testing(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,num_images,image_translation_vector,max_iters=20,atol=None,rtol=1e-4):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    if atol == None:
+        atol = particle_volume*Ms*1e-3
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    num_image_volumes = (2*num_images[0] + 1) * (2*num_images[1] + 1) * (2*num_images[2] + 1) - 1 
+    num_images = cp.asarray(num_images,dtype=cp.int32)
+    system_volume = np.float32(image_translation_vector[0]*image_translation_vector[1]*image_translation_vector[2]*np.power(l_e,3))
+    image_translation_vector = cp.asarray(image_translation_vector,dtype=cp.float32)
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    image_separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*num_image_volumes*3,1),dtype=cp.float32)
+    image_separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0]*num_image_volumes,1),dtype=cp.float32)
+    
+    separation_vectors_pbc_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles,num_images,image_translation_vector,image_separation_vectors,image_separation_vectors_inv_magnitude))
+    cupy_stream.synchronize()
+
+    inv_l_e = np.float32(1/l_e)
+    for i in range(max_iters):
+        system_M = cp.sum(cp.reshape(magnetic_moment,(size_particles,3)),axis=0)/system_volume
+        Htot = cp.tile(Hext - (1./3.)*system_M,particles.shape[0])
+        # Htot = cp.tile(Hext,particles.shape[0])
+        dipole_field_pbc_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles,image_separation_vectors,image_separation_vectors_inv_magnitude,num_images))
+        cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+        if i > 0:
+            difference = host_magnetic_moments[i] - host_magnetic_moments[i-1]
+            if np.all(np.abs(np.ravel(difference)) < atol):
+                host_magnetic_moments[i:] = host_magnetic_moments[i]
+                break
 
     return host_magnetic_moments
 
@@ -866,7 +1025,7 @@ def get_magnetization_iterative_iteration_testing_w_seeded_values(linear_magneti
         cupy_stream.synchronize()
         magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
         cupy_stream.synchronize()
-        magnetic_moment = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
+        # magnetic_moment = realign_and_scale_magnetic_moments(magnetic_moment,Hext,particle_volume,Ms,size_particles)
         host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((size_particles,3))
         magnetic_moment.reshape((size_particles*3,))
 
@@ -1395,6 +1554,46 @@ def linear_magnetization_solver(particle_posns,Hext,chi,Ms,particle_volume,l_e):
     magnetic_moments = cp.asnumpy(magnetic_moments).reshape((num_particles,3))
     return magnetic_moments, trace_check, det_check
 
+def linear_normalized_magnetization_solver(particle_posns,Hext,chi,Ms,particle_volume,l_e):
+    """Assuming a linear magnetization response, find the magnetic moments of a set of mutually magnetizing dipoles in an external magnetic field"""
+    num_particles = np.int64(particle_posns.shape[0]/3)
+    assert particle_posns.shape[0] == 3*num_particles
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_particles = num_particles
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+    # chi = 3*chi/(3+chi)
+    A = calc_A(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,chi,particle_volume)
+    Hext_vector = cp.tile(Hext,num_particles)
+    # chi_v = chi*particle_volume
+    # b = Hext_vector*chi_v#*particle_volume#
+    chiMs = chi/Ms
+    b = Hext_vector*chiMs
+    # b = cp.ones((particle_posns.shape[0]*3,),dtype=cp.float32)*chi*particle_volume
+    magnetic_moments = cp.linalg.solve(A,b)
+    # correctness_check = cp.dot(A,magnetic_moments)
+    # temp = b - correctness_check
+    # absolute_tolerance = 1.6e6*particle_volume*0.005
+    # print(f'consistent answer from linsolve and Ax=b using magnetic moment result?:{cp.allclose(correctness_check,b,atol=absolute_tolerance)}')
+
+    # magnetic_moments = realign_and_scale_magnetic_moments(magnetic_moments,Hext,particle_volume,Ms,num_particles)
+
+    Ainv = cp.linalg.inv(A)
+    AinvA = cp.matmul(Ainv,A)
+    trace_check = cp.trace(AinvA)
+    det_check = cp.linalg.det(AinvA)
+    # print(f'Trace of A^-1 A is {trace_check}')
+    # print(f'Determinant of A^-1 A is {det_check}')
+
+    magnetic_moments = cp.asnumpy(magnetic_moments).reshape((num_particles,3))
+    return magnetic_moments, trace_check, det_check
+
 def realign_and_scale_magnetic_moments(magnetic_moments,Hext,particle_volume,Ms,num_particles):
     """Checks if magnetic moment values are anti-aligned with the external field and flips them, then constrains magnetic moment vector magnitude to saturation value for oversaturated or flipped magnetic moments and returns the resulting magnetic moment components"""
     new_magnetic_moments = cp.copy(cp.reshape(magnetic_moments,(num_particles,3)))
@@ -1860,6 +2059,7 @@ def linear_magnetization_testing():
     separations = np.linspace(min_separation,max_separation,num=500)
     num_separations = separations.shape[0]
     linear_magnetic_moments = np.zeros((Hext_series.shape[0],num_separations,num_particles,3),dtype=np.float32)
+    linear_normalized_magnetization = np.zeros((Hext_series.shape[0],num_separations,num_particles,3),dtype=np.float32)
     traceA = np.zeros((Hext_series.shape[0],num_separations),dtype=np.float32)
     detA = np.zeros((Hext_series.shape[0],num_separations),dtype=np.float32)
     for separation_counter, separation in enumerate(separations):
@@ -1875,6 +2075,7 @@ def linear_magnetization_testing():
         device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
         for i, Hext in enumerate(Hext_series):
             linear_magnetic_moments[i,separation_counter], traceA[i,separation_counter], detA[i,separation_counter] = linear_magnetization_solver(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,Ms,particle_volume,l_e)
+            linear_normalized_magnetization[i,separation_counter], traceA[i,separation_counter], detA[i,separation_counter] = linear_normalized_magnetization_solver(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,Ms,particle_volume,l_e)
         # linear_magnetization_w_chi_scaled[i] = linear_magnetization_solver_chi_scaled(device_particle_posns,cp.asarray(Hext,dtype=cp.float32),chi,particle_volume,l_e)
 
     linear_magnetization = linear_magnetic_moments/particle_volume
@@ -1894,7 +2095,7 @@ def linear_magnetization_testing():
     axs[0].set_title(r'm_x')
     axs[1].set_title(r'm_y')
     axs[2].set_title(r'm_z')
-    axs[0].set_ylabel('normalized particle magnetization')
+    axs[0].set_ylabel('normalized particle magnetization from SI linsolve')
     plt.show(block=False)
 
     fig, axs = plt.subplots(1,3)
@@ -1908,12 +2109,26 @@ def linear_magnetization_testing():
     axs[0].set_title(r'ratio m_x/m_y')
     axs[1].set_title(r'ratio m_x/m_z')
     axs[2].set_title(r'ratio m_y_/m_z')
-    axs[0].set_ylabel('normalized particle magnetization ratio')
+    axs[0].set_ylabel('normalized particle magnetization ratio from SI linsolve')
     plt.show(block=False)
 
     fig, axs = plt.subplots(1,3)
     for count in range(particles.shape[0]):
-        axs[0].plot(separations,linear_magnetization[field_index,:,count,0],'.')
+        axs[0].plot(separations,linear_normalized_magnetization[field_index,:,count,0],'.')
+        axs[1].plot(separations,linear_normalized_magnetization[field_index,:,count,1],'.')
+        axs[2].plot(separations,linear_normalized_magnetization[field_index,:,count,2],'.')
+    axs[0].set_xlabel('separation (m)')
+    axs[1].set_xlabel('separation (m)')
+    axs[2].set_xlabel('separation (m)')
+    axs[0].set_title(r'm_x')
+    axs[1].set_title(r'm_y')
+    axs[2].set_title(r'm_z')
+    axs[0].set_ylabel('normalized particle magnetization from normalized linsolve')
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(1,3)
+    for count in range(particles.shape[0]):
+        axs[0].plot(separations,linear_normalized_magnetization[field_index,:,count,0],'.')
         axs[1].plot(separations,detA[field_index,:],'.')
         axs[2].plot(separations,traceA[field_index,:],'.')
     axs[0].set_xlabel('separation (m)')
@@ -1922,7 +2137,7 @@ def linear_magnetization_testing():
     axs[0].set_title(r'm_x')
     axs[1].set_title(r'det $A^-1$A')
     axs[2].set_title(r'trace $A^-1$A')
-    axs[0].set_ylabel('normalized particle magnetization')
+    axs[0].set_ylabel('normalized particle magnetization from normalized linsolve')
     plt.show(block=False)
     print('End of linear magnetization finding testing')
 
@@ -2052,8 +2267,8 @@ def nonlinear_magnetization_fsolve():
     """Plot the magnetization vector components from using scipy.optimize.fsolve() or scipy.optimize.broyden1(). Test how it behaves with and without symmetry, with more particles. Wishlist for PBC on magnetization, so that you have "image" volumes around the real simulated volume that are copies of the real simulated volume (and include a demagnetization field due to an infinite surrounding medium with a continuous magnetization equal to the magnetic moment vector sum of the real volume divided by the system volume, with a shape factor for a sphere (or a cube, but it is infinite in extent in both cases)). See how symmetry, particle number, and separation/presence or absence of noise causes the method to work or fail"""
     #choose the maximum field, number of field steps, and field angle
     mu0 = 4*np.pi*1e-7
-    H_mag = 0.001/mu0
-    n_field_steps = 1
+    H_mag = 1.0/mu0
+    n_field_steps = 1000
     H_step = H_mag/(n_field_steps)
     #polar angle, aka angle wrt the z axis, range 0 to pi
     Hext_theta_angle = np.pi/2
@@ -2068,6 +2283,7 @@ def nonlinear_magnetization_fsolve():
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    Hext_series = Hext_series[::-1,:]
     chi = np.float32(70)
     Ms = np.float32(1.6e6)
     particle_radius = np.float32(1.5e-6)
@@ -2077,7 +2293,7 @@ def nonlinear_magnetization_fsolve():
     num_nodes_per_particle = 8
     particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    particles_per_axis = np.array([2,2,2])
+    particles_per_axis = np.array([3,1,1])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
@@ -2089,9 +2305,9 @@ def nonlinear_magnetization_fsolve():
     for i in range(particles_per_axis[0]):
         for j in range(particles_per_axis[1]):
             for k in range(particles_per_axis[2]):
-                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,0] = i * separation[0] + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] + rng.integers(low=-1,high=2,size=1)*l_e
                 particle_counter += 1
     particle_posns /= l_e
     device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
@@ -2106,28 +2322,53 @@ def nonlinear_magnetization_fsolve():
     # initial_guess = np.tile(initial_guess,num_particles)
     # initial_guess = np.reshape(initial_guess,(num_particles*3,))
     initial_guess_normalized_magnetization = np.zeros((num_particles*3,))
-    initial_guess_normalized_magnetization = chi*Hext/Ms
+    initial_guess_normalized_magnetization = chi*Hext_series[0]/Ms
     initial_guess_normalized_magnetization = np.tile(initial_guess_normalized_magnetization,num_particles)
-    fixed_point_magnetization = np.zeros((3*num_particles,))
-    fixed_point_magnetization = scipy.optimize.fixed_point(frohlich_kennelly_fixed_point,x0=np.float32(initial_guess_normalized_magnetization),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,Hext,l_e))
-    fsolve_magnetization = scipy.optimize.fsolve(frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)))
+    fixed_point_initial_soln = initial_guess_normalized_magnetization.copy()
+    fsolve_initial_soln = initial_guess_normalized_magnetization.copy()
+    broyden_initial_soln = initial_guess_normalized_magnetization.copy()
+    seeded_gpu_fixedpoint_initial_soln = initial_guess_normalized_magnetization.copy()*particle_volume
+    
+
+    fixed_point_magnetization = np.zeros((Hext_series.shape[0],3*num_particles,))
+    fsolve_magnetization = np.zeros((Hext_series.shape[0],3*num_particles,))
+    broyden_magnetization = np.zeros((Hext_series.shape[0],3*num_particles,))
 
 
     magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    seeded_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
 
     # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
     # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
 
     for i, Hext in enumerate(Hext_series):
         magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        seeded_magnetic_moments[i] = get_magnetization_iterative_iteration_testing_w_seeded_values(np.float32(seeded_gpu_fixedpoint_initial_soln),cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        seeded_gpu_fixedpoint_initial_soln = np.reshape(seeded_magnetic_moments[i,-1],(3*num_particles,))
+
         # magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
         # magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
+        try:
+            fixed_point_magnetization[i] = scipy.optimize.fixed_point(frohlich_kennelly_fixed_point,x0=np.float32(fixed_point_initial_soln),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,np.float32(Hext),l_e))
+            fixed_point_initial_soln = fixed_point_magnetization[i].copy()
+        except:
+            fixed_point_magnetization[i] = np.zeros((3*num_particles,))
+
+        fsolve_magnetization[i] = scipy.optimize.fsolve(frohlich_kennelly_root_finding,x0=np.float64(fsolve_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)))
+        fsolve_initial_soln = fsolve_magnetization[i].copy()
+
+        broyden_magnetization_struct = scipy.optimize.root(frohlich_kennelly_root_finding,x0=np.float64(broyden_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)),method='broyden1')
+        broyden_magnetization[i] = np.reshape(broyden_magnetization_struct.x,(num_particles*3))
+        broyden_initial_soln = broyden_magnetization[i].copy()
+
 
     magnetization = magnetic_moments/particle_volume
+    seeded_magnetization = seeded_magnetic_moments/particle_volume
     # magnetization_w_drag = magnetic_moments_w_drag/particle_volume
     # magnetization_new_drag = magnetic_moments_new_drag/particle_volume
 
     magnetization /= Ms
+    seeded_magnetization /= Ms
     # magnetization_w_drag /= Ms
     # magnetization_new_drag /= Ms
 
@@ -2137,23 +2378,24 @@ def nonlinear_magnetization_fsolve():
     # fsolve_magnetization /= Ms
     # fixed_point_magnetization /= Ms
 
-    fsolve_magnetization = np.reshape(fsolve_magnetization,(num_particles,3))
-    fixed_point_magnetization = np.reshape(fixed_point_magnetization,(num_particles,3))
+    fsolve_magnetization = np.reshape(fsolve_magnetization,(Hext_series.shape[0],num_particles,3))
+    fixed_point_magnetization = np.reshape(fixed_point_magnetization,(Hext_series.shape[0],num_particles,3))
+    broyden_magnetization = np.reshape(broyden_magnetization,(Hext_series.shape[0],num_particles,3))
     
     iter_number = np.arange(max_iters)
-    field_index = 0
+    field_index = Hext_series.shape[0]-1
 
     fig, axs = plt.subplots(3,3)
     for count in range(particles.shape[0]):
         axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
         axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
         axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
-        axs[1,0].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,0])
-        axs[1,1].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,1])
-        axs[1,2].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[count,2])
-        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,0])
-        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,1])
-        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,2])
+        axs[1,0].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,0])
+        axs[1,1].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,1])
+        axs[1,2].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,2])
+        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,0])
+        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,1])
+        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,2])
 
     axs[2,0].set_xlabel('iteration number')
     axs[2,1].set_xlabel('iteration number')
@@ -2163,8 +2405,75 @@ def nonlinear_magnetization_fsolve():
     axs[0,2].set_title('Z')
     # axs[0,3].set_title('magnitude normalized')
     axs[0,0].set_ylabel('normalized particle magnetization')
-    axs[1,0].set_ylabel('normalized particle magnetization (fsolve)')
-    axs[2,0].set_ylabel('normalized particle magnetization (fixed_point)')
+    axs[1,0].set_ylabel('(fsolve)')
+    axs[2,0].set_ylabel('(fixed_point)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,seeded_magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,seeded_magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,seeded_magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[field_index,count,0])
+        axs[1,1].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[field_index,count,1])
+        axs[1,2].plot(iter_number,np.ones(max_iters,)*broyden_magnetization[field_index,count,2])
+
+    axs[1,0].set_xlabel('iteration number')
+    axs[1,1].set_xlabel('iteration number')
+    axs[1,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('(seeded)')
+    axs[1,0].set_ylabel('(broyden)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,2])
+        axs[2,0].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,0])
+        axs[2,1].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,1])
+        axs[2,2].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,2])
+
+    axs[2,0].set_xlabel('Applied Field (T)')
+    axs[2,1].set_xlabel('Applied Field (T)')
+    axs[2,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('(fsolve)')
+    axs[2,0].set_ylabel('(fixed_point)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,2])
+
+    axs[1,0].set_xlabel('Applied Field (T)')
+    axs[1,1].set_xlabel('Applied Field (T)')
+    axs[1,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('(seeded)')
+    axs[1,0].set_ylabel('(broyden)')
 
     plt.show(block=False)
 
@@ -2210,7 +2519,7 @@ def pbc_nonlinear_magnetization_fsolve():
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
-    chi = np.float32(70)
+    chi = np.float32(70)#np.float32(3)#
     Ms = np.float32(1.6e6)
     particle_radius = np.float32(1.5e-6)
     discretization_order = 3
@@ -2219,11 +2528,17 @@ def pbc_nonlinear_magnetization_fsolve():
     num_nodes_per_particle = 8
     particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    particles_per_axis = np.array([2,1,1])
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    particles_per_axis = np.array([2,2,2])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    volume_fraction = 0.20
+    fictional_total_volume = num_particles*particle_volume/volume_fraction
+    fictional_side_length = np.power(fictional_total_volume,(1/3))
+    particle_density = num_particles/fictional_total_volume
+    particle_separation_metric = 1/np.power(particle_density,(1/3))
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
-    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7e-6,7e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    separation = [particle_separation_metric,particle_separation_metric,particle_separation_metric]#[3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7e-6,7e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
     ss = rand.SeedSequence()
     seed = ss.entropy
     rng = rand.default_rng(seed)
@@ -2231,14 +2546,13 @@ def pbc_nonlinear_magnetization_fsolve():
     for i in range(particles_per_axis[0]):
         for j in range(particles_per_axis[1]):
             for k in range(particles_per_axis[2]):
-                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,0] = i * separation[0] + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] + rng.integers(low=-1,high=2,size=1)*l_e
                 particle_counter += 1
     particle_posns /= l_e
     device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
     num_particles = particle_posns.shape[0]
-    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
     max_iters = 40
     max_iters_w_drag = 300
 
@@ -2249,31 +2563,38 @@ def pbc_nonlinear_magnetization_fsolve():
     # initial_guess = np.reshape(initial_guess,(num_particles*3,))
     num_images = np.array([2,2,2],dtype=np.int32)
     translation_vector = np.array(separation,dtype=np.float64)*particles_per_axis/l_e
+
+    # translation_vector[0] *= 1.0
+
     initial_guess_normalized_magnetization = np.zeros((num_particles*3,))
     initial_guess_normalized_magnetization = chi*Hext/Ms
     initial_guess_normalized_magnetization = np.tile(initial_guess_normalized_magnetization,num_particles)
     fixed_point_magnetization = np.zeros((3*num_particles,))
-    # fixed_point_magnetization = scipy.optimize.fixed_point(pbc_frohlich_kennelly_fixed_point,x0=np.float32(initial_guess_normalized_magnetization),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,Hext,l_e,num_images,np.float32(translation_vector)),maxiter=3000,)#method='iteration'
+    # fixed_point_magnetization = scipy.optimize.fixed_point(pbc_frohlich_kennelly_fixed_point,x0=np.float32(initial_guess_normalized_magnetization),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,Hext,l_e,num_images,np.float32(translation_vector)),maxiter=1000,)#method='iteration'
     fsolve_magnetization = scipy.optimize.fsolve(pbc_frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e),num_images,translation_vector))
     broyden_magnetization = scipy.optimize.root(pbc_frohlich_kennelly_root_finding,x0=np.float64(initial_guess_normalized_magnetization),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e),num_images,translation_vector),method='broyden1')
 
     broyden_magnetization = np.reshape(broyden_magnetization.x,(num_particles,3))
 
     magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    pbc_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
 
     # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
     # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
 
     for i, Hext in enumerate(Hext_series):
         magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        pbc_magnetic_moments[i] = get_magnetization_iterative_pbc_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,num_images,translation_vector,max_iters)
         # magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
         # magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
 
     magnetization = magnetic_moments/particle_volume
+    pbc_magnetization = pbc_magnetic_moments/particle_volume
     # magnetization_w_drag = magnetic_moments_w_drag/particle_volume
     # magnetization_new_drag = magnetic_moments_new_drag/particle_volume
 
     magnetization /= Ms
+    pbc_magnetization /= Ms
     # magnetization_w_drag /= Ms
     # magnetization_new_drag /= Ms
 
@@ -2312,9 +2633,34 @@ def pbc_nonlinear_magnetization_fsolve():
     axs[0,2].set_title('Z')
     # axs[0,3].set_title('magnitude normalized')
     axs[0,0].set_ylabel('normalized particle magnetization')
-    axs[1,0].set_ylabel('normalized particle magnetization (fsolve)')
-    axs[3,0].set_ylabel('normalized particle magnetization (broyden)')
-    axs[2,0].set_ylabel('normalized particle magnetization (fixed_point)')
+    axs[1,0].set_ylabel('(fsolve)')
+    axs[3,0].set_ylabel('(broyden)')
+    axs[2,0].set_ylabel('(fixed_point)')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(iter_number,magnetization[field_index,:,count,0])
+        axs[0,1].plot(iter_number,magnetization[field_index,:,count,1])
+        axs[0,2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[1,0].plot(iter_number,pbc_magnetization[field_index,:,count,0])
+        axs[1,1].plot(iter_number,pbc_magnetization[field_index,:,count,1])
+        axs[1,2].plot(iter_number,pbc_magnetization[field_index,:,count,2])
+        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,0])
+        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,1])
+        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[count,2])
+
+    axs[2,0].set_xlabel('iteration number')
+    axs[2,1].set_xlabel('iteration number')
+    axs[2,2].set_xlabel('iteration number')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('gpu_pbc_fixedpoint')
+    axs[2,0].set_ylabel('(fixed_point)')
 
     plt.show(block=False)
 
@@ -2331,11 +2677,11 @@ def pbc_nonlinear_magnetization_fsolve():
     # default_width,default_height = fig.get_size_inches()
     # fig.set_size_inches(3*default_width,3*default_height)
     # fig.set_dpi(200)
-    # ax.set_title('Normalized Magnetic Moment vectors (iterative w new drag)')
+    # ax.set_title('Normalized Magnetic Moment vectors (Broyden, Peridioc)')
     # ax.set_xlabel('X (l_e)')
     # ax.set_ylabel('Y (l_e)')
     # ax.set_zlabel('Z (l_e)')
-    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],magnetization_new_drag[field_index,-1,:,0],magnetization_new_drag[field_index,-1,:,1],magnetization_new_drag[field_index,-1,:,2],pivot='middle',length=15.0)
+    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],broyden_magnetization[:,0],broyden_magnetization[:,1],broyden_magnetization[:,2],pivot='middle',length=30.0)
 
     # plt.show()
     print('review plot')
@@ -2358,13 +2704,713 @@ def pbc_frohlich_kennelly_root_finding(magnetic_moments,particle_posns,chi,parti
     result = magnetism.root_finding_normalized_frohlich_kennelly_normalized_posns_pbc_64bit(magnetic_moments,Hext,particle_posns,particle_radius,chi,Ms,l_e,num_images,translation_vector)
     return result
 
+def nonlinear_magnetization_energy_minimization_w_constraint():
+    """Plot the magnetization vector components from using scipy.optimize.minimize(), different methods that allow nonlinear equality constraints . Test how it behaves with and without symmetry, with more particles. What cases fail? Can a PBC with repeated image volumes be implemented?"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = .050/mu0
+    n_field_steps = 25
+    H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    Hext_series = Hext_series[::-1,:]
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = np.float32(1.5e-6)
+    discretization_order = 3
+    l_e = np.float32(2*particle_radius/(2*discretization_order + 1))
+    # l_e = np.float32(1e-7)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,2,2])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7.8e-6,7.8e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_counter += 1
+    particle_posns /= l_e
+    particle_posns = np.float32(particle_posns)
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+
+    Hext = np.float32(Hext_series[0])
+
+    magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    energy_optimization_magnetization = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_alt_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_noself_magnetization = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_magnetization_slsqp = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+
+    global_energy_optimization_magnetization = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+
+    energy_optimization_unconstrained_penalty = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_enhanced = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_enhanced_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+
+    fixed_point_energy = np.zeros((Hext_series.shape[0],),dtype=np.float32)
+    optimization_energy = np.zeros((Hext_series.shape[0],),dtype=np.float32)
+
+
+    initial_guess = np.float32(0.9*Hext_series[0,:]/np.linalg.norm(Hext_series[0,:]))#+np.array([0.1,0.1,0.1],dtype=np.float32)
+    initial_guess = np.tile(initial_guess,num_particles)
+    initial_guess_unconstrained = initial_guess.copy()
+    initial_guess_no_self_energy = initial_guess.copy()
+    penalty_constant = 1
+    for i, Hext in enumerate(Hext_series):
+        Hext = np.float32(Hext)
+        magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        # if i == 0:
+        #     initial_guess = magnetic_moments[i,-1].reshape((num_particles*3,))/(Ms*particle_volume)
+        #     initial_guess_unconstrained = initial_guess.copy()
+        # res = solve_magnetization_optimization(initial_guess,np.float32(Hext),np.float32(particle_posns),chi,particle_radius,particle_volume,Ms,l_e,num_particles,method='SLSQP')
+        # # print(res)
+        # energy_optimization_magnetization[i] = res.x
+        # initial_guess = energy_optimization_magnetization[i]
+        # energy_optimization_alt_constraint_violation[i] = get_frohlich_kenelley_constraint_violation(energy_optimization_magnetization[i],np.float32(Hext),np.float32(particle_posns),chi,particle_radius,Ms,l_e,num_particles)
+        # res = solve_magnetization_optimization_no_self_term(initial_guess_no_self_energy,np.float32(Hext),np.float32(particle_posns),chi,particle_radius,particle_volume,Ms,l_e,num_particles,method='SLSQP')
+        # energy_optimization_noself_magnetization[i] = res.x
+        # initial_guess_no_self_energy = energy_optimization_noself_magnetization[i]
+        # res = solve_magnetization_optimization(initial_guess,np.float32(Hext),np.float32(particle_posns),chi,particle_radius,particle_volume,Ms,l_e,num_particles,method='SLSQP')
+        # energy_optimization_magnetization_slsqp[i] = res.x
+        # res = solve_magnetization_global_optimization(initial_guess,np.float32(Hext),np.float32(particle_posns),chi,particle_radius,particle_volume,Ms,l_e,num_particles)
+        # global_energy_optimization_magnetization[i] = res.x
+
+        res = penalty_method_magnetization_finder(initial_guess_unconstrained,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles,penalty_constant,method='BFGS')
+        energy_optimization_unconstrained_penalty[i] = res.x
+        energy_optimization_unconstrained_penalty_constraint_violation[i] = get_frohlich_kenelley_constraint_violation(energy_optimization_unconstrained_penalty[i],np.float32(Hext),np.float32(particle_posns),chi,particle_radius,Ms,l_e,num_particles)
+        #should i use the result with lower penalty constant to feed into the next attempt with stronger penalty? probably, but let's see how they behave with different constants for now
+        # initial_guess_unconstrained = energy_optimization_unconstrained_penalty[i]
+        res = penalty_method_magnetization_finder(initial_guess_unconstrained,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles,penalty_constant*100,method='BFGS')
+        energy_optimization_unconstrained_penalty_enhanced[i] = res.x
+        energy_optimization_unconstrained_penalty_enhanced_constraint_violation[i] = get_frohlich_kenelley_constraint_violation(energy_optimization_unconstrained_penalty_enhanced[i],np.float32(Hext),np.float32(particle_posns),chi,particle_radius,Ms,l_e,num_particles)
+
+        initial_guess_unconstrained = energy_optimization_unconstrained_penalty[i]
+
+        fixed_point_energy[i] = get_total_magnetic_energy(np.reshape(magnetic_moments[i,-1]/(Ms*particle_volume),(3*num_particles,)),Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e)
+        optimization_energy[i] = get_total_magnetic_energy(energy_optimization_magnetization[i],Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e)
+
+    energy_optimization_magnetization = np.reshape(energy_optimization_magnetization,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_constraint_violation = np.reshape(energy_optimization_constraint_violation,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_alt_constraint_violation = np.reshape(energy_optimization_alt_constraint_violation,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_noself_magnetization = np.reshape(energy_optimization_noself_magnetization,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_magnetization_slsqp = np.reshape(energy_optimization_magnetization_slsqp,(Hext_series.shape[0],num_particles,3))
+
+    energy_optimization_unconstrained_penalty = np.reshape(energy_optimization_unconstrained_penalty,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_unconstrained_penalty_constraint_violation = np.reshape(energy_optimization_unconstrained_penalty_constraint_violation,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_unconstrained_penalty_enhanced = np.reshape(energy_optimization_unconstrained_penalty_enhanced,(Hext_series.shape[0],num_particles,3))
+    energy_optimization_unconstrained_penalty_enhanced_constraint_violation = np.reshape(energy_optimization_unconstrained_penalty_enhanced_constraint_violation,(Hext_series.shape[0],num_particles,3))
+
+    # global_energy_optimization_magnetization = np.reshape(global_energy_optimization_magnetization,(Hext_series.shape[0],num_particles,3))
+
+    magnetization = magnetic_moments/particle_volume
+    # energy_optimization_magnetization = energy_optimization_magnetic_moments/particle_volume
+
+    magnetization /= Ms
+    # energy_optimization_magnetization /= Ms
+    
+    iter_number = np.arange(max_iters)
+    field_index = Hext_series.shape[0]-1
+    if field_index < 0:
+        field_index = 0
+
+    # fig, axs = plt.subplots(1,3)
+    # for count in range(particles.shape[0]):
+    #     axs[0].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,0])
+    #     axs[1].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,1])
+    #     axs[2].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,2])
+    # axs[0].set_ylabel('normalized magnetization global optimization')
+
+
+    fig, axs = plt.subplots(1,3)
+    for count in range(particles.shape[0]):
+        # axs[0].plot(iter_number,magnetization[field_index,:,count,0])
+        # axs[1].plot(iter_number,magnetization[field_index,:,count,1])
+        # axs[2].plot(iter_number,magnetization[field_index,:,count,2])
+        axs[0].plot(Bext_series_magnitude[::-1],energy_optimization_alt_constraint_violation[:,count,0])
+        axs[1].plot(Bext_series_magnitude[::-1],energy_optimization_alt_constraint_violation[:,count,1])
+        axs[2].plot(Bext_series_magnitude[::-1],energy_optimization_alt_constraint_violation[:,count,2])
+    axs[0].set_ylabel('constraint violation')
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization[:,count,2])
+        axs[2,0].plot(Bext_series_magnitude[::-1],energy_optimization_constraint_violation[:,count,0])
+        axs[2,1].plot(Bext_series_magnitude[::-1],energy_optimization_constraint_violation[:,count,1])
+        axs[2,2].plot(Bext_series_magnitude[::-1],energy_optimization_constraint_violation[:,count,2])
+        # axs[2,0].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization_slsqp[:,count,0])
+        # axs[2,1].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization_slsqp[:,count,1])
+        # axs[2,2].plot(Bext_series_magnitude[::-1],energy_optimization_magnetization_slsqp[:,count,2])
+        # axs[2,0].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,0])
+        # axs[2,1].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,1])
+        # axs[2,2].plot(Bext_series_magnitude[::-1],energy_optimization_noself_magnetization[:,count,2])        
+
+    axs[2,0].set_xlabel('Applied Field (T)')
+    axs[2,1].set_xlabel('Applied Field (T)')
+    axs[2,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    # axs[0,3].set_title('magnitude normalized')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('constrained energy optimization')
+    # axs[2,0].set_ylabel('constrained no self energy')
+    axs[2,0].set_ylabel('constraint violation')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty[:,count,2])
+        axs[2,0].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_constraint_violation[:,count,0])
+        axs[2,1].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_constraint_violation[:,count,1])
+        axs[2,2].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_constraint_violation[:,count,2])
+
+    axs[2,0].set_xlabel('Applied Field (T)')
+    axs[2,1].set_xlabel('Applied Field (T)')
+    axs[2,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('unconstrained energy optimization w penalty')
+    axs[2,0].set_ylabel('constraint violation')
+
+    plt.show(block=False)
+
+    fig, axs = plt.subplots(3,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced[:,count,2])
+        axs[2,0].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced_constraint_violation[:,count,0])
+        axs[2,1].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced_constraint_violation[:,count,1])
+        axs[2,2].plot(Bext_series_magnitude[::-1],energy_optimization_unconstrained_penalty_enhanced_constraint_violation[:,count,2])
+
+    axs[2,0].set_xlabel('Applied Field (T)')
+    axs[2,1].set_xlabel('Applied Field (T)')
+    axs[2,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('normalized particle magnetization')
+    axs[1,0].set_ylabel('unconstrained energy optimization w enhanced penalty')
+    axs[2,0].set_ylabel('constraint violation')
+
+    plt.show(block=False)
+
+
+    fig, ax = plt.subplots()
+    
+    ax.plot(Bext_series_magnitude[::-1],fixed_point_energy,label='fixed point')
+    ax.plot(Bext_series_magnitude[::-1],optimization_energy,label='optimization')
+    ax.set_ylabel('Energy (normalized)')
+    ax.set_xlabel('Applied Field (T)')
+    ax.legend()
+    plt.show(block=False)
+
+    # plt.show(block=False)
+
+    # iter_number = np.arange(max_iters_w_drag)
+    # system_magnetization = np.sum(magnetic_moments_new_drag[field_index,:],axis=1)/(particle_volume*num_particles)/Ms
+    # fig, ax = plt.subplots()
+    # ax.plot(iter_number,system_magnetization[:,:])
+    # ax.set_xlabel('iteration number')
+    # ax.set_ylabel('normalized system magnetization')
+        
+    # plt.show(block=False)
+
+    fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_dpi(200)
+    ax.set_title('Normalized Magnetic Moment vectors (constrained optimization))')
+    ax.set_xlabel('X (l_e)')
+    ax.set_ylabel('Y (l_e)')
+    ax.set_zlabel('Z (l_e)')
+    ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],energy_optimization_unconstrained_penalty_enhanced[field_index,:,0],energy_optimization_unconstrained_penalty_enhanced[field_index,:,1],energy_optimization_unconstrained_penalty_enhanced[field_index,:,2],pivot='middle',length=15.0)
+    # print('constrained result:',energy_optimization_magnetization[field_index,:])
+    # print('SLSQP',energy_optimization_magnetization_slsqp[field_index,:])
+    # print('unconstrained penalty result:',energy_optimization_unconstrained_penalty[field_index,:])
+
+    # dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.reshape(energy_optimization_magnetization[field_index],(3*num_particles,)),np.float32(Hext_series[field_index]),np.float32(particle_posns),particle_radius,chi,Ms,l_e)
+    # print('result:',dipole_fields)
+    # get_frohlich_kenelley_constraint_violation(np.reshape(energy_optimization_magnetization[field_index],(3*num_particles,)),np.float32(Hext_series[field_index]),np.float32(particle_posns),chi,particle_radius,Ms,l_e,num_particles)
+
+    plt.show(block=False)
+    print('review plot')
+
+def get_zeeman_energy(magnetic_moments,Hext):
+     mu0 = 4*np.pi*1e-7
+     individual_energy = -1*np.sum(magnetic_moments*Hext)#-1*np.einsum('ij,j->i',magnetic_moments,Hext)
+     total_energy = mu0*np.sum(individual_energy)
+     return total_energy
+
+def get_dipolar_energy(magnetic_moments,dipole_fields):
+    mu0 = 4*np.pi*1e-7
+    individual_energy = -1*np.dot(np.ravel(magnetic_moments),np.ravel(dipole_fields))#-1*np.einsum('ij,hj->i',magnetic_moments,dipole_fields)
+    total_energy = mu0*np.sum(individual_energy)/2
+    return total_energy
+
+def get_self_energy(magnetic_moments,chi,particle_volume):
+    #under the assumption of linear, nonsaturable magnetizability... but could be worked out as an integral equation where chi depends on M, and an integration is done over dM
+    #W = (1/(2*chi)) * M^2
+    #dW = (1/(2*chi)) * d (M^2)
+    #\integral_0^M
+    mu0 = 4*np.pi*1e-7
+    individual_energy = mu0/(2*chi*particle_volume) * np.einsum('ij,hj->i',magnetic_moments,magnetic_moments)
+    total_energy = np.sum(individual_energy)
+    return total_energy
+
+def get_total_magnetic_energy(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e):
+    mu0 = 4*np.pi*1e-7
+    scaling_factor = mu0*np.power(Ms,2)*particle_volume
+    dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    magnetic_moments = np.reshape(normalized_magnetic_moments,(particle_posns.shape[0],3))*Ms*particle_volume
+    zeeman_energy = get_zeeman_energy(magnetic_moments,Hext)
+    dipole_energy = get_dipolar_energy(magnetic_moments,dipole_fields)
+    self_energy = get_self_energy(magnetic_moments,chi,particle_volume)
+    total_energy = (zeeman_energy + dipole_energy + self_energy)/scaling_factor
+    return total_energy
+    
+def solve_magnetization_optimization(initial_guess,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles,method='trust-constr'):
+    """Function wrapper to run the optimization with constraint, since the constraint can't be passed arguments, they need to be defined in scope (in this function) to be used"""
+    def frohlich_kenelley_constraint(normalized_magnetic_moments):
+        # tiled_hext = np.tile(Hext,num_particles)/Ms
+        dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+        h_tot = (dipole_fields + Hext)/Ms
+        htot_norm = np.linalg.norm(h_tot,axis=1)
+        htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+        h_tot = np.reshape(h_tot,(3*num_particles,))
+        return normalized_magnetic_moments*(1 + chi*htot_norm_repeat) - chi*h_tot
+
+    fk_constraint = scipy.optimize.NonlinearConstraint(frohlich_kenelley_constraint,0,0)
+    res = scipy.optimize.minimize(get_total_magnetic_energy,x0=initial_guess,args=(Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e),method=method,constraints=fk_constraint)
+    return res
+
+def solve_magnetization_global_optimization(initial_guess,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles):
+    """Function wrapper to run the optimization with constraint, since the constraint can't be passed arguments, they need to be defined in scope (in this function) to be used"""
+    def frohlich_kenelley_constraint(normalized_magnetic_moments):
+        # tiled_hext = np.tile(Hext,num_particles)/Ms
+        dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+        h_tot = (dipole_fields + Hext)/Ms
+        htot_norm = np.linalg.norm(h_tot,axis=1)
+        htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+        h_tot = np.reshape(h_tot,(3*num_particles,))
+        return normalized_magnetic_moments*(1 + chi*htot_norm_repeat) - chi*h_tot
+
+    fk_constraint = scipy.optimize.NonlinearConstraint(frohlich_kenelley_constraint,0,0)
+    bounds = scipy.optimize.Bounds(-1*np.ones((3*num_particles,)),np.ones((3*num_particles,)))
+    res = scipy.optimize.differential_evolution(get_total_magnetic_energy,bounds,x0=initial_guess,args=(Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e),constraints=fk_constraint)
+    return res
+
+def get_frohlich_kenelley_constraint_violation(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,Ms,l_e,num_particles):
+    # tiled_hext = np.tile(Hext,num_particles)/Ms
+    dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    h_tot = (dipole_fields + Hext)/Ms
+    htot_norm = np.linalg.norm(h_tot,axis=1)
+    htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+    h_tot = np.reshape(h_tot,(3*num_particles,))
+    return normalized_magnetic_moments*(1 + chi*htot_norm_repeat) - chi*h_tot
+
+def penalty_method_magnetization_finder(initial_guess,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles,penalty_constant,method='BFGS'):
+    def penalty_objective_func(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e):
+        obj = get_total_magnetic_energy(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e)
+        penalty = penalty_constant*np.sum(np.power(get_frohlich_kenelley_constraint_violation(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,Ms,l_e,num_particles),2))
+        return obj + penalty
+    res = scipy.optimize.minimize(penalty_objective_func,x0=initial_guess,args=(Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e),method=method)
+    return res
+
+def solve_magnetization_optimization_no_self_term(initial_guess,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e,num_particles,method='trust-constr'):
+    """Function wrapper to run the optimization with constraint, since the constraint can't be passed arguments, they need to be defined in scope (in this function) to be used"""
+    def frohlich_kenelley_constraint(normalized_magnetic_moments):
+        # tiled_hext = np.tile(Hext,num_particles)
+        dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+        h_tot = (dipole_fields + Hext)/Ms
+        htot_norm = np.linalg.norm(h_tot,axis=1)
+        htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+        h_tot = np.reshape(h_tot,(3*num_particles,))
+        return normalized_magnetic_moments*(Ms + chi*htot_norm_repeat) - chi*h_tot
+
+    fk_constraint = scipy.optimize.NonlinearConstraint(frohlich_kenelley_constraint,0,0)
+    res = scipy.optimize.minimize(get_total_magnetic_energy_no_self_term,x0=initial_guess,args=(Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e),method=method,constraints=fk_constraint)
+    return res
+
+def get_total_magnetic_energy_no_self_term(normalized_magnetic_moments,Hext,particle_posns,chi,particle_radius,particle_volume,Ms,l_e):
+    mu0 = 4*np.pi*1e-7
+    scaling_factor = mu0*np.power(Ms,2)*particle_volume
+    dipole_fields = magnetism.get_dipole_fields_normalized_posns_32bit(np.float32(normalized_magnetic_moments),Hext,particle_posns,particle_radius,chi,Ms,l_e)
+    magnetic_moments = np.reshape(normalized_magnetic_moments,(particle_posns.shape[0],3))*Ms*particle_volume
+    zeeman_energy = get_zeeman_energy(magnetic_moments,Hext)
+    dipole_energy = get_dipolar_energy(magnetic_moments,dipole_fields)
+    total_energy = (zeeman_energy + dipole_energy)//scaling_factor
+    return total_energy
+
+def get_normalized_dipole_field_kernel(rij,inv_rij_mag,num_particles,l_e,particle_volume):
+    """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
+    kernel = cp.zeros((num_particles*3,num_particles*3),dtype=cp.float32)
+
+    nij_x = rij[0::3]*inv_rij_mag
+    nij_y = rij[1::3]*inv_rij_mag
+    nij_z = rij[2::3]*inv_rij_mag
+
+    nij_x = cp.reshape(nij_x,(num_particles,num_particles),order='C')
+    nij_y = cp.reshape(nij_y,(num_particles,num_particles),order='C')
+    nij_z = cp.reshape(nij_z,(num_particles,num_particles),order='C')
+
+    inv_rij_mag = cp.reshape(inv_rij_mag,(num_particles,num_particles),order='C')
+    
+    denom = particle_volume/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#
+
+    kernel[0::3,0::3] = (3*nij_x*nij_x-1)*denom
+    kernel[1::3,1::3] = (3*nij_y*nij_y-1)*denom
+    kernel[2::3,2::3] = (3*nij_z*nij_z-1)*denom
+    kernel[0::3,1::3] = (3*nij_y)*nij_x*denom
+    kernel[1::3,0::3] = kernel[0::3,1::3]
+    kernel[0::3,2::3] = (3*nij_z)*nij_x*denom
+    kernel[2::3,0::3] = kernel[0::3,2::3]
+    kernel[1::3,2::3] = (3*nij_z)*nij_y*denom
+    kernel[2::3,1::3] = kernel[1::3,2::3]
+    
+    return kernel
+
+def get_dipole_field_kernel(rij,inv_rij_mag,num_particles,l_e):
+    """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
+    kernel = cp.zeros((num_particles*3,num_particles*3),dtype=cp.float32)
+
+    nij_x = rij[0::3]*inv_rij_mag
+    nij_y = rij[1::3]*inv_rij_mag
+    nij_z = rij[2::3]*inv_rij_mag
+
+    nij_x = cp.reshape(nij_x,(num_particles,num_particles),order='C')
+    nij_y = cp.reshape(nij_y,(num_particles,num_particles),order='C')
+    nij_z = cp.reshape(nij_z,(num_particles,num_particles),order='C')
+
+    inv_rij_mag = cp.reshape(inv_rij_mag,(num_particles,num_particles),order='C')
+    
+    denom = 1/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#
+
+    kernel[0::3,0::3] = (3*nij_x*nij_x-1)*denom
+    kernel[1::3,1::3] = (3*nij_y*nij_y-1)*denom
+    kernel[2::3,2::3] = (3*nij_z*nij_z-1)*denom
+    kernel[0::3,1::3] = (3*nij_y)*nij_x*denom
+    kernel[1::3,0::3] = kernel[0::3,1::3]
+    kernel[0::3,2::3] = (3*nij_z)*nij_x*denom
+    kernel[2::3,0::3] = kernel[0::3,2::3]
+    kernel[1::3,2::3] = (3*nij_z)*nij_y*denom
+    kernel[2::3,1::3] = kernel[1::3,2::3]
+    
+    return kernel
+
+def performance_testing_nonlinear_magnetization_energy_minimization_w_constraint():
+    """Test run time for different optimization methods and implementations of objective function calculation. Plot the magnetization vector components from using scipy.optimize.minimize(), different methods that allow nonlinear equality constraints . Test how it behaves with and without symmetry, with more particles. What cases fail? Can a PBC with repeated image volumes be implemented?"""
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = .050/mu0
+    n_field_steps = 1
+    H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*5#0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    Hext_series = Hext_series[::-1,:]
+    chi = np.float32(70)
+    Ms = np.float32(1.6e6)
+    particle_radius = np.float32(1.5e-6)
+    discretization_order = 3
+    l_e = np.float32(2*particle_radius/(2*discretization_order + 1))
+    # l_e = np.float32(1e-7)
+    num_nodes_per_particle = 8
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([2,1,1])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7.8e-6,7.8e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    ss = rand.SeedSequence()
+    seed = ss.entropy
+    rng = rand.default_rng(seed)
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_counter += 1
+    particle_posns /= l_e
+    particle_posns = np.float32(particle_posns)
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    max_iters = 40
+
+    Hext = np.float32(Hext_series[0])
+
+    magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+    energy_optimization_magnetization = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+
+    energy_optimization_unconstrained_penalty = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_enhanced = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+    energy_optimization_unconstrained_penalty_enhanced_constraint_violation = np.zeros((Hext_series.shape[0],num_particles*3),dtype=np.float32)
+
+    initial_guess = np.float32(0.9*Hext_series[0,:]/np.linalg.norm(Hext_series[0,:]))#+np.array([0.1,0.1,0.1],dtype=np.float32)
+    initial_guess = np.tile(initial_guess,num_particles)
+    initial_guess_unconstrained = initial_guess.copy()
+    penalty_constant = 1
+    lagrange_multipliers = np.zeros((3*num_particles,))
+    device_lagrange_multipliers = cp.zeros((3*num_particles,),dtype=cp.float32)
+
+    num_particles = np.int64(num_particles)
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_particles = num_particles
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(device_particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    for i, Hext in enumerate(Hext_series):
+        Hext = np.float32(Hext)
+        hext = Hext/Ms
+        # magnetic_moments[i] = get_magnetization_fixed_point_iteration(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+
+        # res = solve_magnetization_augmented_lagrangian_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='BFGS')
+
+        res_gpu = solve_magnetization_augmented_lagrangian_optimization_gpu(initial_guess,separation_vectors,separation_vectors_inv_magnitude,cp.asarray(hext,dtype=cp.float32),chi,particle_volume,l_e,num_particles,penalty_constant,device_lagrange_multipliers,method='BFGS')
+
+    N_iterations = 10
+    start = time.perf_counter()
+    for i in range(N_iterations):
+        placeholder_function()
+    end = time.perf_counter()
+    delta_np = end-start
+    print("CPU time is {} seconds".format(delta_np))
+    # print("GPU time is {} seconds".format(delta_gpu_naive))
+    # print("GPU is {}x faster than CPU".format(delta_np/delta_gpu_naive))
+
+def placeholder_function():
+    return 0
+
+def get_magnetization_fixed_point_iteration(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=20,atol=None,rtol=1e-4):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    if atol == None:
+        atol = particle_volume*Ms*1e-3
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetic_moment = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    host_magnetic_moments = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
+    Hext_vector = cp.tile(Hext,particles.shape[0])
+    size_particles = particles.shape[0]
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+
+    cupy_stream.synchronize()
+    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
+    cupy_stream.synchronize()
+
+    dipole_field_kernel = get_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,size_particles,l_e)
+
+    inv_l_e = np.float32(1/l_e)
+    for i in range(max_iters):
+        Htot = cp.tile(Hext,particles.shape[0])
+        dipolar_fields = dipole_field_kernel*magnetic_moment
+        Htot += dipolar_fields
+        # dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
+        # cupy_stream.synchronize()
+        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
+        cupy_stream.synchronize()
+        host_magnetic_moments[i] = cp.asnumpy(magnetic_moment).reshape((particles.shape[0],3))
+        if i > 0:
+            difference = host_magnetic_moments[i] - host_magnetic_moments[i-1]
+            if np.all(np.abs(np.ravel(difference)) < atol):
+                host_magnetic_moments[i:] = host_magnetic_moments[i]
+                break
+
+    return host_magnetic_moments
+
+def solve_magnetization_augmented_lagrangian_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='BFGS'):
+    """Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
+    dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+    dipole_field_kernel = cp.asnumpy(dipole_field_kernel)
+    max_iterations = 3
+    constraint_history = np.zeros((max_iterations,))
+    for i in range(max_iterations):
+        res = scipy.optimize.minimize(get_normalized_objective_function_auglag,x0=initial_guess,args=(dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers),method=method)
+        initial_guess = res.x
+        constraint_violations = get_normalized_constraint_violation_auglag(initial_guess,dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers)
+        lagrange_multipliers += penalty_constant * constraint_violations
+        penalty_constant *= 2
+        constraint_history[i] = np.sum(np.abs(constraint_violations))
+    return res
+
+def get_normalized_objective_function_auglag(normalized_magnetizations,dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers):
+    dipole_fields = np.matmul(dipole_field_kernel,normalized_magnetizations)
+    energy = get_normalized_total_magnetic_energy_w_kernel(normalized_magnetizations,hext,dipole_fields,chi,num_particles)
+    tiled_hext = np.tile(hext,num_particles)
+    h_tot = (dipole_fields + tiled_hext)
+    htot_norm = np.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
+    htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+    # h_tot = np.reshape(h_tot,(3*num_particles,))
+    constraint_violations = normalized_magnetizations*(1 + chi*htot_norm_repeat) - chi*h_tot
+    result = energy + (0.5*penalty_constant) *np.sum(constraint_violations*constraint_violations) + np.sum(lagrange_multipliers*constraint_violations)
+    return result
+
+def get_normalized_constraint_violation_auglag(normalized_magnetizations,dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers):
+    dipole_fields = np.matmul(dipole_field_kernel,normalized_magnetizations)
+    tiled_hext = np.tile(hext,num_particles)
+    h_tot = (dipole_fields + tiled_hext)
+    htot_norm = np.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
+    htot_norm_repeat = np.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+    constraint_violations = normalized_magnetizations*(1 + chi*htot_norm_repeat) - chi*h_tot
+    return constraint_violations
+
+def get_normalized_total_magnetic_energy_w_kernel(normalized_magnetic_moments,hext,dipole_fields,chi,num_particles):
+    # dipole_fields = dipole_field_kernel*normalized_magnetic_moments
+    # magnetic_moments = np.reshape(normalized_magnetic_moments,(num_particles,3))
+    zeeman_energy = get_normalized_zeeman_energy(normalized_magnetic_moments.reshape((num_particles,3)),hext)
+    dipole_energy = get_normalized_dipolar_energy(normalized_magnetic_moments,dipole_fields)
+    self_energy = get_normalized_self_energy(normalized_magnetic_moments,chi)
+    total_energy = (zeeman_energy + dipole_energy + self_energy)
+    return total_energy
+
+def get_normalized_zeeman_energy(normalized_magnetic_moments,hext):
+     total_energy = -1*np.sum(normalized_magnetic_moments*hext)
+    #  total_energy = np.sum(individual_energy)
+     return total_energy
+
+def get_normalized_dipolar_energy(normalized_magnetic_moments,normalized_dipole_fields):
+    total_energy = (-0.5)*np.dot(np.ravel(normalized_magnetic_moments),np.ravel(normalized_dipole_fields))
+    # total_energy = np.sum(individual_energy)/2
+    return total_energy
+
+def get_normalized_self_energy(normalized_magnetic_moments,chi):
+    total_energy = 1/(2*chi) * np.dot(np.ravel(normalized_magnetic_moments),np.ravel(normalized_magnetic_moments))#np.einsum('ij,hj->i',normalized_magnetic_moments,normalized_magnetic_moments)
+    # total_energy = np.sum(individual_energy)
+    return total_energy
+
+def get_normalized_objective_function_auglag_gpu(normalized_magnetizations,dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers):
+    device_magnetizations = cp.asarray(normalized_magnetizations,dtype=cp.float32)
+    dipole_fields = cp.matmul(dipole_field_kernel,device_magnetizations)
+    energy = get_normalized_total_magnetic_energy_w_kernel_gpu(device_magnetizations,hext,dipole_fields,chi,num_particles)
+    tiled_hext = cp.tile(hext,num_particles)
+    h_tot = (dipole_fields + tiled_hext)
+    htot_norm = cp.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
+    htot_norm_repeat = cp.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+    constraint_violations = device_magnetizations*(1 + chi*htot_norm_repeat) - chi*h_tot
+    result = energy + (0.5*penalty_constant) * cp.sum(constraint_violations*constraint_violations) + cp.sum(lagrange_multipliers*constraint_violations)
+    result = cp.asnumpy(result).item()
+    return result
+
+def get_normalized_total_magnetic_energy_w_kernel_gpu(normalized_magnetic_moments,hext,dipole_fields,chi,num_particles):
+    # mu0 = 4*np.pi*1e-7
+    # scaling_factor = mu0*np.power(Ms,2)*particle_volume
+    # dipole_fields = dipole_field_kernel*normalized_magnetic_moments
+    hext_tiled = cp.tile(hext,num_particles)
+    zeeman_energy = get_normalized_zeeman_energy_gpu(normalized_magnetic_moments,hext_tiled)
+    dipole_energy = get_normalized_dipolar_energy_gpu(normalized_magnetic_moments,dipole_fields)
+    self_energy = get_normalized_self_energy_gpu(normalized_magnetic_moments,chi)
+    total_energy = (zeeman_energy + dipole_energy + self_energy)#/scaling_factor
+    return total_energy
+
+def get_normalized_zeeman_energy_gpu(normalized_magnetic_moments,hext):
+     individual_energy = -1*cp.sum(normalized_magnetic_moments*hext)
+     total_energy = cp.sum(individual_energy)
+     return total_energy
+
+def get_normalized_dipolar_energy_gpu(normalized_magnetic_moments,normalized_dipole_fields):
+    total_energy = -(0.5)*cp.dot(normalized_magnetic_moments,normalized_dipole_fields)
+    # total_energy = cp.sum(individual_energy)/2
+    return total_energy
+
+def get_normalized_self_energy_gpu(normalized_magnetic_moments,chi):
+    total_energy = 1/(2*chi) * cp.dot(normalized_magnetic_moments,normalized_magnetic_moments)
+    # total_energy = cp.sum(individual_energy)
+    return total_energy
+
+def solve_magnetization_augmented_lagrangian_optimization_gpu(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='BFGS'):
+    """Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
+    dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+    max_iterations = 3
+    constraint_history = np.zeros((max_iterations,))
+    for i in range(max_iterations):
+        res = scipy.optimize.minimize(get_normalized_objective_function_auglag_gpu,x0=initial_guess,args=(dipole_field_kernel,chi,hext,num_particles,penalty_constant,lagrange_multipliers),method=method)
+        initial_guess = res.x
+        constraint_violations = get_normalized_constraint_violation_auglag(initial_guess,cp.asnumpy(dipole_field_kernel),chi,cp.asnumpy(hext),num_particles,penalty_constant,lagrange_multipliers)
+        lagrange_multipliers += cp.asarray(penalty_constant * constraint_violations)
+        penalty_constant *= 2
+        constraint_history[i] = np.sum(np.abs(constraint_violations))
+    return res
 if __name__ == "__main__":
     # main()
     # gpu_testing()
     # gpu_testing_force_calc()
-    # linear_magnetization_testing()
+    
     # iterative_magnetization_w_drag_testing()
     # iterative_magnetization_testing()
 
+    # linear_magnetization_testing()
+
     # nonlinear_magnetization_fsolve()
-    pbc_nonlinear_magnetization_fsolve()
+    # pbc_nonlinear_magnetization_fsolve()
+
+    # nonlinear_magnetization_energy_minimization_w_constraint()
+
+    performance_testing_nonlinear_magnetization_energy_minimization_w_constraint()
