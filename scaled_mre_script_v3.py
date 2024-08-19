@@ -1680,17 +1680,15 @@ def jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dirs=[]):
     """Restart an interrupted simulation, extend a particular simulation step (field + b.c.) from a checkpoint, or re-run a (set of) simulation steps (field + b.c.). Pass the simulation directory, the desired behavior as a string ('restart','extend','rerun'), and for extending or re-running an optional argument of the simulation steps to extend or re-run as a list of strings of absolute paths to the relevant directories"""
     sim_variables_dict, sim_logger = reinitialize_sim(sim_dir)
 
+    sim_restart_flag = False
+    sim_extend_flag = False
+    sim_rerun_flag = False
+
     if 'restart' in jumpstart_type:
         sim_restart_flag = True
-        sim_extend_flag = False
-        sim_rerun_flag = False
     elif 'extend' in jumpstart_type:
-        sim_restart_flag = False
         sim_extend_flag = True
-        sim_rerun_flag = False
     elif 'rerun' in jumpstart_type:
-        sim_restart_flag = False
-        sim_extend_flag = False
         sim_rerun_flag = True
     else:
         print(f'jumpstart type: {jumpstart_type} is not defined\n Exiting Program')
