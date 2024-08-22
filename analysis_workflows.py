@@ -2950,57 +2950,7 @@ def plot_strain_tensor_field(sim_dir):
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
 
 if __name__ == "__main__":
-    main()
-    # sim_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-15_strain_testing_shearing_order_1_drag_20/'
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-11-21_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_drag_20_Bext_[0.05 0.   0.  ]/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_strain_testing_torsion_order_0_drag_20/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-20_2particle_freeboundaries_order_0_drag20/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-25_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-31_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-28_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-26_field_dependent_modulus_strain_tension_direction('x', 'x')_order_2_E_900000.0_Bext_angle_90.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-01_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_2_E_900000.0_Bext_angle_90.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-26_field_dependent_modulus_strain_tension_direction('y', 'y')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-27_field_dependent_modulus_strain_tension_direction('y', 'y')_order_2_E_900000.0_Bext_angle_90.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2023-12-29_field_dependent_modulus_strain_compression_direction('y', 'y')_order_2_E_900000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('z', 'z')_order_1_E_90000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-10_field_dependent_modulus_strain_shearing_direction('x', 'y')_order_1_E_30000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_0_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-09_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-12_field_dependent_modulus_strain_tension_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_nodal_WCA_off/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-22_field_dependent_modulus_strain_plate_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    #cpu case that was profiled
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-27_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    #gpu case (calculation of elastic and vcf forces) that was profiled
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-26_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_0_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    #rerunning simulation that was used for profiling the cpu and gpu approaches on the 27th and 26th respectively, to see if the changes to the codebase since then have introduced any bugs/errors
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-01-29_field_dependent_modulus_strain_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations/"
-    #gpu simulations with simple stress
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-01_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-02_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations
-    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the particle rotations turned off
-    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_False_tf_300/"
-    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_off_gpu_True_tf_300/"
-    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the VCF turned off (nu=0.25)
-    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    # #simulations ran with low number of integrations and only one round of integrating, to compare solution vectors, acceleration vectors, and time steps for cpu vs gpu implementations with the VCF turned off (nu=0.25) and the springs turned off (E=0)
-    # sim_dir_one = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_False_tf_300/"
-    # sim_dir_two = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-05_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_0_nu_0.25_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
-    # gpu_repeat_accel_calculation_comparison(sim_dir_two)
-    # cpu_vs_gpu_time_step_comparison(sim_dir_one,sim_dir_two)
-    # cpu_vs_gpu_solution_comparison(sim_dir_one,sim_dir_two)
-    
+    main()    
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
     # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation with "random" particle placement (but only two particles)
