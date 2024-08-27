@@ -982,7 +982,7 @@ def get_particle_separation(posns,particles):
         for j in range(i+1,num_particles):
             separations[counter] = np.linalg.norm(centers[i]-centers[j])
             counter += 1
-    return separations
+    return separations, centers
 
 def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
     """Get the overall system magnetization as a vector sum of the magnetizations of the particles."""
@@ -991,22 +991,28 @@ def get_magnetization(Hext,particle_posns,particle_radius,chi,Ms,l_e):
     overall_magnetization = np.sum(normalized_magnetizations,axis=0)/magnetizations.shape[0]
     return overall_magnetization
 
-def get_magnetization_gpu(posns,particles,Hext,Ms,chi,particle_volume,l_e):
-    particle_centers = np.empty((particles.shape[0],3),dtype=np.float32)
-    for i, particle in enumerate(particles):
-        particle_centers[i,:] = simulate.get_particle_center(particle,posns)
+def get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e):
+    num_particles = particles.shape[0]
+    # particle_centers = np.empty((num_particles,3),dtype=np.float32)
+    # for i, particle in enumerate(particles):
+    #     particle_centers[i,:] = simulate.get_particle_center(particle,posns)
     particle_volume = np.float32(particle_volume)
     l_e = np.float32(l_e)
     Ms = np.float32(Ms)
     chi = np.float32(chi)
     Hext = Hext.astype(np.float32)
-    magnetic_moments = simulate.get_magnetization_iterative(Hext,particles,cp.array(particle_centers.astype(np.float32)).reshape((particle_centers.shape[0]*particle_centers.shape[1],1),order='C'),Ms,chi,particle_volume,l_e)
-    particle_magnetizations = magnetic_moments/particle_volume
-    normalized_magnetizations = particle_magnetizations/Ms
-    overall_magnetization = np.sum(normalized_magnetizations,axis=0)/particle_magnetizations.shape[0]
+    hext = cp.asarray(Hext/Ms)
+    # particle_centers = particle_posns
+    particle_posns = cp.asarray(particle_posns,dtype=cp.float32).reshape((3*num_particles,))
+    magnetization, _, _, return_code = simulate.get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e)
+    magnetization = cp.asnumpy(magnetization).reshape((num_particles,3))
+    # magnetic_moments = simulate.get_magnetization_iterative(Hext,particles,cp.array(particle_centers.astype(np.float32)).reshape((particle_centers.shape[0]*particle_centers.shape[1],1),order='C'),Ms,chi,particle_volume,l_e)
+    # particle_magnetizations = magnetic_moments/particle_volume
+    # normalized_magnetizations = particle_magnetizations/Ms
+    overall_magnetization = np.sum(magnetization,axis=0)/num_particles
     return overall_magnetization
 
-def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series,gpu_flag=True):
+def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
     """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
     num_particles = particles.shape[0]
     num_separations = int(sci.binom(num_particles,2))
@@ -1014,18 +1020,9 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-        separations[i,:] = get_particle_separation(final_posns,particles)
-        if gpu_flag:
-            particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
-            magnetization[i,:] = get_magnetization_gpu(final_posns,particles,Hext,Ms,chi,particle_volume,l_e)
-        else:
-            #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
-            Hext = np.float64(Hext)
-            #for each particle, find the position of the center
-            particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-            for j, particle in enumerate(particles):
-                particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
-                magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
+        particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+        magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
     fig, axs = plt.subplots(2)
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -1050,7 +1047,7 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     plt.close()
     return separations
 
-def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series,gpu_flag=True):
+def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series):
     """Plot the particle behavior as a function of applied field (particle separation and sytem magnetization)"""
     num_particles = particles.shape[0]
     num_separations = int(sci.binom(num_particles,2))
@@ -1059,17 +1056,9 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
-        separations[i,:] = get_particle_separation(final_posns,particles)
-        if gpu_flag:
-            particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
-            magnetization[i,:] = get_magnetization_gpu(final_posns,particles,Hext,Ms,chi,particle_volume,l_e)
-        else:
-            Hext = np.float64(Hext)
-            #for each particle, find the position of the center
-            particle_centers = np.empty((particles.shape[0],3),dtype=np.float64)
-            for j, particle in enumerate(particles):
-                particle_centers[j,:] = simulate.get_particle_center(particle,final_posns)
-            magnetization[i,:] = get_magnetization(Hext,particle_centers,particle_radius,chi,Ms,l_e)
+        separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
+        particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
+        magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
     fig, axs = plt.subplots(2)
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
@@ -1384,6 +1373,8 @@ def get_energies(sim_dir):
     element_energy = np.zeros((num_output_files,1),dtype=np.float32)
     dipole_energy = np.zeros((num_output_files,1),dtype=np.float32)
     wca_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    self_energy = np.zeros((num_output_files,1),dtype=np.float32)
+    zeeman_energy = np.zeros((num_output_files,1),dtype=np.float32)
 
     for i in range(num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
@@ -1391,8 +1382,8 @@ def get_energies(sim_dir):
 
         particle_posns = simulate.get_particle_posns(particles,final_posns)
         particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-        total_energy[i], spring_energy[i], element_energy[i], dipole_energy[i], wca_energy[i] = composite_gpu_energy_calc(device_posns,elements,kappa,springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e)
-    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy
+        total_energy[i], spring_energy[i], element_energy[i], dipole_energy[i], wca_energy[i], self_energy[i], zeeman_energy[i] = composite_gpu_energy_calc(device_posns,elements,kappa,springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e)
+    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
 
 def plot_energy_figures(sim_dir):
     """Given the energies, plot them versus the applied strains and external fields, etc."""
@@ -1415,7 +1406,7 @@ def plot_energy_figures(sim_dir):
     elif 'hysteresis' in sim_type:
         pass
 
-    total_energy, spring_energy, element_energy, dipole_energy, wca_energy = get_energies(sim_dir)
+    total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy = get_energies(sim_dir)
 
     num_output_files = get_num_output_files(sim_dir)
     applied_field = np.zeros((num_output_files,3),dtype=np.float32)
@@ -1435,14 +1426,12 @@ def plot_energy_figures(sim_dir):
     energy_density_plus_wca_fit_modulus = np.zeros((unique_field_values.shape[0],))
     energy_density_fit_error = np.zeros((unique_field_values.shape[0],))
     energy_density_plus_wca_fit_error = np.zeros((unique_field_values.shape[0],))
-    energy_density_fit_linear_term = np.zeros((unique_field_values.shape[0],))
-    energy_density_plus_wca_fit_linear_term = np.zeros((unique_field_values.shape[0],))
-    energy_density_fit_linear_term_error = np.zeros((unique_field_values.shape[0],))
-    energy_density_plus_wca_fit_linear_term_error = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_plus_self_fit_modulus = np.zeros((unique_field_values.shape[0],))
+    energy_density_plus_wca_plus_self_fit_error = np.zeros((unique_field_values.shape[0],))
     for i, unique_value in enumerate(unique_field_values):
-        fig, axs = plt.subplots(2,3)
+        fig, axs = plt.subplots(1,3)
         default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
         relevant_indices = np.isclose(unique_value,np.linalg.norm(applied_field,axis=1))
         plotting_total_energy = total_energy[relevant_indices]
@@ -1450,36 +1439,35 @@ def plot_energy_figures(sim_dir):
         plotting_element_energy = element_energy[relevant_indices]
         plotting_dipole_energy = dipole_energy[relevant_indices]
         plotting_wca_energy = wca_energy[relevant_indices]
+        plotting_self_energy = self_energy[relevant_indices]
+        plotting_zeeman_energy = zeeman_energy[relevant_indices]
         plotting_bc = applied_bc[relevant_indices]
-        axs[0,0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
-        axs[0,1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
-        axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='d',linestyle='-',label=f'WCA: {np.round(unique_value*1000)} (mT)')
-        axs[1,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element: {np.round(unique_value*1000)} (mT)')
-        axs[1,1].plot(plotting_bc,plotting_spring_energy,marker='x',linestyle='-',label=f'Spring: {np.round(unique_value*1000)} (mT)')
-        axs[1,2].plot(plotting_bc,plotting_dipole_energy,marker='v',linestyle='-',label=f'Dipole: {np.round(unique_value*1000)} (mT)')
-        axs[0,0].set_title('System Energy')
-        axs[0,0].set_ylabel('Energy (J)')
-        format_figure(axs[0,0])
-        axs[1,0].set_xlabel(xlabel)
-        axs[1,1].set_xlabel(xlabel)
-        axs[1,2].set_xlabel(xlabel)
-        axs[1,0].set_ylabel('Energy (J)')
-        format_figure(axs[0,1])
-        format_figure(axs[1,0])
-        format_figure(axs[1,1])
+        axs[0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
+        axs[1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
+        axs[2].plot(plotting_bc,plotting_total_energy+plotting_wca_energy+plotting_self_energy,marker='D',linestyle='-',label=f'Total+WCA+Self: {np.round(unique_value*1000)} (mT)')
+        axs[0].set_title('System Energy')
+        axs[0].set_ylabel('Energy (J)')
+        format_figure(axs[0])
+        axs[0].set_xlabel(xlabel)
+        axs[1].set_xlabel(xlabel)
+        axs[2].set_xlabel(xlabel)
+        format_figure(axs[0])
+        format_figure(axs[1])
+        format_figure(axs[2])
         # plt.show()
         # fig.tight_layout()
         fig.legend()
         modulus_fit_guess = 9e3
         energy_density = np.ravel(plotting_total_energy)/total_sim_volume
         energy_plus_wca_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices])/total_sim_volume
+        energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices]+self_energy[relevant_indices])/total_sim_volume
         # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0,0]))
         popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0]))
         energy_density_fit_modulus[i] = popt[0]
         energy_density_fit_error[i] = np.sqrt(np.diag(pcov))[0]
         # energy_density_fit_linear_term[i] = popt[1]
         # energy_density_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
-        axs[0,0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        axs[0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
         plt.annotate(f'modulus from fit: {energy_density_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
         # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc[1:]/xscale_factor,energy_plus_wca_density[1:],p0=np.array([modulus_fit_guess,0,0]))
         popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_density,p0=np.array([modulus_fit_guess,0]))
@@ -1488,10 +1476,43 @@ def plot_energy_figures(sim_dir):
         # energy_density_plus_wca_fit_linear_term[i] = popt[1]
         # energy_density_plus_wca_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
         plt.annotate(f'modulus from fit to total with WCA: {energy_density_plus_wca_fit_modulus[i]}',xy=(1500,10),xycoords='figure pixels')
-        axs[0,1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        savename = fig_output_dir + f'all_energies_{np.round(unique_value*1000)}_mT.png'
+        axs[1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
+        energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+        energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        axs[2].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(750,10),xycoords='figure pixels')
+        savename = fig_output_dir + f'total_energies_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
         plt.close()
+
+        fig, axs = plt.subplots(2,3)
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(200)
+        axs[0,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element: {np.round(unique_value*1000)} (mT)')
+        axs[0,1].plot(plotting_bc,plotting_spring_energy,marker='X',linestyle='-',label=f'Spring: {np.round(unique_value*1000)} (mT)')
+        axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='D',linestyle='-',label=f'WCA: {np.round(unique_value*1000)} (mT)')
+        axs[1,0].plot(plotting_bc,plotting_zeeman_energy,marker='o',linestyle='-',label=f'Zeeman: {np.round(unique_value*1000)} (mT)')
+        axs[1,1].plot(plotting_bc,plotting_dipole_energy,marker='v',linestyle='-',label=f'Dipole: {np.round(unique_value*1000)} (mT)')
+        axs[1,2].plot(plotting_bc,plotting_self_energy,marker='P',linestyle='-',label=f'Self: {np.round(unique_value*1000)} (mT)')
+        axs[1,0].set_xlabel(xlabel)
+        axs[1,1].set_xlabel(xlabel)
+        axs[1,2].set_xlabel(xlabel)
+        axs[0,0].set_ylabel('Energy (J)')
+        axs[1,0].set_ylabel('Energy (J)')
+        format_figure(axs[0,0])
+        format_figure(axs[0,1])
+        format_figure(axs[0,2])
+        format_figure(axs[1,0])
+        format_figure(axs[1,1])
+        format_figure(axs[1,2])
+        fig.legend()
+        savename = fig_output_dir + f'individual_energies_{np.round(unique_value*1000)}_mT.png'
+        plt.savefig(savename)
+        plt.close()
+
+
     fig, ax = plt.subplots()
     ax.errorbar(unique_field_values*1000,energy_density_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
     ax.set_xlabel(f'Applied Field (mT)')
@@ -1501,16 +1522,8 @@ def plot_energy_figures(sim_dir):
     plt.savefig(savename)
     plt.close()
 
-    # fig, ax = plt.subplots()
-    # ax.errorbar(unique_field_values*1000,energy_density_fit_linear_term,linestyle='-',marker='o',yerr=energy_density_fit_linear_term_error)
-    # ax.set_xlabel(f'Applied Field (mT)')
-    # ax.set_ylabel(f'Modulus (Pa)')
-    # savename = fig_output_dir + 'energy_density_fit_linear_term.png'
-    # plt.savefig(savename)
-    # plt.close()
-
     fig, ax = plt.subplots()
-    ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
+    ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_error)
     ax.set_xlabel(f'Applied Field (mT)')
     ax.set_ylabel(f'Modulus (Pa)')
     plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
@@ -1518,14 +1531,17 @@ def plot_energy_figures(sim_dir):
     plt.savefig(savename)
     plt.close()
 
-    # fig, ax = plt.subplots()
-    # ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_linear_term,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_linear_term_error)
-    # ax.set_xlabel(f'Applied Field (mT)')
-    # ax.set_ylabel(f'Modulus (Pa)')
-    # savename = fig_output_dir + 'energy_plus_wca_density_fit_linear_term.png'
-    # plt.savefig(savename)
-    # plt.close()
-
+    smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus))
+    outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
+    non_outlier_mask = np.logical_not(outlier_mask)
+    fig, ax = plt.subplots()
+    ax.errorbar(unique_field_values[non_outlier_mask]*1000,energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask],linestyle='-',marker='o',yerr=energy_density_plus_wca_plus_self_fit_error[non_outlier_mask])
+    ax.set_xlabel(f'Applied Field (mT)')
+    ax.set_ylabel(f'Modulus (Pa)')
+    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus[non_outlier_mask])}',xy=(10,10),xycoords='figure pixels')
+    savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
+    plt.savefig(savename)
+    plt.close()
 
 def reinitialize_sim(sim_dir):
     #first figure out the simulation type
@@ -1660,9 +1676,16 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
     magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
     dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
     dipole_energies = cp.zeros((num_particles,1),dtype=cp.float32)
+    Hext_norm = np.linalg.norm(Hext)
     Hext = cp.array(Hext,dtype=cp.float32,order='C')
     simulate.dipole_energy_kernel((dipole_grid_size,),(block_size,),(magnetic_moments,Htot,Hext,dipole_energies,num_particles))
     cupy_stream.synchronize()
+    
+    host_magnetic_moments = cp.asnumpy(magnetic_moments)
+    # self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume
+    self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume/Ms*(Ms+chi*Hext_norm)
+
+    zeeman_energy = -1*mu0*np.sum(np.dot(host_magnetic_moments.reshape((num_particles,3)),cp.asnumpy(Hext)))
 
     #get separation vectors for wca energy
     separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
@@ -1688,8 +1711,8 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     wca_energy = cp.asnumpy(cp.sum(wca_energies,0))/2
 
-    total_energy = element_energy + spring_energy + dipole_energy
-    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy
+    total_energy = element_energy + spring_energy + dipole_energy + zeeman_energy
+    return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
 
 def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
     """Given the folder containing simulation output, generate figures of the outer surfaces and cuts through the center from each output file."""
@@ -2191,7 +2214,25 @@ if __name__ == "__main__":
 
     #20 particle (5x2x2), anisotropic regular noisy placement [0.8,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc, 0 field only (actually zero, not just near zero). boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_anisotropic_noisy_vol_frac_0.1_starttime_16-28_stepsize_1.e-3/"
-    plot_energy_figures(sim_dir)
-    plot_strain_tensor_field(sim_dir)
+    # plot_energy_figures(sim_dir)
+    # plot_strain_tensor_field(sim_dir)
 
+    # 2 particle hysteresis, field along z, particles along z. first sim in a while. going to try and write a short report on this set of results
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-08-21_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_1.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-08-23_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
     print('Exiting')
