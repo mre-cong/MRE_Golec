@@ -12,11 +12,11 @@ import scipy.integrate as sci
 import matplotlib.pyplot as plt
 import matplotlib
 import os
-import get_volume_correction_force_cy_nogil
-import get_spring_force_cy
 import magnetism
 import mre.initialize
 import mre.analyze
+import torch
+import torch.optim as opt
 mu0 = 4*np.pi*1e-7
 # plt.switch_backend('TkAgg')
 
@@ -181,260 +181,260 @@ def plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,tota
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
 
-class SimCriteria:
-    """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
-    def __init__(self,solutions,*args):
-        self.get_criteria_per_iteration(solutions,*args)
-        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
-        self.timestep = self.time[1:] - self.time[:-1]
+# class SimCriteria:
+#     """Class for calculating criteria for a simulation of up to two particles from the solution vector generated at each integration step. Criteria include:acceleration norm mean, acceleration norm max, particle acceleration norm, particle separation, mean and maximum velocity norms, maximum and minimum node positions in each cartesian direction, mean cartesian coordinate of nodes belonging to each surface of the simulated volume"""
+#     def __init__(self,solutions,*args):
+#         self.get_criteria_per_iteration(solutions,*args)
+#         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+#         self.timestep = self.time[1:] - self.time[:-1]
 
-    def get_criteria_per_iteration(self,solutions,*args):
-        iterations = np.array(solutions).shape[0]
-        self.iter_number = np.arange(iterations)
-        N_nodes = int((np.array(solutions).shape[1] - 1)/2/3)
-        self.a_norm_avg = np.zeros((iterations,))
-        self.a_norm_max = np.zeros((iterations,))
-        self.particle_a_norm = np.zeros((iterations,))
-        self.particle_separation = np.zeros((iterations,))
-        self.v_norm_avg = np.zeros((iterations,))
-        self.v_norm_max = np.zeros((iterations,))
-        self.particle_v_norm = np.zeros((iterations,))
-        self.time = np.array(solutions)[:,0]
-        self.max_x = np.zeros((iterations,))
-        self.max_y = np.zeros((iterations,))
-        self.max_z = np.zeros((iterations,))
-        self.min_x = np.zeros((iterations,))
-        self.min_y = np.zeros((iterations,))
-        self.min_z = np.zeros((iterations,))
-        self.length_x = np.zeros((iterations,))
-        self.length_y = np.zeros((iterations,))
-        self.length_z = np.zeros((iterations,))
-        boundaries = args[8]
-        self.left = np.zeros((iterations,))
-        self.right = np.zeros((iterations,))
-        self.top = np.zeros((iterations,))
-        self.bottom = np.zeros((iterations,))
-        self.front = np.zeros((iterations,))
-        self.back = np.zeros((iterations,))
-        particles = args[2]
-        for count, row in enumerate(solutions):
-            a_var = get_accel_scaled(np.array(row[1:]),*args)
-            a_norms = np.linalg.norm(a_var,axis=1)
-            self.a_norm_max[count] = np.max(a_norms)
-            # if self.a_norm_max[count] > 10000:
-            #     a_var = get_accel_scaled(np.array(row[1:]),*args)
-            self.a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
-            final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
-            final_v = np.reshape(row[N_nodes*3+1:],(N_nodes,3))
-            v_norms = np.linalg.norm(final_v,axis=1)
-            self.v_norm_max[count] = np.max(v_norms)
-            self.v_norm_avg[count] = np.sum(v_norms)/np.shape(v_norms)[0]
-            if particles.shape[0] != 0:
-                a_particles = a_var[particles[0],:]
-                self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
-                v_particles = final_v[particles[0],:]
-                self.particle_v_norm[count] = np.linalg.norm(v_particles[0,:])
-                x1 = get_particle_center(particles[0],final_posns)
-                x2 = get_particle_center(particles[1],final_posns)
-                self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
-            self.get_system_extent(final_posns,boundaries,count)
+#     def get_criteria_per_iteration(self,solutions,*args):
+#         iterations = np.array(solutions).shape[0]
+#         self.iter_number = np.arange(iterations)
+#         N_nodes = int((np.array(solutions).shape[1] - 1)/2/3)
+#         self.a_norm_avg = np.zeros((iterations,))
+#         self.a_norm_max = np.zeros((iterations,))
+#         self.particle_a_norm = np.zeros((iterations,))
+#         self.particle_separation = np.zeros((iterations,))
+#         self.v_norm_avg = np.zeros((iterations,))
+#         self.v_norm_max = np.zeros((iterations,))
+#         self.particle_v_norm = np.zeros((iterations,))
+#         self.time = np.array(solutions)[:,0]
+#         self.max_x = np.zeros((iterations,))
+#         self.max_y = np.zeros((iterations,))
+#         self.max_z = np.zeros((iterations,))
+#         self.min_x = np.zeros((iterations,))
+#         self.min_y = np.zeros((iterations,))
+#         self.min_z = np.zeros((iterations,))
+#         self.length_x = np.zeros((iterations,))
+#         self.length_y = np.zeros((iterations,))
+#         self.length_z = np.zeros((iterations,))
+#         boundaries = args[8]
+#         self.left = np.zeros((iterations,))
+#         self.right = np.zeros((iterations,))
+#         self.top = np.zeros((iterations,))
+#         self.bottom = np.zeros((iterations,))
+#         self.front = np.zeros((iterations,))
+#         self.back = np.zeros((iterations,))
+#         particles = args[2]
+#         for count, row in enumerate(solutions):
+#             a_var = get_accel_scaled(np.array(row[1:]),*args)
+#             a_norms = np.linalg.norm(a_var,axis=1)
+#             self.a_norm_max[count] = np.max(a_norms)
+#             # if self.a_norm_max[count] > 10000:
+#             #     a_var = get_accel_scaled(np.array(row[1:]),*args)
+#             self.a_norm_avg[count] = np.sum(a_norms)/np.shape(a_norms)[0]
+#             final_posns = np.reshape(row[1:N_nodes*3+1],(N_nodes,3))
+#             final_v = np.reshape(row[N_nodes*3+1:],(N_nodes,3))
+#             v_norms = np.linalg.norm(final_v,axis=1)
+#             self.v_norm_max[count] = np.max(v_norms)
+#             self.v_norm_avg[count] = np.sum(v_norms)/np.shape(v_norms)[0]
+#             if particles.shape[0] != 0:
+#                 a_particles = a_var[particles[0],:]
+#                 self.particle_a_norm[count] = np.linalg.norm(a_particles[0,:])
+#                 v_particles = final_v[particles[0],:]
+#                 self.particle_v_norm[count] = np.linalg.norm(v_particles[0,:])
+#                 x1 = get_particle_center(particles[0],final_posns)
+#                 x2 = get_particle_center(particles[1],final_posns)
+#                 self.particle_separation[count] = np.sqrt(np.sum(np.power(x1-x2,2)))
+#             self.get_system_extent(final_posns,boundaries,count)
     
-    def get_system_extent(self,posns,boundaries,count):
-        """Assign values to the objects instance variables that give some sense of the physical extent/dimensions/size of the simulated system as the simulation progresses"""
-        self.max_x[count] = np.max(posns[:,0])
-        self.max_y[count] = np.max(posns[:,1])
-        self.max_z[count] = np.max(posns[:,2])
-        self.min_x[count] = np.min(posns[:,0])
-        self.min_y[count] = np.min(posns[:,1])
-        self.min_z[count] = np.min(posns[:,2])
-        self.length_x[count] = self.max_x[count] - self.min_x[count]
-        self.length_y[count] = self.max_y[count] - self.min_y[count]
-        self.length_z[count] = self.max_z[count] - self.min_z[count]
-        self.left[count] = np.mean(posns[boundaries['left'],0])
-        self.right[count] = np.mean(posns[boundaries['right'],0])
-        self.top[count] = np.mean(posns[boundaries['top'],2])
-        self.bottom[count] = np.mean(posns[boundaries['bot'],2])
-        self.front[count] = np.mean(posns[boundaries['front'],1])
-        self.back[count] = np.mean(posns[boundaries['back'],1])
+#     def get_system_extent(self,posns,boundaries,count):
+#         """Assign values to the objects instance variables that give some sense of the physical extent/dimensions/size of the simulated system as the simulation progresses"""
+#         self.max_x[count] = np.max(posns[:,0])
+#         self.max_y[count] = np.max(posns[:,1])
+#         self.max_z[count] = np.max(posns[:,2])
+#         self.min_x[count] = np.min(posns[:,0])
+#         self.min_y[count] = np.min(posns[:,1])
+#         self.min_z[count] = np.min(posns[:,2])
+#         self.length_x[count] = self.max_x[count] - self.min_x[count]
+#         self.length_y[count] = self.max_y[count] - self.min_y[count]
+#         self.length_z[count] = self.max_z[count] - self.min_z[count]
+#         self.left[count] = np.mean(posns[boundaries['left'],0])
+#         self.right[count] = np.mean(posns[boundaries['right'],0])
+#         self.top[count] = np.mean(posns[boundaries['top'],2])
+#         self.bottom[count] = np.mean(posns[boundaries['bot'],2])
+#         self.front[count] = np.mean(posns[boundaries['front'],1])
+#         self.back[count] = np.mean(posns[boundaries['back'],1])
 
-    def plot_displacement_hist(self,final_posns,initialized_posns,output_dir):
-        displacement = final_posns-initialized_posns
-        displacement_norms = np.linalg.norm(displacement,axis=1)
-        max_displacement = np.max(displacement_norms)
-        mean_displacement = np.mean(displacement_norms)
-        rms_displacement = np.sqrt(np.sum(np.power(displacement_norms,2))/np.shape(displacement_norms)[0])
-        counts, bins = np.histogram(displacement_norms, bins=20)
-        fig,ax = plt.subplots()
-        default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(2*default_width,2*default_height)
-        ax.hist(bins[:-1], bins, weights=counts)
-        sigma = np.std(displacement_norms)
-        mu = mean_displacement
-        # y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)))**2)
-        # ax.plot(bins,y,'--')
-        ax.set_title(f'Displacement Histogram\nMaximum {max_displacement}\nMean {mean_displacement}\n$\sigma={sigma}$\nRMS {rms_displacement}')
-        ax.set_xlabel('displacement (units of l_e)')
-        ax.set_ylabel('counts')
-        savename = output_dir +'node_displacement_hist.png'
-        plt.savefig(savename)
-        # plt.show()
-        plt.close()
+#     def plot_displacement_hist(self,final_posns,initialized_posns,output_dir):
+#         displacement = final_posns-initialized_posns
+#         displacement_norms = np.linalg.norm(displacement,axis=1)
+#         max_displacement = np.max(displacement_norms)
+#         mean_displacement = np.mean(displacement_norms)
+#         rms_displacement = np.sqrt(np.sum(np.power(displacement_norms,2))/np.shape(displacement_norms)[0])
+#         counts, bins = np.histogram(displacement_norms, bins=20)
+#         fig,ax = plt.subplots()
+#         default_width,default_height = fig.get_size_inches()
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         ax.hist(bins[:-1], bins, weights=counts)
+#         sigma = np.std(displacement_norms)
+#         mu = mean_displacement
+#         # y = ((1 / (np.sqrt(2 * np.pi) * sigma)) * np.exp(-0.5 * (1 / sigma * (bins - mu)))**2)
+#         # ax.plot(bins,y,'--')
+#         ax.set_title(f'Displacement Histogram\nMaximum {max_displacement}\nMean {mean_displacement}\n$\sigma={sigma}$\nRMS {rms_displacement}')
+#         ax.set_xlabel('displacement (units of l_e)')
+#         ax.set_ylabel('counts')
+#         savename = output_dir +'node_displacement_hist.png'
+#         plt.savefig(savename)
+#         # plt.show()
+#         plt.close()
     
-    def append_criteria(self,other):
-        """Append data from one SimCriteria object to another, by appending each member variable. Special cases (like time, iteration number) are appended in a manner to reflect the existence of prior integration iterations of the simulation"""
-        #vars(self) returns a dictionary containing the member variables names and values as key-value pairs, allowing for this dynamic sort of access, meaning that extendingh the class with more member variables will allow this method to be used without changes (unless a new special case arises)
-        my_keys = list(vars(self).keys())
-        for key in my_keys:
-            if key != 'iter_number' and key != 'time':
-                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],vars(other)[f'{key}'])
-            elif key == 'iter_number':
-                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}']+1)
-            elif key == 'time':
-                vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}'])
+#     def append_criteria(self,other):
+#         """Append data from one SimCriteria object to another, by appending each member variable. Special cases (like time, iteration number) are appended in a manner to reflect the existence of prior integration iterations of the simulation"""
+#         #vars(self) returns a dictionary containing the member variables names and values as key-value pairs, allowing for this dynamic sort of access, meaning that extendingh the class with more member variables will allow this method to be used without changes (unless a new special case arises)
+#         my_keys = list(vars(self).keys())
+#         for key in my_keys:
+#             if key != 'iter_number' and key != 'time':
+#                 vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],vars(other)[f'{key}'])
+#             elif key == 'iter_number':
+#                 vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}']+1)
+#             elif key == 'time':
+#                 vars(self)[f'{key}'] = np.append(vars(self)[f'{key}'],np.max(vars(self)[f'{key}'])+vars(other)[f'{key}'])
 
-    def plot_criteria(self,output_dir):
-        #TODO Unfinished. use the member variable names to generate save names and figure labels automatically. have a separate variable passed to choose which variable to plot against (time, iteration, anything else?)
-        """Generating plots of simulation criteria using matplotlib and using built-in python features to iterate over the instance variables of the object"""
-        if not (os.path.isdir(output_dir)):
-            os.mkdir(output_dir)
-        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
-        my_keys = list(vars(self).keys())
-        for key in my_keys:
-            if key != 'iter_number' and key != 'time':
-                fig = plt.figure()
-                if key != 'delta_a_norm':
-                    plt.plot(self.time,vars(self)[f'{key}'])
-                else:
-                    plt.plot(self.time[:self.delta_a_norm.shape[0]],vars(self)[f'{key}'])
-                ax = plt.gca()
-                ax.set_xlabel('scaled time')
-                ax.set_ylabel(f'{key}')
-                savename = output_dir + f'{key}_v_time.png'
-                plt.savefig(savename)
-                plt.close()
-        # plt.show()
-        # plt.close('all')
+#     def plot_criteria(self,output_dir):
+#         #TODO Unfinished. use the member variable names to generate save names and figure labels automatically. have a separate variable passed to choose which variable to plot against (time, iteration, anything else?)
+#         """Generating plots of simulation criteria using matplotlib and using built-in python features to iterate over the instance variables of the object"""
+#         if not (os.path.isdir(output_dir)):
+#             os.mkdir(output_dir)
+#         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+#         my_keys = list(vars(self).keys())
+#         for key in my_keys:
+#             if key != 'iter_number' and key != 'time':
+#                 fig = plt.figure()
+#                 if key != 'delta_a_norm':
+#                     plt.plot(self.time,vars(self)[f'{key}'])
+#                 else:
+#                     plt.plot(self.time[:self.delta_a_norm.shape[0]],vars(self)[f'{key}'])
+#                 ax = plt.gca()
+#                 ax.set_xlabel('scaled time')
+#                 ax.set_ylabel(f'{key}')
+#                 savename = output_dir + f'{key}_v_time.png'
+#                 plt.savefig(savename)
+#                 plt.close()
+#         # plt.show()
+#         # plt.close('all')
     
-    def plot_criteria_subplot(self,output_dir):
-        """Generate subplots of simulation criteria using matplotlib"""
-        if not (os.path.isdir(output_dir)):
-            os.mkdir(output_dir)
-        self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
-        # first plotting the system extent (to get a sense of the change in the system size
-        fig, axs = plt.subplots(3,3)
-        default_width, default_height = fig.get_size_inches()
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(100)
-        axs[0,0].plot(self.time,self.min_x)
-        axs[0,0].set_title('x')
-        axs[0,0].set_ylabel('minimum x position (l_e)')
-        axs[1,0].plot(self.time,self.max_x)
-        axs[1,0].set_ylabel('maximum x position (l_e)')
-        axs[2,0].plot(self.time,self.length_x)
-        axs[2,0].set_ylabel('length (max - min) in x direction (l_e)')
-        axs[2,0].set_xlabel('scaled time')
+#     def plot_criteria_subplot(self,output_dir):
+#         """Generate subplots of simulation criteria using matplotlib"""
+#         if not (os.path.isdir(output_dir)):
+#             os.mkdir(output_dir)
+#         self.delta_a_norm = self.a_norm_avg[1:]-self.a_norm_avg[:-1]
+#         # first plotting the system extent (to get a sense of the change in the system size
+#         fig, axs = plt.subplots(3,3)
+#         default_width, default_height = fig.get_size_inches()
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         fig.set_dpi(100)
+#         axs[0,0].plot(self.time,self.min_x)
+#         axs[0,0].set_title('x')
+#         axs[0,0].set_ylabel('minimum x position (l_e)')
+#         axs[1,0].plot(self.time,self.max_x)
+#         axs[1,0].set_ylabel('maximum x position (l_e)')
+#         axs[2,0].plot(self.time,self.length_x)
+#         axs[2,0].set_ylabel('length (max - min) in x direction (l_e)')
+#         axs[2,0].set_xlabel('scaled time')
 
-        axs[0,1].plot(self.time,self.min_y)
-        axs[0,1].set_title('y')
-        axs[0,1].set_ylabel('minimum y position (l_e)')
-        axs[1,1].plot(self.time,self.max_y)
-        axs[1,1].set_ylabel('maximum y position (l_e)')
-        axs[2,1].plot(self.time,self.length_y)
-        axs[2,1].set_ylabel('length (max - min) in y direction (l_e)')
-        axs[2,1].set_xlabel('scaled time')
+#         axs[0,1].plot(self.time,self.min_y)
+#         axs[0,1].set_title('y')
+#         axs[0,1].set_ylabel('minimum y position (l_e)')
+#         axs[1,1].plot(self.time,self.max_y)
+#         axs[1,1].set_ylabel('maximum y position (l_e)')
+#         axs[2,1].plot(self.time,self.length_y)
+#         axs[2,1].set_ylabel('length (max - min) in y direction (l_e)')
+#         axs[2,1].set_xlabel('scaled time')
 
-        axs[0,2].plot(self.time,self.min_z)
-        axs[0,2].set_title('z')
-        axs[0,2].set_ylabel('minimum z position (l_e)')
-        axs[1,2].plot(self.time,self.max_z)
-        axs[1,2].set_ylabel('maximum z position (l_e)')
-        axs[2,2].plot(self.time,self.length_z)
-        axs[2,2].set_ylabel('length (max - min) in z direction (l_e)')
-        axs[2,2].set_xlabel('scaled time')
+#         axs[0,2].plot(self.time,self.min_z)
+#         axs[0,2].set_title('z')
+#         axs[0,2].set_ylabel('minimum z position (l_e)')
+#         axs[1,2].plot(self.time,self.max_z)
+#         axs[1,2].set_ylabel('maximum z position (l_e)')
+#         axs[2,2].plot(self.time,self.length_z)
+#         axs[2,2].set_ylabel('length (max - min) in z direction (l_e)')
+#         axs[2,2].set_xlabel('scaled time')
 
-        savename = output_dir + 'systemextent_v_time.png'
-        plt.savefig(savename)
-        plt.close()
+#         savename = output_dir + 'systemextent_v_time.png'
+#         plt.savefig(savename)
+#         plt.close()
         
-        # plot the acceleration and velocity norms
-        fig, axs = plt.subplots(2,2)
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(100)
-        axs[0,0].plot(self.time,self.a_norm_avg)
-        axs[0,0].set_title('node acceleration')
-        axs[0,0].set_ylabel('node acceleration norm mean (unitless)')
-        axs[1,0].plot(self.time,self.a_norm_max)
-        axs[1,0].set_ylabel('node acceleration norm max (unitless)')
-        axs[1,0].set_xlabel('scaled time')
-        axs[0,1].plot(self.time,self.v_norm_avg)
-        axs[0,1].set_title('node velocity')
-        axs[0,1].set_ylabel('node velocity norm mean (unitless)')    
-        axs[1,1].plot(self.time,self.v_norm_max)
-        axs[1,1].set_ylabel('node velocity norm max (unitless)')
-        axs[1,0].set_xlabel('scaled time')
+#         # plot the acceleration and velocity norms
+#         fig, axs = plt.subplots(2,2)
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         fig.set_dpi(100)
+#         axs[0,0].plot(self.time,self.a_norm_avg)
+#         axs[0,0].set_title('node acceleration')
+#         axs[0,0].set_ylabel('node acceleration norm mean (unitless)')
+#         axs[1,0].plot(self.time,self.a_norm_max)
+#         axs[1,0].set_ylabel('node acceleration norm max (unitless)')
+#         axs[1,0].set_xlabel('scaled time')
+#         axs[0,1].plot(self.time,self.v_norm_avg)
+#         axs[0,1].set_title('node velocity')
+#         axs[0,1].set_ylabel('node velocity norm mean (unitless)')    
+#         axs[1,1].plot(self.time,self.v_norm_max)
+#         axs[1,1].set_ylabel('node velocity norm max (unitless)')
+#         axs[1,0].set_xlabel('scaled time')
 
-        savename = output_dir + 'node_behavior_v_time.png'
-        plt.savefig(savename)
-        plt.close()
+#         savename = output_dir + 'node_behavior_v_time.png'
+#         plt.savefig(savename)
+#         plt.close()
 
-        # plot the particle acceleration, velocity, and separation
-        fig, axs = plt.subplots(3)
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(100)
-        axs[0].plot(self.time,self.particle_separation)
-        axs[0].set_ylabel('particle separation (l_e)')
-        axs[0].set_title('particle position, velocity, and acceleration')
-        axs[1].plot(self.time,self.particle_v_norm)
-        axs[1].set_ylabel('particle velocity norm (unitless)')
-        axs[2].plot(self.time,self.particle_a_norm)
-        axs[2].set_ylabel('particle acceleration norm (unitless)')
-        axs[2].set_xlabel('scaled time')
+#         # plot the particle acceleration, velocity, and separation
+#         fig, axs = plt.subplots(3)
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         fig.set_dpi(100)
+#         axs[0].plot(self.time,self.particle_separation)
+#         axs[0].set_ylabel('particle separation (l_e)')
+#         axs[0].set_title('particle position, velocity, and acceleration')
+#         axs[1].plot(self.time,self.particle_v_norm)
+#         axs[1].set_ylabel('particle velocity norm (unitless)')
+#         axs[2].plot(self.time,self.particle_a_norm)
+#         axs[2].set_ylabel('particle acceleration norm (unitless)')
+#         axs[2].set_xlabel('scaled time')
 
-        savename = output_dir + 'particle_behavior_v_time.png'
-        plt.savefig(savename)
-        plt.close()
+#         savename = output_dir + 'particle_behavior_v_time.png'
+#         plt.savefig(savename)
+#         plt.close()
 
-        fig, axs = plt.subplots(3,2)
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(100)
-        axs[0,0].plot(self.time,self.left)
-        axs[0,0].set_ylabel('mean node position: left bdry (l_e)')
-        axs[0,0].set_title('Mean Boundary Node Positions')
-        axs[0,1].plot(self.time,self.right)
-        axs[0,1].set_ylabel('mean node position: right bdry (l_e)')
-        axs[1,0].plot(self.time,self.front)
-        axs[1,0].set_ylabel('mean node position: front bdry (l_e)')
-        axs[1,1].plot(self.time,self.back)
-        axs[1,1].set_ylabel('mean node position: back bdry (l_e)')
-        axs[2,0].plot(self.time,self.top)
-        axs[2,0].set_ylabel('mean node position: top bdry (l_e)')
-        axs[2,1].plot(self.time,self.bottom)
-        axs[2,1].set_ylabel('mean node position: bottom bdry (l_e)')
-        axs[2,0].set_xlabel('scaled time')
-        savename = output_dir + 'mean_boundaries_v_time.png'
-        plt.savefig(savename)
-        plt.close()
-        # plt.show()
-        # plt.close('all')
+#         fig, axs = plt.subplots(3,2)
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         fig.set_dpi(100)
+#         axs[0,0].plot(self.time,self.left)
+#         axs[0,0].set_ylabel('mean node position: left bdry (l_e)')
+#         axs[0,0].set_title('Mean Boundary Node Positions')
+#         axs[0,1].plot(self.time,self.right)
+#         axs[0,1].set_ylabel('mean node position: right bdry (l_e)')
+#         axs[1,0].plot(self.time,self.front)
+#         axs[1,0].set_ylabel('mean node position: front bdry (l_e)')
+#         axs[1,1].plot(self.time,self.back)
+#         axs[1,1].set_ylabel('mean node position: back bdry (l_e)')
+#         axs[2,0].plot(self.time,self.top)
+#         axs[2,0].set_ylabel('mean node position: top bdry (l_e)')
+#         axs[2,1].plot(self.time,self.bottom)
+#         axs[2,1].set_ylabel('mean node position: bottom bdry (l_e)')
+#         axs[2,0].set_xlabel('scaled time')
+#         savename = output_dir + 'mean_boundaries_v_time.png'
+#         plt.savefig(savename)
+#         plt.close()
+#         # plt.show()
+#         # plt.close('all')
 
-        fig, axs = plt.subplots(1,3)
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(100)
-        axs[0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
-        axs[0].set_title('Time Step Taken')
-        axs[0].set_xlabel('scaled time')
-        axs[0].set_ylabel('time step')
-        axs[1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
-        axs[1].set_title('Time Step Taken')
-        axs[1].set_xlabel('integration number')
-        axs[1].set_ylabel('time step')
-        axs[2].plot(self.iter_number,self.time,'.')
-        axs[2].set_title('Total Time')
-        axs[2].set_xlabel('integration number')
-        axs[2].set_ylabel('total scaled time')
-        savename = output_dir + 'timestep_per_iteration_and_time.png'
-        plt.savefig(savename)
-        plt.close()
+#         fig, axs = plt.subplots(1,3)
+#         fig.set_size_inches(2*default_width,2*default_height)
+#         fig.set_dpi(100)
+#         axs[0].plot(self.time[:self.timestep.shape[0]],self.timestep,'.')
+#         axs[0].set_title('Time Step Taken')
+#         axs[0].set_xlabel('scaled time')
+#         axs[0].set_ylabel('time step')
+#         axs[1].plot(self.iter_number[:self.timestep.shape[0]],self.timestep,'.')
+#         axs[1].set_title('Time Step Taken')
+#         axs[1].set_xlabel('integration number')
+#         axs[1].set_ylabel('time step')
+#         axs[2].plot(self.iter_number,self.time,'.')
+#         axs[2].set_title('Total Time')
+#         axs[2].set_xlabel('integration number')
+#         axs[2].set_ylabel('total scaled time')
+#         savename = output_dir + 'timestep_per_iteration_and_time.png'
+#         plt.savefig(savename)
+#         plt.close()
 
 def get_particle_center(particle_nodes,node_posns):
     """Given the indices of the nodes making up the particle, and the node positions variable describing the system, find the center of the spherical particle."""
@@ -482,12 +482,6 @@ void element_energy(const int* elements, const float* node_posns, const float ka
         int index5 = elements[8*tid+5];
         int index6 = elements[8*tid+6];
         int index7 = elements[8*tid+7];
-        //printf("element tid = %i, size_elements = %i\n",tid,size_elements);                   
-        //printf("tid = %i, index0 = %i, index1 = %i, index2 = %i, index3 = %i, index4 = %i, index5 = %i, index6 = %i, index7 = %i\n",tid,index0,index1,index2,index3,index4,index5,index6,index7);
-        //printf("tid = %i, node_posns[3*index2] = %f, node_posns[3*index0]= %f\n",tid,node_posns[3*index2],node_posns[3*index0]);                     
-        //for(int i = 0; i < 24; i++){
-        //    printf("node_posns[%i] = %f\n",i,node_posns[i]);
-        //}
         //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
         float avg_vector_i[3];
         float avg_vector_j[3];
@@ -541,8 +535,6 @@ void spring_energy(const float* edges, const float* node_posns, float* energies,
     //printf("entered the kernel");
     if (tid < size_edges)
     {
-        //printf("entered the if block");
-        //printf("spring tid = %i, size_springs = %i\n",tid,size_edges);  
         int iid = edges[4*tid];
         int jid = edges[4*tid+1];
         float rij[3];
@@ -682,12 +674,7 @@ void element_force(const int* elements, const float* node_posns, const float kap
         int index5 = elements[8*tid+5];
         int index6 = elements[8*tid+6];
         int index7 = elements[8*tid+7];
-        //printf("element tid = %i, size_elements = %i\n",tid,size_elements);                   
-        //printf("tid = %i, index0 = %i, index1 = %i, index2 = %i, index3 = %i, index4 = %i, index5 = %i, index6 = %i, index7 = %i\n",tid,index0,index1,index2,index3,index4,index5,index6,index7);
-        //printf("tid = %i, node_posns[3*index2] = %f, node_posns[3*index0]= %f\n",tid,node_posns[3*index2],node_posns[3*index0]);                     
-        //for(int i = 0; i < 24; i++){
-        //    printf("node_posns[%i] = %f\n",i,node_posns[i]);
-        //}
+
         //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
         float avg_vector_i[3];
         float avg_vector_j[3];
@@ -707,36 +694,7 @@ void element_force(const int* elements, const float* node_posns, const float kap
 
         avg_vector_k[0] = (node_posns[3*index1] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index6])/4;
         avg_vector_k[1] = (node_posns[1+3*index1] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index6])/4;
-        avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;
-        /*
-        if (isnan(avg_vector_i[0]) || isinf(avg_vector_i[0])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_i[1]) || isinf(avg_vector_i[1])){
-            printf("nan value in average vector component");
-        }                            
-        if (isnan(avg_vector_i[2]) || isinf(avg_vector_i[2])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_j[0]) || isinf(avg_vector_j[0])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_j[1]) || isinf(avg_vector_j[1])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_j[2]) || isinf(avg_vector_j[2])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_k[0]) || isinf(avg_vector_k[0])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_k[1]) || isinf(avg_vector_k[1])){
-            printf("nan value in average vector component");
-        }
-        if (isnan(avg_vector_k[2]) || isinf(avg_vector_k[2])){
-            printf("nan value in average vector component");
-        }*/
-        //printf("tid = %i, avg_vector_k[0] = %f, avg_vector_k[1] = %f, avg_vector_k[2] = %f\n",tid,avg_vector_k[0],avg_vector_k[1],avg_vector_k[2]);                      
+        avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;                   
         
         //need to get cross products of average vectors, stored as variables for gradient vectors, prefactor, then atomicAdd for assignment to forces
         float acrossb[3];
@@ -757,50 +715,7 @@ void element_force(const int* elements, const float* node_posns, const float kap
         ccrossa[2] = avg_vector_k[0]*avg_vector_i[1] - avg_vector_k[1]*avg_vector_i[0];
                                 
         adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
-        /*
-        if (isnan(acrossb[0]) || isinf(acrossb[0])){
-            printf("nan value in average vector cross product\n");
-            printf("acrossb[0] = %f\n",acrossb[0]);
-        }
-        if (isnan(acrossb[1]) || isinf(acrossb[1])){
-            printf("nan value in average vector cross product\n");
-            printf("acrossb[1] = %f\n",acrossb[1]);
-        }                            
-        if (isnan(acrossb[2]) || isinf(acrossb[2])){
-            printf("nan value in average vector cross product\n");
-            printf("acrossb[2] = %f\n",acrossb[2]);
-        }
-        if (isnan(bcrossc[0]) || isinf(bcrossc[0])){
-            printf("nan value in average vector cross product\n");
-            printf("bcrossc[0] = %f\n",bcrossc[0]);
-        }
-        if (isnan(bcrossc[1]) || isinf(bcrossc[1])){
-            printf("nan value in average vector cross product\n");
-            printf("bcrossc[1] = %f\n",bcrossc[1]);
-        }
-        if (isnan(bcrossc[2]) || isinf(bcrossc[2])){
-            printf("nan value in average vector cross product\n");
-            printf("bcrossc[2] = %f\n",bcrossc[2]);
-        }
-        if (isnan(ccrossa[0]) || isinf(ccrossa[0])){
-            printf("nan value in average vector cross product\n");
-            printf("ccrossa[0] = %f\n",ccrossa[0]);
-        }
-        if (isnan(ccrossa[1]) || isinf(ccrossa[1])){
-            printf("nan value in average vector cross product\n");
-            printf("ccrossa[1] = %f\n",ccrossa[1]);
-        }
-        if (isnan(ccrossa[2]) || isinf(ccrossa[2])){
-            printf("nan value in average vector cross product\n");
-            printf("ccrossa[2] = %f\n",ccrossa[2]);
-        }                                                   
-        if (isnan(adotbcrossc)){
-            printf("nan value in adotbcrossc\n");
-            //printf("avg_vector_i[0]*bcrossc[0] = %f,\navg_vector_i[1]*bcrossc[1] = %f,\navg_vector_i[2]*bcrossc[2] = %f\n",avg_vector_i[0]*bcrossc[0],avg_vector_i[1]*bcrossc[1],avg_vector_i[2]*bcrossc[2]);
-            printf("avg_vector_i[0] = %f,\navg_vector_i[1] = %f,\navg_vector_i[2] = %f\n",avg_vector_i[0],avg_vector_i[1],avg_vector_i[2]);
-            printf("(node_posns[3*index2]= %f, node_posns[3*index0] = %f,\n node_posns[3*index3] = %f node_posns[3*index1] = %f,\n node_posns[3*index6] = %f, node_posns[3*index4] = %f,\n node_posns[3*index7] = %f, node_posns[3*index5] = %f\n",node_posns[3*index2],node_posns[3*index0],node_posns[3*index3],node_posns[3*index1],node_posns[3*index6],node_posns[3*index4],node_posns[3*index7],node_posns[3*index5]);
-            //printf("bcrossc[0] = %f,\nbcrossc[1] = %f,\nbcrossc[2] = %f\n",bcrossc[0],bcrossc[1],bcrossc[2]);
-        }*/ 
+                                     
         float gradV1[3];
         float gradV8[3];
         float gradV3[3];
@@ -995,12 +910,7 @@ void get_magnetization(const float Ms, const float chi, const float particle_vol
     {                                           
         //get magnetization based on total Hfield at each particle center
         float H_mag = sqrtf(H[3*tid]*H[3*tid] + H[3*tid+1]*H[3*tid+1] + H[3*tid+2]*H[3*tid+2]);
-        //printf("H_mag: %f\n",H_mag);
-        //printf("particle volume: %f\n", particle_volume);
-        //printf("Ms + chi*H_mag: %f\n",Ms + chi*H_mag);
-        //printf("M/Ms: %f\n",chi*H_mag/(Ms + chi*H_mag));
         float m_mag = particle_volume*(Ms*chi*H_mag/(Ms + chi*H_mag));
-        //printf("m_mag: %f\n",m_mag);
         float H_hat[3];
         if (fabsf(H_mag) < 1.e-4){
             H_hat[0] = 0;
@@ -1016,6 +926,34 @@ void get_magnetization(const float Ms, const float chi, const float particle_vol
         magnetic_moment[3*tid] = m_mag*H_hat[0];
         magnetic_moment[3*tid+1] = m_mag*H_hat[1];
         magnetic_moment[3*tid+2] = m_mag*H_hat[2];
+    }
+    }
+    ''', 'get_magnetization')
+
+normalized_magnetization_kernel = cp.RawKernel(r'''
+extern "C" __global__                                    
+void get_magnetization(const float chi, const float* h, float* magnetization, const int size_particles) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_particles)
+    {                                           
+        //get magnetization based on total Hfield at each particle center
+        float hmag = sqrtf(h[3*tid]*h[3*tid] + h[3*tid+1]*h[3*tid+1] + h[3*tid+2]*h[3*tid+2]);
+        float m_mag = (chi*hmag/(1 + chi*hmag));
+        float h_hat[3];
+        if (fabsf(hmag) < 1.e-4){
+            h_hat[0] = 0;
+            h_hat[1] = 0;
+            h_hat[2] = 0;
+        }
+        else{
+            h_hat[0] = h[3*tid]/hmag;
+            h_hat[1] = h[3*tid+1]/hmag;
+            h_hat[2] = h[3*tid+2]/hmag;
+        }
+        
+        magnetization[3*tid] = m_mag*h_hat[0];
+        magnetization[3*tid+1] = m_mag*h_hat[1];
+        magnetization[3*tid+2] = m_mag*h_hat[2];
     }
     }
     ''', 'get_magnetization')
@@ -1201,13 +1139,6 @@ void get_dipole_force(const float* separation_vectors, const float* separation_v
                 {
                     sigma_over_separation = sigma*separation_vectors_inv_magnitude[inv_magnitude_idx]*inv_l_e;
                     force_temp_var = 4*eps_constant*(12*powf(sigma_over_separation,13) - 6*powf(sigma_over_separation,7))/sigma;
-                    /*
-                    if (isnan(force_temp_var))
-                    {
-                        printf("inside WCA force calculation and WCA magnitude value has NaN entry");
-                    }
-                    */
-                    //printf("inside WCA force calculation bit\ntid = %i, j = %i, wca_force = %f,%f,%f e-6\n",tid,j,force_temp_var*r_hat[0]*1e6,force_temp_var*r_hat[1]*1e6,force_temp_var*r_hat[2]*1e6);
                     force[3*tid] += force_temp_var*r_hat[0];
                     force[3*tid+1] += force_temp_var*r_hat[1];
                     force[3*tid+2] += force_temp_var*r_hat[2];
@@ -1225,24 +1156,107 @@ void set_dipole_force(const int* particle_nodes, const float* magnetic_force, fl
     if (tid < num_particle_nodes)
     {                
         int mag_force_idx = tid/nodes_per_particle;
-        /*
-        printf("tid = %i\n",tid);
-        printf("nodes_per_particle = %i\n", nodes_per_particle);
-        printf("magnetic force index %i\n",mag_force_idx);
-        */
         int node_force_idx = particle_nodes[tid];
-        //printf("node force index %i\n",node_force_idx);
-        /*
-        printf("magnetic_force[3*mag_force_idx] = %.8f e-6\n",magnetic_force[3*mag_force_idx]*1e6);
-        printf("magnetic_force[3*mag_force_idx+1] = %.8f e-6\n",magnetic_force[3*mag_force_idx+1]*1e6);
-        printf("magnetic_force[3*mag_force_idx+2] = %.8f e-6\n",magnetic_force[3*mag_force_idx+2]*1e6);
-        */
+
         node_force[3*node_force_idx] += magnetic_force[3*mag_force_idx];
         node_force[3*node_force_idx+1] += magnetic_force[3*mag_force_idx+1];
         node_force[3*node_force_idx+2] += magnetic_force[3*mag_force_idx+2];
     }
     }
     ''', 'set_dipole_force')
+
+def get_normalized_dipole_field_kernel(rij,inv_rij_mag,num_particles,l_e,particle_volume):
+    """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
+    kernel = cp.zeros((num_particles*3,num_particles*3),dtype=cp.float32)
+
+    nij_x = rij[0::3]*inv_rij_mag
+    nij_y = rij[1::3]*inv_rij_mag
+    nij_z = rij[2::3]*inv_rij_mag
+
+    nij_x = cp.reshape(nij_x,(num_particles,num_particles),order='C')
+    nij_y = cp.reshape(nij_y,(num_particles,num_particles),order='C')
+    nij_z = cp.reshape(nij_z,(num_particles,num_particles),order='C')
+
+    inv_rij_mag = cp.reshape(inv_rij_mag,(num_particles,num_particles),order='C')
+    
+    denom = particle_volume/(4*np.float32(np.pi))*cp.power(inv_rij_mag/l_e,3)#
+
+    kernel[0::3,0::3] = (3*nij_x*nij_x-1)*denom
+    kernel[1::3,1::3] = (3*nij_y*nij_y-1)*denom
+    kernel[2::3,2::3] = (3*nij_z*nij_z-1)*denom
+    kernel[0::3,1::3] = (3*nij_y)*nij_x*denom
+    kernel[1::3,0::3] = kernel[0::3,1::3]
+    kernel[0::3,2::3] = (3*nij_z)*nij_x*denom
+    kernel[2::3,0::3] = kernel[0::3,2::3]
+    kernel[1::3,2::3] = (3*nij_z)*nij_y*denom
+    kernel[2::3,1::3] = kernel[1::3,2::3]
+    
+    return kernel
+
+def get_normalized_dipole_field_kernel_torch(rij,inv_rij_mag,num_particles,l_e,particle_volume):
+    """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
+    kernel = torch.zeros((num_particles*3,num_particles*3)).cuda()
+
+    nij_x = torch.asarray(rij[0::3]*inv_rij_mag)
+    nij_y = torch.asarray(rij[1::3]*inv_rij_mag)
+    nij_z = torch.asarray(rij[2::3]*inv_rij_mag)
+
+    nij_x = torch.reshape(nij_x,(num_particles,num_particles))
+    nij_y = torch.reshape(nij_y,(num_particles,num_particles))
+    nij_z = torch.reshape(nij_z,(num_particles,num_particles))
+
+    inv_rij_mag = torch.reshape(torch.asarray(inv_rij_mag),(num_particles,num_particles))
+    
+    denom = particle_volume/(4*np.float32(np.pi))*torch.pow(inv_rij_mag/l_e,3)#
+
+    kernel[0::3,0::3] = (3*nij_x*nij_x-1)*denom
+    kernel[1::3,1::3] = (3*nij_y*nij_y-1)*denom
+    kernel[2::3,2::3] = (3*nij_z*nij_z-1)*denom
+    kernel[0::3,1::3] = (3*nij_y)*nij_x*denom
+    kernel[1::3,0::3] = kernel[0::3,1::3]
+    kernel[0::3,2::3] = (3*nij_z)*nij_x*denom
+    kernel[2::3,0::3] = kernel[0::3,2::3]
+    kernel[1::3,2::3] = (3*nij_z)*nij_y*denom
+    kernel[2::3,1::3] = kernel[1::3,2::3]
+    
+    return kernel
+
+def get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=20,atol=1e-3,rtol=5e-3,initial_soln=None):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetization = cp.zeros((num_particles*3,1),dtype=cp.float32)
+    last_magnetization = cp.zeros((num_particles*3,1),dtype=cp.float32)
+    hext_vector = cp.tile(hext,num_particles)
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    if type(initial_soln) == type(None):
+        normalized_magnetization_kernel((grid_size,),(block_size,),(chi,hext_vector,magnetization,num_particles))
+        cupy_stream.synchronize()
+    else:
+        magnetization = initial_soln.copy()
+
+    last_magnetization = magnetization.copy()
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+    cupy_stream.synchronize()
+
+    dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+
+    for i in range(max_iters):
+        htot = cp.tile(hext,num_particles)
+        dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,magnetization))
+        htot += dipolar_fields
+        normalized_magnetization_kernel((grid_size,),(block_size,),(chi,htot,magnetization,num_particles))
+        cupy_stream.synchronize()
+        if i > 0:
+            difference = magnetization - last_magnetization
+            if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
+                return (magnetization,separation_vectors,separation_vectors_inv_magnitude,0)
+        last_magnetization = magnetization.copy()
+    return (magnetization,separation_vectors,separation_vectors_inv_magnitude,-1)
 
 def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
@@ -1303,41 +1317,64 @@ def get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms
     dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
     cupy_stream.synchronize()
     return magnetic_moment, Htot
+class FixedPointMethodError(Exception):
+    pass
 
 def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
-    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
-    magnetic_moments = cp.zeros((num_particles*3,1),dtype=cp.float32)
-    Hext_vector = cp.tile(Hext,num_particles)
     block_size = 128
     grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
-    # normalized_magnetization_kernel((grid_size,),(block_size,),(Ms,chi,Hext_vector,magnetic_moment,size_particles))
-    # magnetization_kernel used the particle volume to return the magnetic moment. the normalized approach normalizes by the saturation magnetization. the issue with using the particle volume to convert from magnetization to magnetic moment was that the result for low field values evaluated to zero.
-    #the issue may have actually been that i didn't use 32 bit floats for chi, Ms, and l_e
-    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moments,num_particles))
 
-    cupy_stream.synchronize()
-    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
-    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
-    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
-    cupy_stream.synchronize()
+    hext = cp.asarray(Hext/Ms)
+    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=20,atol=1e-3,rtol=5e-3,initial_soln=None)
 
-    inv_l_e = np.float32(1/l_e)
-    max_iters = 5
-    Htot_initial = cp.tile(Hext,num_particles)
-    for i in range(max_iters):
-        Htot = cp.copy(Htot_initial)#cp.tile(Hext,num_particles)
-        dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,inv_l_e,Htot,num_particles))
-        cupy_stream.synchronize()
-        magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moments,num_particles))
-        cupy_stream.synchronize()
+    if return_code == -1:
+        raise FixedPointMethodError
+
+    magnetization *= Ms*particle_volume
+
     inv_l_e = np.float32(1/l_e)
     force = cp.zeros((3*num_particles,1),dtype=cp.float32,order='C')
-    dipole_force_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,particle_radius,l_e,inv_l_e,force,num_particles))
+    dipole_force_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetization,particle_radius,l_e,inv_l_e,force,num_particles))
     cupy_stream.synchronize()
     force *= np.float32(beta/particle_mass)
     return force
+
+# def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
+#     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+#     cupy_stream = cp.cuda.get_current_stream()
+#     num_streaming_multiprocessors = 14
+#     magnetic_moments = cp.zeros((num_particles*3,1),dtype=cp.float32)
+#     Hext_vector = cp.tile(Hext,num_particles)
+#     block_size = 128
+#     grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+#     # normalized_magnetization_kernel((grid_size,),(block_size,),(Ms,chi,Hext_vector,magnetic_moment,size_particles))
+#     # magnetization_kernel used the particle volume to return the magnetic moment. the normalized approach normalizes by the saturation magnetization. the issue with using the particle volume to convert from magnetization to magnetic moment was that the result for low field values evaluated to zero.
+#     #the issue may have actually been that i didn't use 32 bit floats for chi, Ms, and l_e
+#     magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moments,num_particles))
+
+#     cupy_stream.synchronize()
+#     separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+#     separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+#     separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+#     cupy_stream.synchronize()
+
+#     inv_l_e = np.float32(1/l_e)
+#     max_iters = 5
+#     Htot_initial = cp.tile(Hext,num_particles)
+#     for i in range(max_iters):
+#         Htot = cp.copy(Htot_initial)#cp.tile(Hext,num_particles)
+#         dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,inv_l_e,Htot,num_particles))
+#         cupy_stream.synchronize()
+#         magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moments,num_particles))
+#         cupy_stream.synchronize()
+#     inv_l_e = np.float32(1/l_e)
+#     force = cp.zeros((3*num_particles,1),dtype=cp.float32,order='C')
+#     dipole_force_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moments,particle_radius,l_e,inv_l_e,force,num_particles))
+#     cupy_stream.synchronize()
+#     force *= np.float32(beta/particle_mass)
+#     return force
 
 def composite_gpu_force_calc(normalized_posns,N_nodes,cupy_elements,kappa,cupy_springs):
     """Combining the two kernels so that the positions only need to be transferred from host to device memory once per calculation"""
