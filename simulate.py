@@ -585,7 +585,7 @@ void get_wca_energy(const float* separation_vectors, const float* separation_vec
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
     if (tid < size_particles)
     {                
-        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(1.5e-6,3)/72;
+        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(particle_radius,3)/72;
         //printf("eps_constant = %f e-13\n",eps_constant*1e13);
         float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING);
         float cutoff_length = powf(2.f,(1.f/6.f))*sigma;
@@ -1089,7 +1089,7 @@ void get_dipole_force(const float* separation_vectors, const float* separation_v
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
     if (tid < size_particles)
     {                
-        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(1.5e-6,3)/72;
+        float eps_constant = (1e-7)*4*powf(3.141592654f,2)*powf(1.9e6,2)*powf(particle_radius,3)/72;
         //printf("eps_constant = %f e-13\n",eps_constant*1e13);
         float sigma = (2*particle_radius+SURFACE_TO_SURFACE_SPACING);
         float cutoff_length = powf(2.f,(1.f/6.f))*sigma;
@@ -1317,6 +1317,44 @@ def get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms
     dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
     cupy_stream.synchronize()
     return magnetic_moment, Htot
+
+def get_normalized_magnetization_and_total_field(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=20,atol=1e-3,rtol=5e-3,initial_soln=None):
+    """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    magnetization = cp.zeros((num_particles*3,1),dtype=cp.float32)
+    last_magnetization = cp.zeros((num_particles*3,1),dtype=cp.float32)
+    hext_vector = cp.tile(hext,num_particles)
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    if type(initial_soln) == type(None):
+        normalized_magnetization_kernel((grid_size,),(block_size,),(chi,hext_vector,magnetization,num_particles))
+        cupy_stream.synchronize()
+    else:
+        magnetization = initial_soln.copy()
+
+    last_magnetization = magnetization.copy()
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+    cupy_stream.synchronize()
+
+    dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+
+    for i in range(max_iters):
+        htot = cp.tile(hext,num_particles)
+        dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,magnetization))
+        htot += dipolar_fields
+        normalized_magnetization_kernel((grid_size,),(block_size,),(chi,htot,magnetization,num_particles))
+        cupy_stream.synchronize()
+        if i > 0:
+            difference = magnetization - last_magnetization
+            if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
+                return (magnetization,htot,0)
+        last_magnetization = magnetization.copy()
+    return (magnetization,htot,-1)
+
 class FixedPointMethodError(Exception):
     pass
 
