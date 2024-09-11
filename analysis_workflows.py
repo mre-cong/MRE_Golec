@@ -315,6 +315,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
 
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
+    Bext_series = mu0*Hext_series
     num_output_files = get_num_output_files(sim_dir)
     #get the particle separations and overall magnetizations and plot them
     plot_particle_behavior_flag = True
@@ -356,7 +357,23 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     #on a field by field basis, fit the stress-strain curve to a linear function to extract the effective modulus, ignoring the (0,0) point
     unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
     num_fields = unique_fields.shape[0]
+    # num_boundary_conditions = np.floor_divide(num_output_files,num_fields)
+    # particle_separations = np.zeros((num_fields,num_boundary_conditions))
+    # for i in range(num_fields):
+    #     particle_separations[i] = particle_separations_matrix[i::num_fields,0,1]
 
+    # print(particle_separations[-3,:])
+    # print(particle_separations[-2,:])
+    # print(particle_separations[-1,:])
+    # fig, ax = plt.subplots()
+    # ax.plot(boundary_condition_series,particle_separations[-3,:]-particle_separations[-3,0],'.',label='80mT')
+    # ax.plot(boundary_condition_series,particle_separations[-2,:]-particle_separations[-2,0],'^',label='120mT')
+    # ax.plot(boundary_condition_series,particle_separations[-1,:]-particle_separations[-1,0],'o',label='140mT')
+    # fig.legend()
+    # ax.set_xlabel('applied strain')
+    # ax.set_ylabel(r'change in particle separation ($\mu$m)')
+    # format_figure(ax)
+    # plt.show()
     component_to_index_dict = {'x':0,'y':1,'z':2}
     #strain measure from a quasi average strain tensor by "integrating" the strain tensor components over the volume and dividing by the system volume
     average_strain_tensor = np.zeros((num_output_files,3,3))
@@ -372,7 +389,6 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
         strain_tensor = get_strain_tensor(gradu)
         average_strain_tensor[i] = get_average_tensor_value(strain_tensor,elements,initial_node_posns,tag='strain')
 
-    Bext_series = mu0*Hext_series
     Bext_series_magnitude = np.round(np.linalg.norm(mu0*Hext_series,axis=1)*1e3,decimals=3)
     num_unique_fields = np.unique(Bext_series_magnitude).shape[0]
 
@@ -912,7 +928,7 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
     plt.close()
 
 
-def format_figure(ax,title_size=30,label_size=30,tick_size=30):
+def format_figure(ax,title_size=30,label_size=30,tick_size=22):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
@@ -923,7 +939,7 @@ def format_figure(ax,title_size=30,label_size=30,tick_size=30):
     # ax.yaxis.set_label_coords(-0.1,0.5)
     ax.set_title(ax.get_title(),fontsize=title_size)
 
-def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
+def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
@@ -1403,6 +1419,9 @@ def plot_energy_figures(sim_dir):
     elif 'strain' in sim_type:
         xlabel = 'strain (%)'
         xscale_factor = 100
+        if 'shearing' in sim_type:
+            xscale_factor = 1
+            xlabel='shear strain'
     elif 'hysteresis' in sim_type:
         pass
 
@@ -1429,10 +1448,10 @@ def plot_energy_figures(sim_dir):
     energy_density_plus_wca_plus_self_fit_modulus = np.zeros((unique_field_values.shape[0],))
     energy_density_plus_wca_plus_self_fit_error = np.zeros((unique_field_values.shape[0],))
     for i, unique_value in enumerate(unique_field_values):
-        fig, axs = plt.subplots(1,3)
-        default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(200)
+        # fig, axs = plt.subplots(1,3)
+        # default_width,default_height = fig.get_size_inches()
+        # fig.set_size_inches(2*default_width,2*default_height)
+        # fig.set_dpi(200)
         relevant_indices = np.isclose(unique_value,np.linalg.norm(applied_field,axis=1))
         plotting_total_energy = total_energy[relevant_indices]
         plotting_spring_energy = spring_energy[relevant_indices]
@@ -1442,47 +1461,68 @@ def plot_energy_figures(sim_dir):
         plotting_self_energy = self_energy[relevant_indices]
         plotting_zeeman_energy = zeeman_energy[relevant_indices]
         plotting_bc = applied_bc[relevant_indices]
-        axs[0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
-        axs[1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
-        axs[2].plot(plotting_bc,plotting_total_energy+plotting_wca_energy+plotting_self_energy,marker='D',linestyle='-',label=f'Total+WCA+Self: {np.round(unique_value*1000)} (mT)')
-        axs[0].set_title('System Energy')
-        axs[0].set_ylabel('Energy (J)')
-        format_figure(axs[0])
-        axs[0].set_xlabel(xlabel)
-        axs[1].set_xlabel(xlabel)
-        axs[2].set_xlabel(xlabel)
-        format_figure(axs[0])
-        format_figure(axs[1])
-        format_figure(axs[2])
-        # plt.show()
-        # fig.tight_layout()
+        # axs[0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
+        # axs[1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
+        # axs[2].plot(plotting_bc,plotting_total_energy+plotting_wca_energy+plotting_self_energy,marker='D',linestyle='-',label=f'Total+WCA+Self: {np.round(unique_value*1000)} (mT)')
+        # axs[0].set_title('System Energy')
+        # axs[0].set_ylabel('Energy (J)')
+        # format_figure(axs[0])
+        # axs[0].set_xlabel(xlabel)
+        # axs[1].set_xlabel(xlabel)
+        # axs[2].set_xlabel(xlabel)
+        # format_figure(axs[0])
+        # format_figure(axs[1])
+        # format_figure(axs[2])
+        # # plt.show()
+        # # fig.tight_layout()
+        # fig.legend()
+        modulus_fit_guess = 9e3
+        # energy_density = np.ravel(plotting_total_energy)/total_sim_volume
+        # energy_plus_wca_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices])/total_sim_volume
+        energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/total_sim_volume
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0,0]))
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0]))
+        # energy_density_fit_modulus[i] = popt[0]
+        # energy_density_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        # # energy_density_fit_linear_term[i] = popt[1]
+        # # energy_density_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
+        # axs[0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        # plt.annotate(f'modulus from fit: {energy_density_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+        # # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc[1:]/xscale_factor,energy_plus_wca_density[1:],p0=np.array([modulus_fit_guess,0,0]))
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_density,p0=np.array([modulus_fit_guess,0]))
+        # energy_density_plus_wca_fit_modulus[i] = popt[0]
+        # energy_density_plus_wca_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        # # energy_density_plus_wca_fit_linear_term[i] = popt[1]
+        # # energy_density_plus_wca_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
+        # plt.annotate(f'modulus from fit to total with WCA: {energy_density_plus_wca_fit_modulus[i]}',xy=(1500,10),xycoords='figure pixels')
+        # axs[1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
+        # energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+        # energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+        # axs[2].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        # plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(750,10),xycoords='figure pixels')
+        # savename = fig_output_dir + f'total_energies_{np.round(unique_value*1000)}_mT.png'
+        # plt.savefig(savename)
+        # plt.close()
+
+        fig, ax = plt.subplots()
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(200)
+        ax.plot(plotting_bc,plotting_total_energy,marker='D',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
+        ax.set_title('System Energy')
+        ax.set_ylabel('Energy (J)')
+        format_figure(ax)
+        ax.set_xlabel(xlabel)
+
         fig.legend()
         modulus_fit_guess = 9e3
-        energy_density = np.ravel(plotting_total_energy)/total_sim_volume
-        energy_plus_wca_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices])/total_sim_volume
-        energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices]+self_energy[relevant_indices])/total_sim_volume
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0,0]))
-        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0]))
-        energy_density_fit_modulus[i] = popt[0]
-        energy_density_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        # energy_density_fit_linear_term[i] = popt[1]
-        # energy_density_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
-        axs[0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        plt.annotate(f'modulus from fit: {energy_density_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc[1:]/xscale_factor,energy_plus_wca_density[1:],p0=np.array([modulus_fit_guess,0,0]))
-        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_density,p0=np.array([modulus_fit_guess,0]))
-        energy_density_plus_wca_fit_modulus[i] = popt[0]
-        energy_density_plus_wca_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        # energy_density_plus_wca_fit_linear_term[i] = popt[1]
-        # energy_density_plus_wca_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
-        plt.annotate(f'modulus from fit to total with WCA: {energy_density_plus_wca_fit_modulus[i]}',xy=(1500,10),xycoords='figure pixels')
-        axs[1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
         popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
         energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
         energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        axs[2].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(750,10),xycoords='figure pixels')
-        savename = fig_output_dir + f'total_energies_{np.round(unique_value*1000)}_mT.png'
+        ax.plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+        plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+        savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
         plt.close()
 
@@ -1538,7 +1578,7 @@ def plot_energy_figures(sim_dir):
     ax.errorbar(unique_field_values[non_outlier_mask]*1000,energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask],linestyle='-',marker='o',yerr=energy_density_plus_wca_plus_self_fit_error[non_outlier_mask])
     ax.set_xlabel(f'Applied Field (mT)')
     ax.set_ylabel(f'Modulus (Pa)')
-    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus[non_outlier_mask])}',xy=(10,10),xycoords='figure pixels')
+    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask])}',xy=(10,10),xycoords='figure pixels')
     savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
     plt.savefig(savename)
     plt.close()
@@ -1672,8 +1712,10 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     simulate.scaled_spring_energy_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,spring_energies,size_springs))
     cupy_stream.synchronize()
-
-    magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
+    magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e)
+    magnetic_moments = magnetization*Ms*particle_volume
+    Htot = htot*Ms
+    # magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
     dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
     dipole_energies = cp.zeros((num_particles,1),dtype=cp.float32)
     Hext_norm = np.linalg.norm(Hext)
@@ -1711,7 +1753,7 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     wca_energy = cp.asnumpy(cp.sum(wca_energies,0))/2
 
-    total_energy = element_energy + spring_energy + dipole_energy + zeeman_energy
+    total_energy = element_energy + spring_energy + dipole_energy + zeeman_energy + self_energy + wca_energy
     return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
 
 def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
@@ -1887,352 +1929,382 @@ def plot_strain_tensor_field(sim_dir):
 
 if __name__ == "__main__":
     main()    
+    results_directory = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = results_directory + f"/2024-02-08_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation with "random" particle placement (but only two particles)
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = results_directory + f"/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used simulation
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
+    # sim_dir = results_directory + f"/2024-02-09_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True_tf_300/"
     # gpu based acceleration calculation and gpu based leapfrog integrator used for hysteresis simulation, with new (partially implemented) batch job driving function and simulation running function
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = results_directory + f"/2024-02-12_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     # analysis_case1(sim_dir)
     # ran a series of different discretization orders doing the hysteresis simulation. for this set of results the particle placement was not working as expected... so the initial particle separation was not always the 9 microns that was desired. that has since been fixed (as of 2024-02-13)
     # for i in range(6):
-    #     sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-12_2_particle_hysteresis_order_{i}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    #     sim_dir = results_directory + f"/2024-02-12_2_particle_hysteresis_order_{i}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     #     temp_hysteresis_analysis(sim_dir,gpu_flag=False)
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = results_directory + f"/2024-02-13_2_particle_hysteresis_order_{1}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
+    # sim_dir = results_directory + f"/2024-02-14_2_particle_hysteresis_order_{0}_E_9000.0_nu_0.47_Bext_angle_0.0_particle_rotations_gpu_True/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
-    # sim_dir_one = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
-    # sim_dir_two = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir_one = results_directory + f"/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir_two = results_directory + f"/2024-02-14_2_particle_hysteresis_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # compare_fixed_time_step_solutions_hysteresis(sim_dir_one,sim_dir_two)
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-14_2_particle_hysteresis_order_4_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-14_2_particle_hysteresis_order_4_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     # shearing stress simulation at multiple fields
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-18_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-02-18_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # shearing stress simulation at a 2 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-22_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-02-22_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # shearing stress simulation at a 5 non-zero fields and 2 non-zero stresses, plus the zero stress and zero field cases. 3 particle chain
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-23_3_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-02-23_3_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
 
     # shearing/tension without particles.
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_0_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_None_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-02-26_0_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_None_gpu_True_stepsize_5.e-3/"
 
     # shearing, two particles, incomplete run, but long run time/simulation time elapsed
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-26_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-26_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     
     #tension, two particles, attractive
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-27_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-27_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #compression, two particles, attractive, no particle rotations
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-02-28_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #compression, two particles, attractive, particle rotations via scipy.transform.Rotation, 3 different time step sizes
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_1.25e-3/"
+    # sim_dir = results_directory + f"/2024-03-04_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_1.25e-3/"
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-01_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
+    # sim_dir = results_directory + f"/2024-03-01_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_2.5e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # adjustment to the treatment of particle as rigid body. track particle orientation and relative to particle center vectors poinmting to particle nodes. at the end of an integration round, use the orientation and particle center, as well as the relative to particle center vectors to adjust the particle node positions, to maintain the rigid body shape
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # high order of discretization test run to determine run times and test behavior
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-12_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_compression_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     #tension case
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
-    # sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-14_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    # sim_dir = results_directory + f"/2024-03-14_2_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_6_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # 8 particles, cubic crystal lattice arrangement, 3% volume ratio. Error in particle placement lead to a configuration that was not exactly a cubic lattice, but the results here are interesting, since the particle clusters do not all form at once (at a single field value), but rather occur at different field values, causing multiple "phase transitions". the collective behavior of the particle clustering is important, seemingly the small differences in the value at which clustering occurs plays a role in both the hysteresis and the effective stiffness behavior. this will need to be reran with the fixed particle placement, but also suggests that adding noise to the placement, or intentionally altering separation along different axes, would produce interesting results for comparison.
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-18_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-18_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #27 particles, cubic crystal lattice arrangement, 3% volume ratio. particle placement very broken, but still interesting to see the impact. looks a bit like a periodic boundary structure simulation might look, but handling periodic boundary conditions if there are particles crossing the boundaries is something i haven't considered, and I have not figured out how to handle the magnetic interactions if using periodic boudnary conditions.
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-19_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_4_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-19_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_4_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #8 particles, cubic lattice, 3% volume ratio, fixed particle placement. only 0 stress applied, just looking at the field dependent particle behavior
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_2_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #8 particles, cubic lattice, 3% volume ratio, fixed particle placement. multiple stress values applied to analyze effective modulus
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-20_8_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #27 particles, cubic lattice, 3% volume ratio, fixed particle placement. multiple stress values applied to analyze effective modulus
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-21_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-21_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
     # analysis_average_stress_strain(sim_dir,gpu_flag=True)
 
     #27 particles, up to +/-2 volume elements as noise added to periodic particle placement, two different RNG seeds
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_14-17_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_14-17_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_23-23_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-03-29_27_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_starttime_23-23_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #27 particles, no noise, hysteresis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-02_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-02_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #2 particles, no noise, hysteresis, no scipy.Rotation or rigid body attempts, instead setting particle-particle node springs to have stiffness based on the particle modulus (actually just 100*polymer modulus because the actual ratio was so large it broke things, as small displacements led to huge accelerations)
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-04_2_particle_hysteresis_order_1_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #2 particles, no noise, hysteresis, no scipy.Rotation or rigid body attempts, instead setting particle-particle node springs to have stiffness based on the particle modulus (actually 10000*polymer modulus because the actual ratio was so large it broke things, as small displacements led to huge accelerations). had originally set polymer-particle connections to be the average of the stiffness of the two types, but now set to polymer stiffness. could be adjusted to something like 10* polymer stiffness... maybe. issue was with the acceleration calculations used for checking convergence criteria. higher stiffness meant even small displacements from equilbibrium length lead to outsized accelerations that didn't actually influence particle displacement or polymer displacement... just vibration. polymer-particle connections were also high stiffness, so despite trying to "remove" the particle vibrations from the convergence check, the stiffer polymer around the particles left higher residual accelerations/vibrations
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-04_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #27 particles, noise, hysteresis. particle-particle nodes have stiffer connections, no scipy.Rotation. no fixed nodes
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-04_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-41_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-04_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-41_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #27 particles, no noise, hysteresis. cutoff for WCA set to particle diameter + 100 nm. no fixed nodes. anisotropy_factor = [0.7,1.3,1.3]
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-05_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-05_27_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #45 particles [5,3,3], noise, hysteresis. cutoff for WCA set to particle diameter + 100 nm. no fixed nodes. anisotropy_factor = [0.8,1.13ish,1.13ish]
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-05_45_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_15-34_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-05_45_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_15-34_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #45 particles [5,3,3], regular no noise, shear stress xy, was supposed to be only 0.01 stress, but implementation errors with setting stress boundary conditions during initialization led to stress values up to 1.01 in steps of 0.01. stopped early. may end up removing some of the dataset
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-06_45_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-06_45_particle_field_dependent_modulus_stress_simple_stress_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, tension in x direction, field along x. small stress values. is the zero field modulus still higher than the field on, despite intuition suggesting that it should be stiffer with the field on?
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-08_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-08_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, tension in x direction, field along x. small stress values. no field
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_None_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_None_gpu_True_stepsize_5.e-3/"
 
     #2 particle along x, tension in x direction, field along x. smallish stress values. non zero fields field
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-09_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #64 particle (4,4,4), regular, no noise, tension in x direction, field along x. smallish stress values. non zero fields field
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-09_64_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-09_64_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, field along x, tension along z
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, field along z, tension along x
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, field along z, tension along y
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-10_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, field along z, tension along z
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-11_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-11_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle along x, field along z, tension along x, strain based simulation. only attempted to implement new strain based calculation of modulus for tension/compression cases, and it still needs to be modified
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('y', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-12_2_particle_field_dependent_modulus_strain_strain_tension_direction('z', 'z')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # 2 particle stress, field along z, tension along x, double the maximum number of integration rounds
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-13_2_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     # 8 particle (2x2x2), regular. field along z, tension along x
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-14_8_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-14_8_particle_field_dependent_modulus_stress_simple_stress_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_drag_1_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #27 particles (3x3x3), regular, field along x, tension along x
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-14_27_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-14_27_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
     #125 particles (5x5x5), regular, field along x, tension along x. Results prior to fully testing the new gpu implementations of distributing the magnetic force, setting fixed nodes, and (not relevant to this sim) applying stress to boundary nodes
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-22_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-22_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle, field along x, tension along x, still haven't fully tested new implementations of gpu kernels
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-23_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-23_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #2 particle, field along x, hystersis, after testing/debugging and fixing new implementations of gpu kernels
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-26_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-26_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #125 particle, field along z, hysteresis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #125 particle, field along x, hysteresis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-26_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-26_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #125 particles, noisy placement (+/-1 volume elements off regular possible in each direction), field along x, hysteresis. not guaranteed that all steps reached convergence, but still probably "close enough." Need more refined convergence criteria for these noisy systems, that seem to need more time to settle. that means potentially segregating out the accelerations and velocities of the particles from the rest of the system, and checking the convergence of the rest of the system, then the particle level accelerations and velocities (or changes in position) for convergence testing.
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-40_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-27_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-40_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #125 particles, noisy placement (+/-1 volume elements off regular possible in each direction), field along z, hysteresis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-28_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_04-27_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-28_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_04-27_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #125 particles, regular, field along x, tension along x, strain bc
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular, field along z, tension along x, strain bc
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-04-29_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular noisy, field along x, tension along x, strain bc
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-01_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-53_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-01_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-53_stepsize_5.e-3/"
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #2 particles along x, field along x, tension along x, strain bc with boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #2 particles along x, field along z, tension along x, strain bc with boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-03_2_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-06_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular, field along z, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-07_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-07_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-09_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-55_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-09_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_16-55_stepsize_5.e-3/"
     # plot_full_sim_surface_forces(sim_dir)
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular noisy, field along z, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
     #both smaller and larger strains, for exploring fitting to energy density vs strain for effective modulus vs field analysis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
     # plot_full_sim_surface_forces(sim_dir)
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particles, 1MPa polymer (closer to natural rubber), regular noisy, field along x, tension along x, strain bc. boundary motion allowed for 0 strain to set reference configurations for non-zero strains
     #both smaller and larger strains, for exploring fitting to energy density vs strain for effective modulus vs field analysis
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-15_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_18-05_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-15_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_18-05_stepsize_5.e-3/"
     # plot_full_sim_surface_forces(sim_dir)
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particle, regular noisy, 9e3 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. fewer small strains, more large strains. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-19_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_17-56_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-19_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_17-56_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=False,gpu_flag=True)
 
     #125 particle, regular noisy, 1e6 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. fewer small strains, more large strains. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-20_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_14-49_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-20_125_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_1000000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_14-49_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
 
     #2 particle, 9e3 Pa modulus, field along x, compression along x, strain bc. boudnary motion allowed at 0 strain. .post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #2 particle, 9e3 Pa modulus, field along x, shearing xy, strain bc. boudnary motion allowed at 0 strain. .post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_3_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-24_3_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #125 particle, regular placement, 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-24_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #125 particle, regular noisy placement, 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-25_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_20-48_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-25_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_20-48_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-27_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + f"/2024-06-27_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
 
     #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along z, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=True)
     # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
 
     #125 particle, anisotropic regular placement [0.7,~,~], 9e3 Pa modulus, field along x, hysteresis, bottom fixed bc. post-imlpementation of gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-01_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-07-01_125_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,gpu_flag=True)
 
     #20 particle (5x2x2), anisotropic regular noisy placement [0.8,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc. boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_regular_anisotropic_noisy_vol_frac_0.1_starttime_12-19_stepsize_1.e-3/"
+    sim_dir = results_directory + "/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_regular_anisotropic_noisy_vol_frac_0.1_starttime_12-19_stepsize_1.e-3/"
     # plot_energy_figures(sim_dir)
 
     #20 particle (5x2x2), anisotropic regular noisy placement [0.8,~,~], 9e3 Pa modulus, field along x, shearing xy, strain bc, 0 field only (actually zero, not just near zero). boundary motion allowed at 0 strain. post-imlpementation of cupy built-ins for strained boundary net force calculation and gpu based particle position finding using positions of nodes making up central voxel of each particle
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_anisotropic_noisy_vol_frac_0.1_starttime_16-28_stepsize_1.e-3/"
+    sim_dir = results_directory + "/2024-07-10_20_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_anisotropic_noisy_vol_frac_0.1_starttime_16-28_stepsize_1.e-3/"
     # plot_energy_figures(sim_dir)
     # plot_strain_tensor_field(sim_dir)
 
     # 2 particle hysteresis, field along z, particles along z. first sim in a while. going to try and write a short report on this set of results
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-08-21_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_1.e-3/"
+    sim_dir = results_directory + "/2024-08-21_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_1.e-3/"
     # temp_hysteresis_analysis(sim_dir)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-08-23_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-08-23_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-06-28_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_profiling_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-06-13_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_starttime_14-38_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
 
-    sim_dir = f"/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    sim_dir = results_directory + "/2024-06-24_2_particle_field_dependent_modulus_strain_strain_compression_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "/2024-06-24_3_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "/2024-06-25_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_20-48_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # analysis_case3(sim_dir)
+    # plot_energy_figures(sim_dir)
+    
+    sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_90000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_900000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-04_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
     plot_energy_figures(sim_dir)
     print('Exiting')
