@@ -1351,8 +1351,14 @@ def get_normalized_magnetization_and_total_field(hext,num_particles,particle_pos
         if i > 0:
             difference = magnetization - last_magnetization
             if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
+                htot = cp.tile(hext,num_particles)
+                dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,magnetization))
+                htot += dipolar_fields
                 return (magnetization,htot,0)
         last_magnetization = magnetization.copy()
+    htot = cp.tile(hext,num_particles)
+    dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,magnetization))
+    htot += dipolar_fields
     return (magnetization,htot,-1)
 
 class FixedPointMethodError(Exception):
