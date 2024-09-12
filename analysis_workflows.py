@@ -1650,12 +1650,9 @@ def plot_energy_figures(sim_dir):
     #which figures do i want? I want plots of the total energy, and the individual energies as a function of the boundary condition value, with each line representing a different applied field. I may also want the inverse, (each line a different strain), and I may also want to plot different energies separately, but lets just start
     Bext_magnitude = np.linalg.norm(applied_field,axis=1)
     unique_field_values = np.unique(Bext_magnitude)
-    energy_density_fit_modulus = np.zeros((unique_field_values.shape[0],))
-    energy_density_plus_wca_fit_modulus = np.zeros((unique_field_values.shape[0],))
-    energy_density_fit_error = np.zeros((unique_field_values.shape[0],))
-    energy_density_plus_wca_fit_error = np.zeros((unique_field_values.shape[0],))
     energy_density_plus_wca_plus_self_fit_modulus = np.zeros((unique_field_values.shape[0],))
     energy_density_plus_wca_plus_self_fit_error = np.zeros((unique_field_values.shape[0],))
+    subset_modulus_error_dict = dict({})
     for i, unique_value in enumerate(unique_field_values):
         # fig, axs = plt.subplots(1,3)
         # default_width,default_height = fig.get_size_inches()
@@ -1670,71 +1667,10 @@ def plot_energy_figures(sim_dir):
         plotting_self_energy = self_energy[relevant_indices]
         plotting_zeeman_energy = zeeman_energy[relevant_indices]
         plotting_bc = applied_bc[relevant_indices]
-        # axs[0].plot(plotting_bc,plotting_total_energy,marker='o',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
-        # axs[1].plot(plotting_bc,plotting_total_energy+plotting_wca_energy,marker='s',linestyle='-',label=f'Total + WCA: {np.round(unique_value*1000)} (mT)')
-        # axs[2].plot(plotting_bc,plotting_total_energy+plotting_wca_energy+plotting_self_energy,marker='D',linestyle='-',label=f'Total+WCA+Self: {np.round(unique_value*1000)} (mT)')
-        # axs[0].set_title('System Energy')
-        # axs[0].set_ylabel('Energy (J)')
-        # format_figure(axs[0])
-        # axs[0].set_xlabel(xlabel)
-        # axs[1].set_xlabel(xlabel)
-        # axs[2].set_xlabel(xlabel)
-        # format_figure(axs[0])
-        # format_figure(axs[1])
-        # format_figure(axs[2])
-        # # plt.show()
-        # # fig.tight_layout()
-        # fig.legend()
-        modulus_fit_guess = 9e3
-        # energy_density = np.ravel(plotting_total_energy)/total_sim_volume
-        # energy_plus_wca_density = np.ravel(plotting_total_energy+wca_energy[relevant_indices])/total_sim_volume
-        energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/total_sim_volume
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0,0]))
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_density,p0=np.array([modulus_fit_guess,0]))
-        # energy_density_fit_modulus[i] = popt[0]
-        # energy_density_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        # # energy_density_fit_linear_term[i] = popt[1]
-        # # energy_density_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
-        # axs[0].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        # plt.annotate(f'modulus from fit: {energy_density_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
-        # # popt, pcov = scipy.optimize.curve_fit(quadratic_fit_func,plotting_bc[1:]/xscale_factor,energy_plus_wca_density[1:],p0=np.array([modulus_fit_guess,0,0]))
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_density,p0=np.array([modulus_fit_guess,0]))
-        # energy_density_plus_wca_fit_modulus[i] = popt[0]
-        # energy_density_plus_wca_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        # # energy_density_plus_wca_fit_linear_term[i] = popt[1]
-        # # energy_density_plus_wca_fit_linear_term_error[i] = np.sqrt(np.diag(pcov))[1]
-        # plt.annotate(f'modulus from fit to total with WCA: {energy_density_plus_wca_fit_modulus[i]}',xy=(1500,10),xycoords='figure pixels')
-        # axs[1].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        # popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
-        # energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
-        # energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        # axs[2].plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        # plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(750,10),xycoords='figure pixels')
-        # savename = fig_output_dir + f'total_energies_{np.round(unique_value*1000)}_mT.png'
-        # plt.savefig(savename)
-        # plt.close()
 
-        fig, ax = plt.subplots()
-        default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(2*default_width,2*default_height)
-        fig.set_dpi(200)
-        ax.plot(plotting_bc,plotting_total_energy,marker='D',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
-        ax.set_title('System Energy')
-        ax.set_ylabel('Energy (J)')
-        format_figure(ax)
-        ax.set_xlabel(xlabel)
-
-        fig.legend()
-        modulus_fit_guess = 9e3
-        popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
-        energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
-        energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-        ax.plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
-        savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
-        plt.savefig(savename)
-        plt.close()
-
+        #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
+        strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
+        energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0] + 2
         fig, axs = plt.subplots(2,3)
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
@@ -1761,30 +1697,70 @@ def plot_energy_figures(sim_dir):
         plt.savefig(savename)
         plt.close()
 
+        modulus_fit_guess = 9e3
 
-    # fig, ax = plt.subplots()
-    # ax.errorbar(unique_field_values*1000,energy_density_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
-    # ax.set_xlabel(f'Applied Field (mT)')
-    # ax.set_ylabel(f'Modulus (Pa)')
-    # plt.annotate(f'modulus minimum: {np.min(energy_density_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
-    # savename = fig_output_dir + 'energy_density_fit_modulus.png'
-    # plt.savefig(savename)
-    # plt.close()
+        energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/total_sim_volume
 
-    # fig, ax = plt.subplots()
-    # ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_error)
-    # ax.set_xlabel(f'Applied Field (mT)')
-    # ax.set_ylabel(f'Modulus (Pa)')
-    # plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
-    # savename = fig_output_dir + 'energy_plus_wca_density_fit_modulus.png'
-    # plt.savefig(savename)
-    # plt.close()
+        fig, ax = plt.subplots()
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(200)
+        ax.plot(plotting_bc,plotting_total_energy,marker='D',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
+        ax.set_title('System Energy')
+        ax.set_ylabel('Energy (J)')
+        format_figure(ax)
+        ax.set_xlabel(xlabel)
 
-    smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus))
+        fig.legend()
+        modulus_fit_guess = 9e3
+        potential_subsets = energy_trend_switch_indices.shape[0] + 1
+        if potential_subsets == 1:
+            popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
+            energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+            energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+            ax.plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+            plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+        else:
+            subset_start_idx = 0
+            for subset_count in range(potential_subsets):
+                if subset_count + 1 == potential_subsets:
+                    subset_end_idx = plotting_bc.shape[0]
+                else:
+                    subset_end_idx = energy_trend_switch_indices[subset_count]
+                #if there are not at least 3 datapoints to fit to, don't bother trying a fit.
+                if subset_end_idx - subset_start_idx < 3:
+                    continue
+                popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,energy_plus_wca_plus_self_density[subset_start_idx:subset_end_idx],p0=np.array([modulus_fit_guess,0]))
+                if subset_count == 0:
+                    energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+                    energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+                else:
+                    subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
+                ax.plot(plotting_bc[subset_start_idx:subset_end_idx],total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1]))
+                plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+                subset_start_idx = subset_end_idx
+        savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
+        plt.savefig(savename)
+        plt.close()
+
+    #if there were not at least 3 data points for the first subset of data to fit to, the modulus would be zero, and this will break the search for outliers. so we need to correct for that here, by getting the true smallest modulus
+    nonzero_modulus_indices = np.nonzero(energy_density_plus_wca_plus_self_fit_modulus)[0]
+    smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus[nonzero_modulus_indices]))
     outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
     non_outlier_mask = np.logical_not(outlier_mask)
     fig, ax = plt.subplots()
     ax.errorbar(unique_field_values[non_outlier_mask]*1000,energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask],linestyle='-',marker='o',yerr=energy_density_plus_wca_plus_self_fit_error[non_outlier_mask])
+
+    #now i need to grab the other subsets fits that were done, and get those results on the same figure.
+    subset_modulus = np.zeros(energy_density_plus_wca_plus_self_fit_modulus.shape)
+    subset_error = np.zeros(energy_density_plus_wca_plus_self_fit_modulus.shape)
+    for key in subset_modulus_error_dict.keys():
+        subset_modulus[int(key)] = subset_modulus_error_dict[key][0]
+        subset_error[int(key)] = subset_modulus_error_dict[key][1]
+    nonzero_indices = np.nonzero(subset_modulus)[0]
+    if nonzero_indices.shape[0] != 0:
+        ax.errorbar(1000*unique_field_values[nonzero_indices],subset_modulus[nonzero_indices],marker='s',yerr=subset_error[nonzero_indices])
+    
     ax.set_xlabel(f'Applied Field (mT)')
     ax.set_ylabel(f'Modulus (Pa)')
     plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask])}',xy=(10,10),xycoords='figure pixels')
@@ -2513,7 +2489,7 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
-    analysis_case3(sim_dir)
+    # analysis_case3(sim_dir)
     plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
     plot_energy_figures(sim_dir)
