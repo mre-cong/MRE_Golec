@@ -322,16 +322,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     if plot_particle_behavior_flag and particles.shape[0] != 0:
         particle_separations = plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
         num_particles = particles.shape[0]
-        clustering_distance = 4
-        particle_separations *= l_e*1e6
-        particle_separations_matrix = np.zeros((num_output_files,num_particles,num_particles))
-        for output_file_count in np.arange(num_output_files):
-            counter = 0
-            for i in np.arange(num_particles):
-                for j in np.arange(i+1,num_particles):
-                    particle_separations_matrix[output_file_count,i,j] = particle_separations[output_file_count,counter]
-                    counter += 1
-            particle_separations_matrix[output_file_count] += np.transpose(particle_separations_matrix[output_file_count])
+        # particle_separations_matrix = check_clustering(num_particles,num_output_files,Hext_series,particle_separations,l_e,clustering_distance=4)
     else:
         particle_separations_matrix = None
 
@@ -341,30 +332,18 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
 #       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
-    #TODO effective modulus calculations for field dependent simulations
 
-    #how many cluster pairs formed?
-    for output_file_count in np.arange(num_output_files):
-        cluster_counter = 0
-        for i in np.arange(num_particles):
-            temp_separations = particle_separations_matrix[output_file_count,i,:]
-            cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
-            #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
-        cluster_counter /= 2
-        if cluster_counter != 0:
-            print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and output file {[output_file_count]} the total number of clusters: {cluster_counter}')
-            # print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {bc_type} {bc_values[output_file_count]} the total number of clusters: {cluster_counter}')
-    #on a field by field basis, fit the stress-strain curve to a linear function to extract the effective modulus, ignoring the (0,0) point
+    plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series,boundary_condition_series,l_e)
+
     unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
     num_fields = unique_fields.shape[0]
-    # num_boundary_conditions = np.floor_divide(num_output_files,num_fields)
-    # particle_separations = np.zeros((num_fields,num_boundary_conditions))
-    # for i in range(num_fields):
-    #     particle_separations[i] = particle_separations_matrix[i::num_fields,0,1]
+    num_boundary_conditions = np.floor_divide(num_output_files,num_fields)
+    particle_separations = np.zeros((num_fields,num_boundary_conditions))
+    for i in range(num_fields):
+        particle_separations[i] = particle_separations_matrix[i::num_fields,0,1]
+    particle_orientations = get_particle_orientation(sim_dir,num_output_files,particles)
 
-    # print(particle_separations[-3,:])
-    # print(particle_separations[-2,:])
-    # print(particle_separations[-1,:])
+
     # fig, ax = plt.subplots()
     # ax.plot(boundary_condition_series,particle_separations[-3,:]-particle_separations[-3,0],'.',label='80mT')
     # ax.plot(boundary_condition_series,particle_separations[-2,:]-particle_separations[-2,0],'^',label='120mT')
@@ -1107,6 +1086,236 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     plt.savefig(savename)
     plt.close()
 
+def check_clustering(num_particles,num_output_files,Hext_series,particle_separations,l_e,clustering_distance=4):
+    """Given some threshold separation in microns, print out the number of clusters formed by particles whose center-to-center distances are below the threshold for each output file."""
+    particle_separations *= l_e*1e6
+    particle_separations_matrix = np.zeros((num_output_files,num_particles,num_particles))
+    for output_file_count in np.arange(num_output_files):
+        counter = 0
+        for i in np.arange(num_particles):
+            for j in np.arange(i+1,num_particles):
+                particle_separations_matrix[output_file_count,i,j] = particle_separations[output_file_count,counter]
+                counter += 1
+        particle_separations_matrix[output_file_count] += np.transpose(particle_separations_matrix[output_file_count])
+
+    for output_file_count in np.arange(num_output_files):
+        cluster_counter = 0
+        for i in np.arange(num_particles):
+            temp_separations = particle_separations_matrix[output_file_count,i,:]
+            cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
+            #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
+        cluster_counter /= 2
+        if cluster_counter != 0:
+            print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and output file {[output_file_count]} the total number of clusters: {cluster_counter}')
+            # print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {bc_type} {bc_values[output_file_count]} the total number of clusters: {cluster_counter}')
+    return particle_separations_matrix
+
+def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series,boundary_condition_series,l_e):
+    """Make a composite plot of particle orientation, separation, and positions as well as their change with respect to applied strain. Intended for two particle simulations."""
+    num_particles = particles.shape[0]
+    num_separations = int(sci.binom(num_particles,2))
+    separations = np.zeros((num_output_files,num_separations))
+    particle_posns = np.zeros((num_output_files,num_particles,3))
+    particle_orientation = np.zeros((num_output_files,num_particles,2))
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        separations[i,:], particle_posns[i,:] = get_particle_separation(final_posns,particles)
+        particle_orientation[i,:] = get_particle_orientation(particles,final_posns)
+
+    unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
+    num_fields = unique_fields.shape[0]
+    num_boundary_conditions = boundary_condition_series.shape[0]
+    unique_field_particle_separations = np.zeros((num_fields,num_boundary_conditions))
+    unique_field_particle_separation_change = np.zeros((num_fields,num_boundary_conditions))
+    unique_field_particle_posns = np.zeros((num_fields,num_boundary_conditions,num_particles,3))
+    unique_field_particle_posn_change = np.zeros((num_fields,num_boundary_conditions,num_particles,3))
+    unique_field_particle_orientations = np.zeros((num_fields,num_boundary_conditions,num_particles,2))
+    unique_field_particle_orientation_change = np.zeros((num_fields,num_boundary_conditions,num_particles,2))
+
+    for i in range(num_fields):
+        unique_field_particle_separations[i] = 1e6*l_e*separations[i::num_fields].ravel()
+        unique_field_particle_separation_change[i] = unique_field_particle_separations[i,:] - unique_field_particle_separations[i,0]
+        unique_field_particle_posns[i] = 1e6*l_e*particle_posns[i::num_fields]
+        unique_field_particle_posn_change[i] = unique_field_particle_posns[i,:] - unique_field_particle_posns[i,0]
+        unique_field_particle_orientations[i] = particle_orientation[i::num_fields]
+        unique_field_particle_orientation_change[i] = unique_field_particle_orientations[i,:] - unique_field_particle_orientations[i,0]
+
+
+    fig, axs = plt.subplots(1,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    unique_markers = ['^','s','d','v','o','+','*']
+    for i in range(np.floor_divide(num_fields,2)):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0].plot(boundary_condition_series,unique_field_particle_separations[i],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1].plot(boundary_condition_series,unique_field_particle_separation_change[i],unique_markers[np.mod(i,len(unique_markers))])
+
+    axs[0].set_xlabel('applied strain')
+    axs[1].set_xlabel('applied strain')
+    axs[0].set_ylabel(r'particle separation ($\mu$m)')
+    axs[1].set_ylabel(r'change in particle separation ($\mu$m)')
+
+    fig.legend()
+
+    format_figure(axs[0])
+    format_figure(axs[1])
+    savename = f'particle_separation_strain_response0.png'
+    save_dir = sim_dir+'/figures/'
+    plt.savefig(save_dir+savename)
+
+    fig, axs = plt.subplots(1,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    for i in range(np.floor_divide(num_fields,2),num_fields):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0].plot(boundary_condition_series,unique_field_particle_separations[i],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1].plot(boundary_condition_series,unique_field_particle_separation_change[i],unique_markers[np.mod(i,len(unique_markers))])
+
+    axs[0].set_xlabel('applied strain')
+    axs[1].set_xlabel('applied strain')
+    axs[0].set_ylabel(r'particle separation ($\mu$m)')
+    axs[1].set_ylabel(r'change in particle separation ($\mu$m)')
+
+    fig.legend()
+
+    format_figure(axs[0])
+    format_figure(axs[1])
+    savename = f'particle_separation_strain_response1.png'
+    plt.savefig(save_dir+savename)
+
+    fig, axs = plt.subplots(2,3)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    for i in range(np.floor_divide(num_fields,2)):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0,0].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1,0].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,1].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,1].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,2].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,2],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,2].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,2],unique_markers[np.mod(i,len(unique_markers))])
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[1,0].set_xlabel('applied strain')
+    axs[1,1].set_xlabel('applied strain')
+    axs[1,2].set_xlabel('applied strain')
+    axs[0,0].set_ylabel(r'particle posn ($\mu$m)')
+    axs[1,0].set_ylabel(r'change in posn ($\mu$m)')
+
+    fig.legend()
+
+    format_figure(axs[0,0])
+    format_figure(axs[0,1])
+    format_figure(axs[1,0])
+    format_figure(axs[1,1])
+    format_figure(axs[0,2])
+    format_figure(axs[1,2])
+    savename = f'particle_posn_strain_response0.png'
+    plt.savefig(save_dir+savename)
+
+    fig, axs = plt.subplots(2,3)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    for i in range(np.floor_divide(num_fields,2),num_fields):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0,0].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1,0].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,1].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,1].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,2].plot(boundary_condition_series,unique_field_particle_posns[i,:,:,2],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,2].plot(boundary_condition_series,unique_field_particle_posn_change[i,:,:,2],unique_markers[np.mod(i,len(unique_markers))])
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[1,0].set_xlabel('applied strain')
+    axs[1,1].set_xlabel('applied strain')
+    axs[1,2].set_xlabel('applied strain')
+    axs[0,0].set_ylabel(r'particle posn ($\mu$m)')
+    axs[1,0].set_ylabel(r'change in posn ($\mu$m)')
+
+    fig.legend()
+
+    format_figure(axs[0,0])
+    format_figure(axs[0,1])
+    format_figure(axs[1,0])
+    format_figure(axs[1,1])
+    format_figure(axs[0,2])
+    format_figure(axs[1,2])
+    savename = f'particle_posn_strain_response1.png'
+    plt.savefig(save_dir+savename)
+
+
+    fig, axs = plt.subplots(2,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    for i in range(np.floor_divide(num_fields,2)):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0,0].plot(boundary_condition_series,unique_field_particle_orientations[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1,0].plot(boundary_condition_series,unique_field_particle_orientation_change[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,1].plot(boundary_condition_series,unique_field_particle_orientations[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,1].plot(boundary_condition_series,unique_field_particle_orientation_change[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+    axs[0,0].set_title('polar')
+    axs[0,1].set_title('azimuthal')
+    axs[1,0].set_xlabel('applied strain')
+    axs[1,1].set_xlabel('applied strain')
+    axs[0,0].set_ylabel(r'particle orientation (rad)')
+    axs[1,0].set_ylabel(r'change in particle orientation (rad)')
+
+    fig.legend()
+
+    format_figure(axs[0,0])
+    format_figure(axs[0,1])
+    format_figure(axs[1,0])
+    format_figure(axs[1,1])
+    savename = f'particle_orientation_strain_response0.png'
+    plt.savefig(save_dir+savename)
+
+    fig, axs = plt.subplots(2,2)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    for i in range(np.floor_divide(num_fields,2),num_fields):
+        field = np.round(unique_fields[i]*1000,decimals=0)
+        axs[0,0].plot(boundary_condition_series,unique_field_particle_orientations[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))],label=f'{field}mT')
+        axs[1,0].plot(boundary_condition_series,unique_field_particle_orientation_change[i,:,:,0],unique_markers[np.mod(i,len(unique_markers))])
+        axs[0,1].plot(boundary_condition_series,unique_field_particle_orientations[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+        axs[1,1].plot(boundary_condition_series,unique_field_particle_orientation_change[i,:,:,1],unique_markers[np.mod(i,len(unique_markers))])
+    axs[0,0].set_title('polar')
+    axs[0,1].set_title('azimuthal')
+    axs[1,0].set_xlabel('applied strain')
+    axs[1,1].set_xlabel('applied strain')
+    axs[0,0].set_ylabel(r'particle orientation (rad)')
+    axs[1,0].set_ylabel(r'change in particle orientation (rad)')
+
+    fig.legend()
+
+    format_figure(axs[0,0])
+    format_figure(axs[0,1])
+    format_figure(axs[1,0])
+    format_figure(axs[1,1])
+    savename = f'particle_orientation_strain_response1.png'
+    plt.savefig(save_dir+savename)
+
+def get_particle_orientation(particles,node_posns):
+    """Get the particle orientation as (polar,azimuthal) angle pairs."""
+    num_particles = particles.shape[0]
+    particle_orientation = np.zeros((num_particles,2))
+    rij_vectors = node_posns[particles[:,0]] - node_posns[particles[:,1]]
+    rij_magnitudes = np.linalg.norm(rij_vectors,axis=1)
+    zaxis = np.array([0,0,1])
+    xaxis = np.array([1,0,0])
+    particle_orientation[:,0] = np.arccos(np.dot(rij_vectors,zaxis)/rij_magnitudes)
+    rij_vectors[:,2] = 0
+    rij_magnitudes = np.linalg.norm(rij_vectors,axis=1)
+    particle_orientation[:,1] = np.arccos(np.dot(rij_vectors,xaxis)/rij_magnitudes) 
+    return particle_orientation
+
 def plot_surface_node_force_vector(sim_dir,output_dir,file_number,initial_node_posns,final_posns,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag,boundary_conditions,force_plate_flag=False):
     """Calculate the forces acting on the "probed" boundary nodes and plot the force vector components and norm in a subplot. Option force_plate_flag to calculate and plot the forces acting on a fictional "force plate" for "plate based" stress boundary conditions"""
     #TODO make into a function the plotting of the forces acting on the probed surface necessary to keep it held fixed in place
@@ -1521,7 +1730,7 @@ def plot_energy_figures(sim_dir):
         energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
         energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
         ax.plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-        plt.annotate(f'modulus from fit to total with WCA + Self: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+        plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
         savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
         plt.close()
@@ -1553,23 +1762,23 @@ def plot_energy_figures(sim_dir):
         plt.close()
 
 
-    fig, ax = plt.subplots()
-    ax.errorbar(unique_field_values*1000,energy_density_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
-    ax.set_xlabel(f'Applied Field (mT)')
-    ax.set_ylabel(f'Modulus (Pa)')
-    plt.annotate(f'modulus minimum: {np.min(energy_density_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
-    savename = fig_output_dir + 'energy_density_fit_modulus.png'
-    plt.savefig(savename)
-    plt.close()
+    # fig, ax = plt.subplots()
+    # ax.errorbar(unique_field_values*1000,energy_density_fit_modulus,linestyle='-',marker='o',yerr=energy_density_fit_error)
+    # ax.set_xlabel(f'Applied Field (mT)')
+    # ax.set_ylabel(f'Modulus (Pa)')
+    # plt.annotate(f'modulus minimum: {np.min(energy_density_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
+    # savename = fig_output_dir + 'energy_density_fit_modulus.png'
+    # plt.savefig(savename)
+    # plt.close()
 
-    fig, ax = plt.subplots()
-    ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_error)
-    ax.set_xlabel(f'Applied Field (mT)')
-    ax.set_ylabel(f'Modulus (Pa)')
-    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
-    savename = fig_output_dir + 'energy_plus_wca_density_fit_modulus.png'
-    plt.savefig(savename)
-    plt.close()
+    # fig, ax = plt.subplots()
+    # ax.errorbar(unique_field_values*1000,energy_density_plus_wca_fit_modulus,linestyle='-',marker='o',yerr=energy_density_plus_wca_fit_error)
+    # ax.set_xlabel(f'Applied Field (mT)')
+    # ax.set_ylabel(f'Modulus (Pa)')
+    # plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_fit_modulus)}',xy=(10,10),xycoords='figure pixels')
+    # savename = fig_output_dir + 'energy_plus_wca_density_fit_modulus.png'
+    # plt.savefig(savename)
+    # plt.close()
 
     smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus))
     outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
@@ -2304,6 +2513,7 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
+    analysis_case3(sim_dir)
     plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
     plot_energy_figures(sim_dir)
