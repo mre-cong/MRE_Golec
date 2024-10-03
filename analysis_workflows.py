@@ -481,6 +481,9 @@ def quadratic_no_linear_term_fit_func(x,a,c):
     """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from energy density vs strain curves"""
     return (1./2.)*a*np.power(x,2) + c
 
+def shearing_quadratic_fit_func(x,a,c):
+    """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from energy density vs strain curves"""
+    return a*np.power(x,2) + c
 
 def get_average_tensor_value(tensor,elements,initial_node_posns,tag=""):
     """Calculate the average stress/strain tensor for the RVE/system and compare the results."""
@@ -1618,10 +1621,12 @@ def plot_energy_figures(sim_dir):
     if not (os.path.isdir(output_dir+'energy/')):
         os.mkdir(output_dir+'energy/')
     fig_output_dir = output_dir + 'energy/'
-    node_posns, _, _, _, _, _, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    node_posns, _, _, _, _, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
     l_e = parameters[7]
     dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
     total_sim_volume = dimensions[0]*dimensions[1]*dimensions[2]
+    particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
+    print(f'Actual volume fraction: {particles.shape[0]*particle_volume/total_sim_volume}')
     if 'stress' in sim_type:
         xlabel = 'stress (Pa)'
         xscale_factor = 1
@@ -1631,6 +1636,9 @@ def plot_energy_figures(sim_dir):
         if 'shearing' in sim_type:
             xscale_factor = 1
             xlabel='shear strain'
+            fit_func = shearing_quadratic_fit_func
+        else:
+            fit_func = quadratic_no_linear_term_fit_func
     elif 'hysteresis' in sim_type:
         pass
 
@@ -1670,7 +1678,7 @@ def plot_energy_figures(sim_dir):
 
         #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
         strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
-        energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0] + 2
+        energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
         fig, axs = plt.subplots(2,3)
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
@@ -1715,11 +1723,11 @@ def plot_energy_figures(sim_dir):
         modulus_fit_guess = 9e3
         potential_subsets = energy_trend_switch_indices.shape[0] + 1
         if potential_subsets == 1:
-            popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
+            popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
             energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
             energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-            ax.plot(plotting_bc,total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
-            plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+            ax.plot(plotting_bc,total_sim_volume*fit_func(plotting_bc/xscale_factor,popt[0],popt[1]))
+            plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])}',xy=(10,10),xycoords='figure pixels')
         else:
             subset_start_idx = 0
             for subset_count in range(potential_subsets):
@@ -1729,15 +1737,18 @@ def plot_energy_figures(sim_dir):
                     subset_end_idx = energy_trend_switch_indices[subset_count]
                 #if there are not at least 3 datapoints to fit to, don't bother trying a fit.
                 if subset_end_idx - subset_start_idx < 3:
+                    subset_start_idx = subset_end_idx
                     continue
-                popt, pcov = scipy.optimize.curve_fit(quadratic_no_linear_term_fit_func,plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,energy_plus_wca_plus_self_density[subset_start_idx:subset_end_idx],p0=np.array([modulus_fit_guess,0]))
+                popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,energy_plus_wca_plus_self_density[subset_start_idx:subset_end_idx],p0=np.array([modulus_fit_guess,0]))
                 if subset_count == 0:
                     energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
                     energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
                 else:
                     subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
-                ax.plot(plotting_bc[subset_start_idx:subset_end_idx],total_sim_volume*quadratic_no_linear_term_fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1]))
-                plt.annotate(f'modulus from fit: {energy_density_plus_wca_plus_self_fit_modulus[i]}',xy=(10,10),xycoords='figure pixels')
+                ax.plot(plotting_bc[subset_start_idx:subset_end_idx],total_sim_volume*fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1]))
+                plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])}',xy=(10,10),xycoords='figure pixels')
+                if f'{i}' in subset_modulus_error_dict:
+                    plt.annotate(f'modulus from alt fit: {np.round(subset_modulus_error_dict[f"{i}"][0])}',xy=(10,25),xycoords='figure pixels')
                 subset_start_idx = subset_end_idx
         savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
@@ -1746,7 +1757,7 @@ def plot_energy_figures(sim_dir):
     #if there were not at least 3 data points for the first subset of data to fit to, the modulus would be zero, and this will break the search for outliers. so we need to correct for that here, by getting the true smallest modulus
     nonzero_modulus_indices = np.nonzero(energy_density_plus_wca_plus_self_fit_modulus)[0]
     smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus[nonzero_modulus_indices]))
-    outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
+    outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<=0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
     non_outlier_mask = np.logical_not(outlier_mask)
     fig, ax = plt.subplots()
     ax.errorbar(unique_field_values[non_outlier_mask]*1000,energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask],linestyle='-',marker='o',yerr=energy_density_plus_wca_plus_self_fit_error[non_outlier_mask])
@@ -1763,7 +1774,7 @@ def plot_energy_figures(sim_dir):
     
     ax.set_xlabel(f'Applied Field (mT)')
     ax.set_ylabel(f'Modulus (Pa)')
-    plt.annotate(f'modulus minimum: {np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask])}',xy=(10,10),xycoords='figure pixels')
+    plt.annotate(f'modulus minimum: {np.round(np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask]))}',xy=(10,10),xycoords='figure pixels')
     savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
     plt.savefig(savename)
     plt.close()
@@ -1897,34 +1908,45 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     simulate.scaled_spring_energy_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,spring_energies,size_springs))
     cupy_stream.synchronize()
-    magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e)
-    magnetic_moments = magnetization*Ms*particle_volume
-    Htot = htot*Ms
-    # magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
-    dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
-    dipole_energies = cp.zeros((num_particles,1),dtype=cp.float32)
-    Hext_norm = np.linalg.norm(Hext)
-    Hext = cp.array(Hext,dtype=cp.float32,order='C')
-    simulate.dipole_energy_kernel((dipole_grid_size,),(block_size,),(magnetic_moments,Htot,Hext,dipole_energies,num_particles))
-    cupy_stream.synchronize()
-    
-    host_magnetic_moments = cp.asnumpy(magnetic_moments)
-    # self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume
-    self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume/Ms*(Ms+chi*Hext_norm)
+    if num_particles != 0:
+        magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e)
+        magnetic_moments = magnetization*Ms*particle_volume
+        Htot = htot*Ms
+        # magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
+        dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+        dipole_energies = cp.zeros((num_particles,1),dtype=cp.float32)
+        Hext_norm = np.linalg.norm(Hext)
+        Hext = cp.array(Hext,dtype=cp.float32,order='C')
+        simulate.dipole_energy_kernel((dipole_grid_size,),(block_size,),(magnetic_moments,Htot,Hext,dipole_energies,num_particles))
+        cupy_stream.synchronize()
+        
+        host_magnetic_moments = cp.asnumpy(magnetic_moments)
+        # self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume
+        self_energy = np.sum(host_magnetic_moments*host_magnetic_moments)*mu0/2/chi/particle_volume/Ms*(Ms+chi*Hext_norm)
 
-    zeeman_energy = -1*mu0*np.sum(np.dot(host_magnetic_moments.reshape((num_particles,3)),cp.asnumpy(Hext)))
+        zeeman_energy = -1*mu0*np.sum(np.dot(host_magnetic_moments.reshape((num_particles,3)),cp.asnumpy(Hext)))
 
-    #get separation vectors for wca energy
-    separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
-    separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
-    simulate.separation_vectors_kernel((dipole_grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
-    cupy_stream.synchronize()
+        #get separation vectors for wca energy
+        separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
+        separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
+        simulate.separation_vectors_kernel((dipole_grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+        cupy_stream.synchronize()
 
-    wca_energies = cp.zeros((num_particles,1),dtype=cp.float32)
-    particle_radius = np.float32(np.power((3./4)*(1/np.pi)*particle_volume,1/3))
-    inv_l_e = np.float32(1/l_e)
-    simulate.wca_energy_kernel((dipole_grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,particle_radius,l_e,inv_l_e,wca_energies,num_particles))
-    cupy_stream.synchronize()
+        wca_energies = cp.zeros((num_particles,1),dtype=cp.float32)
+        particle_radius = np.float32(np.power((3./4)*(1/np.pi)*particle_volume,1/3))
+        inv_l_e = np.float32(1/l_e)
+        simulate.wca_energy_kernel((dipole_grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,particle_radius,l_e,inv_l_e,wca_energies,num_particles))
+        cupy_stream.synchronize()
+
+        #factor of two because we count the interaction of each dipole with each other dipole, which results in a double counting of the interaction energy for each pair
+        dipole_energy = cp.asnumpy(cp.sum(dipole_energies,0))/2
+
+        wca_energy = cp.asnumpy(cp.sum(wca_energies,0))/2
+    else:
+        zeeman_energy = 0
+        self_energy = 0
+        dipole_energy = 0
+        wca_energy = 0
 
     #sum energies, and scale back to SI units as necessary
     element_energy = cp.asnumpy(cp.sum(element_energies,0))
@@ -1932,11 +1954,6 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
 
     spring_energy = cp.asnumpy(cp.sum(spring_energies,0))
     spring_energy *= l_e
-
-    #factor of two because we count the interaction of each dipole with each other dipole, which results in a double counting of the interaction energy for each pair
-    dipole_energy = cp.asnumpy(cp.sum(dipole_energies,0))/2
-
-    wca_energy = cp.asnumpy(cp.sum(wca_energies,0))/2
 
     total_energy = element_energy + spring_energy + dipole_energy + zeeman_energy + self_energy + wca_energy
     return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
@@ -2111,6 +2128,131 @@ def plot_strain_tensor_field(sim_dir):
         for cut_type,center_idx in zip(cut_types,center_indices):
             tag = 'center_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
+
+def plot_mr_effect_figure(directory_file,output_dir):
+    """Given a text file containing newline separated directories containing results for the analysis, extract the effective moduli and generate a figure showing the volume fraction dependence of the effective modulus and MR Effect."""
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    directories = []
+    vol_fractions = []
+    zero_field_effective_modulus = []
+    effective_modulus = []
+    mr_effect = []
+    with open(directory_file,'r') as filehandle:
+        for line in filehandle:
+            line = line.strip()
+            directories.append(line)
+    for directory in directories:
+        if directory[-1] != '/':
+            directory += '/'
+        sim_dir = directory
+        node_posns, _, _, _, _, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+        l_e = parameters[7]
+        if 'shearing' in sim_type:
+            fit_func = shearing_quadratic_fit_func
+        else:
+            fit_func = quadratic_no_linear_term_fit_func
+        dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
+        total_sim_volume = dimensions[0]*dimensions[1]*dimensions[2]
+        particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
+        actual_vol_fraction = particles.shape[0]*particle_volume/total_sim_volume
+        vol_fractions.append(actual_vol_fraction)
+
+        total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy = get_energies(sim_dir)
+
+        num_output_files = get_num_output_files(sim_dir)
+        applied_field = np.zeros((num_output_files,3),dtype=np.float32)
+        applied_bc = np.zeros((num_output_files,),dtype=np.float32)
+        for i in range(num_output_files):
+            _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+            boundary_conditions = format_boundary_conditions(boundary_conditions)
+            applied_field[i] = Hext*mu0
+            applied_bc[i] = boundary_conditions[2]
+
+        Bext_magnitude = np.linalg.norm(applied_field,axis=1)
+        unique_field_values = np.unique(Bext_magnitude)
+        energy_density_plus_wca_plus_self_fit_modulus = np.zeros((unique_field_values.shape[0],))
+        energy_density_plus_wca_plus_self_fit_error = np.zeros((unique_field_values.shape[0],))
+        subset_modulus_error_dict = dict({})
+        for i, unique_value in enumerate(unique_field_values):
+            relevant_indices = np.isclose(unique_value,np.linalg.norm(applied_field,axis=1))
+            plotting_total_energy = total_energy[relevant_indices]
+            # plotting_spring_energy = spring_energy[relevant_indices]
+            # plotting_element_energy = element_energy[relevant_indices]
+            # plotting_dipole_energy = dipole_energy[relevant_indices]
+            # plotting_wca_energy = wca_energy[relevant_indices]
+            plotting_self_energy = self_energy[relevant_indices]
+            # plotting_zeeman_energy = zeeman_energy[relevant_indices]
+            plotting_bc = applied_bc[relevant_indices]
+
+            #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
+            strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
+            energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
+
+            energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/total_sim_volume
+            modulus_fit_guess = 9e3
+            potential_subsets = energy_trend_switch_indices.shape[0] + 1
+            if potential_subsets == 1:
+                popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
+                energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+                energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+            else:
+                subset_start_idx = 0
+                for subset_count in range(potential_subsets):
+                    if subset_count + 1 == potential_subsets:
+                        subset_end_idx = plotting_bc.shape[0]
+                    else:
+                        subset_end_idx = energy_trend_switch_indices[subset_count]
+                    #if there are not at least 3 datapoints to fit to, don't bother trying a fit.
+                    if subset_end_idx - subset_start_idx < 3:
+                        subset_start_idx = subset_end_idx
+                        continue
+                    popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc[subset_start_idx:subset_end_idx],energy_plus_wca_plus_self_density[subset_start_idx:subset_end_idx],p0=np.array([modulus_fit_guess,0]))
+                    if subset_count == 0:
+                        energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+                        energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+                    else:
+                        subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
+                    subset_start_idx = subset_end_idx
+        if '0' in subset_modulus_error_dict:
+            zero_field_modulus = subset_modulus_error_dict['0'][0]
+        else:
+            zero_field_modulus = energy_density_plus_wca_plus_self_fit_modulus[0]
+        if '1' in subset_modulus_error_dict:
+            nonzero_field_modulus = subset_modulus_error_dict['1'][0]
+        else:
+            nonzero_field_modulus = energy_density_plus_wca_plus_self_fit_modulus[1]
+        zero_field_effective_modulus.append(zero_field_modulus)
+        effective_modulus.append(nonzero_field_modulus)
+        mr_effect.append((nonzero_field_modulus/zero_field_modulus-1)*100)
+        #*** if the fitting is done, now you need to add the values to the appropriate lists. then you need to sort the lists, or convert to np.ndarrays and sort them based on the volume fraction. this is to avoid line drawing issues when making the figure. need to consider the subset fitting, if it is present, do you use it instead of the default fitting value? probably. also, don't forget to save out the dataset used to generate the final figure. probably need to add a mkdir call at the top of this function to have a directory to save out the figure and datasets to. 
+    vol_fractions = np.array(vol_fractions)
+    zero_field_effective_modulus = np.array(zero_field_effective_modulus)
+    effective_modulus = np.array(effective_modulus)
+    mr_effect = np.array(mr_effect)
+    sorted_indices = np.argsort(vol_fractions)
+    vol_fractions = vol_fractions[sorted_indices]
+    zero_field_effective_modulus = zero_field_effective_modulus[sorted_indices]
+    effective_modulus = effective_modulus[sorted_indices]
+    mr_effect = mr_effect[sorted_indices]
+    fig, axs = plt.subplots(3,1)
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    savename = output_dir + f'mr_effect.png'
+    axs[2].set_xlabel('Vol. Fraction')
+    axs[0].set_ylabel(r'$G_{B=0}$ Pa')
+    nonzero_field_value = np.max(unique_field_values)
+    axs[1].set_ylabel(r'$G_{B!=0}$ Pa')
+    axs[2].set_ylabel('MR Effect (%)')
+    axs[0].plot(vol_fractions,zero_field_effective_modulus)
+    axs[1].plot(vol_fractions,effective_modulus)
+    axs[2].plot(vol_fractions,mr_effect)
+    format_figure(axs[0])
+    format_figure(axs[1])
+    format_figure(axs[2])
+    plt.savefig(savename)
+    plt.close()
 
 if __name__ == "__main__":
     main()    
@@ -2490,7 +2632,62 @@ if __name__ == "__main__":
 
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
     # analysis_case3(sim_dir)
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    # #fields perpendicular to particle axis, along shearing direction
+    # sim_dir = results_directory + "2024-09-14_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-14_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # #fields perp to particle axis, perp to shearing direction
+    # sim_dir = results_directory + "2024-09-16_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_90.0_90.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-16_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angles_90.0_90.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # #8 particle isotropic shearing
+    # sim_dir = results_directory + "2024-09-16_8_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-17_8_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-17_8_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-17_8_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    # 0 particle strain sims with different dimensions, cubic shape first
+    sim_dir = results_directory + "2024-09-17_0_particle_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-17_0_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_[20 10 10]_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    # volume fraction variation, for generating a plot of MR effect versus volume fraction. two particles, shearing, field along particle axis
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.02_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.04000000000000001_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.06000000000000001_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.08000000000000002_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.10000000000000002_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.12000000000000002_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.14_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.16_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.18000000000000002_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-21_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-09-24_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.005_stepsize_5.e-3/"
     plot_energy_figures(sim_dir)
+    directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
+    plot_mr_effect_figure(directory_file,output_dir)
+
     print('Exiting')
