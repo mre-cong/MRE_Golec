@@ -1592,10 +1592,10 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
         strained_boundary_grid_size = (int (np.ceil((int (np.ceil(size_strained_boundary/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
         strained_boundary_kernel((strained_boundary_grid_size,),(block_size,),(moving_boundary,cupy_composite_forces,individual_force,size_strained_boundary))
         cupy_stream.synchronize()
-
-    magnetic_forces = get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
-    #need to assign magnetic forces. every node belonging to a given particle has the same force as returned for the particle
-    cupy_composite_forces = distribute_magnetic_forces(particles,num_particles,magnetic_forces,cupy_composite_forces,num_streaming_multiprocessors,block_size)
+    if num_particles != 0:
+        magnetic_forces = get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+        #need to assign magnetic forces. every node belonging to a given particle has the same force as returned for the particle
+        cupy_composite_forces = distribute_magnetic_forces(particles,num_particles,magnetic_forces,cupy_composite_forces,num_streaming_multiprocessors,block_size)
     # nodes_per_particle = cp.int32(particles.shape[0]/num_particles)
     # num_particle_nodes = cp.int32(nodes_per_particle*num_particles)
     # mag_force_distribution_grid_size = (int (np.ceil((int (np.ceil(num_particle_nodes/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
@@ -1780,7 +1780,10 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         stress_direction = 0
         stress_node_force = 0
     num_particles = host_particles.shape[0]
-    nodes_per_particle = cp.int32(particles.shape[0]/num_particles)
+    if num_particles == 0:
+        nodes_per_particle = 0
+    else:
+        nodes_per_particle = cp.int32(particles.shape[0]/num_particles)
     particle_posns = get_particle_posns_gpu(posns,particles,num_particles,nodes_per_particle)
     # particle_posns = get_particle_posns(host_particles,last_posns)
     # particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
