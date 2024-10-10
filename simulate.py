@@ -528,6 +528,53 @@ void element_energy(const int* elements, const float* node_posns, const float ka
     }
     ''', 'element_energy')
 
+scaled_element_volume_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void element_volume(const int* elements, const float* node_posns, float* volume, const int size_elements) {
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if (tid < size_elements)
+    {
+        int index0 = elements[8*tid+0];
+        int index1 = elements[8*tid+1];
+        int index2 = elements[8*tid+2];
+        int index3 = elements[8*tid+3];
+        int index4 = elements[8*tid+4];
+        int index5 = elements[8*tid+5];
+        int index6 = elements[8*tid+6];
+        int index7 = elements[8*tid+7];
+        //for the element, get the average edge vectors, then using the average edge vectors, get the volume correction force
+        float avg_vector_i[3];
+        float avg_vector_j[3];
+        float avg_vector_k[3];
+                                
+        avg_vector_i[0] = (node_posns[3*index2] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index1] + node_posns[3*index6] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index5])/4;
+        avg_vector_i[1] = (node_posns[1+3*index2] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index1] + node_posns[1+3*index6] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index5])/4;
+        avg_vector_i[2] = (node_posns[2+3*index2] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index1] + node_posns[2+3*index6] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index5])/4;
+                          
+        avg_vector_j[0] = (node_posns[3*index4] - node_posns[3*index0] + node_posns[3*index6] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index1] + node_posns[3*index7] - node_posns[3*index3])/4;
+        avg_vector_j[1] = (node_posns[1+3*index4] - node_posns[1+3*index0] + node_posns[1+3*index6] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index1] + node_posns[1+3*index7] - node_posns[1+3*index3])/4;
+        avg_vector_j[2] = (node_posns[2+3*index4] - node_posns[2+3*index0] + node_posns[2+3*index6] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index1] + node_posns[2+3*index7] - node_posns[2+3*index3])/4;
+
+        avg_vector_k[0] = (node_posns[3*index1] - node_posns[3*index0] + node_posns[3*index3] - node_posns[3*index2] + node_posns[3*index5] - node_posns[3*index4] + node_posns[3*index7] - node_posns[3*index6])/4;
+        avg_vector_k[1] = (node_posns[1+3*index1] - node_posns[1+3*index0] + node_posns[1+3*index3] - node_posns[1+3*index2] + node_posns[1+3*index5] - node_posns[1+3*index4] + node_posns[1+3*index7] - node_posns[1+3*index6])/4;
+        avg_vector_k[2] = (node_posns[2+3*index1] - node_posns[2+3*index0] + node_posns[2+3*index3] - node_posns[2+3*index2] + node_posns[2+3*index5] - node_posns[2+3*index4] + node_posns[2+3*index7] - node_posns[2+3*index6])/4;                    
+        
+        //float acrossb[3];
+        float bcrossc[3];
+        //float ccrossa[3];
+        float adotbcrossc;
+                   
+        bcrossc[0] = avg_vector_j[1]*avg_vector_k[2] - avg_vector_j[2]*avg_vector_k[1];
+        bcrossc[1] = avg_vector_j[2]*avg_vector_k[0] - avg_vector_j[0]*avg_vector_k[2];
+        bcrossc[2] = avg_vector_j[0]*avg_vector_k[1] - avg_vector_j[1]*avg_vector_k[0];
+                 
+        adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
+
+        energies[tid] = energy;
+    }
+    }
+    ''', 'element_volume')
+
 scaled_spring_energy_kernel = cp.RawKernel(r'''
 extern "C" __global__
 void spring_energy(const float* edges, const float* node_posns, float* energies, const int size_edges) {
