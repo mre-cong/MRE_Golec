@@ -2264,6 +2264,20 @@ def plot_mr_effect_figure(directory_file,output_dir):
     plt.savefig(savename)
     plt.close()
 
+def get_system_volume(posns,cupy_elements,l_e):
+    """Get the total volume of the system in the current configuration by calculating the approximate volume of each volume element."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    size_elements = int(cupy_elements.shape[0]/8)
+    block_size = 128
+    element_grid_size = (int (np.ceil((int (np.ceil(size_elements/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+    element_volumes = cp.zeros((size_elements,1),dtype=cp.float32)
+    simulate.element_volume((element_grid_size,),(block_size,),(cupy_elements,posns,element_volumes,size_elements))
+    cupy_stream.synchronize()
+    system_volume = np.asnumpy(cp.sum(element_volumes))*np.power(l_e,3)
+
+    return system_volume
+
 if __name__ == "__main__":
     main()    
     results_directory = '/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
@@ -2696,7 +2710,7 @@ if __name__ == "__main__":
 
     sim_dir = results_directory + "2024-09-24_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.005_stepsize_5.e-3/"
     sim_dir = results_directory + "2024-09-24_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.01_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    plot_energy_figures(sim_dir)
     directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
     output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
     plot_mr_effect_figure(directory_file,output_dir)
