@@ -17,6 +17,7 @@ import os
 import tables as tb#pytables, for HDF5 interface
 import mre.initialize
 import mre.analyze
+from mre.analyze import format_figure, format_figure_3D
 import mre.sphere_rasterization
 import magnetism
 import simulate
@@ -483,7 +484,7 @@ def quadratic_no_linear_term_fit_func(x,a,c):
 
 def shearing_quadratic_fit_func(x,a,c):
     """Used with scipy.optimize.curve_fit to try and extract the field dependent effective modulus from energy density vs strain curves"""
-    return a*np.power(x,2) + c
+    return a*np.power(x/2,2) + c
 
 def get_average_tensor_value(tensor,elements,initial_node_posns,tag=""):
     """Calculate the average stress/strain tensor for the RVE/system and compare the results."""
@@ -1678,7 +1679,12 @@ def plot_energy_figures(sim_dir):
 
         #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
         strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
-        energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
+        tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
+        if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
+            potential_subsets = 1
+        else:
+            energy_trend_switch_indices = tmp_var[::2] + 2
+            potential_subsets = energy_trend_switch_indices.shape[0] + 1
         fig, axs = plt.subplots(2,3)
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
@@ -1721,7 +1727,6 @@ def plot_energy_figures(sim_dir):
 
         fig.legend()
         modulus_fit_guess = 9e3
-        potential_subsets = energy_trend_switch_indices.shape[0] + 1
         if potential_subsets == 1:
             popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
             energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
@@ -2187,11 +2192,16 @@ def plot_mr_effect_figure(directory_file,output_dir):
 
             #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
             strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
-            energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
+            tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
+            if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
+                potential_subsets = 1
+            else:
+                energy_trend_switch_indices = tmp_var[::2] + 2
+                potential_subsets = energy_trend_switch_indices.shape[0] + 1
+            # energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
 
             energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/total_sim_volume
             modulus_fit_guess = 9e3
-            potential_subsets = energy_trend_switch_indices.shape[0] + 1
             if potential_subsets == 1:
                 popt, pcov = scipy.optimize.curve_fit(fit_func,plotting_bc,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,0]))
                 energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
@@ -2685,7 +2695,8 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-09-24_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.005_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-09-24_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.01_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
     directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
     output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
     plot_mr_effect_figure(directory_file,output_dir)
