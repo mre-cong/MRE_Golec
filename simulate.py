@@ -570,7 +570,7 @@ void element_volume(const int* elements, const float* node_posns, float* volume,
                  
         adotbcrossc = avg_vector_i[0]*bcrossc[0] + avg_vector_i[1]*bcrossc[1] + avg_vector_i[2]*bcrossc[2];
 
-        energies[tid] = energy;
+        volume[tid] = adotbcrossc;
     }
     }
     ''', 'element_volume')
