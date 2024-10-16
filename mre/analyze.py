@@ -1228,10 +1228,10 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
-    ax.axis('equal')
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
+    ax.axis('equal')
     format_figure_3D(ax)
     # if tag != "":
     #     ax.set_title(tag)
@@ -1303,26 +1303,71 @@ def setup_figure_and_variables_2D(cut_type,eq_node_posns,node_posns):
     ax.set_ylabel(ylabel)
     return fig,ax,xvar,yvar
 
-def format_figure(ax,title_size=30,label_size=30,tick_size=30):
+def format_subfigures(axs,**kwargs):
+    """Given a list of axes making up a figure with subfigures, make appropriate adjustments to the figure depending on the shape of the subfigure and user passed keyword arguments, e.g. 'ylim_sharing'"""
+    pass
+
+def format_figure(ax,title_size=30,label_size=30,tick_size=22):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
-    # ax.xaxis.set_label_coords(0.5,-0.1)
     ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+    # ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+    # ax.xaxis.set_label_coords(0.5,-0.1)
+    # ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
     # ax.yaxis.set_label_coords(-0.1,0.5)
     ax.set_title(ax.get_title(),fontsize=title_size)
 
-def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
+def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22,view_angles=None,fig=None):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
-    # format_figure(ax,title_size,label_size,tick_size)
     ax.tick_params(labelsize=tick_size)
-    ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
-    # ax.xaxis.set_label_coords(0.5,-0.1)
-    ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
-    # ax.yaxis.set_label_coords(-0.1,0.5)
-    ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size)
+    ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size,linespacing=2.5)
+    if type(view_angles) == type(tuple()):
+        if view_angles[0] == 90:
+        # xy (90,-90,0)
+            #remove the y label and use an annotation to set text to act as the ylabel. on the effectiv y axis (have to rotate the annotation)
+            ax.annotate(ax.get_ylabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            # ax.annotate(ax.get_ylabel(),xy=(np.floor_divide(pixel_width,8),np.floor_divide(pixel_height,4)-),xycoords='figure pixels',fontsize=label_size,rotation=90)
+            ax.set_ylabel('')
+        elif view_angles[0] == 0 and view_angles[1] == -90:
+        # xz (0,-90,0)
+            #remove the z label and use an annotation to set text to act as the zlabel. on the effective y axis
+            ax.annotate(ax.get_zlabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            ax.set_zlabel('')
+        elif view_angles[0] == 0 and view_angles[1] == 0:
+        # yz (0,0,0)
+            #remove y and z labels and use annotations instead. y label on the effective x-axis, z label on the effective y-axis
+            ax.annotate(ax.get_ylabel(),xy=(0.467,0.217),xycoords='figure fraction',fontsize=label_size)
+            ax.set_ylabel('')
+            ax.annotate(ax.get_zlabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            ax.set_zlabel('')
+    else:
+        ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size,linespacing=2.5)
+        ax.set_title(ax.get_title(),fontsize=title_size)
+        ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size,linespacing=2.5)
+
     # ax.zaxis.set_label_coords(1.1,0.5)
-    ax.set_title(ax.get_title(),fontsize=title_size)
+
+# def format_figure(ax,title_size=30,label_size=30,tick_size=30):
+#     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+#     ax.tick_params(labelsize=tick_size)
+#     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+#     # ax.xaxis.set_label_coords(0.5,-0.1)
+#     ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+#     # ax.yaxis.set_label_coords(-0.1,0.5)
+#     ax.set_title(ax.get_title(),fontsize=title_size)
+
+# def format_figure_3D(ax,title_size=30,label_size=30,tick_size=30):
+#     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+#     # format_figure(ax,title_size,label_size,tick_size)
+#     ax.tick_params(labelsize=tick_size)
+#     ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+#     # ax.xaxis.set_label_coords(0.5,-0.1)
+#     ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
+#     # ax.yaxis.set_label_coords(-0.1,0.5)
+#     ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size)
+#     # ax.zaxis.set_label_coords(1.1,0.5)
+#     ax.set_title(ax.get_title(),fontsize=title_size)
 
 def get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index):
     """Manipulate node positions variable and return x, y, and z variables for 3D plots (wireframe and surface plots) based on the type of cut and the desired layer"""
@@ -1347,27 +1392,31 @@ def get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D):
         zvar = zposn_3D[:,:,idx]
     return xvar, yvar, zvar
 
-def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
+def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""):
     """Plot a scatter plot showing the nodes making up the particles"""
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    xlabel = '\nX (l_e)'
-    ylabel = '\nY (l_e)'
-    zlabel = '\nZ (l_e)'
-    axis_limit_max = np.max(np.array([Lx,Ly,Lz]))*1.1
+    xlabel = r'X ($\mu$m)'
+    ylabel = r'Y ($\mu$m)'
+    zlabel = r'Z ($\mu$m)'
+    # xlabel = r'\nX (l_e)'
+    # ylabel = r'\nY (l_e)'
+    # zlabel = r'\nZ (l_e)'
+    axis_limit_max = np.max(np.array([Lx,Ly,Lz]))*1.1*l_e*1e6
     # xlim = (-0.1,Lx*1.1)
     # ylim = (-0.1,Ly*1.1)
     # zlim = (-0.1,Lz*1.1)
-    xlim = (-0.1,axis_limit_max)
-    ylim = (-0.1,axis_limit_max)
-    zlim = (-0.1,axis_limit_max)
+    xlim = (-0.1*l_e*1e6,axis_limit_max)
+    ylim = (-0.1*l_e*1e6,axis_limit_max)
+    zlim = (-0.1*l_e*1e6,axis_limit_max)
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     particles = np.ravel(particles)
     # my_cmap = matplotlib.colormaps['Blues']
+    node_posns *= l_e*1e6
     ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -1376,10 +1425,10 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    # ax.axis('equal')
+    ax.axis('equal')
     format_figure_3D(ax)
     if tag != "":
-        ax.set_title(tag)
+        # ax.set_title(tag)
         tag = "_" + tag
     savename = output_dir + f'particle_nodes_'+ tag +'.png'
     plt.savefig(savename)
@@ -1393,14 +1442,18 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure_3D(ax)
-    if tag != "":
-        ax.set_title(tag)
-    ax.view_init(90,-90,0)
+    ax.axis('equal')
+    # format_figure_3D(ax)
+    # if tag != "":
+        # ax.set_title(tag)
+    ax.set_proj_type('ortho')
+    angles = (90,-90,0)
+    ax.view_init(angles[0],angles[1],angles[2])
     ax.set_zlabel('')
     my_zticks = ax.get_zticks()
     ax.set_zticks([])
     ax.set_aspect('equal')
+    format_figure_3D(ax,fig=fig,view_angles=angles)
     savename = output_dir + f'particle_nodes_'+ tag +'_xy.png'
     plt.savefig(savename)
 
@@ -1412,16 +1465,20 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure_3D(ax)
-    if tag != "":
-        ax.set_title(tag)
-    ax.view_init(0,-90,0)
+    ax.axis('equal')
+    # format_figure_3D(ax)
+    # if tag != "":
+        # ax.set_title(tag)
+    ax.set_proj_type('ortho')
+    angles = (0,-90,0)
+    ax.view_init(angles[0],angles[1],angles[2])
     ax.set_zlabel(zlabel)
     ax.set_zticks(my_zticks[1:-1])
     ax.set_ylabel('')
     my_yticks = ax.get_yticks()
     ax.set_yticks([])
     ax.set_aspect('equal')
+    format_figure_3D(ax,fig=fig,view_angles=angles)
     savename = output_dir + f'particle_nodes_'+ tag +'_xz.png'
     plt.savefig(savename)
 
@@ -1433,16 +1490,20 @@ def plot_particle_nodes(eq_node_posns,node_posns,particles,output_dir,tag=""):
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     ax.set_zlim(zlim)
-    format_figure_3D(ax)
-    if tag != "":
-        ax.set_title(tag)
-    ax.view_init(0,0,0)
+    ax.axis('equal')
+    # format_figure_3D(ax)
+    # if tag != "":
+    #     ax.set_title(tag)
+    ax.set_proj_type('ortho')
+    angles = (0,0,0)
+    ax.view_init(angles[0],angles[1],angles[2])
     ax.set_ylabel(ylabel)
     ax.set_yticks(my_yticks[1:-1])
     ax.set_xlabel('')
     ax.set_xticks([])
     ax.set_aspect('equal')
     savename = output_dir + f'particle_nodes_'+ tag +'_yz.png'
+    format_figure_3D(ax,fig=fig,view_angles=angles)
     plt.savefig(savename)
     plt.close()
     #TODO just do 2D plots for these views. grab the necessary components, make a new figure, and you'll have figures that look genuinely better
