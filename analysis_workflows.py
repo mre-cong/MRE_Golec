@@ -3,6 +3,7 @@
 #Establishing the distinct workflows for different types of simulations and analyses via pseudocode. Followed by implementation of necessary component functions and visualizations.
 
 import numpy as np
+import pandas as pd
 import scipy.special as sci
 import scipy.optimize
 import scipy.linalg
@@ -17,7 +18,7 @@ import os
 import tables as tb#pytables, for HDF5 interface
 import mre.initialize
 import mre.analyze
-from mre.analyze import format_figure, format_figure_3D
+from mre.analyze import format_figure, format_figure_3D, format_subfigures
 import mre.sphere_rasterization
 import magnetism
 import simulate
@@ -333,8 +334,8 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
 #       surface areas are calculated and used to convert boundary forces to stresses along relevant direction
 #       effective modulus is calculated from stress and strain
 #       effective modulus and stress are saved to respective array variables
-
-    plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series,boundary_condition_series,l_e)
+    if num_particles > 0 and num_particles <= 2:
+        plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series,boundary_condition_series,l_e)
 
     unique_fields = np.unique(np.linalg.norm(Bext_series,axis=1))
     num_fields = unique_fields.shape[0]
@@ -342,7 +343,7 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     particle_separations = np.zeros((num_fields,num_boundary_conditions))
     for i in range(num_fields):
         particle_separations[i] = particle_separations_matrix[i::num_fields,0,1]
-    particle_orientations = get_particle_orientation(sim_dir,num_output_files,particles)
+    # particle_orientations = get_particle_orientation(sim_dir,num_output_files,particles)
 
 
     # fig, ax = plt.subplots()
@@ -376,9 +377,9 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
-        si_final_posns = final_posns*l_e
+        # si_final_posns = final_posns*l_e
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
 #TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
@@ -710,9 +711,9 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
     dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
-    fig, axs = plt.subplots(2,2)
+    fig, axs = plt.subplots(2,2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
     #if the shape has 2 members, reshape the vectorfield variable to a 3D grid of values
@@ -792,9 +793,9 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
     dimensions = (int(Lx+1),int(Ly+1),int(Lz+1))
-    fig, axs = plt.subplots(2,3)
+    fig, axs = plt.subplots(2,3,layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     xposns, yposns, zposns = get_component_3D_arrays(eq_node_posns,dimensions)
     #want to store the colorbar limits used in each image, so that colorbar limits in each row of images are the same
@@ -909,7 +910,7 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
         ax.set_ylabel(ylabel)
         format_figure(ax)
     # plt.show()
-    fig.tight_layout()
+    # fig.tight_layout()
     savename = output_dir + f'subplots_{cut_type}_cut_pcolormesh_'+tag+'_tensorfield_visualization.png'
     plt.savefig(savename)
     plt.close()
@@ -1026,9 +1027,9 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
         separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
         particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
         magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     # fig.tight_layout()
     axs[0].plot(np.linalg.norm(mu0*Hext_series,axis=1),separations*l_e,'o')
@@ -1062,9 +1063,9 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
         separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
         particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
         magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     # fig.tight_layout()
     B_field_norms = np.linalg.norm(mu0*Hext_series,axis=1)
@@ -1149,7 +1150,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
         unique_field_particle_orientation_change[i] = unique_field_particle_orientations[i,:] - unique_field_particle_orientations[i,0]
 
 
-    fig, axs = plt.subplots(1,2)
+    fig, axs = plt.subplots(1,2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1172,7 +1173,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     save_dir = sim_dir+'/figures/'
     plt.savefig(save_dir+savename)
 
-    fig, axs = plt.subplots(1,2)
+    fig, axs = plt.subplots(1,2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1193,7 +1194,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     savename = f'particle_separation_strain_response1.png'
     plt.savefig(save_dir+savename)
 
-    fig, axs = plt.subplots(2,3)
+    fig, axs = plt.subplots(2,3,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1225,7 +1226,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     savename = f'particle_posn_strain_response0.png'
     plt.savefig(save_dir+savename)
 
-    fig, axs = plt.subplots(2,3)
+    fig, axs = plt.subplots(2,3,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1258,7 +1259,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     plt.savefig(save_dir+savename)
 
 
-    fig, axs = plt.subplots(2,2)
+    fig, axs = plt.subplots(2,2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1284,7 +1285,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     savename = f'particle_orientation_strain_response0.png'
     plt.savefig(save_dir+savename)
 
-    fig, axs = plt.subplots(2,2)
+    fig, axs = plt.subplots(2,2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -1528,7 +1529,7 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
                 mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
@@ -1554,9 +1555,9 @@ def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     mean_posn = np.mean(boundary_node_posns)
     rms_posn = np.sqrt(np.sum(np.power(boundary_node_posns,2))/np.shape(boundary_node_posns)[0])
     counts, bins = np.histogram(boundary_node_posns, bins=40)
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     ax.hist(boundary_node_posns,bins=30)
     # ax.hist(bins[:-1], bins, weights=counts)
@@ -1582,7 +1583,7 @@ def plot_particles_scatter_sim(sim_dir):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 
 def get_energies(sim_dir):
     """For the configurations in the output files, calculate the different energies, and the total energy."""
@@ -1634,7 +1635,7 @@ def get_system_volumes(sim_dir):
         system_volume[i] = get_system_volume(device_posns,elements,l_e)
     return system_volume
 
-def plot_energy_figures(sim_dir):
+def plot_energy_figures(sim_dir,diagram_path):
     """Given the energies, plot them versus the applied strains and external fields, etc."""
     output_dir = sim_dir+'figures/'
     if not (os.path.isdir(output_dir)):
@@ -1652,14 +1653,14 @@ def plot_energy_figures(sim_dir):
     particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
     print(f'Actual volume fraction: {particles.shape[0]*particle_volume/total_sim_volume}')
     if 'stress' in sim_type:
-        xlabel = 'stress (Pa)'
+        xlabel = 'Stress (Pa)'
         xscale_factor = 1
     elif 'strain' in sim_type:
-        xlabel = 'strain (%)'
+        xlabel = 'Strain (%)'
         xscale_factor = 100
         if 'shearing' in sim_type:
             xscale_factor = 1
-            xlabel='shear strain'
+            xlabel='$\gamma$'
             fit_func = shearing_quadratic_fit_func
             # fit_func = shearing_quadratic_fit_func_no_offset
         else:
@@ -1718,39 +1719,43 @@ def plot_energy_figures(sim_dir):
         else:
             energy_trend_switch_indices = tmp_var[::2] + 2
             potential_subsets = energy_trend_switch_indices.shape[0] + 1
-        fig, axs = plt.subplots(2,3)
+        fig, axs = plt.subplots(2,3,layout="constrained")
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
-        axs[0,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element: {np.round(unique_value*1000)} (mT)')
-        axs[0,1].plot(plotting_bc,plotting_spring_energy,marker='X',linestyle='-',label=f'Spring: {np.round(unique_value*1000)} (mT)')
-        axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='D',linestyle='-',label=f'WCA: {np.round(unique_value*1000)} (mT)')
-        axs[1,0].plot(plotting_bc,plotting_zeeman_energy,marker='o',linestyle='-',label=f'Zeeman: {np.round(unique_value*1000)} (mT)')
-        axs[1,1].plot(plotting_bc,plotting_dipole_energy,marker='v',linestyle='-',label=f'Dipole: {np.round(unique_value*1000)} (mT)')
-        axs[1,2].plot(plotting_bc,plotting_self_energy,marker='P',linestyle='-',label=f'Self: {np.round(unique_value*1000)} (mT)')
+        # fig.tight_layout()
+        axs[0,0].annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.8),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
+        axs[0,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element')#: {np.round(unique_value*1000)} (mT)')
+        axs[0,1].plot(plotting_bc,plotting_spring_energy,marker='X',linestyle='-',label=f'Spring')#: {np.round(unique_value*1000)} (mT)')
+        axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='D',linestyle='-',label=f'WCA')#: {np.round(unique_value*1000)} (mT)')
+        axs[1,0].plot(plotting_bc,plotting_zeeman_energy,marker='o',linestyle='-',label=f'Zeeman')#: {np.round(unique_value*1000)} (mT)')
+        axs[1,1].plot(plotting_bc,plotting_dipole_energy,marker='v',linestyle='-',label=f'Dipole')#: {np.round(unique_value*1000)} (mT)')
+        axs[1,2].plot(plotting_bc,plotting_self_energy,marker='P',linestyle='-',label=f'Self')#: {np.round(unique_value*1000)} (mT)')
         axs[1,0].set_xlabel(xlabel)
         axs[1,1].set_xlabel(xlabel)
         axs[1,2].set_xlabel(xlabel)
         axs[0,0].set_ylabel('Energy (J)')
         axs[1,0].set_ylabel('Energy (J)')
-        format_figure(axs[0,0])
-        format_figure(axs[0,1])
-        format_figure(axs[0,2])
-        format_figure(axs[1,0])
-        format_figure(axs[1,1])
-        format_figure(axs[1,2])
-        fig.legend()
+        format_subfigures(axs,offset_font_size=22,shared_x_axis=True)
+        # format_figure(axs[0,0])
+        # format_figure(axs[0,1])
+        # format_figure(axs[0,2])
+        # format_figure(axs[1,0])
+        # format_figure(axs[1,1])
+        # format_figure(axs[1,2])
+        # fig.legend()
         savename = fig_output_dir + f'individual_energies_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
         plt.close()
 
         energy_plus_wca_plus_self_density = np.float64(np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes))#total_sim_volume
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(layout="constrained")
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
-        ax.plot(plotting_bc,energy_plus_wca_plus_self_density,marker='D',linestyle='-',label=f'Total: {np.round(unique_value*1000)} (mT)')
-        ax.set_title('System Energy')
+        ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
+        ax.plot(plotting_bc,energy_plus_wca_plus_self_density,marker='D',linestyle='-')#,label=f'Total: {np.round(unique_value*1000)} (mT)')
+        # ax.set_title('System Energy')
         ax.set_ylabel(r'Energy Density (J/m$^3$)')
         format_figure(ax)
         ax.set_xlabel(xlabel)
@@ -1786,11 +1791,15 @@ def plot_energy_figures(sim_dir):
                     subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
                 fit_results = fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1])
                 ax.plot(plotting_bc[subset_start_idx:subset_end_idx],fit_results)
-                plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])}',xy=(10,10),xycoords='figure pixels')
+                plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])} Pa',xy=(10,10),xycoords='figure pixels')
                 if f'{i}' in subset_modulus_error_dict:
-                    plt.annotate(f'modulus from alt fit: {np.round(subset_modulus_error_dict[f"{i}"][0])}',xy=(10,25),xycoords='figure pixels')
+                    plt.annotate(f'modulus from alt fit: {np.round(subset_modulus_error_dict[f"{i}"][0])} Pa',xy=(10,25),xycoords='figure pixels')
                 subset_start_idx = subset_end_idx
         savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
+        inset_image = plt.imread(diagram_path,format='png')
+        inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
+        inset_ax.imshow(inset_image)
+        inset_ax.axis('off')
         plt.savefig(savename)
         plt.close()
 
@@ -1799,7 +1808,11 @@ def plot_energy_figures(sim_dir):
     smallest_modulus_magnitude = np.min(np.abs(energy_density_plus_wca_plus_self_fit_modulus[nonzero_modulus_indices]))
     outlier_mask = np.logical_or(energy_density_plus_wca_plus_self_fit_modulus<=0,energy_density_plus_wca_plus_self_fit_modulus>(100*smallest_modulus_magnitude))
     non_outlier_mask = np.logical_not(outlier_mask)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout="constrained")
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    energy_density_plus_wca_plus_self_fit_modulus /= 1000
+    energy_density_plus_wca_plus_self_fit_error /= 1000
     ax.errorbar(unique_field_values[non_outlier_mask]*1000,energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask],linestyle='-',marker='o',yerr=energy_density_plus_wca_plus_self_fit_error[non_outlier_mask])
 
     #now i need to grab the other subsets fits that were done, and get those results on the same figure.
@@ -1808,16 +1821,30 @@ def plot_energy_figures(sim_dir):
     for key in subset_modulus_error_dict.keys():
         subset_modulus[int(key)] = subset_modulus_error_dict[key][0]
         subset_error[int(key)] = subset_modulus_error_dict[key][1]
+    #scale to kPa
+    subset_modulus /= 1000
+    subset_error /= 1000
     nonzero_indices = np.nonzero(subset_modulus)[0]
     if nonzero_indices.shape[0] != 0:
         ax.errorbar(1000*unique_field_values[nonzero_indices],subset_modulus[nonzero_indices],marker='s',yerr=subset_error[nonzero_indices])
-    
-    ax.set_xlabel(f'Applied Field (mT)')
-    ax.set_ylabel(f'Modulus (Pa)')
+    ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
+    ax.set_xlabel(f'B (mT)')
+    ax.set_ylabel(f'Modulus (kPa)')
     plt.annotate(f'modulus minimum: {np.round(np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask]))}',xy=(10,10),xycoords='figure pixels')
+    format_figure(ax)
     savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
+    inset_image = plt.imread(diagram_path,format='png')
+    inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
+    inset_ax.imshow(inset_image)
+    inset_ax.axis('off')
     plt.savefig(savename)
     plt.close()
+    my_dataframe = pd.DataFrame({'B (mT)':1000*unique_field_values})
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Modulus (kPa)':energy_density_plus_wca_plus_self_fit_modulus})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Standard Deviation (kPa)':energy_density_plus_wca_plus_self_fit_error})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Seconcdary Modulus (kPa)':subset_modulus})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Secondary Standard Deviation (kPa)':subset_error})],axis=1)
+    my_dataframe.to_csv(fig_output_dir + 'modulus_v_field_data.csv',header=True,index=False)
 
 def reinitialize_sim(sim_dir):
     #first figure out the simulation type
@@ -2074,7 +2101,7 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
 #TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
@@ -2144,7 +2171,7 @@ def plot_strain_tensor_field(sim_dir):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are used to calculate nodal displacement
         displacement_field = get_displacement_field(initial_node_posns,final_posns)
 #       nodal displacement is used to calculated displacement gradient
@@ -2193,16 +2220,16 @@ def plot_mr_effect_figure(directory_file,output_dir):
         l_e = parameters[7]
         if 'shearing' in sim_type:
             fit_func = shearing_quadratic_fit_func
-            ylabel_one = r'$G_{eff}$ Pa'
-            ylabel_two = r'$G_{eff,B}$ Pa'
+            ylabel_one = r'$G_{eff}$ (kPa)'
+            ylabel_two = r'$G_{eff,B}$ (kPa)'
         else:
             fit_func = quadratic_no_linear_term_fit_func
             if 'tension' in sim_type:
-                ylabel_one = r'$E_{tension,eff}$ Pa'
-                ylabel_two = r'$E_{tension,eff,B}$ Pa'
+                ylabel_one = r'$E_{tension,eff}$ (kPa)'
+                ylabel_two = r'$E_{tension,eff,B}$ (kPa)'
             elif 'compression' in sim_type:
-                ylabel_one = r'$E_{compression,eff}$ Pa'
-                ylabel_two = r'$E_{compression,eff,B}$ Pa'
+                ylabel_one = r'$E_{compression,eff}$ (kPa)'
+                ylabel_two = r'$E_{compression,eff,B}$ (kPa)'
         dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
         total_sim_volume = dimensions[0]*dimensions[1]*dimensions[2]
         particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
@@ -2317,7 +2344,13 @@ def plot_mr_effect_figure(directory_file,output_dir):
     zero_field_effective_modulus_error = zero_field_effective_modulus_error[sorted_indices]
     effective_modulus_error = effective_modulus_error[sorted_indices]
     mr_effect_error = mr_effect_error[sorted_indices]
-    fig, axs = plt.subplots(3,1)
+
+    zero_field_effective_modulus /= 1000
+    zero_field_effective_modulus_error /= 1000
+    effective_modulus /= 1000
+    effective_modulus_error /= 1000
+
+    fig, axs = plt.subplots(3,1,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
@@ -2330,11 +2363,20 @@ def plot_mr_effect_figure(directory_file,output_dir):
     axs[0].errorbar(vol_fractions,zero_field_effective_modulus,yerr=zero_field_effective_modulus_error,marker='o')
     axs[1].errorbar(vol_fractions,effective_modulus,yerr=effective_modulus_error,marker='o')
     axs[2].errorbar(vol_fractions,mr_effect,yerr=mr_effect_error,marker='o')
-    format_figure(axs[0])
-    format_figure(axs[1])
-    format_figure(axs[2])
+    format_subfigures(axs,shared_x_axis=True)
+    # format_figure(axs[0])
+    # format_figure(axs[1])
+    # format_figure(axs[2])
     plt.savefig(savename)
     plt.close()
+    my_dataframe = pd.DataFrame({'Volume Fraction (%)':vol_fractions})
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Zero Field Modulus (kPa)':zero_field_effective_modulus})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'ZFM Standard Deviation (kPa)':zero_field_effective_modulus_error})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Field Modulus (kPa)':effective_modulus})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'FM Standard Deviation (kPa)':effective_modulus_error})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'MR Effect (%)':mr_effect})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'MR Effect Standard Deviation (%)':mr_effect_error})],axis=1)
+    my_dataframe.to_csv(output_dir + 'mr_effect_modulus_v_volfrac.csv',header=True,index=False)
 
 def get_system_volume(posns,cupy_elements,l_e):
     """Get the total volume of the system in the current configuration by calculating the approximate volume of each volume element."""
@@ -2788,10 +2830,12 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-10-11_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_4.e-2_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    diagram_path = '/mnt/c/Users/bagaw/Desktop/2024-10-24_dissertation_diagrams/two_particle_shearing_zx_parallel.png'
+    # plot_particles_scatter_sim(sim_dir)
+    plot_energy_figures(sim_dir,diagram_path)
 
     directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
     output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
-    plot_mr_effect_figure(directory_file,output_dir)
+    # plot_mr_effect_figure(directory_file,output_dir)
 
     print('Exiting')
