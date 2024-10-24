@@ -39,7 +39,7 @@ def plot_cut_normalized(cut_type,eq_node_posns,node_posns,springs,particles,boun
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     ax = fig.add_subplot(projection= '3d')
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
@@ -175,7 +175,7 @@ def plot_scatter_color_depth_visualization(eq_node_posns,final_node_posns,cut_ty
     Lz = eq_node_posns[:,2].max()
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     ax = fig.add_subplot()
     depth_color = final_node_posns[chosen_nodes,cut_type_index]
@@ -254,7 +254,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     if ax == None:
         fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
         default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
     xvar,yvar,zvar = get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
 
@@ -368,7 +368,7 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
         # ax = plt.axes(projection='3d',computed_zorder=False)
         fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
         default_width,default_height = fig.get_size_inches()
-        fig.set_size_inches(3*default_width,3*default_height)
+        fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(layer),eq_node_posns[:,cut_type_index]).nonzero()[0]
 
@@ -524,7 +524,7 @@ def plot_center_cut(cut_type,eq_node_posns,node_posns,springs,particles,boundary
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     ax = fig.add_subplot()
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
@@ -652,7 +652,7 @@ def plot_contour_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,outpu
     # zlabel = r'Z ($\mu$m)'
     fig, ax = plt.subplots()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*idx,eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
@@ -802,7 +802,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
     Lz *= l_e*1e6
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(center[cut_type_index]),eq_node_posns[:,cut_type_index]).nonzero()[0]
     if cut_nodes.shape[0] == 0:#list is empty, central point is not aligned with nodes, try a shift
@@ -1022,9 +1022,9 @@ def plot_tiled_outer_surfaces_contours_si(eq_node_posns,node_posns,l_e,output_di
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
-    fig, axs = plt.subplots(2,3)
+    fig, axs = plt.subplots(2,3,layout="constrained")
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     xposn_3D *= l_e*1e6
@@ -1130,7 +1130,7 @@ def plot_outer_surfaces_wireframe(eq_node_posns,node_posns,boundary_conditions,o
     zlim = (-0.1,Lz*1.1)
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     # cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*int(layer),eq_node_posns[:,cut_type_index]).nonzero()[0]
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
@@ -1170,7 +1170,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
     zlim = (-0.1,Lz*1.1)
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     layers = (0,Lx,0,Ly,0,Lz)
@@ -1206,7 +1206,7 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
     zlabel = r'Z ($\mu$m)'
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     xposn_3D *= l_e*1e6
@@ -1270,7 +1270,7 @@ def setup_figure_and_variables_2D(cut_type,eq_node_posns,node_posns):
     center = (np.round(np.array([Lx,Ly,Lz]))/2)
     fig = plt.figure()
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     ax = fig.add_subplot()
     cut_nodes = np.isclose(np.ones((node_posns.shape[0],))*center[cut_type_index],eq_node_posns[:,cut_type_index]).nonzero()[0]
@@ -1303,9 +1303,36 @@ def setup_figure_and_variables_2D(cut_type,eq_node_posns,node_posns):
     ax.set_ylabel(ylabel)
     return fig,ax,xvar,yvar
 
-def format_subfigures(axs,**kwargs):
+def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,shared_x_axis=True):
     """Given a list of axes making up a figure with subfigures, make appropriate adjustments to the figure depending on the shape of the subfigure and user passed keyword arguments, e.g. 'ylim_sharing'"""
-    pass
+    figure_shape = axs.shape
+    subplot_labels = ['a)','b)','c)','d)','e)','f)']
+    subplot_label_counter = 0
+    if len(figure_shape) == 2:
+        for i in range(figure_shape[0]):
+            for j in range(figure_shape[1]):            
+                axs[i,j].yaxis.get_offset_text().set_fontsize(offset_font_size)
+                axs[i,j].legend(loc="upper left")
+                axs[i,j].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                                xytext=(-1.5,0.65),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+                subplot_label_counter += 1
+                axs[i,j].tick_params(labelsize=tick_size)
+                axs[i,j].set_xlabel(axs[i,j].get_xlabel(),fontsize=label_size)
+                axs[i,j].set_ylabel(axs[i,j].get_ylabel(),fontsize=label_size)
+                if shared_x_axis and i != (figure_shape[0]-1):
+                    axs[i,j].set_xticks([])
+    elif len(figure_shape) == 1:
+        for i in range(figure_shape[0]):      
+            axs[i].yaxis.get_offset_text().set_fontsize(offset_font_size)
+            axs[i].legend(loc="upper left")
+            axs[i].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                            xytext=(-1.5,0.75),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+            subplot_label_counter += 1
+            axs[i].tick_params(labelsize=tick_size)
+            axs[i].set_xlabel(axs[i].get_xlabel(),fontsize=label_size)
+            axs[i].set_ylabel(axs[i].get_ylabel(),fontsize=label_size)
+            if shared_x_axis and i != (figure_shape[0]-1):
+                axs[i].set_xticks([])
 
 def format_figure(ax,title_size=30,label_size=30,tick_size=22):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
@@ -1322,6 +1349,8 @@ def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22,view_angles=Non
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size,linespacing=2.5)
+    ax.xaxis.pane.set_edgecolor('black')
+    ax.yaxis.pane.set_edgecolor('black')
     if type(view_angles) == type(tuple()):
         if view_angles[0] == 90:
         # xy (90,-90,0)
@@ -1509,7 +1538,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     #TODO just do 2D plots for these views. grab the necessary components, make a new figure, and you'll have figures that look genuinely better
     # fig, ax = plt.subplots()
     # default_width,default_height = fig.get_size_inches()
-    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_size_inches(2*default_width,2*default_height)
     # fig.set_dpi(200)
     # ax.scatter(node_posns[particles,0],node_posns[particles,1])
     # ax.set_xlim(xlim)
