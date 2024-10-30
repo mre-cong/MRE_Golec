@@ -774,6 +774,7 @@ def subplot_cut_pcolormesh_vectorfield(cut_type,eq_node_posns,vectorfield,index,
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         format_figure(ax)
+    format_subfigures(axs)
     # plt.show()
     savename = output_dir + f'subplots_cut_pcolormesh_' + tag + '_vectorfield_visualization.png'
     plt.savefig(savename)
@@ -909,6 +910,7 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         format_figure(ax)
+    format_subfigures(axs)
     # plt.show()
     # fig.tight_layout()
     savename = output_dir + f'subplots_{cut_type}_cut_pcolormesh_'+tag+'_tensorfield_visualization.png'
@@ -916,25 +918,25 @@ def subplot_cut_pcolormesh_tensorfield(cut_type,eq_node_posns,tensorfield,index,
     plt.close()
 
 
-def format_figure(ax,title_size=30,label_size=30,tick_size=22):
-    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
-    ax.tick_params(labelsize=tick_size)
-    ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
-    ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
-    # ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
-    # ax.xaxis.set_label_coords(0.5,-0.1)
-    # ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
-    # ax.yaxis.set_label_coords(-0.1,0.5)
-    ax.set_title(ax.get_title(),fontsize=title_size)
+# def format_figure(ax,title_size=30,label_size=30,tick_size=22):
+#     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+#     ax.tick_params(labelsize=tick_size)
+#     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+#     ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+#     # ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+#     # ax.xaxis.set_label_coords(0.5,-0.1)
+#     # ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
+#     # ax.yaxis.set_label_coords(-0.1,0.5)
+#     ax.set_title(ax.get_title(),fontsize=title_size)
 
-def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22):
-    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
-    ax.tick_params(labelsize=tick_size)
-    ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
-    ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
-    ax.set_title(ax.get_title(),fontsize=title_size)
-    ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size)
-    # ax.zaxis.set_label_coords(1.1,0.5)
+# def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22):
+#     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+#     ax.tick_params(labelsize=tick_size)
+#     ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+#     ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
+#     ax.set_title(ax.get_title(),fontsize=title_size)
+#     ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size)
+#     # ax.zaxis.set_label_coords(1.1,0.5)
 
 def get_num_output_files(sim_dir):
     """Get the number of output files, since the series variable in current implementations will only contain the applied strains, and not the applied fields. used for properly reading in output files during analysis, and naming figures"""
@@ -1032,19 +1034,23 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     fig.set_size_inches(2*default_width,2*default_height)
     fig.set_dpi(200)
     # fig.tight_layout()
-    axs[0].plot(np.linalg.norm(mu0*Hext_series,axis=1),separations*l_e,'o')
-    axs[0].set_xlabel('Applied Field (T)')
-    axs[0].set_ylabel('Particle Separation (m)')
-    #find the unit vector describing the direction along which the external magnetic field is applied
     Bext_series = mu0*Hext_series
+    Bext_norm = np.linalg.norm(Bext_series,axis=1)*1e3
+    axs[0].plot(Bext_norm,separations*l_e*1e6,'o')
+    axs[0].set_xlabel(r'$B_{ext}$ (mT)')
+    axs[0].set_ylabel(r'S ($\mu$m)')
+    # axs[0].set_ylabel(r'Particle Separation ($\mu$m)')
+    #find the unit vector describing the direction along which the external magnetic field is applied
     nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
     Bext_unit_vector = Bext_series[nonzero_field_value_indices[0],:]/np.linalg.norm(Bext_series[nonzero_field_value_indices[0],:])
     magnetization_along_applied_field = np.dot(magnetization,Bext_unit_vector)
-    axs[1].plot(np.linalg.norm(mu0*Hext_series,axis=1),magnetization_along_applied_field,'o')
-    axs[1].set_xlabel('Applied Field (T)')
-    axs[1].set_ylabel('Normalized System Magnetization')
-    format_figure(axs[0])
-    format_figure(axs[1])
+    axs[1].plot(Bext_norm,magnetization_along_applied_field,'o')
+    axs[1].set_xlabel(r'$B_{ext}$ (mT)')
+    axs[1].set_ylabel(r'M/$M_s$')
+    # axs[1].set_ylabel('Normalized System Magnetization')
+    format_subfigures(axs)
+    # format_figure(axs[0])
+    # format_figure(axs[1])
     # fig.show()
     savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
     plt.savefig(savename)
@@ -1070,13 +1076,16 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     # fig.tight_layout()
     B_field_norms = np.linalg.norm(mu0*Hext_series,axis=1)
     turning_point_index = np.argwhere(np.max(B_field_norms)==B_field_norms)[0][0]
-    upward_leg = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1]*l_e,'o-')
+    separations *= l_e*1e6
+    B_field_norms *= 1e3
+    upward_leg = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1],'o-')
     upward_leg[0].set_label('Upward Leg')
-    downward_leg = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:]*l_e,'x--')
+    downward_leg = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:],'x--')
     downward_leg[0].set_label('Downward Leg')
-    axs[0].set_xlabel('Applied Field (T)')
-    axs[0].set_ylabel('Particle Separation (m)')
-    axs[0].legend()
+    axs[0].set_xlabel(r'$B_{ext}$ (mT)')
+    axs[0].set_ylabel(r'S ($\mu$m)')
+    # axs[0].set_ylabel(r'Particle Separation ($\mu$m)')
+    # axs[0].legend()
     #find the unit vector describing the direction along which the external magnetic field is applied
     Bext_series = mu0*Hext_series
     nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
@@ -1086,12 +1095,14 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     # upward_leg.set_label('Upward Leg')
     downward_leg, = axs[1].plot(B_field_norms[turning_point_index:],magnetization_along_applied_field[turning_point_index:],'x--')
     # downward_leg.set_label('Downward Leg')
-    axs[1].set_xlabel('Applied Field (T)')
-    axs[1].set_ylabel('Normalized System Magnetization')
-    format_figure(axs[0])
-    format_figure(axs[1])
+    axs[1].set_xlabel(r'$B_{ext}$ (mT)')
+    axs[1].set_ylabel(r'M/$M_s$')
+    format_subfigures(axs,legend_loc="upper right")
+    # axs[0].legend(loc="upper right")
+    # format_figure(axs[0])
+    # format_figure(axs[1])
     # fig.show()
-    savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization.png'
+    savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization_hysteresis.png'
     plt.savefig(savename)
     plt.close()
 
@@ -1535,6 +1546,7 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
                 mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+                plt.close()
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
         mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
 #       visualizations of cuts through the center of the volume are generated and saved out
@@ -1547,6 +1559,7 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
                 mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+                plt.close()
 
 def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     """Plot a histogram of the boundary node positions. Intended for analyzing the variation in boundary surface position relevant to the strain calculation."""
@@ -1635,7 +1648,7 @@ def get_system_volumes(sim_dir):
         system_volume[i] = get_system_volume(device_posns,elements,l_e)
     return system_volume
 
-def plot_energy_figures(sim_dir,diagram_path):
+def plot_energy_figures(sim_dir,diagram_path=None):
     """Given the energies, plot them versus the applied strains and external fields, etc."""
     output_dir = sim_dir+'figures/'
     if not (os.path.isdir(output_dir)):
@@ -1652,6 +1665,7 @@ def plot_energy_figures(sim_dir,diagram_path):
     total_sim_volume = dimensions[0]*dimensions[1]*dimensions[2]
     particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
     print(f'Actual volume fraction: {particles.shape[0]*particle_volume/total_sim_volume}')
+    modulus_type = r'$E_{eff}$'
     if 'stress' in sim_type:
         xlabel = 'Stress (Pa)'
         xscale_factor = 1
@@ -1663,6 +1677,7 @@ def plot_energy_figures(sim_dir,diagram_path):
             xlabel='$\gamma$'
             fit_func = shearing_quadratic_fit_func
             # fit_func = shearing_quadratic_fit_func_no_offset
+            modulus_type = r'$G_{eff}$'
         else:
             fit_func = quadratic_no_linear_term_fit_func
     elif 'hysteresis' in sim_type:
@@ -1724,7 +1739,7 @@ def plot_energy_figures(sim_dir,diagram_path):
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
         # fig.tight_layout()
-        axs[0,0].annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.8),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
+        axs[0,0].annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.8),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=5.0))
         axs[0,0].plot(plotting_bc,plotting_element_energy,marker='^',linestyle='-',label=f'Element')#: {np.round(unique_value*1000)} (mT)')
         axs[0,1].plot(plotting_bc,plotting_spring_energy,marker='X',linestyle='-',label=f'Spring')#: {np.round(unique_value*1000)} (mT)')
         axs[0,2].plot(plotting_bc,plotting_wca_energy,marker='D',linestyle='-',label=f'WCA')#: {np.round(unique_value*1000)} (mT)')
@@ -1753,25 +1768,25 @@ def plot_energy_figures(sim_dir,diagram_path):
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
-        ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
-        ax.plot(plotting_bc,energy_plus_wca_plus_self_density,marker='D',linestyle='-')#,label=f'Total: {np.round(unique_value*1000)} (mT)')
+        ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=5.0))
+        ax.plot(plotting_bc,energy_plus_wca_plus_self_density,marker='D',linestyle='-',label='Data')#,label=f'Total: {np.round(unique_value*1000)} (mT)')
         # ax.set_title('System Energy')
         ax.set_ylabel(r'Energy Density (J/m$^3$)')
-        format_figure(ax)
         ax.set_xlabel(xlabel)
-
-        fig.legend()
         if 'shearing' in sim_type:
             modulus_fit_guess = youngs_modulus/(2*(1+poisson_ratio))
         else:
             modulus_fit_guess = youngs_modulus
+        fit_x_vals = np.linspace(np.min(plotting_bc/xscale_factor),np.max(plotting_bc),50)
         if potential_subsets == 1:
             popt, pcov, info_dict, msg, ier = scipy.optimize.curve_fit(fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,energy_plus_wca_plus_self_density[0]]),full_output=True)
             energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
             energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
-            fit_results = fit_func(plotting_bc/xscale_factor,popt[0],popt[1])
-            ax.plot(plotting_bc,fit_results)
-            plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])}',xy=(10,10),xycoords='figure pixels')
+            fit_results = fit_func(fit_x_vals,popt[0],popt[1])#fit_func(plotting_bc/xscale_factor,popt[0],popt[1])
+            ax.plot(fit_x_vals,fit_results,label='Fit')#ax.plot(plotting_bc,fit_results,label='Fit')
+            # plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])} Pa',xy=(10,10),xycoords='figure pixels')
+            rounding_decimals_val = get_uncertainty_magnitude(energy_density_plus_wca_plus_self_fit_error[i])
+            plt.annotate(modulus_type + f': {np.round(energy_density_plus_wca_plus_self_fit_modulus[i],decimals=rounding_decimals_val+1)} Pa',xy=(0.7,0.2),xycoords='figure fraction')
         else:
             subset_start_idx = 0
             for subset_count in range(potential_subsets):
@@ -1789,17 +1804,24 @@ def plot_energy_figures(sim_dir,diagram_path):
                     energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
                 else:
                     subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
-                fit_results = fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1])
-                ax.plot(plotting_bc[subset_start_idx:subset_end_idx],fit_results)
-                plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])} Pa',xy=(10,10),xycoords='figure pixels')
+                fit_results = fit_func(fit_x_vals,popt[0],popt[1])#fit_results = fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1])
+                ax.plot(fit_x_vals,fit_results,label=f'Subset Fit {subset_count+1}')#ax.plot(plotting_bc[subset_start_idx:subset_end_idx],fit_results,label=f'Subset Fit {subset_count+1}')
+                rounding_decimals_val = get_uncertainty_magnitude(energy_density_plus_wca_plus_self_fit_error[i])
+                plt.annotate(modulus_type +f'$_1$' + f': {np.round(energy_density_plus_wca_plus_self_fit_modulus[i],decimals=rounding_decimals_val+1)} Pa',xy=(0.7,0.2),xycoords='figure fraction')
+                # plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])} Pa',xy=(10,10),xycoords='figure pixels')
                 if f'{i}' in subset_modulus_error_dict:
-                    plt.annotate(f'modulus from alt fit: {np.round(subset_modulus_error_dict[f"{i}"][0])} Pa',xy=(10,25),xycoords='figure pixels')
+                    rounding_decimals_val = get_uncertainty_magnitude(subset_modulus_error_dict[f"{i}"][1])
+                    plt.annotate(modulus_type +f'$_2$' + f': {np.round(subset_modulus_error_dict[f"{i}"][0],decimals=rounding_decimals_val+1)} Pa',xy=(0.7,0.15),xycoords='figure fraction')
+                    # plt.annotate(f'modulus from alt fit: {np.round(subset_modulus_error_dict[f"{i}"][0])} Pa',xy=(10,25),xycoords='figure pixels')
                 subset_start_idx = subset_end_idx
         savename = fig_output_dir + f'total_energy_{np.round(unique_value*1000)}_mT.png'
-        inset_image = plt.imread(diagram_path,format='png')
-        inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
-        inset_ax.imshow(inset_image)
-        inset_ax.axis('off')
+        # fig.legend()
+        format_figure(ax,legend_loc="upper center")
+        if type(diagram_path) != type(None):
+            inset_image = plt.imread(diagram_path,format='png')
+            inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
+            inset_ax.imshow(inset_image)
+            inset_ax.axis('off')
         plt.savefig(savename)
         plt.close()
 
@@ -1827,16 +1849,17 @@ def plot_energy_figures(sim_dir,diagram_path):
     nonzero_indices = np.nonzero(subset_modulus)[0]
     if nonzero_indices.shape[0] != 0:
         ax.errorbar(1000*unique_field_values[nonzero_indices],subset_modulus[nonzero_indices],marker='s',yerr=subset_error[nonzero_indices])
-    ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
+    # ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
     ax.set_xlabel(f'B (mT)')
     ax.set_ylabel(f'Modulus (kPa)')
-    plt.annotate(f'modulus minimum: {np.round(np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask]))}',xy=(10,10),xycoords='figure pixels')
+    # plt.annotate(f'modulus minimum: {np.round(np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask]))}',xy=(10,10),xycoords='figure pixels')
     format_figure(ax)
     savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
-    inset_image = plt.imread(diagram_path,format='png')
-    inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
-    inset_ax.imshow(inset_image)
-    inset_ax.axis('off')
+    if type(diagram_path) != type(None):
+        inset_image = plt.imread(diagram_path,format='png')
+        inset_ax = ax.inset_axes([-0.075,0.3,0.5,0.5])
+        inset_ax.imshow(inset_image)
+        inset_ax.axis('off')
     plt.savefig(savename)
     plt.close()
     my_dataframe = pd.DataFrame({'B (mT)':1000*unique_field_values})
@@ -1845,6 +1868,13 @@ def plot_energy_figures(sim_dir,diagram_path):
     my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Seconcdary Modulus (kPa)':subset_modulus})],axis=1)
     my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Secondary Standard Deviation (kPa)':subset_error})],axis=1)
     my_dataframe.to_csv(fig_output_dir + 'modulus_v_field_data.csv',header=True,index=False)
+
+def get_uncertainty_magnitude(uncertainty):
+    """Return the negative of the exponent of the uncertainty expressed in scientific notation. Used for printing out or creating annotations of the effective modulus only up to the precision implied by the uncertainty of the fit."""
+    uncertainty_string = np.format_float_scientific(uncertainty)
+    exponent_index = uncertainty_string.find('e')
+    rounding_decimals_val = -1*(int(uncertainty_string[exponent_index+2:]))
+    return rounding_decimals_val
 
 def reinitialize_sim(sim_dir):
     #first figure out the simulation type
@@ -2111,6 +2141,7 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
                 mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
                 print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+                plt.close()
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
         mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
 #       visualizations of cuts through the center of the volume are generated and saved out
@@ -2122,6 +2153,7 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
                 mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+                plt.close()
 
 def plot_strain_tensor_field(sim_dir):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
@@ -2731,6 +2763,7 @@ if __name__ == "__main__":
 
     sim_dir = results_directory + "/2024-08-23_2_particle_hysteresis_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
 
     sim_dir = results_directory + "/2024-05-10_125_particle_field_dependent_modulus_strain_strain_tension_direction('x', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_gpu_True_starttime_11-33_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
@@ -2750,29 +2783,32 @@ if __name__ == "__main__":
     sim_dir = results_directory + "/2024-06-25_125_particle_field_dependent_modulus_strain_strain_shearing_direction('x', 'y')_order_3_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_profiling_starttime_20-48_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
 
+
+    diagram_path = '/mnt/c/Users/bagaw/Desktop/2024-10-24_dissertation_diagrams/two_particle_shearing_zx_parallel.png'
     sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
     # analysis_case3(sim_dir)
-    # plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir,diagram_path)
     
     sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_90000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir,diagram_path)
     sim_dir = results_directory + "2024-09-03_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_900000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-09-04_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
-    sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
-    sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir,diagram_path)
+    sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3_R_2.5/"
+    plot_energy_figures(sim_dir)
+    # sim_dir = results_directory + "2024-09-06_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
+    # # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.03_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
     # analysis_case3(sim_dir)
-    # plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir,diagram_path)
     sim_dir = results_directory + "2024-09-09_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_18000.0_nu_0.47_Bext_angle_90_regular_vol_frac_0.06_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir,diagram_path)
 
     # #fields perpendicular to particle axis, along shearing direction
     # sim_dir = results_directory + "2024-09-14_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9000.0_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_0.03_stepsize_5.e-3/"
@@ -2804,7 +2840,7 @@ if __name__ == "__main__":
     # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.02_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.04000000000000001_stepsize_5.e-3/"
-    # plot_energy_figures(sim_dir)
+    plot_energy_figures(sim_dir,diagram_path)
     # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.06000000000000001_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
     # sim_dir = results_directory + "2024-09-20_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9000.0_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_0.08000000000000002_stepsize_5.e-3/"
@@ -2830,8 +2866,9 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
 
     sim_dir = results_directory + "2024-10-11_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_4.e-2_stepsize_5.e-3/"
-    diagram_path = '/mnt/c/Users/bagaw/Desktop/2024-10-24_dissertation_diagrams/two_particle_shearing_zx_parallel.png'
+    
     # plot_particles_scatter_sim(sim_dir)
+    plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
     plot_energy_figures(sim_dir,diagram_path)
 
     directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
