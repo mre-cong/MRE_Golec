@@ -334,7 +334,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     cbar = fig.colorbar(my_cmap)
     cbar.ax.set_ylabel(r'$\mu$m',rotation=270,fontsize=20)
     cbar.ax.tick_params(labelsize=20)
-    ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
+    # ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
     format_figure_3D(ax)
     # if tag != "":
         # ax.set_title(tag)
@@ -467,9 +467,9 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
         #     centers[i,:] = simulate.get_particle_center(particle,node_posns)
         #     centers[i,:] *= l_e*1e6
         #     ax.plot_surface(x+centers[i,0],y+centers[i,1],z+centers[i,2],zorder=i)
-        xvar = node_posns[particle_cut_nodes,0]
-        yvar = node_posns[particle_cut_nodes,1]
-        zvar = node_posns[particle_cut_nodes,2]
+        xvar = node_posns[particle_cut_nodes,0].copy()
+        yvar = node_posns[particle_cut_nodes,1].copy()
+        zvar = node_posns[particle_cut_nodes,2].copy()
         xvar *= l_e*1e6
         yvar *= l_e*1e6
         zvar *= l_e*1e6
@@ -478,7 +478,7 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.axis('equal')
-    ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
+    # ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
     format_figure_3D(ax)
     if tag != "":
         tag = "_" + tag
@@ -1303,7 +1303,7 @@ def setup_figure_and_variables_2D(cut_type,eq_node_posns,node_posns):
     ax.set_ylabel(ylabel)
     return fig,ax,xvar,yvar
 
-def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,shared_x_axis=True):
+def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_size=14,shared_x_axis=True,legend_loc="upper left",legend_fontsize=18):
     """Given a list of axes making up a figure with subfigures, make appropriate adjustments to the figure depending on the shape of the subfigure and user passed keyword arguments, e.g. 'ylim_sharing'"""
     figure_shape = axs.shape
     subplot_labels = ['a)','b)','c)','d)','e)','f)']
@@ -1312,29 +1312,33 @@ def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,shared_
         for i in range(figure_shape[0]):
             for j in range(figure_shape[1]):            
                 axs[i,j].yaxis.get_offset_text().set_fontsize(offset_font_size)
-                axs[i,j].legend(loc="upper left")
                 axs[i,j].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
                                 xytext=(-1.5,0.65),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
                 subplot_label_counter += 1
                 axs[i,j].tick_params(labelsize=tick_size)
                 axs[i,j].set_xlabel(axs[i,j].get_xlabel(),fontsize=label_size)
                 axs[i,j].set_ylabel(axs[i,j].get_ylabel(),fontsize=label_size)
+                for child_line in axs[i,j].get_lines():
+                    child_line.set_markersize(marker_size)
+                axs[i,j].legend(loc=legend_loc,fontsize=legend_fontsize)
                 if shared_x_axis and i != (figure_shape[0]-1):
                     axs[i,j].set_xticks([])
     elif len(figure_shape) == 1:
         for i in range(figure_shape[0]):      
             axs[i].yaxis.get_offset_text().set_fontsize(offset_font_size)
-            axs[i].legend(loc="upper left")
             axs[i].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
                             xytext=(-1.5,0.75),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
             subplot_label_counter += 1
             axs[i].tick_params(labelsize=tick_size)
             axs[i].set_xlabel(axs[i].get_xlabel(),fontsize=label_size)
             axs[i].set_ylabel(axs[i].get_ylabel(),fontsize=label_size)
+            for child_line in axs[i].get_lines():
+                child_line.set_markersize(marker_size)
+            axs[i].legend(loc=legend_loc,fontsize=legend_fontsize)
             if shared_x_axis and i != (figure_shape[0]-1):
                 axs[i].set_xticks([])
 
-def format_figure(ax,title_size=30,label_size=30,tick_size=22):
+def format_figure(ax,title_size=30,label_size=30,tick_size=22,marker_size=14,legend_loc="upper right",legend_fontsize=18):
     """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
     ax.tick_params(labelsize=tick_size)
     ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
@@ -1343,6 +1347,9 @@ def format_figure(ax,title_size=30,label_size=30,tick_size=22):
     # ax.xaxis.set_label_coords(0.5,-0.1)
     # ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
     # ax.yaxis.set_label_coords(-0.1,0.5)
+    for child_line in ax.get_lines():
+        child_line.set_markersize(marker_size)
+    ax.legend(loc=legend_loc,fontsize=legend_fontsize)
     ax.set_title(ax.get_title(),fontsize=title_size)
 
 def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22,view_angles=None,fig=None):
@@ -1445,8 +1452,9 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     fig.set_dpi(200)
     particles = np.ravel(particles)
     # my_cmap = matplotlib.colormaps['Blues']
-    node_posns *= l_e*1e6
-    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2])
+    local_node_posns = node_posns.copy()
+    local_node_posns *= l_e*1e6
+    ax.scatter(local_node_posns[particles,0],local_node_posns[particles,1],local_node_posns[particles,2])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1464,7 +1472,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     #set the view angles to capture the different perspectives
     #reset axis and do scatter plot using a blue colormap, so that particle nodes are colored based on position value coming out of the page
     ax.cla()
-    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues',c=node_posns[particles,2])
+    ax.scatter(local_node_posns[particles,0],local_node_posns[particles,1],local_node_posns[particles,2],cmap='Blues',c=local_node_posns[particles,2])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1487,7 +1495,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     plt.savefig(savename)
 
     ax.cla()
-    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues_r',c=node_posns[particles,1])
+    ax.scatter(local_node_posns[particles,0],local_node_posns[particles,1],local_node_posns[particles,2],cmap='Blues_r',c=local_node_posns[particles,1])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1512,7 +1520,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     plt.savefig(savename)
 
     ax.cla()
-    ax.scatter(node_posns[particles,0],node_posns[particles,1],node_posns[particles,2],cmap='Blues',c=node_posns[particles,0])
+    ax.scatter(local_node_posns[particles,0],local_node_posns[particles,1],local_node_posns[particles,2],cmap='Blues',c=local_node_posns[particles,0])
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1540,7 +1548,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     # default_width,default_height = fig.get_size_inches()
     # fig.set_size_inches(2*default_width,2*default_height)
     # fig.set_dpi(200)
-    # ax.scatter(node_posns[particles,0],node_posns[particles,1])
+    # ax.scatter(local_node_posns[particles,0],local_node_posns[particles,1])
     # ax.set_xlim(xlim)
     # ax.set_ylim(ylim)
     # ax.set_xlabel(xlabel)
@@ -1549,7 +1557,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     # savename = output_dir + f'particle_nodes_'+ tag +'_xy_2D.png'
     # plt.savefig(savename)
     # ax.clear()
-    # ax.scatter(node_posns[particles,0],node_posns[particles,2])
+    # ax.scatter(local_node_posns[particles,0],local_node_posns[particles,2])
     # ax.set_xlim(xlim)
     # ax.set_ylim(zlim)
     # ax.set_xlabel(xlabel)
@@ -1558,7 +1566,7 @@ def plot_particle_nodes(eq_node_posns,node_posns,l_e,particles,output_dir,tag=""
     # savename = output_dir + f'particle_nodes_'+ tag +'_xz_2D.png'
     # plt.savefig(savename)
     # ax.clear()
-    # ax.scatter(node_posns[particles,1],node_posns[particles,2])
+    # ax.scatter(local_node_posns[particles,1],local_node_posns[particles,2])
     # ax.set_xlim(ylim)
     # ax.set_ylim(zlim)
     # ax.set_xlabel(ylabel)
