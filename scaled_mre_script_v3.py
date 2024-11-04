@@ -52,6 +52,8 @@ import springs
 # import magnetism
 import simulate
 import random
+
+from typing import Any
 #magnetic permeability of free space
 mu0 = 4*np.pi*1e-7
 #remember, purpose, signature, stub
@@ -725,84 +727,86 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]#[9e3,2*9e3]#[1e-2]#[1e6]#
-    discretizations = [7]#[3,4,5,6]#[0,1,2,3,4,5]
+    discretizations = [5]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]#[0.47]
-    volume_fractions = np.array([5e-3,1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2])#np.linspace(0.02,0.2,10)
-    bc_directions = ((('z','x'),),)#((('z','x'),),(('z','z'),),(('z','z'),),)#((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
+    volume_fractions = np.array([3e-2])#np.array([5e-3,1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2])#np.linspace(0.02,0.2,10)
+    bc_directions = ((('z','x'),),)#((('z','z'),),(('z','z'),),)#((('z','x'),),(('z','z'),),(('z','z'),),)#((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
     Hext_angles = ((0,0),)#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
-    sim_types = ('strain_shearing',)#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
+    sim_types = ('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     
     total_sim_num = 0
     step_sizes = [np.float32(5e-3)]#[np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
     max_integration_steps = [5000]#[10000, 20000]#[2500]#[5000, 10000, 20000]
-    for E in youngs_modulus:
-        for poisson_ratio in poisson_ratios:
-            for volume_fraction in volume_fractions:
-                for discretization_order in discretizations:
-                    for i, sim_type in enumerate(sim_types):
-                        for step_size,integration_steps in zip(step_sizes,max_integration_steps):
-                            for bc_direction in bc_directions[i]:
-                                for Hext_angle in Hext_angles:
-                                    # this may not always be correct, but for some simulations not every combination of field angle + boundary condition direction is necessary
-                                    # for an isotropic  MRE, there are two configurations for a strain/stress simulation: field + boundary condition parallel, field + boundary condition perpendicular
-                                    # for an anisotropic MRE, there are 5 configurations: field + anisotropy + bc parallel, field + anisotropy parallel with bc perpendicular, field + bc parallel with anisotropy perpendicular, anisotropy + bc parallel with field perpendicular, field perpendicular to anisotropy perpendicular to bc 
-                                    if np.isclose(Hext_angle[0],np.pi/2) and bc_direction[0] == 'y':
-                                        break
-                                    parameters = dict({})
-                                    parameters['max_integrations'] = 40
-                                    # parameters['step_size'] = np.float32(0.01/2)
-                                    parameters['max_integration_steps'] = integration_steps
-                                    parameters['step_size'] = step_size
-                                    parameters['gpu_flag'] = True 
-                                    parameters['particle_rotation_flag'] = True
-                                    parameters['persistent_checkpointing_flag'] = True
-                                    parameters['plotting_flag'] = False
-                                    parameters['criteria_flag'] = False
-                                    parameters['particle_radius'] = 1.5e-6
-                                    parameters['youngs_modulus'] = E
-                                    parameters['poisson_ratio'] = poisson_ratio
-                                    parameters['drag'] = 1#1#0#20
-                                    parameters['discretization_order'] = discretization_order
-                                    parameters['num_particles_along_axes'] = [1,1,2]#[2,2,2]#[3,1,1]#[8,8,8]#
-                                    parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
-                                    if parameters['num_particles'] == 0:
-                                        #dimensions in normalized units, the number of nodes in each direction
-                                        parameters['dimensions'] = np.array([20,10,10])
-                                    parameters['particle_placement'] = 'regular'#'regular_anisotropic_noisy'#'regular_anisotropic'#'regular_noisy'#
-                                    parameters['anisotropy_factor'] = np.array([1.0,1.0,1.0])
-                                    parameters['anisotropy_factor'][1:] = 1/np.sqrt(parameters['anisotropy_factor'][0])
-                                    parameters['volume_fraction'] = volume_fraction
-                                    parameters['particle_separation'] = 9e-6
-                                    tmp_field_var = np.array([0.0,1.4e-1])#np.array([0.0,1e-2,2e-2,4e-2,8e-2,1.2e-1,1.4e-1])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
-                                    tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
-                                    if np.isclose(Hext_angle[0],np.pi/2):
-                                        tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
-                                    else:
-                                        tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
-                                    parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
-                                    # parameters['Hext_series'] = tmp_field_vectors#(1/mu0)*np.array([[1e-4,0,0],[1e-2,0,0],[2e-2,0,0],[3e-2,0,0],[5e-2,0,0],[8e-2,0,0],[1e-1,0,0],[1.2e-1,0,0],[1.4e-1,0,0],[1.5e-1,0,0],],dtype=np.float32)
-                                    parameters['max_field'] = 0.06
-                                    parameters['field_angle_theta'] = Hext_angle[0]
-                                    parameters['field_angle_phi'] = Hext_angle[1]
-                                    parameters['num_field_steps'] = 15
-                                    if 'stress' in sim_type:
-                                        parameters['boundary_condition_value_series'] = np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
-                                    parameters['boundary_condition_value_series'] = np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2])#np.array([0.0])#np.array([0.0,1e-3,2e-3,5e-3,1e-2,2e-2,3e-2,4e-2])#np.concatenate((np.linspace(0,2e-4,5),np.linspace(4e-4,1e-3,4),np.array([2e-3,5e-3,1e-2,1.5e-2,2e-2,3e-2,4e-2])))
-                                    parameters['boundary_condition_max_value'] = 0.0010
-                                    parameters['num_boundary_condition_steps'] = 5
-                                    parameters['boundary_condition_type'] = bc_type[i]
-                                    parameters['boundary_condition_direction'] = bc_direction
-                                    print(f'sim type = {sim_type}\nbc_direction = {bc_direction}\n')
-                                    print(f"Young's modulus = {E} Pa\nPoisson Ratio = {poisson_ratio}\ndiscretization order = {discretization_order}\n")
-                                    print(f"N particles = {parameters['num_particles']}\nField angle theta = {Hext_angle[0]}\nField angle phi = {Hext_angle[1]}\n")
-                                    print(f"gpu based calculation {parameters['gpu_flag']}")
-                                    # parameters could be a dict with key value pairs describing the simulation, acting like a struct, sim_type would be a string used to describe the type of simulation to run (stress based/strain based boundary conditions, magnetic hysteresis, etc.)
-                                    run_sim(parameters,sim_type)
-                                    total_sim_num += 1
+    particle_arrangements = [[1,1,4],[1,1,6],[3,3,4]]
+    for particle_arrangement in particle_arrangements:
+        for E in youngs_modulus:
+            for poisson_ratio in poisson_ratios:
+                for volume_fraction in volume_fractions:
+                    for discretization_order in discretizations:
+                        for i, sim_type in enumerate(sim_types):
+                            for step_size,integration_steps in zip(step_sizes,max_integration_steps):
+                                for bc_direction in bc_directions[i]:
+                                    for Hext_angle in Hext_angles:
+                                        # this may not always be correct, but for some simulations not every combination of field angle + boundary condition direction is necessary
+                                        # for an isotropic  MRE, there are two configurations for a strain/stress simulation: field + boundary condition parallel, field + boundary condition perpendicular
+                                        # for an anisotropic MRE, there are 5 configurations: field + anisotropy + bc parallel, field + anisotropy parallel with bc perpendicular, field + bc parallel with anisotropy perpendicular, anisotropy + bc parallel with field perpendicular, field perpendicular to anisotropy perpendicular to bc 
+                                        if np.isclose(Hext_angle[0],np.pi/2) and bc_direction[0] == 'y':
+                                            break
+                                        parameters = dict({})
+                                        parameters['max_integrations'] = 40
+                                        # parameters['step_size'] = np.float32(0.01/2)
+                                        parameters['max_integration_steps'] = integration_steps
+                                        parameters['step_size'] = step_size
+                                        parameters['gpu_flag'] = True 
+                                        parameters['particle_rotation_flag'] = True
+                                        parameters['persistent_checkpointing_flag'] = True
+                                        parameters['plotting_flag'] = False
+                                        parameters['criteria_flag'] = False
+                                        parameters['particle_radius'] = 1.5e-6
+                                        parameters['youngs_modulus'] = E
+                                        parameters['poisson_ratio'] = poisson_ratio
+                                        parameters['drag'] = 1#1#0#20
+                                        parameters['discretization_order'] = discretization_order
+                                        parameters['num_particles_along_axes'] = particle_arrangement#[1,1,4]#[1,1,2]#[2,2,2]#[3,1,1]#[8,8,8]#
+                                        parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
+                                        if parameters['num_particles'] == 0:
+                                            #dimensions in normalized units, the number of elements in each direction
+                                            parameters['dimensions'] = np.array([18,18,54])
+                                        parameters['particle_placement'] = 'regular_anisotropic'#'regular'#'regular_anisotropic_noisy'#'regular_noisy'#
+                                        parameters['anisotropy_factor'] = np.array([1.0,1.0,0.9])
+                                        parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
+                                        parameters['volume_fraction'] = volume_fraction
+                                        parameters['particle_separation'] = 9e-6
+                                        tmp_field_var = np.array([0.0,1e-2,2e-2,4e-2,8e-2,1.2e-1,1.4e-1])#np.array([0.0])#np.array([0.0,1.4e-1])#np.array([0.0,1e-2,1.4e-1])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
+                                        tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
+                                        if np.isclose(Hext_angle[0],np.pi/2):
+                                            tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
+                                        else:
+                                            tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
+                                        parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
+                                        # parameters['Hext_series'] = tmp_field_vectors#(1/mu0)*np.array([[1e-4,0,0],[1e-2,0,0],[2e-2,0,0],[3e-2,0,0],[5e-2,0,0],[8e-2,0,0],[1e-1,0,0],[1.2e-1,0,0],[1.4e-1,0,0],[1.5e-1,0,0],],dtype=np.float32)
+                                        parameters['max_field'] = 0.06
+                                        parameters['field_angle_theta'] = Hext_angle[0]
+                                        parameters['field_angle_phi'] = Hext_angle[1]
+                                        parameters['num_field_steps'] = 15
+                                        if 'stress' in sim_type:
+                                            parameters['boundary_condition_value_series'] = np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
+                                        parameters['boundary_condition_value_series'] = np.linspace(0,5e-2,6)#np.linspace(0,5e-2,21)#np.array([0.0])#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2])#np.array([0.0,1e-3,2e-3,5e-3,1e-2,2e-2,3e-2,4e-2])#np.concatenate((np.linspace(0,2e-4,5),np.linspace(4e-4,1e-3,4),np.array([2e-3,5e-3,1e-2,1.5e-2,2e-2,3e-2,4e-2])))
+                                        parameters['boundary_condition_max_value'] = 0.0010
+                                        parameters['num_boundary_condition_steps'] = 5
+                                        parameters['boundary_condition_type'] = bc_type[i]
+                                        parameters['boundary_condition_direction'] = bc_direction
+                                        print(f'sim type = {sim_type}\nbc_direction = {bc_direction}\n')
+                                        print(f"Young's modulus = {E} Pa\nPoisson Ratio = {poisson_ratio}\ndiscretization order = {discretization_order}\n")
+                                        print(f"N particles = {parameters['num_particles']}\nField angle theta = {Hext_angle[0]}\nField angle phi = {Hext_angle[1]}\n")
+                                        print(f"gpu based calculation {parameters['gpu_flag']}")
+                                        # parameters could be a dict with key value pairs describing the simulation, acting like a struct, sim_type would be a string used to describe the type of simulation to run (stress based/strain based boundary conditions, magnetic hysteresis, etc.)
+                                        run_sim(parameters,sim_type)
+                                        total_sim_num += 1
     print(total_sim_num)
 
-def run_sim(parameters,sim_type):
+def run_sim(parameters: dict[str,Any],sim_type: str) -> Any:
     # needs to select amongst different simulation types, and needs to initialize things
     """Driver for a simulation of a particular type with a given set of parameters."""
     sim_variables_dict, sim_logger = initialize_simulation_variables(parameters,sim_type)
@@ -821,7 +825,7 @@ def run_sim(parameters,sim_type):
     print(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n')
     sim_logger.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',output_dir)
 
-def reinitialize_sim(sim_dir):
+def reinitialize_sim(sim_dir: str):
     #first figure out the simulation type
     node_posns, mass, springs_var, elements, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
     # figure out the field sequence and stress/strain sequence if necessary
@@ -970,7 +974,7 @@ def jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dirs=[]):
             return -1
         sim_logger.append_log(f'Simulation took:{simulation_run_time} seconds\nReturned with status {return_status}(0 for converged, -1 for diverged, 1 for reaching maximum integrations)\n',sim_dir)
 
-def initialize_simulation_variables(parameters,sim_type):
+def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> tuple[dict[str,Any], Any]:
     start = time.time()
     mu0 = 4*np.pi*1e-7
     E = parameters['youngs_modulus']
@@ -1388,7 +1392,7 @@ def initialize_simulation_variables(parameters,sim_type):
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
 
-    mre.analyze.plot_particle_nodes(normalized_posns,normalized_posns,particles,output_dir,tag=f"initial_particle_placement")
+    mre.analyze.plot_particle_nodes(normalized_posns,normalized_posns,l_e,particles,output_dir,tag=f"initial_particle_placement")
 
     my_sim = mre.initialize.Simulation(E,nu,kappa,k,drag,l_e,Lx,Ly,Lz,particle_radius,particle_mass,Ms,chi,beta,characteristic_mass,characteristic_time,max_integrations,max_integration_steps,step_size,tolerance,anisotropy_factor)
     my_sim.set_time(t_f)
@@ -1611,12 +1615,12 @@ def run_stress_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         boundary_conditions = (bc_type,(bc_direction[0],bc_direction[1]),stress)
         for i, Hext in enumerate(Hext_series):
             if output_dir[-1] != '/':
-                current_output_dir = output_dir + f'/stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'/{bc_type}_{count}_{np.format_float_scientific(stress,precision=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             elif output_dir[-1] == '/':
-                current_output_dir = output_dir + f'stress_{count}_{bc_type}_{np.round(stress,decimals=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'{bc_type}_{count}_{np.format_float_scientific(stress,precision=3)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
-            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=3)}, {np.round(Hext[1]*mu0,decimals=3)}, {np.round(Hext[2]*mu0,decimals=3)}) T\nApplied stress {boundary_conditions[1]} {np.round(stress,decimals=5)}\n')
+            print(f'Running simulation with external magnetic field: ({np.round(Hext[0]*mu0,decimals=3)}, {np.round(Hext[1]*mu0,decimals=3)}, {np.round(Hext[2]*mu0,decimals=3)}) T\nApplied stress {boundary_conditions[1]} {np.format_float_scientific(stress,precision=5)}\n')
             start = time.time()
             try:
                 sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v3(x0,elements,host_particles,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag)
@@ -1682,9 +1686,9 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         strain = strains[strain_start_index]
         Hext = Hext_series[field_start_index]
         if output_dir[-1] != '/':
-            current_output_dir = output_dir + f'/strain_{strain_start_index}_{bc_type}_{np.round(strain,decimals=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            current_output_dir = output_dir + f'/{bc_type}_{strain_start_index}_{np.format_float_scientific(strain,precision=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
         elif output_dir[-1] == '/':
-            current_output_dir = output_dir + f'strain_{strain_start_index}_{bc_type}_{np.round(strain,decimals=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            current_output_dir = output_dir + f'{bc_type}_{strain_start_index}_{np.format_float_scientific(strain,precision=5)}_field_{field_start_index}_Bext_{np.round(Hext*mu0,decimals=3)}/'
         if not (os.path.isdir(current_output_dir)):
             os.mkdir(current_output_dir)
         # read in the checkpoint file and continue the simulation
@@ -1796,9 +1800,13 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         for i in range(field_start_index,Hext_series.shape[0]):#for i, Hext in enumerate(Hext_series):
             Hext = Hext_series[i]
             if output_dir[-1] != '/':
-                current_output_dir = output_dir + f'/strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'/{bc_type}_{count}_{np.format_float_scientific(strain,precision=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             elif output_dir[-1] == '/':
-                current_output_dir = output_dir + f'strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+                current_output_dir = output_dir + f'{bc_type}_{count}_{np.format_float_scientific(strain,precision=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            # if output_dir[-1] != '/':
+            #     current_output_dir = output_dir + f'/strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
+            # elif output_dir[-1] == '/':
+            #     current_output_dir = output_dir + f'strain_{count}_{bc_type}_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/'
             if sim_extend_flag:
                 current_output_dir = current_output_dir[:-1] + '_extension/'
             if not (os.path.isdir(current_output_dir)):
@@ -1806,7 +1814,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
             if reuse_solution_flag:
                 #here i need to ensure what the "eq_posns" variable is more carefully now that I am trying to use simulation results as reference configurations for non-zero applied strains
                 x0, boundary_conditions = apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,dimensions,l_e,gpu_flag)
-            print(f'Running simulation with external magnetic field: {np.round(Hext*mu0,decimals=4)} T\nApplied strain {boundary_conditions[1]} {np.round(strain,decimals=5)}\n')
+            print(f'Running simulation with external magnetic field: {np.round(Hext*mu0,decimals=4)} T\nApplied strain {boundary_conditions[1]} {np.format_float_scientific(strain,precision=5)}\n')
             start = time.time()
             try:
                 sol, return_status = simulate.simulate_scaled_gpu_leapfrog_v3(x0,elements,host_particles,particles,boundaries,dimensions,springs_var,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,current_output_dir,max_integrations,max_integration_steps,tolerance,step_size,persistent_checkpointing_flag,starting_velocities,checkpoint_offset)
@@ -1891,7 +1899,8 @@ def apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,
         if bc_direction[0] == 'x':
             if bc_direction[1] == 'x':
                 raise ValueError('Cannot have a shear strain applied to a surface with surface normal in x direction and force in x direction')
-            adjacent_length = dimensions[0]/l_e
+            # adjacent_length = dimensions[0]/l_e
+            adjacent_length = eq_posns[boundaries['right'],0]
             opposite_length = np.tan(strain)*adjacent_length
             if bc_direction[1] == 'y':
                 x0[boundaries['right'],1] = eq_posns[boundaries['right'],1] + opposite_length
@@ -1902,7 +1911,8 @@ def apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,
         elif bc_direction[0] == 'y':
             if bc_direction[1] == 'y':
                 raise ValueError('Cannot have a shear strain applied to a surface with surface normal in y direction and force in y direction')
-            adjacent_length = dimensions[1]/l_e
+            # adjacent_length = dimensions[1]/l_e
+            adjacent_length = eq_posns[boundaries['back'],1]
             opposite_length = np.tan(strain)*adjacent_length
             if bc_direction[1] == 'x':
                 x0[boundaries['back'],0] = eq_posns[boundaries['back'],0] + opposite_length
@@ -1913,7 +1923,8 @@ def apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,
         elif bc_direction[0] == 'z':
             if bc_direction[1] == 'z':
                 raise ValueError('Cannot have a shear strain applied to a surface with surface normal in z direction and force in z direction')
-            adjacent_length = dimensions[2]/l_e
+            # adjacent_length = dimensions[2]/l_e
+            adjacent_length = eq_posns[boundaries['top'],2]
             opposite_length = np.tan(strain)*adjacent_length
             if bc_direction[1] == 'x':
                 x0[boundaries['top'],0] = eq_posns[boundaries['top'],0] + opposite_length
@@ -2023,9 +2034,9 @@ if __name__ == "__main__":
     #         Hext = Hext_series[i]
     #         sim_checkpoint_dir.append(sim_dir + f'strain_{count}_strain_tension_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/')
 
-    # jumpstart_type = 'restart'#'rerun'#'extend'#
-    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-07-01_125_particle_hysteresis_order_5_E_9000.0_nu_0.47_Bext_angle_0.0_gpu_True_regular_stepsize_5.e-3/"
-    # jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dirs=[])
+    # jumpstart_type = 'extend'#'restart'#'rerun'#
+    # sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-10-10_2_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_4.e-2_stepsize_5.e-3/"
+    # jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dirs=[sim_dir+'strain_0_strain_shearing_0.0_field_2_Bext_[0.   0.   0.14]/'])
 
     # extend_sim(sim_dir,sim_checkpoint_dir)
     batch_job_runner()
