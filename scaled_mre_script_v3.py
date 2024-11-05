@@ -727,18 +727,18 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]#[9e3,2*9e3]#[1e-2]#[1e6]#
-    discretizations = [5]#[3,4,5,6]#[0,1,2,3,4,5]
+    discretizations = [3]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]#[0.47]
     volume_fractions = np.array([3e-2])#np.array([5e-3,1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2])#np.linspace(0.02,0.2,10)
     bc_directions = ((('z','x'),),)#((('z','z'),),(('z','z'),),)#((('z','x'),),(('z','z'),),(('z','z'),),)#((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
     Hext_angles = ((0,0),)#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
-    sim_types = ('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
+    sim_types = ('strain_simple_shearing',)#('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     
     total_sim_num = 0
     step_sizes = [np.float32(5e-3)]#[np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
     max_integration_steps = [5000]#[10000, 20000]#[2500]#[5000, 10000, 20000]
-    particle_arrangements = [[1,1,4],[1,1,6],[3,3,4]]
+    particle_arrangements = [[1,1,0]]#[[1,1,4],[1,1,6],[3,3,4]]
     for particle_arrangement in particle_arrangements:
         for E in youngs_modulus:
             for poisson_ratio in poisson_ratios:
@@ -773,12 +773,12 @@ def batch_job_runner():
                                         if parameters['num_particles'] == 0:
                                             #dimensions in normalized units, the number of elements in each direction
                                             parameters['dimensions'] = np.array([18,18,54])
-                                        parameters['particle_placement'] = 'regular_anisotropic'#'regular'#'regular_anisotropic_noisy'#'regular_noisy'#
-                                        parameters['anisotropy_factor'] = np.array([1.0,1.0,0.9])
+                                        parameters['particle_placement'] = 'regular'#'regular_anisotropic'#'regular_anisotropic_noisy'#'regular_noisy'#
+                                        parameters['anisotropy_factor'] = np.array([1.0,1.0,1.0])#np.array([1.0,1.0,0.9])
                                         parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
                                         parameters['volume_fraction'] = volume_fraction
                                         parameters['particle_separation'] = 9e-6
-                                        tmp_field_var = np.array([0.0,1e-2,2e-2,4e-2,8e-2,1.2e-1,1.4e-1])#np.array([0.0])#np.array([0.0,1.4e-1])#np.array([0.0,1e-2,1.4e-1])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
+                                        tmp_field_var = np.array([0.0])#np.array([0.0,1.4e-1])#np.array([0.0,1e-2,2e-2,4e-2,8e-2,1.2e-1,1.4e-1])#np.array([0.0,1e-2,1.4e-1])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
                                         tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
                                         if np.isclose(Hext_angle[0],np.pi/2):
                                             tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
@@ -1893,6 +1893,43 @@ def apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,
             x0[boundaries['top'],2] = eq_posns[boundaries['top'],2] * (1 + strain)
         else:
             raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
+    elif 'simple_shear' in bc_type:
+        surface_nodes = np.concatenate((boundaries['left'],boundaries['right'],boundaries['front'],boundaries['back'],boundaries['top'],boundaries['bot']))
+        if strain >= np.abs(np.pi/2):
+            raise ValueError('For shearing strains, cannot use or exceed an angle of pi/2')
+        if bc_direction[0] == 'x':
+            if bc_direction[1] == 'x':
+                raise ValueError('Cannot have a shear strain applied to a surface with surface normal in x direction and force in x direction')
+            adjacent_length = eq_posns[surface_nodes,0]
+            opposite_length = np.tan(strain)*adjacent_length
+            if bc_direction[1] == 'y':
+                x0[surface_nodes,1] = eq_posns[surface_nodes,1] + opposite_length
+            elif bc_direction[1] == 'z':
+                x0[surface_nodes,2] = eq_posns[surface_nodes,2] + opposite_length
+            else:
+                raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
+        elif bc_direction[0] == 'y':
+            if bc_direction[1] == 'y':
+                raise ValueError('Cannot have a shear strain applied to a surface with surface normal in y direction and force in y direction')
+            adjacent_length = eq_posns[surface_nodes,1]
+            opposite_length = np.tan(strain)*adjacent_length
+            if bc_direction[1] == 'x':
+                x0[surface_nodes,0] = eq_posns[surface_nodes,0] + opposite_length
+            elif bc_direction[1] == 'z':
+                x0[surface_nodes,2] = eq_posns[surface_nodes,2] + opposite_length
+            else:
+                raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
+        elif bc_direction[0] == 'z':
+            if bc_direction[1] == 'z':
+                raise ValueError('Cannot have a shear strain applied to a surface with surface normal in z direction and force in z direction')
+            adjacent_length = eq_posns[surface_nodes,2]
+            opposite_length = np.tan(strain)*adjacent_length
+            if bc_direction[1] == 'x':
+                x0[surface_nodes,0] = eq_posns[surface_nodes,0] + opposite_length
+            elif bc_direction[1] == 'y':
+                x0[surface_nodes,1] = eq_posns[surface_nodes,1] + opposite_length
+            else:
+                raise ValueError('strain direction not one of acceptable directions ("x","y","z")')
     elif 'shearing' in bc_type:
         if strain >= np.abs(np.pi/2):
             raise ValueError('For shearing strains, cannot use or exceed an angle of pi/2')
