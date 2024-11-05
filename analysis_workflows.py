@@ -1648,6 +1648,65 @@ def get_system_volumes(sim_dir):
         system_volume[i] = get_system_volume(device_posns,elements,l_e)
     return system_volume
 
+def get_strain_values(sim_dir,num_output_files,boundaries):
+    """For shearing simulations, calculate the shear strain relative to the equilibrium configuration (0 strain applied boundary condition at the same field). Necessary for validating strain was applied correctly, due to implementation error for shearing simulations in results prior to 2024-11-04."""
+    applied_bc = np.zeros((num_output_files,),dtype=np.float32)
+    Hext_series = get_applied_field_series(sim_dir)
+    num_unique_fields = np.shape(np.unique(Hext_series,axis=1))[0]
+    reference_adjacent_length = {}#np.zeros((num_unique_fields,),dtype=np.float32)
+    reference_mean_surface_posns = {}#np.zeros((num_unique_fields,),dtype=np.float32)
+    # reference_counter = 0
+    for i in range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        bc_direction = boundary_conditions[1]
+        dictionary_key = str(list(np.round(mu0*Hext,decimals=3)))
+        if np.allclose(Hext_series[i],Hext) and boundary_conditions[2] == 0:
+            applied_bc[i] = 0
+            #get the reference position component of the surface for the unique magnetic field vector
+            if bc_direction[0] == 'x':
+                if bc_direction[1] == 'y':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['right'],1])
+                elif bc_direction[1] == 'z':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['right'],2])
+            elif bc_direction[0] == 'y':
+                if bc_direction[1] == 'x':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['back'],0])
+                elif bc_direction[1] == 'z':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['back'],2])
+            elif bc_direction[0] == 'z':
+                if bc_direction[1] == 'x':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['top'],0])
+                elif bc_direction[1] == 'y':
+                    reference_mean_surface_posns[dictionary_key] = np.mean(final_posns[boundaries['top'],1])
+            if bc_direction[0] == 'x':
+                reference_adjacent_length[dictionary_key] = final_posns[boundaries['right'][0],0]
+            elif bc_direction[0] == 'y':
+                reference_adjacent_length[dictionary_key] = final_posns[boundaries['back'][0],1]
+            elif bc_direction[0] == 'z':
+                reference_adjacent_length[dictionary_key] = final_posns[boundaries['top'][0],2]
+            # reference_counter += 1
+        else:
+            #use the reference length and reference and current mean surface posn component to calculate the strain, based on the displacement
+            if bc_direction[0] == 'x':
+                if bc_direction[1] == 'y':
+                    displacement = np.mean(final_posns[boundaries['right'],1]) - reference_mean_surface_posns[dictionary_key]
+                elif bc_direction[1] == 'z':
+                    displacement = np.mean(final_posns[boundaries['right'],2]) - reference_mean_surface_posns[dictionary_key]
+            elif bc_direction[0] == 'y':
+                if bc_direction[1] == 'x':
+                    displacement = np.mean(final_posns[boundaries['back'],0]) - reference_mean_surface_posns[dictionary_key]
+                elif bc_direction[1] == 'z':
+                    displacement = np.mean(final_posns[boundaries['back'],2]) - reference_mean_surface_posns[dictionary_key]
+            elif bc_direction[0] == 'z':
+                if bc_direction[1] == 'x':
+                    displacement = np.mean(final_posns[boundaries['top'],0]) - reference_mean_surface_posns[dictionary_key]
+                elif bc_direction[1] == 'y':
+                    displacement = np.mean(final_posns[boundaries['top'],1]) - reference_mean_surface_posns[dictionary_key]
+            applied_bc[i] = np.arctan(displacement/reference_adjacent_length[dictionary_key])
+    return applied_bc
+                
+
 def plot_energy_figures(sim_dir,diagram_path=None):
     """Given the energies, plot them versus the applied strains and external fields, etc."""
     output_dir = sim_dir+'figures/'
@@ -1656,7 +1715,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
     if not (os.path.isdir(output_dir+'energy/')):
         os.mkdir(output_dir+'energy/')
     fig_output_dir = output_dir + 'energy/'
-    node_posns, _, _, _, _, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+    node_posns, _, _, _, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
     l_e = parameters[7]
     _, my_sim = reinitialize_sim(sim_dir)
     youngs_modulus = my_sim.E
@@ -1666,6 +1725,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
     particle_volume = (4/3)*np.pi*np.power(parameters['particle_radius'],3)
     print(f'Actual volume fraction: {particles.shape[0]*particle_volume/total_sim_volume}')
     modulus_type = r'$E_{eff}$'
+    calc_strain_flag = False
     if 'stress' in sim_type:
         xlabel = 'Stress (Pa)'
         xscale_factor = 1
@@ -1678,6 +1738,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
             fit_func = shearing_quadratic_fit_func
             # fit_func = shearing_quadratic_fit_func_no_offset
             modulus_type = r'$G_{eff}$'
+            calc_strain_flag = True
         else:
             fit_func = quadratic_no_linear_term_fit_func
     elif 'hysteresis' in sim_type:
@@ -1692,11 +1753,16 @@ def plot_energy_figures(sim_dir,diagram_path=None):
     num_output_files = get_num_output_files(sim_dir)
     applied_field = np.zeros((num_output_files,3),dtype=np.float32)
     applied_bc = np.zeros((num_output_files,),dtype=np.float32)
+    if calc_strain_flag:
+        applied_bc = get_strain_values(sim_dir,num_output_files,boundaries)
     for i in range(num_output_files):
         _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         applied_field[i] = Hext*mu0
-        applied_bc[i] = boundary_conditions[2]
+        if calc_strain_flag:
+            pass
+        else:
+            applied_bc[i] = boundary_conditions[2]
     # if 'shearing' in sim_type and 'strain' in sim_type:
     #     applied_bc = np.tan(applied_bc)
     applied_bc *= xscale_factor
@@ -1724,18 +1790,32 @@ def plot_energy_figures(sim_dir,diagram_path=None):
         relevant_system_volumes = system_volumes[relevant_indices]
 
         #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
-        strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
-        tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
-        # strain_differential_total_energy = np.diff(plotting_total_energy.ravel())
-        # tmp_var = np.where(strain_differential_total_energy[:-1]*strain_differential_total_energy[1:] < 0)[0]
-        if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
-            potential_subsets = 1
-        elif tmp_var.shape[0] > 1 and tmp_var[0] == 0:
-            energy_trend_switch_indices = tmp_var[1::2] + 2
-            potential_subsets = energy_trend_switch_indices.shape[0] + 1
+        # strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
+        # tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
+        # if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
+        #     potential_subsets = 1
+        # elif tmp_var.shape[0] > 1 and tmp_var[0] == 0:
+        #     energy_trend_switch_indices = tmp_var[1::2] + 2
+        #     potential_subsets = energy_trend_switch_indices.shape[0] + 1
+        # else:
+        #     energy_trend_switch_indices = tmp_var[::2] + 2
+        #     potential_subsets = energy_trend_switch_indices.shape[0] + 1
+
+        # 2024-11-1 Trying to use the total energy (density) to look for dislocations in the curve that would require subset fitting
+        energy_density = np.float64(np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes))
+        strain_differential_total_energy = np.diff(energy_density.ravel())
+        #if the rate of increase in the energy isn't at least greater than the last increase wrt strain, then something has gone wrong.
+        tmp_var = np.where(strain_differential_total_energy[1:]<strain_differential_total_energy[:-1])[0]
+        # one additional issue, likely not the only one, is the case where the first non-zero strain value is lower energy than at 0 strain, in which case we would want to ignore the 0 strain energy datapoint
+        if tmp_var.shape[0] != 0:
+            potential_subsets = tmp_var.shape[0]+1
+            energy_trend_switch_indices = list(tmp_var+2)
         else:
-            energy_trend_switch_indices = tmp_var[::2] + 2
-            potential_subsets = energy_trend_switch_indices.shape[0] + 1
+            potential_subsets = 1
+            energy_trend_switch_indices = []
+        if energy_density[0] > energy_density[1]:
+            potential_subsets += 1
+            energy_trend_switch_indices.insert(0,1)
         fig, axs = plt.subplots(2,3,layout="constrained")
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
@@ -2243,6 +2323,7 @@ def plot_mr_effect_figure(directory_file,output_dir):
     effective_modulus_error = []
     mr_effect = []
     mr_effect_error = []
+    calc_strain_flag = False
     with open(directory_file,'r') as filehandle:
         for line in filehandle:
             line = line.strip()
@@ -2251,12 +2332,13 @@ def plot_mr_effect_figure(directory_file,output_dir):
         if directory[-1] != '/':
             directory += '/'
         sim_dir = directory
-        node_posns, _, _, _, _, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
+        node_posns, _, _, _, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
         l_e = parameters[7]
         if 'shearing' in sim_type:
             fit_func = shearing_quadratic_fit_func
             ylabel_one = r'$G_{eff}$ (kPa)'
             ylabel_two = r'$G_{eff,B}$ (kPa)'
+            calc_strain_flag = True
         else:
             fit_func = quadratic_no_linear_term_fit_func
             if 'tension' in sim_type:
@@ -2281,11 +2363,16 @@ def plot_mr_effect_figure(directory_file,output_dir):
         num_output_files = get_num_output_files(sim_dir)
         applied_field = np.zeros((num_output_files,3),dtype=np.float32)
         applied_bc = np.zeros((num_output_files,),dtype=np.float32)
+        if calc_strain_flag:
+            applied_bc = get_strain_values(sim_dir,num_output_files,boundaries)
         for i in range(num_output_files):
             _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
             boundary_conditions = format_boundary_conditions(boundary_conditions)
             applied_field[i] = Hext*mu0
-            applied_bc[i] = boundary_conditions[2]
+            if calc_strain_flag:
+                pass
+            else:
+                applied_bc[i] = boundary_conditions[2]
 
         Bext_magnitude = np.linalg.norm(applied_field,axis=1)
         unique_field_values = np.unique(Bext_magnitude)
@@ -2306,18 +2393,32 @@ def plot_mr_effect_figure(directory_file,output_dir):
             relevant_system_volumes = system_volumes[relevant_indices]
 
             #check for issues with total energy by observing the trend of the self energy as the strain increases. if the trend changes (goes from increasing to decreasing or vice versa), need to fit to a subset of the data, or not use the dataset at all for effective modulus analysis
-            strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
-            tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
-            if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
-                potential_subsets = 1
-            elif tmp_var.shape[0] > 1 and tmp_var[0] == 0:
-                energy_trend_switch_indices = tmp_var[1::2] + 2
-                potential_subsets = energy_trend_switch_indices.shape[0] + 1
-            else:
-                energy_trend_switch_indices = tmp_var[::2] + 2
-                potential_subsets = energy_trend_switch_indices.shape[0] + 1
+            # strain_differential_self_energy = np.diff(plotting_self_energy.ravel())
+            # tmp_var = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0]
+            # if tmp_var.shape[0] == 1 and tmp_var[0] == 0:
+            #     potential_subsets = 1
+            # elif tmp_var.shape[0] > 1 and tmp_var[0] == 0:
+            #     energy_trend_switch_indices = tmp_var[1::2] + 2
+            #     potential_subsets = energy_trend_switch_indices.shape[0] + 1
+            # else:
+            #     energy_trend_switch_indices = tmp_var[::2] + 2
+            #     potential_subsets = energy_trend_switch_indices.shape[0] + 1
             # energy_trend_switch_indices = np.where(strain_differential_self_energy[:-1]*strain_differential_self_energy[1:] < 0)[0][::2] + 2
-
+            # 2024-11-1 Trying to use the total energy (density) to look for dislocations in the curve that would require subset fitting
+            energy_density = np.float64(np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes))
+            strain_differential_total_energy = np.diff(energy_density.ravel())
+            #if the rate of increase in the energy isn't at least greater than the last increase wrt strain, then something has gone wrong.
+            tmp_var = np.where(strain_differential_total_energy[1:]<strain_differential_total_energy[:-1])[0]
+            # one additional issue, likely not the only one, is the case where the first non-zero strain value is lower energy than at 0 strain, in which case we would want to ignore the 0 strain energy datapoint
+            if tmp_var.shape[0] != 0:
+                potential_subsets = tmp_var.shape[0]+1
+                energy_trend_switch_indices = tmp_var+2
+            else:
+                potential_subsets = 1
+                energy_trend_switch_indices = []
+            if energy_density[0] > energy_density[1]:
+                potential_subsets += 1
+                energy_trend_switch_indices.insert(0,1)
             energy_plus_wca_plus_self_density = np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes)#total_sim_volume
             if 'shearing' in sim_type:
                 modulus_fit_guess = youngs_modulus/(2*(1+poisson_ratio))
@@ -2913,7 +3014,14 @@ if __name__ == "__main__":
     # plot_energy_figures(sim_dir)
     # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
     sim_dir = results_directory + "2024-10-31_16_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    sim_dir = results_directory + "2024-11-01_4_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
     plot_energy_figures(sim_dir)
-    plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+    sim_dir = results_directory + "2024-11-02_6_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-02_36_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
 
     print('Exiting')
