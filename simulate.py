@@ -72,21 +72,22 @@ def plot_displacement_v_integration(num_integration_rounds,mean_displacement,max
     
 def plot_snapshots(snapshot_stepsize,step_size,total_entries,snapshot_values,output_dir,tag=""):
     """Generate and save a figure showing the evolution of some value at particular steps throughout integration."""
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(3*default_width,3*default_height)
     fig.set_dpi(200)
     simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
     snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
-    axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries],'o-')
+    axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries],'o-',label='_')
     axs[0].set_xlabel('simulation time')
     axs[0].set_ylabel(f'{tag}')
-    mre.analyze.format_figure(axs[0])
+    # mre.analyze.format_figure(axs[0])
     midpoint = int(total_entries/2)
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries],'o-')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries],'o-',label='_')
     axs[1].set_xlabel('simulation time')
     axs[1].set_ylabel(f'{tag}')
-    mre.analyze.format_figure(axs[1])
+    # mre.analyze.format_figure(axs[1])
+    mre.analyze.format_subfigures(axs)
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
     np.save(output_dir+'simulation_time',simulation_time)
@@ -97,7 +98,7 @@ def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,s
     simulation_time = snapshot_stepsize*snapshot_values.shape[0]*step_size
     snapshot_times = np.arange(0,simulation_time,step_size*snapshot_stepsize)
     if 'boundary' in tag:
-        fig, axs = plt.subplots(2,3)
+        fig, axs = plt.subplots(2,3,layout="constrained")
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(3*default_width,3*default_height)
         fig.set_dpi(200)
@@ -110,25 +111,25 @@ def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,s
         axs[0,1].set_ylabel(f'{tag}')
         axs[0,2].set_xlabel('simulation time')
         axs[0,2].set_ylabel(f'{tag}')
-        mre.analyze.format_figure(axs[0,0])
-        mre.analyze.format_figure(axs[0,1])
-        mre.analyze.format_figure(axs[0,2])
+        # mre.analyze.format_figure(axs[0,0])
+        # mre.analyze.format_figure(axs[0,1])
+        # mre.analyze.format_figure(axs[0,2])
         midpoint = int(total_entries/2)
-        axs[1,0].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-')
-        axs[1,1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-')
-        axs[1,2].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-')
+        axs[1,0].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-',label='_')
+        axs[1,1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-',label='_')
+        axs[1,2].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-',label='_')
         axs[1,0].set_xlabel('simulation time')
         axs[1,0].set_ylabel(f'{tag}')
         axs[1,1].set_xlabel('simulation time')
         axs[1,1].set_ylabel(f'{tag}')
         axs[1,2].set_xlabel('simulation time')
         axs[1,2].set_ylabel(f'{tag}')
-        fig.legend(fontsize=20)
-        mre.analyze.format_figure(axs[1,0])
-        mre.analyze.format_figure(axs[1,1])
-        mre.analyze.format_figure(axs[1,2])
+        # fig.legend(fontsize=20)
+        # mre.analyze.format_figure(axs[1,0])
+        # mre.analyze.format_figure(axs[1,1])
+        # mre.analyze.format_figure(axs[1,2])
     else:
-        fig, axs = plt.subplots(2)
+        fig, axs = plt.subplots(2,layout="constrained")
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(3*default_width,3*default_height)
         fig.set_dpi(200)
@@ -137,15 +138,16 @@ def plot_snapshots_vector_components(snapshot_stepsize,step_size,total_entries,s
         axs[0].plot(snapshot_times[:total_entries],snapshot_values[:total_entries,2],'o-',label=f'{tag} z')
         axs[0].set_xlabel('simulation time')
         axs[0].set_ylabel(f'{tag}')
-        mre.analyze.format_figure(axs[0])
+        # mre.analyze.format_figure(axs[0])
         midpoint = int(total_entries/2)
-        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-')
-        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-')
-        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-')
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,0],'o-',label='_')
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,1],'o-',label='_')
+        axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values[midpoint:total_entries,2],'o-',label='_')
         axs[1].set_xlabel('simulation time')
         axs[1].set_ylabel(f'{tag}')
-        fig.legend(fontsize=20)
-        mre.analyze.format_figure(axs[1])
+        # fig.legend(fontsize=20)
+        # mre.analyze.format_figure(axs[1])
+    mre.analyze.format_subfigures(axs)
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
     np.save(output_dir+f'{tag}_snapshots',snapshot_values)
@@ -166,18 +168,19 @@ def plot_snapshots_vector_components_comparison(snapshot_stepsize,step_size,tota
     axs[0].plot(snapshot_times[:total_entries],snapshot_values_two[:total_entries,2],'x--',label=f"{tag+'two'} z")
     axs[0].set_xlabel('simulation time')
     axs[0].set_ylabel(f'{tag}')
-    mre.analyze.format_figure(axs[0])
+    # mre.analyze.format_figure(axs[0])
     midpoint = int(total_entries/2)
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,0],'o-')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,1],'o-')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,2],'o-')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,0],'x--')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,1],'x--')
-    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,2],'x--')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,0],'o-',label='_')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,1],'o-',label='_')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_one[midpoint:total_entries,2],'o-',label='_')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,0],'x--',label='_')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,1],'x--',label='_')
+    axs[1].plot(snapshot_times[midpoint:total_entries],snapshot_values_two[midpoint:total_entries,2],'x--',label='_')
     axs[1].set_xlabel('simulation time')
     axs[1].set_ylabel(f'{tag}')
-    fig.legend(fontsize=20)
-    mre.analyze.format_figure(axs[1])
+    # fig.legend(fontsize=20)
+    # mre.analyze.format_figure(axs[1])
+    mre.analyze.format_subfigures(axs)
     plt.savefig(output_dir+f'{tag}_snapshots.png')
     plt.close()
 
@@ -1794,7 +1797,11 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         moving_boundary_nodes = cp.array([],dtype=np.int32)
         host_moving_boundary_nodes = np.array([],dtype=np.int64)
     elif 'strain' in boundary_conditions[0]:
-        if boundary_conditions[2] == 0:
+        if 'simple_shear' in boundary_conditions[0]:
+            fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'],boundaries['front'],boundaries['back'],boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
+            moving_boundary_nodes = cp.array([],dtype=np.int32)
+            host_moving_boundary_nodes = np.array([],dtype=np.int64)
+        elif boundary_conditions[2] == 0:
             if boundary_conditions[1][0] == 'x':
                 fixed_nodes = cp.asarray(boundaries['left'],dtype=cp.int32,order='C')
                 host_moving_boundary_nodes = boundaries['right']
@@ -1932,12 +1939,17 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         # a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         accel_comp_magnitude = np.abs(host_accel)
         accel_comp_magnitude_avg = np.mean(accel_comp_magnitude[my_mask])
-        # particle_net_accel = np.sum(host_accel[np.ravel(host_particles),:],axis=0)/host_particles[0].shape
-        particle_accel_comp_magnitude_avg = np.mean(accel_comp_magnitude[np.ravel(host_particles)])
         vel_comp_magnitude = np.abs(host_velocities)
         vel_comp_magnitude_avg = np.mean(vel_comp_magnitude[my_mask])
-        # particle_net_vel = np.sum(host_velocities[np.ravel(host_particles),:],axis=0)/host_particles[0].shape
-        particle_vel_comp_magnitude_avg = np.mean(vel_comp_magnitude[np.ravel(host_particles)])
+        if num_particles != 0:
+            # particle_net_accel = np.sum(host_accel[np.ravel(host_particles),:],axis=0)/host_particles[0].shape
+            particle_accel_comp_magnitude_avg = np.mean(accel_comp_magnitude[np.ravel(host_particles)])
+            # particle_net_vel = np.sum(host_velocities[np.ravel(host_particles),:],axis=0)/host_particles[0].shape
+            particle_vel_comp_magnitude_avg = np.mean(vel_comp_magnitude[np.ravel(host_particles)])
+        else:
+            particle_accel_comp_magnitude_avg = np.nan
+            particle_vel_comp_magnitude_avg = np.nan
+
         a_norms = np.linalg.norm(host_accel[my_mask],axis=1)
         a_norm_avg = np.sum(a_norms)/np.shape(a_norms)[0]
         host_posns = np.reshape(host_posns,(N_nodes,3))
