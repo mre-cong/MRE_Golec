@@ -1306,7 +1306,6 @@ def get_normalized_magnetization_fixed_point_iteration(hext,num_particles,partic
             if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
                 return (magnetization,separation_vectors,separation_vectors_inv_magnitude,0)
         last_magnetization = magnetization.copy()
-    print(difference)
     return (magnetization,separation_vectors,separation_vectors_inv_magnitude,-1)
 
 def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
