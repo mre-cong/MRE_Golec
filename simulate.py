@@ -1306,6 +1306,7 @@ def get_normalized_magnetization_fixed_point_iteration(hext,num_particles,partic
             if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
                 return (magnetization,separation_vectors,separation_vectors_inv_magnitude,0)
         last_magnetization = magnetization.copy()
+    print(difference)
     return (magnetization,separation_vectors,separation_vectors_inv_magnitude,-1)
 
 def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
@@ -1421,9 +1422,10 @@ def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,parti
     grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
 
     hext = cp.asarray(Hext/Ms)
-    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=20,atol=1e-3,rtol=5e-3,initial_soln=None)
+    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40,atol=1e-3,rtol=5e-3,initial_soln=None)
 
     if return_code == -1:
+        print(f'fixed point method for magnetization finding failed to converge')
         raise FixedPointMethodError
 
     magnetization *= Ms*particle_volume
@@ -1605,11 +1607,35 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
     cupy_stream.synchronize()
 
     #need to apply stress if appropriate before scaling, or else i need to scale inside the stress kernel
-    size_boundary = stressed_boundary.shape[0]
-    if size_boundary != 0:
+    if type(stressed_boundary) == type(list()):
+        size_boundary = stressed_boundary[0].shape[0]
+        special_stress_flag = True
+    else:
+        size_boundary = stressed_boundary.shape[0]
+        special_stress_flag = False
+    if size_boundary != 0 and stress_node_force != 0:
         boundary_stress_grid_size = (int (np.ceil((int (np.ceil(size_boundary/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
-        boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary,stress_direction,stress_node_force,cupy_composite_forces,size_boundary))
-        cupy_stream.synchronize()
+        if special_stress_flag:
+            if len(stressed_boundary) == 2:
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[0],stress_direction,stress_node_force,cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[1],stress_direction,np.float32(-1*stress_node_force),cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+            elif len(stressed_boundary) == 4:
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[0],stress_direction[0],stress_node_force[0],cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[1],stress_direction[0],np.float32(-1*stress_node_force[0]),cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+                size_boundary = stressed_boundary[2].shape[0]
+                boundary_stress_grid_size = (int (np.ceil((int (np.ceil(size_boundary/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[2],stress_direction[1],stress_node_force[1],cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+                boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary[3],stress_direction[1],np.float32(-1*stress_node_force[1]),cupy_composite_forces,size_boundary))
+                cupy_stream.synchronize()
+
+        else:
+            boundary_stress_kernel((boundary_stress_grid_size,),(block_size,),(stressed_boundary,stress_direction,stress_node_force,cupy_composite_forces,size_boundary))
+            cupy_stream.synchronize()
 
     beta_scaling_grid_size = (int (np.ceil((int (np.ceil(N_nodes/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
     beta_scaling_kernel((beta_scaling_grid_size,),(block_size,),(beta_i,cupy_composite_forces,N_nodes))
@@ -1793,11 +1819,81 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         stress = boundary_conditions[2]
         surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
         net_force_mag = stress*surface_area
-        stress_node_force = np.squeeze(net_force_mag/stressed_nodes.shape[0])
+        stress_node_force = np.float32(np.squeeze(net_force_mag/stressed_nodes.shape[0]))
         moving_boundary_nodes = cp.array([],dtype=np.int32)
         host_moving_boundary_nodes = np.array([],dtype=np.int64)
+        host_fixed_nodes = cp.asnumpy(fixed_nodes)
+    if 'special_stress' in boundary_conditions[0]:
+        #opposing surfaces' nodes need to have additional forces applied, no nodes are held fixed
+        if boundary_conditions[1][0] == 'x':
+            fixed_nodes = cp.array([],dtype=np.int32)
+            stressed_nodes = [cp.asarray(boundaries['right'],dtype=cp.int32,order='C'),cp.asarray(boundaries['left'],dtype=cp.int32,order='C')]
+            host_stressed_nodes = np.concatenate((boundaries['right'],boundaries['left']))
+            relevant_dimension_indices = [1,2]
+        elif boundary_conditions[1][0] == 'y':
+            fixed_nodes = cp.array([],dtype=np.int32)
+            stressed_nodes = [cp.asarray(boundaries['back'],dtype=cp.int32,order='C'),cp.asarray(boundaries['front'],dtype=cp.int32,order='C')]
+            host_stressed_nodes = np.concatenate((boundaries['back'],boundaries['front']))
+            relevant_dimension_indices = [0,2]
+        elif boundary_conditions[1][0] == 'z':
+            fixed_nodes = cp.array([],dtype=np.int32)
+            stressed_nodes = [cp.asarray(boundaries['top'],dtype=cp.int32,order='C'),cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')]
+            host_stressed_nodes = np.concatenate((boundaries['top'],boundaries['bot']))
+            relevant_dimension_indices = [0,1]
+        stress_direction_char = boundary_conditions[1][1]
+        if stress_direction_char == 'x':
+            stress_direction = 0
+        elif stress_direction_char == 'y':
+            stress_direction = 1
+        elif stress_direction_char == 'z':
+            stress_direction = 2
+        stress = boundary_conditions[2]
+        surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+        net_force_mag = stress*surface_area
+        stress_node_force = np.float32(np.squeeze(net_force_mag/stressed_nodes[0].shape[0]))
+        if 'shear' in boundary_conditions[0]:
+            if boundary_conditions[1][1] == 'x':
+                stressed_nodes.append(cp.asarray(boundaries['right'],dtype=cp.int32,order='C'))
+                stressed_nodes.append(cp.asarray(boundaries['left'],dtype=cp.int32,order='C'))
+                host_stressed_nodes = np.concatenate((host_stressed_nodes,boundaries['right'],boundaries['left']))
+                relevant_dimension_indices = [1,2]
+            elif boundary_conditions[1][1] == 'y':
+                stressed_nodes.append(cp.asarray(boundaries['back'],dtype=cp.int32,order='C'))
+                stressed_nodes.append(cp.asarray(boundaries['front'],dtype=cp.int32,order='C'))
+                host_stressed_nodes = np.concatenate((host_stressed_nodes,boundaries['back'],boundaries['front']))
+                relevant_dimension_indices = [0,2]
+            elif boundary_conditions[1][1] == 'z':
+                stressed_nodes.append(cp.asarray(boundaries['top'],dtype=cp.int32,order='C'))
+                stressed_nodes.append(cp.asarray(boundaries['bot'],dtype=cp.int32,order='C'))
+                host_stressed_nodes = np.concatenate((host_stressed_nodes,boundaries['top'],boundaries['bot']))
+                relevant_dimension_indices = [0,1]
+            stress_direction_char = boundary_conditions[1][0]
+            if stress_direction_char == 'x':
+                stress_direction = [stress_direction,0]
+            elif stress_direction_char == 'y':
+                stress_direction = [stress_direction,1]
+            elif stress_direction_char == 'z':
+                stress_direction = [stress_direction,2]
+            stress = boundary_conditions[2]
+            surface_area = dimensions[relevant_dimension_indices[0]]*dimensions[relevant_dimension_indices[1]]
+            net_force_mag = stress*surface_area
+            stress_node_force = [stress_node_force,np.float32(np.squeeze(net_force_mag/stressed_nodes[0].shape[0]))]
+        moving_boundary_nodes = cp.array([],dtype=np.int32)
+        host_moving_boundary_nodes = np.array([],dtype=np.int64)
+        host_fixed_nodes = cp.asnumpy(fixed_nodes)
     elif 'strain' in boundary_conditions[0]:
-        if 'simple_shear' in boundary_conditions[0]:
+        if 'special_shear' in boundary_conditions[0] and boundary_conditions[2] == 0:
+            if boundary_conditions[1][0] == 'x':
+                fixed_nodes = cp.asarray(boundaries['left'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['right']
+            elif boundary_conditions[1][0] == 'y':
+                fixed_nodes = cp.asarray(boundaries['front'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['back']
+            elif boundary_conditions[1][0] == 'z':
+                fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+                host_moving_boundary_nodes = boundaries['top']
+            moving_boundary_nodes = cp.asarray(host_moving_boundary_nodes,dtype=cp.int32,order='C')
+        elif 'simple_shear' in boundary_conditions[0]:
             fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'],boundaries['front'],boundaries['back'],boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
             moving_boundary_nodes = cp.array([],dtype=np.int32)
             host_moving_boundary_nodes = np.array([],dtype=np.int64)
@@ -1823,10 +1919,12 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             host_moving_boundary_nodes = np.array([],dtype=np.int64)
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
+        host_fixed_nodes = cp.asnumpy(fixed_nodes)
         stress_direction = 0
         stress_node_force = 0
     elif boundary_conditions[0] == 'hysteresis':
         fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+        host_fixed_nodes = cp.asnumpy(fixed_nodes)
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
         moving_boundary_nodes = cp.array([],dtype=np.int32)
@@ -1868,6 +1966,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
     # 2024-07-09 making a mask array to avoid including particle nodes when getting convergence criteria
     my_mask = np.ones((int(N_nodes),),dtype=np.bool8)
     my_mask[np.ravel(host_particles)] = False
+    my_mask[host_fixed_nodes] = False
 
     i = 0
     previously_converged = False
@@ -1960,7 +2059,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         # v_norm_avg = np.sum(v_norms)/N_nodes
         v_norms = np.linalg.norm(final_v[my_mask],axis=1)
         v_norm_avg = np.sum(v_norms)/np.shape(v_norms)[0]
-        if host_stressed_nodes.shape[0] != 0:
+        if False and host_stressed_nodes.shape[0] != 0:
             boundary_accel_comp_magnitude = accel_comp_magnitude[host_stressed_nodes]
             boundary_accel_comp_magnitude_avg = np.mean(boundary_accel_comp_magnitude)
             boundary_vel_comp_magnitude = vel_comp_magnitude[host_stressed_nodes]
