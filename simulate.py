@@ -1414,19 +1414,19 @@ def get_normalized_magnetization_and_total_field(hext,num_particles,particle_pos
 class FixedPointMethodError(Exception):
     pass
 
-def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
+def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,starting_magnetization=None):
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
     block_size = 128
     grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
 
     hext = cp.asarray(Hext/Ms)
-    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40,atol=1e-3,rtol=5e-3,initial_soln=None)
+    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40,atol=1e-3,rtol=5e-3,initial_soln=starting_magnetization)
 
     if return_code == -1:
         print(f'fixed point method for magnetization finding failed to converge')
         raise FixedPointMethodError
-
+    normalized_magnetization = magnetization.copy()
     magnetization *= Ms*particle_volume
 
     inv_l_e = np.float32(1/l_e)
@@ -1434,7 +1434,7 @@ def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,parti
     dipole_force_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetization,particle_radius,l_e,inv_l_e,force,num_particles))
     cupy_stream.synchronize()
     force *= np.float32(beta/particle_mass)
-    return force
+    return force, normalized_magnetization
 
 # def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e):
 #     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
@@ -1589,7 +1589,7 @@ def composite_gpu_force_calc_v3(posns,velocities,N_nodes,cupy_elements,kappa,cup
     cupy_stream.synchronize()
     return cupy_composite_forces
 
-def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cupy_springs,stressed_boundary,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary,host_moving_boundary):
+def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cupy_springs,stressed_boundary,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary,starting_magnetization=None):
     """Combining gpu kernels to calculate different forces and perform scaling"""
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
@@ -1668,15 +1668,17 @@ def composite_gpu_force_calc_v3b(posns,velocities,N_nodes,cupy_elements,kappa,cu
         strained_boundary_kernel((strained_boundary_grid_size,),(block_size,),(moving_boundary,cupy_composite_forces,individual_force,size_strained_boundary))
         cupy_stream.synchronize()
     if num_particles != 0:
-        magnetic_forces = get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+        magnetic_forces, normalized_magnetization = get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,starting_magnetization)
         #need to assign magnetic forces. every node belonging to a given particle has the same force as returned for the particle
         cupy_composite_forces = distribute_magnetic_forces(particles,num_particles,magnetic_forces,cupy_composite_forces,num_streaming_multiprocessors,block_size)
+    else:
+        normalized_magnetization = None
     # nodes_per_particle = cp.int32(particles.shape[0]/num_particles)
     # num_particle_nodes = cp.int32(nodes_per_particle*num_particles)
     # mag_force_distribution_grid_size = (int (np.ceil((int (np.ceil(num_particle_nodes/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
     # distribute_magnetic_force_kernel((mag_force_distribution_grid_size,),(block_size,),(particles,magnetic_forces,cupy_composite_forces,nodes_per_particle,num_particle_nodes))
     cupy_stream.synchronize()
-    return cupy_composite_forces
+    return cupy_composite_forces, normalized_magnetization
 
 def distribute_magnetic_forces(particles,num_particles,magnetic_forces,total_forces,num_streaming_multiprocessors,block_size=128):
     nodes_per_particle = cp.int32(particles.shape[0]/num_particles)
@@ -1765,7 +1767,7 @@ def get_accel_scaled_GPU_test(posns,velocities,elements,springs,particles,kappa,
         host_posns = None
     return accel, host_posns
 
-def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False,starting_velocities=None,checkpoint_offset=0,sim_extend_flag=False):
+def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False,starting_velocities=None,checkpoint_offset=0,sim_extend_flag=False,normalized_magnetization=None):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
     #function to be called at every sucessful integration step to get the solution output
     hard_limit_max_integrations = 2*max_integrations
@@ -1938,7 +1940,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
     particle_posns = get_particle_posns_gpu(posns,particles,num_particles,nodes_per_particle)
     # particle_posns = get_particle_posns(host_particles,last_posns)
     # particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-    a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,host_moving_boundary_nodes)
+    a_var, normalized_magnetization = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,starting_magnetization=normalized_magnetization)
 
     size_entries = int(N_nodes*3)
     leapfrog_update(velocities,a_var,np.float32(step_size/2),size_entries)
@@ -2014,7 +2016,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
                     snapshot_soln_diff_norm[snapshot_count-1] = np.linalg.norm(np.ravel(soln_diff))
                 previous_soln = host_posns
                 snapshot_count += 1
-            a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,host_moving_boundary_nodes)
+            a_var, normalized_magnetization = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e,moving_boundary_nodes,starting_magnetization=normalized_magnetization)
             leapfrog_update(velocities,a_var,step_size,size_entries)
         host_posns = cp.asnumpy(posns)
         host_velocities = cp.asnumpy(velocities)
@@ -2208,7 +2210,7 @@ def simulate_scaled_gpu_leapfrog_test(posns,elements,host_particles,particles,bo
     num_particles = host_particles.shape[0]
     particle_posns = get_particle_posns(host_particles,last_posns)
     particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-    a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+    a_var, _ = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
     host_beta_i = cp.asnumpy(beta_i)
     host_accel, host_posns = get_accel_scaled_GPU_test(posns,velocities,elements,springs,host_particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
     host_a_var = cp.asnumpy(a_var)
@@ -2286,7 +2288,7 @@ def simulate_scaled_gpu_leapfrog_test(posns,elements,host_particles,particles,bo
                     snapshot_soln_diff_norm[snapshot_count-1] = np.linalg.norm(np.ravel(soln_diff))
                 previous_soln = host_posns
                 snapshot_count += 1
-            a_var = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
+            a_var, _ = composite_gpu_force_calc_v3b(posns,velocities,N_nodes,elements,kappa,springs,stressed_nodes,stress_direction,stress_node_force,beta_i,drag,fixed_nodes,particles,particle_posns,num_particles,Hext,Ms,chi,particle_radius,particle_volume,beta,particle_mass,l_e)
             host_accel, host_posns = get_accel_scaled_GPU_test(posns,velocities,elements,springs,host_particles,kappa,l_e,beta,beta_i,host_beta_i,boundary_conditions,boundaries,dimensions,Hext,particle_radius,particle_mass,chi,Ms,drag)
             host_a_var = cp.asnumpy(a_var)
             host_a_var = host_a_var.reshape((N_nodes,3))
