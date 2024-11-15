@@ -1727,6 +1727,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
     modulus_type = r'$E_{eff}$'
     calc_strain_flag = False
     if 'stress' in sim_type:
+        fit_func = quadratic_no_linear_term_fit_func
         xlabel = 'Stress (Pa)'
         xscale_factor = 1
     elif 'strain' in sim_type:
@@ -1735,7 +1736,8 @@ def plot_energy_figures(sim_dir,diagram_path=None):
         if 'shearing' in sim_type:
             xscale_factor = 1
             xlabel='$\gamma$'
-            fit_func = shearing_quadratic_fit_func
+            fit_func = quadratic_no_linear_term_fit_func
+            # fit_func = shearing_quadratic_fit_func
             # fit_func = shearing_quadratic_fit_func_no_offset
             modulus_type = r'$G_{eff}$'
             calc_strain_flag = True
@@ -1862,8 +1864,12 @@ def plot_energy_figures(sim_dir,diagram_path=None):
         fit_x_vals = np.linspace(np.min(plotting_bc/xscale_factor),np.max(plotting_bc/xscale_factor),50)
         if potential_subsets == 1:
             popt, pcov, info_dict, msg, ier = scipy.optimize.curve_fit(fit_func,plotting_bc/xscale_factor,energy_plus_wca_plus_self_density,p0=np.array([modulus_fit_guess,energy_plus_wca_plus_self_density[0]]),full_output=True)
-            energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
-            energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+            if 'strain' in sim_type:
+                energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+                energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+            elif 'stress' in sim_type:
+                energy_density_plus_wca_plus_self_fit_modulus[i] = 1/popt[0]
+                energy_density_plus_wca_plus_self_fit_error[i] = 1/popt[0]*np.sqrt(np.diag(pcov))[0]/popt[0]
             fit_results = fit_func(fit_x_vals,popt[0],popt[1])#fit_func(plotting_bc/xscale_factor,popt[0],popt[1])
             ax.plot(fit_x_vals*xscale_factor,fit_results,label='Fit')#ax.plot(plotting_bc,fit_results,label='Fit')
             # plt.annotate(f'modulus from fit: {np.round(energy_density_plus_wca_plus_self_fit_modulus[i])} Pa',xy=(10,10),xycoords='figure pixels')
@@ -1882,10 +1888,17 @@ def plot_energy_figures(sim_dir,diagram_path=None):
                     continue
                 popt, pcov, info_dict, msg, ier = scipy.optimize.curve_fit(fit_func,plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,energy_plus_wca_plus_self_density[subset_start_idx:subset_end_idx],p0=np.array([modulus_fit_guess,energy_plus_wca_plus_self_density[0]]),full_output=True)
                 if subset_count == 0:
-                    energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
-                    energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+                    if 'strain' in sim_type:
+                        energy_density_plus_wca_plus_self_fit_modulus[i] = popt[0]
+                        energy_density_plus_wca_plus_self_fit_error[i] = np.sqrt(np.diag(pcov))[0]
+                    if 'stress' in sim_type:
+                        energy_density_plus_wca_plus_self_fit_modulus[i] = 1/popt[0]
+                        energy_density_plus_wca_plus_self_fit_error[i] = 1/popt[0]*np.sqrt(np.diag(pcov))[0]/popt[0]
                 else:
-                    subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
+                    if 'strain' in sim_type:
+                        subset_modulus_error_dict[f'{i}'] = (popt[0],np.sqrt(np.diag(pcov))[0])
+                    if 'stress' in sim_type:
+                        subset_modulus_error_dict[f'{i}'] = (1/popt[0],1/popt[0]*np.sqrt(np.diag(pcov))[0]/popt[0])
                 fit_results = fit_func(fit_x_vals,popt[0],popt[1])#fit_results = fit_func(plotting_bc[subset_start_idx:subset_end_idx]/xscale_factor,popt[0],popt[1])
                 ax.plot(fit_x_vals*xscale_factor,fit_results,label=f'Subset Fit {subset_count+1}')#ax.plot(plotting_bc[subset_start_idx:subset_end_idx],fit_results,label=f'Subset Fit {subset_count+1}')
                 rounding_decimals_val = get_uncertainty_magnitude(energy_density_plus_wca_plus_self_fit_error[i])
@@ -2088,7 +2101,7 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
     simulate.scaled_spring_energy_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,spring_energies,size_springs))
     cupy_stream.synchronize()
     if num_particles != 0:
-        magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e)
+        magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40)
         magnetic_moments = magnetization*Ms*particle_volume
         Htot = htot*Ms
         # magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
@@ -2226,14 +2239,14 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
             print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
             plt.close()
 #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
 #       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
+        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
-                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
                 plt.close()
@@ -2293,9 +2306,9 @@ def plot_strain_tensor_field(sim_dir):
         gradu = get_gradu(displacement_field,num_nodes)
 #       displacement gradient is used to calculate linear and nonlinear strain tensors
         strain_tensor = get_strain_tensor(gradu)
-        green_strain_tensor = get_green_strain_tensor(gradu)
+        # green_strain_tensor = get_green_strain_tensor(gradu)
 #       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
-        stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
+        # stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
 #       stress and strain tensors are visualized for the outer surfaces
         for surf_idx,surface in zip(surf_indices,surf_type):
             if surface == 'left' or surface == 'right':
@@ -2304,11 +2317,11 @@ def plot_strain_tensor_field(sim_dir):
                 cut_type = 'xz'
             elif surface == 'top' or surface == 'bottom':
                 cut_type = 'xy'
-            tag = surface+'_surface_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            tag = surface+'_surface_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
 #       stress and strain tensors are visualized for cuts through the center of the volume
         for cut_type,center_idx in zip(cut_types,center_indices):
-            tag = 'center_' + f'boundary_condition_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}_'
+            tag = 'center_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
 
 def plot_mr_effect_figure(directory_file,output_dir):
@@ -2335,7 +2348,8 @@ def plot_mr_effect_figure(directory_file,output_dir):
         node_posns, _, _, _, boundaries, particles, parameters, field_series, boundary_condition_series, sim_type = mre.initialize.read_init_file(sim_dir+'init.h5')
         l_e = parameters[7]
         if 'shearing' in sim_type:
-            fit_func = shearing_quadratic_fit_func
+            # fit_func = shearing_quadratic_fit_func
+            fit_func = quadratic_no_linear_term_fit_func
             ylabel_one = r'$G_{eff}$ (kPa)'
             ylabel_two = r'$G_{eff,B}$ (kPa)'
             calc_strain_flag = True
@@ -2527,6 +2541,65 @@ def get_system_volume(posns,cupy_elements,l_e):
     system_volume = cp.asnumpy(cp.sum(element_volumes))*np.power(l_e,3)
 
     return system_volume
+
+def get_particle_magnetizations_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e):
+    num_particles = particles.shape[0]
+    particle_volume = np.float32(particle_volume)
+    l_e = np.float32(l_e)
+    Ms = np.float32(Ms)
+    chi = np.float32(chi)
+    Hext = Hext.astype(np.float32)
+    hext = cp.asarray(Hext/Ms)
+    particle_posns = cp.asarray(particle_posns,dtype=cp.float32).reshape((3*num_particles,))
+    magnetization, _, _, return_code = simulate.get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e)
+    magnetization = cp.asnumpy(magnetization).reshape((num_particles,3))
+    return magnetization, return_code
+
+def plot_particle_magnetization_vectors(sim_dir):
+    """Make 3D quiver plots showing the normalized magnetization vectors of the particles of the system in the positions of the center of those particles."""
+    sim_variables_dict, _ = reinitialize_sim(sim_dir)
+
+    particles = sim_variables_dict['particles']
+    num_particles = particles.shape[0]
+    Ms = sim_variables_dict['Ms']
+    chi = sim_variables_dict['chi']
+    particle_volume = sim_variables_dict['particle_volume']
+
+    l_e = sim_variables_dict['element_length']
+    Hext_series = sim_variables_dict['Hext_series']
+    Bext_series = mu0*Hext_series
+    unique_fields = np.unique(Bext_series,axis=1)
+    num_unique_fields = unique_fields.shape[0]
+
+    num_output_files = get_num_output_files(sim_dir)
+    output_dir = sim_dir+'figures/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    output_dir += 'particle_behavior/'
+    if not (os.path.isdir(output_dir)):
+        os.mkdir(output_dir)
+    for i in range(num_unique_fields):#range(num_output_files):
+        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        # device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
+        boundary_conditions = format_boundary_conditions(boundary_conditions)
+        particle_posns = simulate.get_particle_posns(particles,final_posns)
+        device_particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
+        magnetization_vectors, return_code = get_particle_magnetizations_gpu(device_particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        if return_code == -1:
+            print(f'Bext {np.round(mu0*Hext,decimals=2)}, error during magnetization calculation or did not converge')
+        X, Y, Z = (particle_posns[:,0],particle_posns[:,1],particle_posns[:,2])
+        U, V, W = (magnetization_vectors[:,0],magnetization_vectors[:,1],magnetization_vectors[:,2])
+        fig,ax = plt.subplots(subplot_kw={'projection':'3d'})
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(200)
+        ax.quiver(X,Y,Z,U,V,W,pivot='middle',length=8)
+        ax.set_title(f'Bext {np.round(mu0*Hext,decimals=2)}, strain {boundary_conditions[2]}')
+        ax.axis('equal')
+
+        plt.savefig(output_dir+f'magnetization_quiver_Bext_{np.round(mu0*Hext,decimals=3)}.png')
+        # plt.show()
+        plt.close()
 
 if __name__ == "__main__":
     main()    
@@ -2981,10 +3054,6 @@ if __name__ == "__main__":
     # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
     # plot_energy_figures(sim_dir,diagram_path)
 
-    directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/mr_effect_volfrac.txt'
-    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
-    # plot_mr_effect_figure(directory_file,output_dir)
-
     # 0 particle cases. there seem to be shape effects for the resulting effective modulus calculation, which is not what i expect (they should be intrinsic properties)
     # the shape effect is less pronounced for tension and compression (uniaxial), but pronounced for shearing. my version of shearing is different in some ways from the typical diagrams of shearing (pure and simple) due to the way in which the sides are imagined to move in that case. It is a simple shear, but ends up more like a beam deflection, as the inner curve vs outer curve have different lengths (and corresponding volume preserving expansions and contractions), and there is a curvature that develops, rather than the edge staying straight.
     sim_dir = results_directory + "2024-10-31_0_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_[18 18 36]_stepsize_5.e-3/"
@@ -3018,10 +3087,104 @@ if __name__ == "__main__":
     # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
 
     sim_dir = results_directory + "2024-11-01_4_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-11-02_6_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-11-02_36_particle_field_dependent_modulus_strain_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
 
+    sim_dir = results_directory + "2024-11-05_0_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_[18 18 36]_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+    sim_dir = results_directory + "2024-11-05_0_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_[18 18 54]_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+    sim_dir = results_directory + "2024-11-05_0_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_[36 36 36]_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    sim_dir = results_directory + "2024-11-05_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-05_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-05_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_strain_tensor_field(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    sim_dir = results_directory + "2024-11-05_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_experimental_boundary_condition_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-05_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_experimental_boundary_condition_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-06_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_experimental_boundary_condition_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_strain_tensor_field(sim_dir)
+
+    sim_dir = results_directory + "2024-11-06_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-06_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_1.2e-1_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-11-06_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-06_6_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-06_16_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-07_36_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_particle_magnetization_vectors(sim_dir)
+    # plot_particles_scatter_sim(sim_dir)
+    # plot_energy_figures(sim_dir)
+
+    directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/mr_effect_volfrac.txt'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
+    # plot_mr_effect_figure(directory_file,output_dir)
+
+    sim_dir = results_directory + "2024-11-08_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-08_6_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-08_16_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-09_36_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-11_2_particle_field_dependent_modulus_special_stress_shearing_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_particles_scatter_sim(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    sim_dir = results_directory + "2024-11-11_2_particle_field_dependent_modulus_simple_stress_shearing2_direction('z', 'x')_order_3_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    #attempted stress based boundary conditions for shearing. two sets of opposite surfaces having stresses applied to achieve a pure shear. resulted in rotation of the system instead
+    #somewhere above a special_stress was only one set of opposite surfaces having stresses applied, which also resulted in the system rotating.
+    sim_dir = results_directory + "2024-11-11_2_particle_field_dependent_modulus_special_stress_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+
+    #symmetric 4 particle chain and asymmetric 4 particle chain. same vol. fraction. hand placement of particle positions and choice of system size in SI units.
+    sim_dir = results_directory + "2024-11-12_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-13_4_particle_field_dependent_modulus_strain_simple_shearing_asymmetric_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    #symmetric 4 particle chain field perpendicular. same vol. fraction. hand placement of particle positions and choice of system size in SI units.
+    sim_dir = results_directory + "2024-11-13_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    #8 particle helical placement
+    sim_dir = results_directory + "2024-11-13_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.112e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_particles_scatter_sim(sim_dir)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True)
+    # plot_particle_magnetization_vectors(sim_dir)
+
+    #symmetric 4 particle chain run time performance with and without providing an initial magnetization guess from the last available magnetization solution at a prior time step for the same applied field and boundary condition value. same vol. fraction. hand placement of particle positions and choice of system size in SI units. comparing results to see if the seeding has a large impact on the solutions (nodal positions)
+    sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_base_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_base_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case1_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case1_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir)
     print('Exiting')
