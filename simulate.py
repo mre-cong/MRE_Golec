@@ -2140,8 +2140,8 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm,output_dir,tag="velocity norm average")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count,snapshot_vel_norm_std,output_dir,tag="velocity norm standard deviation")
     plot_snapshots(snapshot_stepsize,step_size,snapshot_count-1,snapshot_soln_diff_norm,output_dir,tag="position solution vector difference norm")
-    
-    return sol, return_status#returning a solution object, that can then have it's attributes inspected
+    host_normalized_magnetization = cp.asnumpy(normalized_magnetization)
+    return sol, host_normalized_magnetization, return_status#returning a solution object, that can then have it's attributes inspected
 
 def simulate_scaled_gpu_leapfrog_test(posns,elements,host_particles,particles,boundaries,dimensions,springs,kappa,l_e,beta,beta_i,boundary_conditions,Hext,particle_radius,particle_volume,particle_mass,chi,Ms,drag,output_dir,max_integrations=10,max_integration_steps=200,tolerance=1e-4,step_size=1e-2,persistent_checkpointing_flag=False):
     """Run a simulation of a hybrid mass spring system using a leapfrog numerical integration. Node_posns is an N_vertices by 3 cupy array of the positions of the vertices, elements is an N_elements by 8 cupy array whose rows contain the row indices of the vertices(in node_posns) that define each cubic element. springs is an N_springs by 4 array, first two columns are the row indices in Node_posns of nodes connected by springs, 3rd column is spring stiffness in N/m, 4th column is equilibrium separation in (m). kappa is a scalar that defines the addditional bulk modulus of the material being simulated, which is calculated using get_kappa(). l_e is the side length of the cube used to discretize the system (this is a uniform structured mesh grid). boundary_conditions is a tuple where different types of boundary conditions (displacements or stresses/external forces/tractions) and the boundary they are applied to are defined."""
