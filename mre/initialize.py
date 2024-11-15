@@ -553,8 +553,8 @@ def read_criteria_file(fn):
     return results
 
 #TODO make functionality that converts boundary_conditions variable data into a format that can be stored in hdf5 format, and a function that reverses this process (reading from hdf5 format to a variable in the format of boundary_conditions)
-def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,output_dir):
-    """Write out the vertex positions, boundary conditions, and simulation wall time (time to complete simulation) as HDF5 file."""
+def write_output_file(count,posns,normalized_magnetization,applied_field,boundary_conditions,sim_time,output_dir):
+    """Write out the vertex positions, normalized particle magnetizations, boundary conditions, and simulation wall time (time to complete simulation) as HDF5 file."""
     f = tb.open_file(f'{output_dir}output_{count}.h5','w')
     f.create_array('/','node_posns',posns)
     # f.create_group('/','node_posns','Final Configurations')
@@ -567,6 +567,7 @@ def write_output_file(count,posns,applied_field,boundary_conditions,sim_time,out
     bc = np.array([(boundary_conditions[0],boundary_conditions[1][0],boundary_conditions[1][1],boundary_conditions[2])],dtype=dt)
     f.root.boundary_conditions.append(bc)
     f.create_array('/','simulation_time',sim_time)
+    f.create_array('/','normalized_magnetization',normalized_magnetization)
     f.close()
 
 def read_output_file(fn):
@@ -580,8 +581,13 @@ def read_output_file(fn):
     applied_field = field_object.read()
     time_object = f.get_node('/','simulation_time')
     sim_time = time_object.read()
+    try:
+        magnetization_object = f.get_node('/','normalized_magnetization')
+        normalized_magnetization = magnetization_object.read()
+    except:
+        normalized_magnetization = None
     f.close()
-    return node_posns, applied_field, boundary_condition, sim_time
+    return node_posns, normalized_magnetization, applied_field, boundary_condition, sim_time
 
 def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir,tag=""):
     """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field, boundary conditions, and the number of which integration step furnished the solution vector."""
