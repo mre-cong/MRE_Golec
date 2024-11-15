@@ -179,7 +179,7 @@ def analysis_case1(sim_dir):
 
 #   in a loop, output files are read in and manipulated
     for i in range(boundary_condition_series.shape[0]):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 #       node positions are scaled to SI units using l_e variable for visualization
         si_final_posns = final_posns*l_e
@@ -358,9 +358,10 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
     component_to_index_dict = {'x':0,'y':1,'z':2}
     #strain measure from a quasi average strain tensor by "integrating" the strain tensor components over the volume and dividing by the system volume
     average_strain_tensor = np.zeros((num_output_files,3,3))
+    average_stress_tensor = np.zeros((num_output_files,3,3))
     # relevant_eig_val_avg = np.zeros((num_output_files,))
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 #       node positions are used to calculate nodal displacement
         displacement_field = get_displacement_field(initial_node_posns,final_posns)
@@ -368,14 +369,22 @@ def analysis_case3(sim_dir,stress_strain_flag=True,gpu_flag=False):
         gradu = get_gradu(displacement_field,num_nodes)
 #       displacement gradient is used to calculate linear strain tensors
         strain_tensor = get_strain_tensor(gradu)
+        #       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
+        my_mask = np.ones((num_nodes[0]*num_nodes[1]*num_nodes[2],),dtype=np.bool8)
+        my_mask[np.ravel(particles)] = 0
+        my_mask_3D = transform_to_3D_array(my_mask,num_nodes)
+        #need to ignore the particle nodes
+        stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor,mask=my_mask_3D)
+        
         average_strain_tensor[i] = get_average_tensor_value(strain_tensor,elements,initial_node_posns,tag='strain')
+        average_stress_tensor[i] = get_average_tensor_value(stress_tensor,elements,initial_node_posns,tag='strain')
 
     Bext_series_magnitude = np.round(np.linalg.norm(mu0*Hext_series,axis=1)*1e3,decimals=3)
     num_unique_fields = np.unique(Bext_series_magnitude).shape[0]
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
@@ -556,7 +565,7 @@ def format_boundary_conditions(boundary_conditions):
 
 def get_probe_boundary_forces(sim_dir,output_file_number,strain_direction,beta_i,springs_var,elements,boundaries,dimensions,particles,total_num_nodes,E,kappa,beta,l_e,particle_mass,particle_radius,Ms,chi,drag):
     """For a given configuration of nodes and particles, calculate the forces on the probe surface, and return those values."""
-    final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
+    final_posns, _, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{output_file_number}.h5')
     Hext = np.float64(applied_field)
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     y = np.zeros((6*total_num_nodes,))
@@ -662,7 +671,7 @@ def get_green_strain_tensor(gradu):
     strain_tensor[:,:,:,2,1] = strain_tensor[:,:,:,1,2]
     return strain_tensor
 
-def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
+def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain,my_mask_3D):
     """stress for homogeneous isotropic material defined by Hooke's law in 3D"""
     stress = np.zeros((np.shape(strain)))
     #print(f'The shape of the result of the trace function on the strain tensor variable is {np.shape(np.trace(strain,axis1=3,axis2=4))}')
@@ -675,6 +684,7 @@ def get_isotropic_medium_stress(shear_modulus,lame_lambda,strain):
     stress[:,:,:,1,0] = 2*shear_modulus*strain[:,:,:,1,0]
     stress[:,:,:,2,0] = 2*shear_modulus*strain[:,:,:,2,0]
     stress[:,:,:,2,1] = 2*shear_modulus*strain[:,:,:,2,1]
+    stress[my_mask_3D,:,:] = 0
     return stress
 
 #manipulating arrays to get them in an appropriate shape for certain types of visualization, like wireframe and surface plots
@@ -950,7 +960,7 @@ def get_applied_field_series(sim_dir):
     num_output_files = get_num_output_files(sim_dir)
     Hext_series = np.zeros((num_output_files,3),dtype=np.float64)
     for i in range(num_output_files):
-        _, Hext, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        _, _, Hext, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         Hext_series[i,:] = Hext
     return Hext_series
 
@@ -1025,10 +1035,13 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     separations = np.zeros((num_output_files,num_separations))
     magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
         particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
-        magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        if type(normalized_magnetization) == type(None):
+            magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        else:
+            magnetization[i,:] = np.sum(normalized_magnetization.reshape(num_particles,3),axis=0)/num_particles
     fig, axs = plt.subplots(2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
@@ -1064,11 +1077,14 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     separations = np.zeros((num_output_files,num_separations))
     magnetization = np.zeros((num_output_files,3))
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         #temporarily doing casting to deal with the analysis of simulations ran using gpu calculations (where 32bit floats must be used)
         separations[i,:], particle_posns = get_particle_separation(final_posns,particles)
         particle_volume = (4/3)*np.pi*np.power(particle_radius,3)
-        magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        if type(normalized_magnetization) == type(None):
+            magnetization[i,:] = get_magnetization_gpu(particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+        else:
+            magnetization[i,:] = np.sum(normalized_magnetization.reshape(num_particles,3),axis=0)/num_particles
     fig, axs = plt.subplots(2,layout="constrained")
     default_width,default_height = fig.get_size_inches()
     fig.set_size_inches(2*default_width,2*default_height)
@@ -1138,7 +1154,7 @@ def plot_particle_strain_response(sim_dir,num_output_files,particles,Bext_series
     particle_posns = np.zeros((num_output_files,num_particles,3))
     particle_orientation = np.zeros((num_output_files,num_particles,2))
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         separations[i,:], particle_posns[i,:] = get_particle_separation(final_posns,particles)
         particle_orientation[i,:] = get_particle_orientation(particles,final_posns)
 
@@ -1384,7 +1400,7 @@ def get_zero_strain_reference_forces(sim_dir):
     num_unique_fields = field_series.shape[0]
     Bext_series = mu0*field_series
 
-    _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
+    _, _, _, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_0.h5')
     boundary_conditions = format_boundary_conditions(boundary_conditions)
     bc_direction = boundary_conditions[1]
     if bc_direction[0] == 'x':
@@ -1397,13 +1413,13 @@ def get_zero_strain_reference_forces(sim_dir):
     zero_strain_comparison_forces = np.zeros((num_unique_fields,num_boundary_nodes,3),dtype=np.float32)
 
     for i in range(num_unique_fields):
-        final_posns, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, applied_field, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         assert(np.isclose(np.linalg.norm(mu0*applied_field),np.linalg.norm(Bext_series[i])))
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         bc_direction = boundary_conditions[1]
         if not np.isclose(boundary_conditions[2],0):
             raise ValueError('Unexpected non-zero value for boundary condition while calculating comparison system configuration metric used to define strain or comparison force used to define stress')
-        final_posns, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
         velocities = cp.zeros(posns.shape,order='C',dtype=cp.float32)
         N_nodes = int(posns.shape[0]/3)
@@ -1429,7 +1445,7 @@ def plot_full_sim_surface_forces(sim_dir):
     zero_strain_comparison_forces = get_zero_strain_reference_forces(sim_dir)
 
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
 
@@ -1538,7 +1554,7 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
 
 # #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
         if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
@@ -1594,7 +1610,7 @@ def plot_particles_scatter_sim(sim_dir):
     if not (os.path.isdir(output_dir+'particle_behavior/')):
         os.mkdir(output_dir+'particle_behavior/')
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 
@@ -1624,12 +1640,12 @@ def get_energies(sim_dir):
     zeeman_energy = np.zeros((num_output_files,1),dtype=np.float32)
 
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
 
         particle_posns = simulate.get_particle_posns(particles,final_posns)
         particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-        total_energy[i], spring_energy[i], element_energy[i], dipole_energy[i], wca_energy[i], self_energy[i], zeeman_energy[i] = composite_gpu_energy_calc(device_posns,elements,kappa,springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e)
+        total_energy[i], spring_energy[i], element_energy[i], dipole_energy[i], wca_energy[i], self_energy[i], zeeman_energy[i] = composite_gpu_energy_calc(device_posns,elements,kappa,springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e,normalized_magnetization)
     return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
 
 def get_system_volumes(sim_dir):
@@ -1643,7 +1659,7 @@ def get_system_volumes(sim_dir):
     system_volume = np.zeros((num_output_files,1),dtype=np.float32)
 
     for i in range(num_output_files):
-        final_posns, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, _, _, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')        
         system_volume[i] = get_system_volume(device_posns,elements,l_e)
     return system_volume
@@ -1657,7 +1673,7 @@ def get_strain_values(sim_dir,num_output_files,boundaries):
     reference_mean_surface_posns = {}#np.zeros((num_unique_fields,),dtype=np.float32)
     # reference_counter = 0
     for i in range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         bc_direction = boundary_conditions[1]
         dictionary_key = str(list(np.round(mu0*Hext,decimals=3)))
@@ -1758,7 +1774,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
     if calc_strain_flag:
         applied_bc = get_strain_values(sim_dir,num_output_files,boundaries)
     for i in range(num_output_files):
-        _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        _, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         applied_field[i] = Hext*mu0
         if calc_strain_flag:
@@ -2003,7 +2019,7 @@ def reinitialize_sim(sim_dir):
     dimensions = np.array([np.max(node_posns[:,0])*l_e,np.max(node_posns[:,1])*l_e,np.max(node_posns[:,2])*l_e])
     Hext_series = field_series
 
-    _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
+    _, _, _, boundary_condition, _ = mre.initialize.read_output_file(sim_dir+f'output_{continuation_index-1}.h5')
     boundary_condition = format_boundary_conditions(boundary_condition)
     # print(boundary_condition)
     bc_direction = boundary_condition[1]
@@ -2083,7 +2099,7 @@ def reinitialize_sim(sim_dir):
 
     return sim_variables_dict, my_sim
 
-def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e):
+def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,particle_posns,num_particles,Hext,Ms,chi,particle_volume,l_e,normalized_magnetization):
     """Combining gpu kernels to calculate different energies"""
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
@@ -2101,8 +2117,13 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
     simulate.scaled_spring_energy_kernel((spring_grid_size,),(block_size,),(cupy_springs,posns,spring_energies,size_springs))
     cupy_stream.synchronize()
     if num_particles != 0:
-        magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40)
-        magnetic_moments = magnetization*Ms*particle_volume
+        if type(normalized_magnetization) == type(None):
+            magnetization, htot, _ = simulate.get_normalized_magnetization_and_total_field(Hext/Ms,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40)
+            magnetic_moments = magnetization*Ms*particle_volume
+        else:
+            normalized_magnetization = cp.array(normalized_magnetization.astype(np.float32),order='C')
+            htot = simulate.get_total_field(normalized_magnetization,Hext/Ms,num_particles,particle_posns,particle_volume,l_e)
+            magnetic_moments = normalized_magnetization*Ms*particle_volume
         Htot = htot*Ms
         # magnetic_moments, Htot = simulate.get_magnetization_iterative_and_total_field(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e)
         dipole_grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
@@ -2225,7 +2246,7 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
@@ -2297,7 +2318,7 @@ def plot_strain_tensor_field(sim_dir):
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are used to calculate nodal displacement
@@ -2380,7 +2401,7 @@ def plot_mr_effect_figure(directory_file,output_dir):
         if calc_strain_flag:
             applied_bc = get_strain_values(sim_dir,num_output_files,boundaries)
         for i in range(num_output_files):
-            _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+            _, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
             boundary_conditions = format_boundary_conditions(boundary_conditions)
             applied_field[i] = Hext*mu0
             if calc_strain_flag:
@@ -2579,14 +2600,17 @@ def plot_particle_magnetization_vectors(sim_dir):
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
     for i in range(num_unique_fields):#range(num_output_files):
-        final_posns, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+        final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         # device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         particle_posns = simulate.get_particle_posns(particles,final_posns)
         device_particle_posns = cp.asarray(particle_posns.reshape((num_particles*3,1)),dtype=cp.float32,order='C')
-        magnetization_vectors, return_code = get_particle_magnetizations_gpu(device_particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
-        if return_code == -1:
-            print(f'Bext {np.round(mu0*Hext,decimals=2)}, error during magnetization calculation or did not converge')
+        if type(normalized_magnetization) == type(None):
+            magnetization_vectors, return_code = get_particle_magnetizations_gpu(device_particle_posns,particles,Hext,Ms,chi,particle_volume,l_e)
+            if return_code == -1:
+                print(f'Bext {np.round(mu0*Hext,decimals=2)}, error during magnetization calculation or did not converge')
+        else:
+            magnetization_vectors = normalized_magnetization
         X, Y, Z = (particle_posns[:,0],particle_posns[:,1],particle_posns[:,2])
         U, V, W = (magnetization_vectors[:,0],magnetization_vectors[:,1],magnetization_vectors[:,2])
         fig,ax = plt.subplots(subplot_kw={'projection':'3d'})
