@@ -1411,6 +1411,25 @@ def get_normalized_magnetization_and_total_field(hext,num_particles,particle_pos
     htot += dipolar_fields
     return (magnetization,htot,-1)
 
+def get_total_field(normalized_magnetization,hext,num_particles,particle_posns,particle_volume,l_e):
+    """Using given normalized magnetizations, get the total field.."""
+    cupy_stream = cp.cuda.get_current_stream()
+    num_streaming_multiprocessors = 14
+    block_size = 128
+    grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
+
+    separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,num_particles))
+    cupy_stream.synchronize()
+
+    dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+
+    htot = cp.tile(hext,num_particles)
+    dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,normalized_magnetization))
+    htot += dipolar_fields
+    return htot
+
 class FixedPointMethodError(Exception):
     pass
 
