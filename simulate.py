@@ -1306,6 +1306,7 @@ def get_normalized_magnetization_fixed_point_iteration(hext,num_particles,partic
             if cp.all(cp.abs(cp.ravel(difference)) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
                 return (magnetization,separation_vectors,separation_vectors_inv_magnitude,0)
         last_magnetization = magnetization.copy()
+    print(f'difference {difference}')
     return (magnetization,separation_vectors,separation_vectors_inv_magnitude,-1)
 
 def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_volume,l_e):
@@ -1440,10 +1441,13 @@ def get_magnetic_forces_composite(Hext,num_particles,particle_posns,Ms,chi,parti
     grid_size = (int (np.ceil((int (np.ceil(num_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
 
     hext = cp.asarray(Hext/Ms)
-    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=40,atol=1e-3,rtol=5e-3,initial_soln=starting_magnetization)
+    magnetization, separation_vectors, separation_vectors_inv_magnitude, return_code = get_normalized_magnetization_fixed_point_iteration(hext,num_particles,particle_posns,chi,particle_volume,l_e,max_iters=60,atol=1e-3,rtol=5e-3,initial_soln=starting_magnetization)
 
     if return_code == -1:
         print(f'fixed point method for magnetization finding failed to converge')
+        print(f'magnetization: {magnetization}')
+        # print(f'separation_vectors: {separation_vectors}')
+        print(f'particle posns: {particle_posns}')
         raise FixedPointMethodError
     normalized_magnetization = magnetization.copy()
     magnetization *= Ms*particle_volume
@@ -1843,7 +1847,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         moving_boundary_nodes = cp.array([],dtype=np.int32)
         host_moving_boundary_nodes = np.array([],dtype=np.int64)
         host_fixed_nodes = cp.asnumpy(fixed_nodes)
-    if 'special_stress' in boundary_conditions[0]:
+    elif 'special_stress' in boundary_conditions[0]:
         #opposing surfaces' nodes need to have additional forces applied, no nodes are held fixed
         if boundary_conditions[1][0] == 'x':
             fixed_nodes = cp.array([],dtype=np.int32)
@@ -2079,7 +2083,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         # v_norm_avg = np.sum(v_norms)/N_nodes
         v_norms = np.linalg.norm(final_v[my_mask],axis=1)
         v_norm_avg = np.sum(v_norms)/np.shape(v_norms)[0]
-        if False and host_stressed_nodes.shape[0] != 0:
+        if host_stressed_nodes.shape[0] != 0:
             boundary_accel_comp_magnitude = accel_comp_magnitude[host_stressed_nodes]
             boundary_accel_comp_magnitude_avg = np.mean(boundary_accel_comp_magnitude)
             boundary_vel_comp_magnitude = vel_comp_magnitude[host_stressed_nodes]
@@ -2123,9 +2127,11 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             # print(f'last snapshot values of norms\n acceleration norm: {snapshot_accel_norm[snapshot_count-1]}\n velocity norm: {snapshot_vel_norm[snapshot_count-1]}')
             mean_displacement[i], max_displacement[i] = get_displacement_norms(final_posns,last_posns)
             last_posns = final_posns.copy()
+
+        host_normalized_magnetization = cp.asnumpy(normalized_magnetization)
         if persistent_checkpointing_flag:
-            mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,output_dir,tag=f'{i+checkpoint_offset}')
-        mre.initialize.write_checkpoint_file(i,sol,Hext,boundary_conditions,checkpoint_output_dir)
+            mre.initialize.write_checkpoint_file(i,sol,host_normalized_magnetization,Hext,boundary_conditions,output_dir,tag=f'{i+checkpoint_offset}')
+        mre.initialize.write_checkpoint_file(i,sol,host_normalized_magnetization,Hext,boundary_conditions,checkpoint_output_dir)
         if num_particles != 0 and num_particles < 8:
             particle_velocity = np.zeros((num_particles,3))
             for particle_counter, particle in enumerate(host_particles):
