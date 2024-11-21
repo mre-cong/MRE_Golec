@@ -589,10 +589,11 @@ def read_output_file(fn):
     f.close()
     return node_posns, normalized_magnetization, applied_field, boundary_condition, sim_time
 
-def write_checkpoint_file(count,sol,applied_field,boundary_conditions,output_dir,tag=""):
-    """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with the applied field, boundary conditions, and the number of which integration step furnished the solution vector."""
+def write_checkpoint_file(count,sol,normalized_magnetization,applied_field,boundary_conditions,output_dir,tag=""):
+    """Write out the vertex positions and velocities (the solution vector) at an intermediate step (at the end of a numerical integration), along with normalized magnetizaiton, the applied field, boundary conditions, and the number of which integration step furnished the solution vector."""
     f = tb.open_file(f'{output_dir}checkpoint'+tag+'.h5','w')
     f.create_array('/','solution',sol)
+    f.create_array('/','normalized_magnetization',normalized_magnetization)
     f.create_array('/','applied_field',applied_field)
     f.create_array('/','count',count)
     dt = np.dtype([('bc_type','S30'),('surf1','S6'),('surf2','S6'),('value',np.float64)])
@@ -606,6 +607,8 @@ def read_checkpoint_file(fn):
     f = tb.open_file(fn,'r')
     solution_object = f.get_node('/','solution')
     solution = solution_object.read()
+    normalized_magnetization_object = f.get_node('/','normalized_magnetization')
+    normalized_magnetization = normalized_magnetization_object.read()
     bc_object = f.get_node('/','boundary_conditions')
     boundary_condition = bc_object.read()
     field_object = f.get_node('/','applied_field')
@@ -613,7 +616,7 @@ def read_checkpoint_file(fn):
     count_object = f.get_node('/','count')
     count = count_object.read()
     f.close()
-    return solution, applied_field, boundary_condition, count
+    return solution, normalized_magnetization, applied_field, boundary_condition, count
 
 def format_boundary_conditions(boundary_conditions):
     boundary_conditions = (str(boundary_conditions[0][0])[1:],(str(boundary_conditions[0][1])[1:],str(boundary_conditions[0][2])[1:]),boundary_conditions[0][3])
