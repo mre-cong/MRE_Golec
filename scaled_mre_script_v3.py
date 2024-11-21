@@ -746,27 +746,31 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]#[9e3,2*9e3]#[1e-2]#[1e6]#
-    discretizations = [5]#[3,4,5,6]#[0,1,2,3,4,5]
+    discretizations = [7]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]#[0.47]
-    volume_fractions = np.array([3e-2])#np.concatenate((np.array([1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2]),np.linspace(0.02,0.2,10)))#np.array([3e-2,6e-2,9e-2])#
+    volume_fractions = np.concatenate((np.array([5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#np.concatenate((np.array([1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2,4.5e-2,5e-2,5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#np.array([3e-2])#np.array([3e-2,6e-2,9e-2])#
     bc_directions = ((('z','x'),),)#((('z','z'),),(('z','z'),),)#((('z','x'),),(('z','z'),),(('z','z'),),)#((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
-    Hext_angles = ((0,0),(np.pi/2,0))#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
-    sim_types = ('strain_simple_shearing_performance_case1',)#('simple_stress_shearing',)#('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('hysteresis',)#('simple_stress_compression','simple_stress_tension',)
+    Hext_angles = ((0,0),)#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
+    sim_types = ('strain_simple_shearing',)#('hysteresis',)#('simple_stress_shearing',)#('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     
     total_sim_num = 0
     step_sizes = [np.float32(5e-3)]#[np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
     max_integration_steps = [5000]#[10000, 20000]#[2500]#[5000, 10000, 20000]
-    num_particles = 4
-    particle_arrangements = [[1,1,4]]#[[1,1,4],[1,1,6],[2,2,4],[3,3,4]]#[[3,3,4]]#
+    num_particles = 2
+    particle_arrangements = [[1,1,2]]#[[1,1,4],[1,1,6],[2,2,4],[3,3,4]]#[[3,3,4]]#
     particle_posns = np.zeros((num_particles,3))
-    Lx, Ly, Lz = (12e-6,12e-6,40e-6)#(13e-6,13e-6,62e-6)#
+    Lx, Ly, Lz = (12e-6,12e-6,40e-6)#
     # total_volume = Lx*Ly*Lz
-    particle_posns[:,0] = 6e-6
-    particle_posns[:,1] = 6e-6
-    for i in range(num_particles):
-        particle_posns[i,2] = 11e-6 + i*(6e-6)
-    particle_posns[1,2] = 15.5e-6
+    # particle_posns[:,0] = 6e-6
+    # particle_posns[:,1] = 6e-6
+    # for i in range(num_particles):
+    #     particle_posns[i,2] = 11e-6 + i*(6e-6)
+    #asymmetric straight chain
+    # particle_posns[1,2] = 15.5e-6
+
+    #helical chain
+    # Lx, Ly, Lz = (13e-6,13e-6,62e-6)#
     # particle_radius = 1.5e-6
     # vertical_spacing = 5e-6
     # horizontal_spacing = particle_radius
@@ -774,7 +778,7 @@ def batch_job_runner():
     # particle_posns[:,1] = 6.5e-6
     # angle_increment = 2*np.pi/num_particles
     # for i in range(num_particles):
-    #     particle_posns[i,2] = 11e-6 + i*vertical_spacing
+    #     particle_posns[i,2] = 13.5e-6 + i*vertical_spacing
     #     particle_posns[i,0] += horizontal_spacing*np.cos(i*angle_increment)
     #     particle_posns[i,1] += horizontal_spacing*np.sin(i*angle_increment)
 
@@ -807,7 +811,7 @@ def batch_job_runner():
                                         parameters['poisson_ratio'] = poisson_ratio
                                         parameters['drag'] = 1#1#0#20
                                         parameters['discretization_order'] = discretization_order
-                                        parameters['particle_placement'] = 'by_hand'#'regular'#'regular_anisotropic'#'regular_anisotropic_noisy'#'regular_noisy'#
+                                        parameters['particle_placement'] = 'regular'#'by_hand'#'regular_anisotropic'#'regular_anisotropic_noisy'#'regular_noisy'#
                                         parameters['num_particles_along_axes'] = particle_arrangement#[1,1,4]#[1,1,2]#[2,2,2]#[3,1,1]#[8,8,8]#
                                         parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
                                         if parameters['num_particles'] == 0 or 'hand' in parameters['particle_placement']:
@@ -820,22 +824,30 @@ def batch_job_runner():
                                         parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
                                         parameters['volume_fraction'] = volume_fraction
                                         parameters['particle_separation'] = 9e-6
-                                        tmp_field_var = np.array([0.0,4e-2,12e-2])#np.array([0.0,1e-2,2e-2,4e-2,8e-2,1.2e-1,1.4e-1])#np.array([0.0,1.4e-1])#np.array([0.0,4e-2,8e-2,1.2e-1,1.6e-1,2e-1,2.4e-1,3e-1,3.5e-1,4e-1])#np.array([0.0])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
+                                        tmp_field_var = np.array([0.0,1.4e-1])#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])#np.array([0.0,4e-2,12e-2])#np.array([0.0,1e-2,2e-2])#np.array([0.0,4e-2,8e-2,1.2e-1,1.6e-1,2e-1,2.4e-1,3e-1,3.5e-1,4e-1])#np.array([0.0])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
                                         tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
                                         if np.isclose(Hext_angle[0],np.pi/2):
                                             tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
                                         else:
                                             tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
                                         parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
+                                        if 'hysteresis' in sim_type:
+                                            first_leg = np.linspace(0,6e-2,13)
+                                            # downward_leg = np.concatenate((first_leg[-2::-1],first_leg[1::]*-1))
+                                            hysteresis_loop_series = np.concatenate((first_leg,first_leg[-2::-1],first_leg[1::]*-1,first_leg[-2::-1]*-1,first_leg[1::]))
+                                            Hext_series = np.zeros((hysteresis_loop_series.shape[0],3),dtype=np.float32)
+                                            Hext_series[:,2] = hysteresis_loop_series
+                                            parameters['Hext_series'] = (1/mu0)*Hext_series
+                                            # parameters['Hext_series_magnitude'] = (1/mu0)*hysteresis_loop_series
                                         # parameters['Hext_series'] = tmp_field_vectors#(1/mu0)*np.array([[1e-4,0,0],[1e-2,0,0],[2e-2,0,0],[3e-2,0,0],[5e-2,0,0],[8e-2,0,0],[1e-1,0,0],[1.2e-1,0,0],[1.4e-1,0,0],[1.5e-1,0,0],],dtype=np.float32)
                                         parameters['max_field'] = 0.06
                                         parameters['field_angle_theta'] = Hext_angle[0]
                                         parameters['field_angle_phi'] = Hext_angle[1]
                                         parameters['num_field_steps'] = 15
                                         if 'stress' in sim_type:
-                                            parameters['boundary_condition_value_series'] = np.linspace(0,100,6)#np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
+                                            parameters['boundary_condition_value_series'] = np.linspace(0,100,3)#np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
                                         elif 'strain' in sim_type:
-                                            parameters['boundary_condition_value_series'] = np.linspace(0,1e-1,4)#np.array([0.0])#np.linspace(0,5e-2,21)#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2])#np.array([0.0,1e-3,2e-3,5e-3,1e-2,2e-2,3e-2,4e-2])#np.concatenate((np.linspace(0,2e-4,5),np.linspace(4e-4,1e-3,4),np.array([2e-3,5e-3,1e-2,1.5e-2,2e-2,3e-2,4e-2])))
+                                            parameters['boundary_condition_value_series'] = np.linspace(0,1e-1,11)#np.array([0.0])#np.linspace(0,5e-2,21)#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2])#np.array([0.0,1e-3,2e-3,5e-3,1e-2,2e-2,3e-2,4e-2])#np.concatenate((np.linspace(0,2e-4,5),np.
                                         parameters['boundary_condition_max_value'] = 0.0010
                                         parameters['num_boundary_condition_steps'] = 5
                                         parameters['boundary_condition_type'] = bc_type[i]
@@ -1591,13 +1603,14 @@ def run_hysteresis_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag
         #if there are checkpoint files, use them, if not...
         if num_checkpoint_files != 0:
             checkpoint_offset = num_checkpoint_files
-            solution, _, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
+            solution, normalized_magnetization, _, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
             boundary_conditions = format_boundary_conditions(boundary_conditions)
             N_nodes = int(solution.shape[0]/6)
             posn_soln = solution[:3*N_nodes]
             x0 = cp.array(posn_soln.astype(np.float32)).reshape((posn_soln.shape[0]*posn_soln.shape[1],1),order='C')
             starting_velocities = solution[3*N_nodes:]
             starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
+            normalized_magnetization = cp.array(normalized_magnetization.astype(np.float32),order='C')
         else:
             checkpoint_offset = 0
             posns, normalized_magnetization, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{continuation_index-1}.h5')
@@ -1761,13 +1774,14 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         #if there are checkpoint files, use them, if not...
         if num_checkpoint_files != 0:
             checkpoint_offset = num_checkpoint_files
-            solution, _, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
+            solution, normalized_magnetization, _, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
             boundary_conditions = format_boundary_conditions(boundary_conditions)
             posn_soln = solution[:3*N_nodes]
             x0 = cp.array(posn_soln.astype(np.float32)).reshape((posn_soln.shape[0]*posn_soln.shape[1],1),order='C')
             reuse_solution_flag = False
             starting_velocities = solution[3*N_nodes:]
             starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
+            normalized_magnetization = cp.array(normalized_magnetization.astype(np.float32),order='C')
         else:
             checkpoint_offset = 0
             posns, normalized_magnetization, _, _, _ = mre.initialize.read_output_file(output_dir+f'output_{continuation_index-1}.h5')
@@ -1783,7 +1797,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         #if there are checkpoint files, use them, if not...
         if num_checkpoint_files != 0:
             checkpoint_offset = num_checkpoint_files
-            solution, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
+            solution, normalized_magnetization, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint{num_checkpoint_files-1}.h5')
             boundary_conditions = format_boundary_conditions(boundary_conditions)
             strain_start_index = np.nonzero(np.isclose(boundary_conditions[2],strains))[0][0]
             field_start_index = np.nonzero(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Hext_series,axis=1)))[0][0]
@@ -1792,6 +1806,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
             reuse_solution_flag = False
             starting_velocities = solution[3*N_nodes:]
             starting_velocities = cp.array(starting_velocities.astype(np.float32)).reshape((starting_velocities.shape[0]*starting_velocities.shape[1],1),order='C')
+            normalized_magnetization = cp.array(normalized_magnetization.astype(np.float32),order='C')
         else:
             raise NotImplementedError
     elif sim_rerun_flag:
@@ -1803,7 +1818,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
         current_output_dir = sim_variables_dict['checkpoint_dir']
         checkpoint_offset = 0
         starting_velocities = None
-        solution, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint0.h5')
+        solution, normalized_magnetization, applied_field, boundary_conditions, _ = mre.initialize.read_checkpoint_file(current_output_dir+f'checkpoint0.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
         strain_start_index = np.nonzero(np.isclose(boundary_conditions[2],strains))[0][0]
         field_start_index = np.nonzero(np.isclose(np.linalg.norm(applied_field),np.linalg.norm(Hext_series,axis=1)))[0][0]
@@ -1879,7 +1894,7 @@ def run_strain_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag=Fal
                 current_output_dir = current_output_dir[:-1] + '_extension/'
             if not (os.path.isdir(current_output_dir)):
                 os.mkdir(current_output_dir)
-            if reuse_solution_flag:
+            if reuse_solution_flag and (type(x0) == type(np.array([0]))):
                 #here i need to ensure what the "eq_posns" variable is more carefully now that I am trying to use simulation results as reference configurations for non-zero applied strains
                 x0, boundary_conditions = apply_strain_to_boundary(x0,eq_posns,boundaries,bc_type,bc_direction,strain,dimensions,l_e,gpu_flag)
             print(f'Running simulation with external magnetic field: {np.round(Hext*mu0,decimals=4)} T\nApplied strain {boundary_conditions[1]} {np.format_float_scientific(strain,precision=5)}\n')
@@ -2145,7 +2160,7 @@ if __name__ == "__main__":
     #         sim_checkpoint_dir.append(sim_dir + f'strain_{count}_strain_tension_{np.round(strain,decimals=5)}_field_{i}_Bext_{np.round(Hext*mu0,decimals=3)}/')
 
     jumpstart_type = 'restart'#'rerun'#'extend'#
-    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-11-13_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    sim_dir = "/mnt/c/Users/bagaw/Desktop/MRE/two_particle/2024-11-20_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
     # jumpstart_sim(sim_dir,jumpstart_type,sim_checkpoint_dirs=[sim_dir+'strain_0_strain_shearing_0.0_field_2_Bext_[0.   0.   0.14]/'])
     # jumpstart_sim(sim_dir,jumpstart_type)
 
