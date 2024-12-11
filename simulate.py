@@ -846,12 +846,12 @@ void spring_force(const float* edges, const float* node_posns, float* forces, co
         rij[0] = node_posns[3*iid]-node_posns[3*jid];
         rij[1] = node_posns[3*iid+1]-node_posns[3*jid+1];
         rij[2] = node_posns[3*iid+2]-node_posns[3*jid+2];
-        float inv_mag = rsqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+        float inv_mag = rnorm3df(rij[0],rij[1],rij[2]);//rsqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
         float rij_hat[3];
         rij_hat[0] = rij[0]*inv_mag;
         rij_hat[1] = rij[1]*inv_mag; 
         rij_hat[2] = rij[2]*inv_mag;
-        float mag = sqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
+        float mag = norm3df(rij[0],rij[1],rij[2]);//sqrtf(rij[0]*rij[0] + rij[1]*rij[1] + rij[2]*rij[2]);
         float force_mag = -1*edges[4*tid+2]*(mag-edges[4*tid+3]);
         float force[3];
         force[0] = rij_hat[0]*force_mag;
@@ -1947,7 +1947,8 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
         stress_direction = 0
         stress_node_force = 0
     elif boundary_conditions[0] == 'hysteresis':
-        fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+        # fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+        fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'],boundaries['front'],boundaries['back'],boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
         host_fixed_nodes = cp.asnumpy(fixed_nodes)
         stressed_nodes = cp.array([],dtype=np.int32)
         host_stressed_nodes = np.array([],dtype=np.int64)
