@@ -746,16 +746,16 @@ def reinforce_particle_particle_spring(springs,particles):
 def batch_job_runner():
     """Wrapper function. Future implementation should take in a config file describing the set of simulations, and could produce config files for each simulation that is passed to the function actually running the simulations"""
     youngs_modulus = [9e3]#[9e3,2*9e3]#[1e-2]#[1e6]#
-    discretizations = [7]#[3,4,5,6]#[0,1,2,3,4,5]
+    discretizations = [5]#[3,4,5,6]#[0,1,2,3,4,5]
     poisson_ratios = [0.47]#[0.47]
-    volume_fractions = np.concatenate((np.array([5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#np.concatenate((np.array([1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2,4.5e-2,5e-2,5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#np.array([3e-2])#np.array([3e-2,6e-2,9e-2])#
+    volume_fractions = np.array([5e-2])#np.array([1e-2,3e-2,5e-2,7e-2])#np.concatenate((np.array([5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#np.concatenate((np.array([1e-2,1.5e-2,2.5e-2,3e-2,3.5e-2,4.5e-2,5e-2,5.5e-2,6.5e-2,7e-2,7.5e-2]),np.linspace(0.02,0.2,10)))#
     bc_directions = ((('z','x'),),)#((('z','z'),),(('z','z'),),)#((('z','x'),),(('z','z'),),(('z','z'),),)#((('x','x'),),)#((('x','x'),('y','y'),('z','z'),),)#((('x','y'),),)#((('z','z'),),(('x','x'),('z','z')))#((('x','y'),),(('x','x'),('z','z')),(('x','x'),('z','z')),)
-    Hext_angles = ((0,0),)#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
-    sim_types = ('strain_simple_shearing',)#('hysteresis',)#('simple_stress_shearing',)#('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension',)
+    Hext_angles = ((np.pi/2,0),)#((np.pi/2,0),(0,0))#((np.pi/2,np.pi/2),)#((np.pi/2,0),(np.pi/2,np.pi/2))#((0,0),(np.pi/2,0),)#
+    sim_types = ('hysteresis',)#('strain_simple_shearing',)#('simple_stress_shearing',)#('strain_shearing',)#('strain_tension','strain_compression')#('strain_shearing','strain_tension','strain_compression')#('hysteresis',)#('strain_compression',)#('simple_stress_tension',)#('test_simple_stress_tension',)#('strain_tension','simple_stress_tension')#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension',)
     bc_type = sim_types#('hysteresis',)#('simple_stress_shearing',)#('simple_stress_compression','simple_stress_tension')#('simple_stress_shearing','simple_stress_compression','simple_stress_tension')
     
     total_sim_num = 0
-    step_sizes = [np.float32(5e-3)]#[np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
+    step_sizes = [np.float32(5e-3)]#[np.float32(5e-3)]#[np.float32(0.01/2)]#[np.float32(0.01/4),np.float32(0.01/8)]#[np.float32(0.01)]#[np.float32(0.01/2),np.float32(0.01/4),np.float32(0.01/8)]
     max_integration_steps = [5000]#[10000, 20000]#[2500]#[5000, 10000, 20000]
     num_particles = 2
     particle_arrangements = [[1,1,2]]#[[1,1,4],[1,1,6],[2,2,4],[3,3,4]]#[[3,3,4]]#
@@ -768,20 +768,29 @@ def batch_job_runner():
     #     particle_posns[i,2] = 11e-6 + i*(6e-6)
     #asymmetric straight chain
     # particle_posns[1,2] = 15.5e-6
-
-    #helical chain
-    # Lx, Ly, Lz = (13e-6,13e-6,62e-6)#
+    # horizontal_spacings = [0.5e-6,1.5e-6,2.5e-6,3.5e-6,]
+    # for horizontal_spacing in horizontal_spacings:
+    #     #helical chain
+    #     Lx, Ly, Lz = (18e-6,18e-6,62e-6)#
+    #     particle_radius = 1.5e-6
+    #     vertical_spacing = 5e-6
+    #     # horizontal_spacing = particle_radius*2
+    #     particle_posns[:,0] = 9e-6#6.5e-6
+    #     particle_posns[:,1] = 9e-6#6.5e-6
+    #     angle_increment = 2*np.pi/num_particles
+    #     for i in range(num_particles):
+    #         particle_posns[i,2] = 13.5e-6 + i*vertical_spacing
+    #         particle_posns[i,0] += horizontal_spacing*np.cos(i*angle_increment)
+    #         particle_posns[i,1] += horizontal_spacing*np.sin(i*angle_increment)
+    # vertical_spacings = [11.2e-6,7.6e-6,6.5e-6,5.5e-6]
     # particle_radius = 1.5e-6
-    # vertical_spacing = 5e-6
-    # horizontal_spacing = particle_radius
-    # particle_posns[:,0] = 6.5e-6
-    # particle_posns[:,1] = 6.5e-6
-    # angle_increment = 2*np.pi/num_particles
-    # for i in range(num_particles):
-    #     particle_posns[i,2] = 13.5e-6 + i*vertical_spacing
-    #     particle_posns[i,0] += horizontal_spacing*np.cos(i*angle_increment)
-    #     particle_posns[i,1] += horizontal_spacing*np.sin(i*angle_increment)
-
+    # for vertical_spacing in vertical_spacings:
+    # #   # 2 particle hysteresis, fixed vol. fraction, by hand placement, varying particle separation
+    #     Lx, Ly, Lz = (12e-6,12e-6,40e-6)#
+    #     particle_posns[:,0] = 6e-6
+    #     particle_posns[:,1] = 6e-6
+    #     for i in range(num_particles):
+    #         particle_posns[i,2] = (Lz-vertical_spacing)/2 + i*vertical_spacing
     for particle_arrangement in particle_arrangements:
         for E in youngs_modulus:
             for poisson_ratio in poisson_ratios:
@@ -824,7 +833,7 @@ def batch_job_runner():
                                         parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
                                         parameters['volume_fraction'] = volume_fraction
                                         parameters['particle_separation'] = 9e-6
-                                        tmp_field_var = np.array([0.0,1.4e-1])#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])#np.array([0.0,4e-2,12e-2])#np.array([0.0,1e-2,2e-2])#np.array([0.0,4e-2,8e-2,1.2e-1,1.6e-1,2e-1,2.4e-1,3e-1,3.5e-1,4e-1])#np.array([0.0])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
+                                        tmp_field_var = np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])#np.array([0.0,1.4e-1])#np.array([0.0,4e-2,12e-2])#np.array([0.0,1e-2,2e-2])#np.array([0.0,4e-2,8e-2,1.2e-1,1.6e-1,2e-1,2.4e-1,3e-1,3.5e-1,4e-1])#np.array([0.0])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
                                         tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
                                         if np.isclose(Hext_angle[0],np.pi/2):
                                             tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
@@ -832,12 +841,15 @@ def batch_job_runner():
                                             tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
                                         parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
                                         if 'hysteresis' in sim_type:
-                                            first_leg = np.linspace(0,6e-2,13)
+                                            first_leg = np.linspace(0,6e-2,13,dtype=np.float32)
                                             # downward_leg = np.concatenate((first_leg[-2::-1],first_leg[1::]*-1))
                                             hysteresis_loop_series = np.concatenate((first_leg,first_leg[-2::-1],first_leg[1::]*-1,first_leg[-2::-1]*-1,first_leg[1::]))
-                                            Hext_series = np.zeros((hysteresis_loop_series.shape[0],3),dtype=np.float32)
-                                            Hext_series[:,2] = hysteresis_loop_series
-                                            parameters['Hext_series'] = (1/mu0)*Hext_series
+                                            field_angle_theta = Hext_angle[0]
+                                            field_angle_phi = Hext_angle[1]
+                                            parameters['Hext_series'] = convert_field_magnitude_to_vector_series((1/mu0)*hysteresis_loop_series,field_angle_theta,field_angle_phi)
+                                            # Hext_series = np.zeros((hysteresis_loop_series.shape[0],3),dtype=np.float32)
+                                            # Hext_series[:,2] = hysteresis_loop_series
+                                            # parameters['Hext_series'] = (1/mu0)*Hext_series
                                             # parameters['Hext_series_magnitude'] = (1/mu0)*hysteresis_loop_series
                                         # parameters['Hext_series'] = tmp_field_vectors#(1/mu0)*np.array([[1e-4,0,0],[1e-2,0,0],[2e-2,0,0],[3e-2,0,0],[5e-2,0,0],[8e-2,0,0],[1e-1,0,0],[1.2e-1,0,0],[1.4e-1,0,0],[1.5e-1,0,0],],dtype=np.float32)
                                         parameters['max_field'] = 0.06
@@ -1314,11 +1326,12 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
             Hext_series_magnitude = np.arange(0.0,max_magnetic_field_strength + 1,H_step)
         # Hext_series_magnitude[0] = near_zero_H_field
         if 'hysteresis' in sim_type:
-            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])        
-        Hext_series = np.zeros((len(Hext_series_magnitude),3))
-        Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
-        Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
-        Hext_series[:,2] = Hext_series_magnitude*np.cos(field_angle_theta)
+            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+        Hext_series = convert_field_magnitude_to_vector_series(Hext_series_magnitude,field_angle_theta,field_angle_phi)
+        # Hext_series = np.zeros((len(Hext_series_magnitude),3))
+        # Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
+        # Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
+        # Hext_series[:,2] = Hext_series_magnitude*np.cos(field_angle_theta)
     Bext_angle = np.zeros((2,))
     Bext_angle[0] = field_angle_theta*180/np.pi
     Bext_angle[1] = field_angle_phi*180/np.pi
@@ -1443,7 +1456,7 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
         output_dir = output_dir[:-1] + f'_Bext_angles_{np.round(Bext_angle[0])}_{np.round(Bext_angle[1])}_{particle_placement}_vol_frac_{np.format_float_scientific(volume_fraction,exp_digits=1)}/'
     elif 'dimensions' in parameters:
         output_dir = output_dir[:-1] + f"_{parameters['dimensions']}/"
-    if 'noisy' in particle_placement:
+    if 'noisy' in particle_placement or 'hand' in particle_placement:
         output_dir = output_dir[:-1] + f'_starttime_{time.strftime("%H-%M",time.localtime())}/'
     if gpu_flag:
         step_size = parameters['step_size']
@@ -1524,6 +1537,14 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
     else:
         sim_variables_dict['t_f'] = t_f
     return sim_variables_dict, my_sim
+
+def convert_field_magnitude_to_vector_series(Hext_series_magnitude,field_angle_theta,field_angle_phi):
+    """Given the series of applied field magnitudes, and the desired polar and azimuthal angles (theta and phi, respectively, measured wrt the z-axis and the x-axis respectively(CCW positive looking onto the right handed xy-plane))."""
+    Hext_series = np.zeros((len(Hext_series_magnitude),3),dtype=np.float32)
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(field_angle_phi)*np.sin(field_angle_theta)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(field_angle_phi)*np.sin(field_angle_theta)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(field_angle_theta)
+    return Hext_series
 
 def unpack_sim_variables(sim_variables_dict):
     """Does what it says on the label. For internal use only."""
@@ -1629,7 +1650,7 @@ def run_hysteresis_sim(sim_variables_dict,sim_restart_flag=False,sim_extend_flag
         normalized_magnetization = None
     for count in range(field_start_index,Hext_series.shape[0]):# for count, Hext in enumerate(Hext_series):
         Hext = Hext_series[count]
-        boundary_conditions = ('hysteresis',('free','free'),0) 
+        boundary_conditions = ('hysteresis',('free','free'),1) 
         if output_dir[-1] != '/':
             current_output_dir = output_dir + f'/field_{count}_Bext_{np.round(np.linalg.norm(Hext)*mu0,decimals=3)}/'
         elif output_dir[-1] == '/':
