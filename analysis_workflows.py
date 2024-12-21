@@ -596,7 +596,7 @@ def checkpoint_traversal(sim_dir):
             checkpoint_number = np.append(checkpoint_number,np.array([int(count) for count in re.findall(r'\d+',fn)]))
         sort_indices = np.argsort(checkpoint_number)
         checkpoint_file = checkpoint_files[sort_indices[-1]]
-        solution, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
+        solution, normalized_magnetization, applied_field, boundary_conditions, i = mre.initialize.read_checkpoint_file(checkpoint_file)
         boundary_conditions = format_boundary_conditions(boundary_conditions)
 
 #used for getting stress, strain tensors, displacement vector field, and displacement gradient tensor field
@@ -1050,7 +1050,7 @@ def plot_particle_behavior(sim_dir,num_output_files,particles,particle_radius,ch
     Bext_series = mu0*Hext_series
     Bext_norm = np.linalg.norm(Bext_series,axis=1)*1e3
     axs[0].plot(Bext_norm,separations*l_e*1e6,'o')
-    axs[0].set_xlabel(r'$B_{ext}$ (mT)')
+    # axs[0].set_xlabel(r'$B_{ext}$ (mT)')
     axs[0].set_ylabel(r'S ($\mu$m)')
     # axs[0].set_ylabel(r'Particle Separation ($\mu$m)')
     #find the unit vector describing the direction along which the external magnetic field is applied
@@ -1091,14 +1091,25 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     fig.set_dpi(200)
     # fig.tight_layout()
     B_field_norms = np.linalg.norm(mu0*Hext_series,axis=1)
+    B_field_norms = mu0*Hext_series[:,2]*1e3
+    B_field_norms = np.round(B_field_norms,decimals=1)
     turning_point_index = np.argwhere(np.max(B_field_norms)==B_field_norms)[0][0]
+    turning_point_indices = np.argwhere(np.isclose(np.max(np.abs(B_field_norms))*np.ones(B_field_norms.shape),np.abs(B_field_norms)))
     separations *= l_e*1e6
-    B_field_norms *= 1e3
-    upward_leg = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1],'o-')
-    upward_leg[0].set_label('Upward Leg')
-    downward_leg = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:],'x--')
-    downward_leg[0].set_label('Downward Leg')
-    axs[0].set_xlabel(r'$B_{ext}$ (mT)')
+    # B_field_norms *= 1e3
+    starting_index = 0
+    marker_styles = ['o-','x--','d--','v--','s--','^--']
+    labels = ['Upward Leg', 'Downward Leg']
+    for count, turning_point in enumerate(turning_point_indices):
+        axs[0].plot(B_field_norms[starting_index:turning_point[0]+1],separations[starting_index:turning_point[0]+1],marker_styles[count],label=labels[np.mod(count,2)])
+        starting_index = turning_point[0]+1
+    # count += 1
+    # axs[0].plot(B_field_norms[starting_index:],separations[starting_index:],marker_styles[count],label=labels[np.mod(count,2)])
+    # upward_leg = axs[0].plot(B_field_norms[:turning_point_index+1],separations[:turning_point_index+1],'o-')
+    # upward_leg[0].set_label('Upward Leg')
+    # downward_leg = axs[0].plot(B_field_norms[turning_point_index:],separations[turning_point_index:],'x--')
+    # downward_leg[0].set_label('Downward Leg')
+    # axs[0].set_xlabel(r'$B_{ext}$ (mT)')
     axs[0].set_ylabel(r'S ($\mu$m)')
     # axs[0].set_ylabel(r'Particle Separation ($\mu$m)')
     # axs[0].legend()
@@ -1107,9 +1118,13 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
     Bext_unit_vector = Bext_series[nonzero_field_value_indices[0],:]/np.linalg.norm(Bext_series[nonzero_field_value_indices[0],:])
     magnetization_along_applied_field = np.dot(magnetization,Bext_unit_vector)
-    upward_leg, = axs[1].plot(B_field_norms[:turning_point_index+1],magnetization_along_applied_field[:turning_point_index+1],'o-')
-    # upward_leg.set_label('Upward Leg')
-    downward_leg, = axs[1].plot(B_field_norms[turning_point_index:],magnetization_along_applied_field[turning_point_index:],'x--')
+    starting_index = 0
+    for count, turning_point in enumerate(turning_point_indices):
+        axs[1].plot(B_field_norms[starting_index:turning_point[0]+1],magnetization_along_applied_field[starting_index:turning_point[0]+1],marker_styles[count])
+        starting_index = turning_point[0]+1
+    # upward_leg, = axs[1].plot(B_field_norms[:turning_point_index+1],magnetization_along_applied_field[:turning_point_index+1],'o-')
+    # # upward_leg.set_label('Upward Leg')
+    # downward_leg, = axs[1].plot(B_field_norms[turning_point_index:],magnetization_along_applied_field[turning_point_index:],'x--')
     # downward_leg.set_label('Downward Leg')
     axs[1].set_xlabel(r'$B_{ext}$ (mT)')
     axs[1].set_ylabel(r'M/$M_s$')
@@ -1121,6 +1136,10 @@ def plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particl
     savename = sim_dir + 'figures/particle_behavior/' + f'particle_separation_magnetization_hysteresis.png'
     plt.savefig(savename)
     plt.close()
+    my_dataframe = pd.DataFrame({'B Field Norm (mT)':B_field_norms})
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({r'Particle Separation (\mum)':np.ravel(separations)})],axis=1)
+    my_dataframe = pd.concat([my_dataframe,pd.DataFrame({r'Particle Magnetization Along B (M/M_s)':magnetization_along_applied_field})],axis=1)
+    my_dataframe.to_csv(sim_dir + 'figures/particle_behavior/particle_separation_magnetization_hysteresis.csv',header=True,index=False)
 
 def check_clustering(num_particles,num_output_files,Hext_series,particle_separations,l_e,clustering_distance=4):
     """Given some threshold separation in microns, print out the number of clusters formed by particles whose center-to-center distances are below the threshold for each output file."""
@@ -1504,7 +1523,7 @@ def plot_surface_forces(output_dir,output_file_number,initial_node_posns,sim_var
     all_forces[boundaries[relevant_boundaries[0]]] = relative_boundary_forces
     subplot_cut_pcolormesh_vectorfield(cut_type,initial_node_posns,all_forces,index,output_dir,tag=f"strained_surface_relative_forces_series{output_file_number}")
 
-def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
+def temp_hysteresis_analysis(sim_dir,gpu_flag=False,extra_plots=False):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
     For hysteresis simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization"""
@@ -1553,29 +1572,33 @@ def temp_hysteresis_analysis(sim_dir,gpu_flag=False):
     plot_particle_behavior_hysteresis(sim_dir,num_output_files,particles,particle_radius,chi,Ms,l_e,Hext_series)
 
 # #   in a loop, output files are read in and manipulated
-    for i in range(num_output_files):#range(6,num_output_files):
-        final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
-        boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
-        if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
-            try:
-                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
-            except:
-                print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
-                plt.close()
-#       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
-#       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
-        # mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
-        #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
-        if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
-            try:
-                mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
-            except:
-                print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
-                plt.close()
+    if extra_plots:
+        for i in range(num_output_files):#range(6,num_output_files):
+            final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
+            boundary_conditions = format_boundary_conditions(boundary_conditions)
+            # mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
+            if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+                try:
+                    mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+                except:
+                    print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+                    plt.close()
+    #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+            if i == 0:
+                mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+    #       visualizations of cuts through the center of the volume are generated and saved out
+
+            mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+            # mre.analyze.plot_center_cuts_surf_si(initial_node_posns,final_posns,l_e,particles,output_dir+'cuts/center/',plot_3D_flag=True,tag=f"3D_strain_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+
+            mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+            #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
+            if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+                try:
+                    mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"field_{i}_field_{np.round(mu0*Hext,decimals=4)}")
+                except:
+                    print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
+                    plt.close()
 
 def plot_boundary_node_posn_hist(boundary_node_posns,output_dir,tag=""):
     """Plot a histogram of the boundary node positions. Intended for analyzing the variation in boundary surface position relevant to the strain calculation."""
@@ -1612,7 +1635,8 @@ def plot_particles_scatter_sim(sim_dir):
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        tag = f'{i}_Bext_{np.round(mu0*Hext,decimals=3)}_strain_{np.format_float_scientific(np.round(boundary_conditions[2],decimals=3),exp_digits=2)}'
+        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=tag)
 
 def get_energies(sim_dir):
     """For the configurations in the output files, calculate the different energies, and the total energy."""
@@ -1723,7 +1747,7 @@ def get_strain_values(sim_dir,num_output_files,boundaries):
     return applied_bc
                 
 
-def plot_energy_figures(sim_dir,diagram_path=None):
+def plot_energy_figures(sim_dir,diagram_path=None,subplot_labels=True,legend_location="upper left"):
     """Given the energies, plot them versus the applied strains and external fields, etc."""
     output_dir = sim_dir+'figures/'
     if not (os.path.isdir(output_dir)):
@@ -1851,7 +1875,7 @@ def plot_energy_figures(sim_dir,diagram_path=None):
         axs[1,2].set_xlabel(xlabel)
         axs[0,0].set_ylabel('Energy (J)')
         axs[1,0].set_ylabel('Energy (J)')
-        format_subfigures(axs,offset_font_size=22,shared_x_axis=True)
+        format_subfigures(axs,offset_font_size=22,shared_x_axis=True,subplot_label_flag=subplot_labels,legend_loc=legend_location)
         # format_figure(axs[0,0])
         # format_figure(axs[0,1])
         # format_figure(axs[0,2])
@@ -1862,6 +1886,14 @@ def plot_energy_figures(sim_dir,diagram_path=None):
         savename = fig_output_dir + f'individual_energies_{np.round(unique_value*1000)}_mT.png'
         plt.savefig(savename)
         plt.close()
+        my_dataframe = pd.DataFrame({'Strain':plotting_bc})
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Element Energy (J)':plotting_element_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Spring Elastic Energy (J)':plotting_spring_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Exclusion (WCA) Energy (J)':plotting_wca_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Zeeman Energy (J)':plotting_zeeman_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Dipole-Dipole Energy (J)':plotting_dipole_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Magnetic Self Energy (J)':plotting_self_energy})],axis=1)
+        my_dataframe.to_csv(fig_output_dir + f'individual_energies_{np.round(unique_value*1000)}_mT.csv',header=True,index=False)
 
         energy_plus_wca_plus_self_density = np.float64(np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes))#total_sim_volume
         fig, ax = plt.subplots(layout="constrained")
@@ -2272,7 +2304,7 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
                 print('contour plotting of volume center cuts failed due to lack of variation (no contour levels could be generated)')
                 plt.close()
 
-def plot_strain_tensor_field(sim_dir):
+def plot_strain_tensor_field(sim_dir,plot_surface_strain=False):
     """Given the folder containing simulation output, calculate relevant quantities and generate figures.
     
     For case (3), simulations with particles and applied magnetic fields, for analyzing the particle motion and magnetization, stress and strain tensors, and the effective modulus for an applied field"""
@@ -2315,7 +2347,7 @@ def plot_strain_tensor_field(sim_dir):
     #get the the applied field associated with each output file
     Hext_series = get_applied_field_series(sim_dir)
     num_output_files = get_num_output_files(sim_dir)
-
+    cut_types = ('xy','xz','yz')
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
@@ -2331,18 +2363,19 @@ def plot_strain_tensor_field(sim_dir):
 #       linear strain tensor and Lame parameters are used to calculate the linear stress tensor
         # stress_tensor = get_isotropic_medium_stress(shear_modulus,lame_lambda,strain_tensor)
 #       stress and strain tensors are visualized for the outer surfaces
-        for surf_idx,surface in zip(surf_indices,surf_type):
-            if surface == 'left' or surface == 'right':
-                cut_type = 'yz'
-            elif surface == 'front' or surface == 'back':
-                cut_type = 'xz'
-            elif surface == 'top' or surface == 'bottom':
-                cut_type = 'xy'
-            tag = surface+'_surface_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
-            subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
+        if plot_surface_strain:
+            for surf_idx,surface in zip(surf_indices,surf_type):
+                if surface == 'left' or surface == 'right':
+                    cut_type = 'yz'
+                elif surface == 'front' or surface == 'back':
+                    cut_type = 'xz'
+                elif surface == 'top' or surface == 'bottom':
+                    cut_type = 'xy'
+                tag = surface+'_surface_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
+                subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,surf_idx,output_dir+'strain/outer_surface/',tag=tag+'strain')
 #       stress and strain tensors are visualized for cuts through the center of the volume
         for cut_type,center_idx in zip(cut_types,center_indices):
-            tag = 'center_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
+            tag = f'center_{i}_' + f'boundary_condition_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}_'
             subplot_cut_pcolormesh_tensorfield(cut_type,initial_node_posns,strain_tensor,center_idx,output_dir+'strain/center/',tag=tag+'strain')
 
 def plot_mr_effect_figure(directory_file,output_dir):
@@ -2576,7 +2609,7 @@ def get_particle_magnetizations_gpu(particle_posns,particles,Hext,Ms,chi,particl
     magnetization = cp.asnumpy(magnetization).reshape((num_particles,3))
     return magnetization, return_code
 
-def plot_particle_magnetization_vectors(sim_dir):
+def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
     """Make 3D quiver plots showing the normalized magnetization vectors of the particles of the system in the positions of the center of those particles."""
     sim_variables_dict, _ = reinitialize_sim(sim_dir)
 
@@ -2585,6 +2618,7 @@ def plot_particle_magnetization_vectors(sim_dir):
     Ms = sim_variables_dict['Ms']
     chi = sim_variables_dict['chi']
     particle_volume = sim_variables_dict['particle_volume']
+    particle_radius = sim_variables_dict['particle_radius']*1e6
 
     l_e = sim_variables_dict['element_length']
     Hext_series = sim_variables_dict['Hext_series']
@@ -2599,7 +2633,7 @@ def plot_particle_magnetization_vectors(sim_dir):
     output_dir += 'particle_behavior/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
-    for i in range(num_unique_fields):#range(num_output_files):
+    for i in range(num_output_files):#range(num_unique_fields):#
         final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         # device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
@@ -2610,18 +2644,58 @@ def plot_particle_magnetization_vectors(sim_dir):
             if return_code == -1:
                 print(f'Bext {np.round(mu0*Hext,decimals=2)}, error during magnetization calculation or did not converge')
         else:
-            magnetization_vectors = normalized_magnetization
+            magnetization_vectors = normalized_magnetization.reshape((num_particles,3))
+        particle_posns *= l_e*1e6#getting positions in SI units (microns)
         X, Y, Z = (particle_posns[:,0],particle_posns[:,1],particle_posns[:,2])
         U, V, W = (magnetization_vectors[:,0],magnetization_vectors[:,1],magnetization_vectors[:,2])
         fig,ax = plt.subplots(subplot_kw={'projection':'3d'})
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
-        ax.quiver(X,Y,Z,U,V,W,pivot='middle',length=8)
-        ax.set_title(f'Bext {np.round(mu0*Hext,decimals=2)}, strain {boundary_conditions[2]}')
+        length = 8
+        width = 0.5*length
+        ax.quiver(X,Y,Z,U,V,W,pivot='middle',length=length,linewidth=width)
+
+        if wireframe_flag:
+        #wireframe addition
+            eq_node_posns, _, _, _, _, _, _, _, _, _ = mre.initialize.read_init_file(sim_dir + 'init.h5')
+            cut_type = view
+            if view == 'default':
+                layer = int(np.floor_divide(eq_node_posns[:,2].max(),2))
+                cut_type = 'xy'
+                mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+                layer = int(np.floor_divide(eq_node_posns[:,1].max(),2))
+                cut_type = 'xz'
+                mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+                layer = int(np.floor_divide(eq_node_posns[:,0].max(),2))
+                cut_type = 'yz'
+            elif view == 'xy':
+                layer = int(np.floor_divide(eq_node_posns[:,2].max(),2))
+            elif view == 'xz':
+                layer = int(np.floor_divide(eq_node_posns[:,1].max(),2))
+            elif view == 'yz':
+                layer = int(np.floor_divide(eq_node_posns[:,0].max(),2))
+            mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+
+        phi, theta = np.mgrid[0:np.pi*2:100j,0:np.pi:50j]
+        x = particle_radius*np.sin(theta)*np.cos(phi)
+        y = particle_radius*np.sin(theta)*np.sin(phi)
+        z = particle_radius*np.cos(theta)
+        #from xkcd color survey
+        # cyan, grey, light green, light blue,light red, clay, pale violet,yellow ochre
+        colors = ['#00ffff','#929591','#96f97b','#95d0fc','#ff474c','#b66a50','#ceaefa','#cb9d06']
+        for color_count, particle_posn in enumerate(particle_posns):
+            particle_x = x + particle_posn[0]
+            particle_y = y + particle_posn[1]
+            particle_z = z + particle_posn[2]
+            ax.plot_surface(particle_x,particle_y,particle_z,rstride=1,cstride=1,color=colors[int(np.mod(color_count,len(colors)))],alpha=0.2,linewidth=0)
+        ax.set_title(f'Bext {np.round(mu0*Hext,decimals=3)}, strain {boundary_conditions[2]}')
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
         ax.axis('equal')
 
-        plt.savefig(output_dir+f'magnetization_quiver_Bext_{np.round(mu0*Hext,decimals=3)}.png')
+        plt.savefig(output_dir+f'magnetization_quiver_{i}_Bext_{np.round(mu0*Hext,decimals=3)}_strain_{np.format_float_scientific(np.round(boundary_conditions[2],decimals=3),exp_digits=2)}.png')
         # plt.show()
         plt.close()
 
@@ -3160,9 +3234,7 @@ if __name__ == "__main__":
     # plot_particles_scatter_sim(sim_dir)
     # plot_energy_figures(sim_dir)
 
-    directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/mr_effect_volfrac.txt'
-    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
-    # plot_mr_effect_figure(directory_file,output_dir)
+    
 
     sim_dir = results_directory + "2024-11-08_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_7_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_anisotropic_vol_frac_3.e-2_stepsize_5.e-3/"
     # plot_energy_figures(sim_dir)
@@ -3204,11 +3276,131 @@ if __name__ == "__main__":
 
     #symmetric 4 particle chain run time performance with and without providing an initial magnetization guess from the last available magnetization solution at a prior time step for the same applied field and boundary condition value. same vol. fraction. hand placement of particle positions and choice of system size in SI units. comparing results to see if the seeding has a large impact on the solutions (nodal positions)
     sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_base_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_base_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case1_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
     sim_dir = results_directory + "2024-11-14_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case1_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir)
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case2_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_performance_case2_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    
+    sim_dir = results_directory + "2024-11-15_2_particle_hysteresis_order_3_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+
+    #Results post-magnetization seeding implementation changes, second round, so saving out and reusing magnetizations from prior steps/prior strains for the same magnetic field
+    sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-17_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-17_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_4.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-17_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    sim_dir = results_directory + "2024-11-18_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.112e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-20_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    sim_dir = results_directory + "2024-11-22_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_4.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_particle_magnetization_vectors(sim_dir)
+
+    sim_dir = results_directory + "2024-11-19_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-19_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_4.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-20_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_6.e-2_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    directory_file = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/mr_effect_volfrac.txt'
+    output_dir = '/mnt/c/Users/bagaw/Desktop/MRE/MR_effect/'
+    # plot_mr_effect_figure(directory_file,output_dir)3
+
+    #2024-12-03 4 particle chain, perpendicular field direction
+    sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
+    # plot_particle_magnetization_vectors(sim_dir)
+
+    sim_dir = results_directory + "2024-11-26_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_6.e-2_stepsize_5.e-3/"
+    plot_energy_figures(sim_dir,subplot_labels=False)
+
+    #2024-11-26 8 particle helical arrangement, variation of horizontal separation/radius of helix, zero field and 140 mT field
+    sim_dir = results_directory + "2024-11-22_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_18-57_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-22_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_21-08_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-22_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_23-09_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-23_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_01-12_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+
+    #2024-11-26 8 particle helical arrangement, variation of horizontal separation/radius of helix, fields from 0 to 140 mT
+    sim_dir = results_directory + "2024-11-23_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_08-16_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-24_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_08-41_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-25_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_09-02_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    sim_dir = results_directory + "2024-11-26_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_01-04_stepsize_4.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir)
+    # plot_particles_scatter_sim(sim_dir)
+
+    #2024-12-04 running hysteresis simulation analysis, vol fraction variation, field parallel to particles (2 particles)
+    sim_dir = results_directory + "2024-12-03_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_1.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    sim_dir = results_directory + "2024-12-03_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir)
+    sim_dir = results_directory + "2024-12-03_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_5.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    sim_dir = results_directory + "2024-12-04_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_7.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+
+    sim_dir = results_directory + "2024-12-04_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_5.e-2_stepsize_4.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir)
+    sim_dir = results_directory + "2024-12-04_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_7.e-2_stepsize_4.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_particle_magnetization_vectors(sim_dir)
+
+    sim_dir = results_directory + "2024-12-05_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_5.e-2_stepsize_2.5e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir)
+
+    #2024-12-04 running hysteresis simulation analysis, vol fraction variation, field parallel to particles (2 particles). all surfaces fixed boundary conditions
+    sim_dir = results_directory + "2024-12-05_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_1.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_particles_scatter_sim(sim_dir)
+    sim_dir = results_directory + "2024-12-05_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_3.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir)
+    sim_dir = results_directory + "2024-12-05_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_5.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir)
+    sim_dir = results_directory + "2024-12-05_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_7.e-2_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_particles_scatter_sim(sim_dir)
+
+    #2024-12-06 running hysteresis simulation analysis, ~0.5% vol fraction, varying particle separation, field parallel to particles (2 particles). all surfaces fixed boundary conditions
+    sim_dir = results_directory + "2024-12-06_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_11-43_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=False)
+    sim_dir = results_directory + "2024-12-06_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_15-56_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=False)
+    sim_dir = results_directory + "2024-12-06_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_20-18_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_strain_tensor_field(sim_dir)
+    # plot_particles_scatter_sim(sim_dir)
+    sim_dir = results_directory + "2024-12-07_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_01-01_stepsize_5.e-3/"
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # plot_strain_tensor_field(sim_dir)
+    # plot_particles_scatter_sim(sim_dir)
+
+    sim_dir = results_directory + "2024-12-10_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_5.e-2_stepsize_5.e-3/"
+    temp_hysteresis_analysis(sim_dir,extra_plots=True)
+
     print('Exiting')
