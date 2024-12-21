@@ -244,6 +244,8 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
+
+    maximum_dimension_size = np.array([Lx,Ly,Lz]).max()
     # if cut_type_index == 0:
     #     assert layer <= Lx and layer >= 0, f'Layer choice not within bounds of available layers [0,{Lx}]'
     # elif cut_type_index == 1:
@@ -325,14 +327,22 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     my_cmap = cm.ScalarMappable(norm=norm)
     my_cmap.set_array([])
     fcolors = my_cmap.to_rgba(color_dimension)
-    surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+    threshold_size = 50
+    if maximum_dimension_size > threshold_size:
+        rstride = 2
+        cstride = 2
+    else:
+        rstride = 1
+        cstride = 1
+    surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+    # surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
     # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
     ax.axis('equal')
-    cbar = fig.colorbar(my_cmap)
-    cbar.ax.set_ylabel(r'$\mu$m',rotation=270,fontsize=20)
+    cbar = fig.colorbar(my_cmap,location='left')
+    cbar.ax.set_ylabel(r'$\mu$m',rotation=0,fontsize=20)
     cbar.ax.tick_params(labelsize=20)
     # ax.annotate(tag,xy=(0,0),xytext=(0.3,-0.05),xycoords='axes fraction',size=20)
     format_figure_3D(ax)
@@ -375,6 +385,8 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
+
+    maximum_dimension_size = np.array([Lx,Ly,Lz]).max()
 
     xvar,yvar,zvar = get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
 
@@ -431,7 +443,16 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
     #     xlim = (-0.1,Lx*1.1)
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
-    ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1,zorder=0)
+    threshold_size = 50
+    if maximum_dimension_size > threshold_size:
+        rstride = 2
+        cstride = 2
+    else:
+        rstride = 1
+        cstride = 1
+    # ax.plot_wireframe(xvar,yvar,zvar,zorder=0)
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=rstride,cstride=cstride,zorder=0,alpha=0.65)
+    # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1,zorder=0)
     #now identify which of those nodes belong to the particle and the cut. set intersection?
     cut_nodes_set = set(cut_nodes)
     #TODO unravel the particles variable since there might be more than one, need a onedimensional object (i think) to pass to the set() constructor
@@ -1194,20 +1215,22 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
     plt.savefig(savename)
     plt.close()
 
-def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animation_flag=False):
+def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animation_flag=False,ax=None):
     """Plot the outer surfaces of the simulated volume as a surface plot.
     
     tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
     Lx = eq_node_posns[:,0].max()
     Ly = eq_node_posns[:,1].max()
     Lz = eq_node_posns[:,2].max()
+    maximum_dimension_size = np.array([Lx,Ly,Lz]).max()
     xlabel = r'X ($\mu$m)'
     ylabel = r'Y ($\mu$m)'
     zlabel = r'Z ($\mu$m)'
-    fig, ax = plt.subplots(subplot_kw={'projection':'3d'},layout="constrained")
-    default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(2*default_width,2*default_height)
-    fig.set_dpi(200)
+    if type(ax) == type(None):
+        fig, ax = plt.subplots(subplot_kw={'projection':'3d'},layout="constrained")
+        default_width,default_height = fig.get_size_inches()
+        fig.set_size_inches(2*default_width,2*default_height)
+        fig.set_dpi(200)
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     xposn_3D *= l_e*1e6
     yposn_3D *= l_e*1e6
@@ -1219,11 +1242,20 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
     xlim = (-0.1,Lx*1.1)
     ylim = (-0.1,Ly*1.1)
     zlim = (-0.1,Lz*1.1)
+    threshold_size = 50
+    if maximum_dimension_size > threshold_size:
+        rstride = 2
+        cstride = 2
+    else:
+        rstride = 1
+        cstride = 1
     for cut_type_index in range(3):
         for i in range(2):
             idx = int(layers[2*cut_type_index+i])
             xvar, yvar, zvar = get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D)
-            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
+            # surf = ax.plot_surface(xvar,yvar,zvar,edgecolor='gray')
+            surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,edgecolor='gray')
+            #surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
             # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -1239,7 +1271,10 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
         savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'
         plt.savefig(savename)
         plt.close()
-    return fig, ax
+    if type(ax) == type(None):
+        return fig, ax
+    else:
+        return ax
 
 def transform_to_3D_array(array,dimensions):
     """Given a 1D vector of node positions, or similarly structured per node values, and convert to a 3D array mapped to the grid of initial node positions for plotting and analysis. Dimensions is tuple or array of number of nodes along each direction (x,y,z)."""
@@ -1312,7 +1347,7 @@ def get_labeled_legend_handles(ax):
             legend_handles.append(h[handle])
     return legend_handles
 
-def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_size=14,shared_x_axis=True,legend_loc="upper left",legend_fontsize=18):
+def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_size=14,shared_x_axis=True,legend_loc="upper left",legend_fontsize=18,subplot_label_flag=True):
     """Given a list of axes making up a figure with subfigures, make appropriate adjustments to the figure depending on the shape of the subfigure and user passed keyword arguments, e.g. 'ylim_sharing'"""
     figure_shape = axs.shape
     subplot_labels = ['a)','b)','c)','d)','e)','f)']
@@ -1321,9 +1356,10 @@ def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_
         for i in range(figure_shape[0]):
             for j in range(figure_shape[1]):            
                 axs[i,j].yaxis.get_offset_text().set_fontsize(offset_font_size)
-                axs[i,j].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
-                                xytext=(-1.5,0.65),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
-                subplot_label_counter += 1
+                if subplot_label_flag:
+                    axs[i,j].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                                    xytext=(-1.5,0.65),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+                    subplot_label_counter += 1
                 axs[i,j].tick_params(labelsize=tick_size)
                 axs[i,j].set_xlabel(axs[i,j].get_xlabel(),fontsize=label_size)
                 axs[i,j].set_ylabel(axs[i,j].get_ylabel(),fontsize=label_size)
@@ -1337,9 +1373,10 @@ def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_
     elif len(figure_shape) == 1:
         for i in range(figure_shape[0]):      
             axs[i].yaxis.get_offset_text().set_fontsize(offset_font_size)
-            axs[i].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
-                            xytext=(-1.5,0.75),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
-            subplot_label_counter += 1
+            if subplot_label_flag:
+                axs[i].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                                xytext=(-1.5,0.75),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+                subplot_label_counter += 1
             axs[i].tick_params(labelsize=tick_size)
             axs[i].set_xlabel(axs[i].get_xlabel(),fontsize=label_size)
             axs[i].set_ylabel(axs[i].get_ylabel(),fontsize=label_size)
