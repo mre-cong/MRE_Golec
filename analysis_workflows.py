@@ -1887,12 +1887,12 @@ def plot_energy_figures(sim_dir,diagram_path=None,subplot_labels=True,legend_loc
         plt.savefig(savename)
         plt.close()
         my_dataframe = pd.DataFrame({'Strain':plotting_bc})
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Element Energy (J)':plotting_element_energy})],axis=1)
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Spring Elastic Energy (J)':plotting_spring_energy})],axis=1)
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Exclusion (WCA) Energy (J)':plotting_wca_energy})],axis=1)
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Zeeman Energy (J)':plotting_zeeman_energy})],axis=1)
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Dipole-Dipole Energy (J)':plotting_dipole_energy})],axis=1)
-        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Magnetic Self Energy (J)':plotting_self_energy})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Element Energy (J)':np.ravel(plotting_element_energy)})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Spring Elastic Energy (J)':np.ravel(plotting_spring_energy)})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Volume Exclusion (WCA) Energy (J)':np.ravel(plotting_wca_energy)})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Zeeman Energy (J)':np.ravel(plotting_zeeman_energy)})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Dipole-Dipole Energy (J)':np.ravel(plotting_dipole_energy)})],axis=1)
+        my_dataframe = pd.concat([my_dataframe,pd.DataFrame({'Magnetic Self Energy (J)':np.ravel(plotting_self_energy)})],axis=1)
         my_dataframe.to_csv(fig_output_dir + f'individual_energies_{np.round(unique_value*1000)}_mT.csv',header=True,index=False)
 
         energy_plus_wca_plus_self_density = np.float64(np.ravel(plotting_total_energy)/np.ravel(relevant_system_volumes))#total_sim_volume
@@ -1994,7 +1994,7 @@ def plot_energy_figures(sim_dir,diagram_path=None,subplot_labels=True,legend_loc
         ax.errorbar(1000*unique_field_values[nonzero_indices],subset_modulus[nonzero_indices],marker='s',yerr=subset_error[nonzero_indices])
     # ax.annotate(f'{np.round(unique_value*1000,decimals=0)} (mT)',xy=(0.05,0.9),xycoords='axes fraction',fontsize=22,bbox=dict(facecolor='none',edgecolor='black',pad=3.0))
     ax.set_xlabel(f'B (mT)')
-    ax.set_ylabel(f'Modulus (kPa)')
+    ax.set_ylabel(modulus_type+f' (kPa)')
     # plt.annotate(f'modulus minimum: {np.round(np.min(energy_density_plus_wca_plus_self_fit_modulus[non_outlier_mask]))}',xy=(10,10),xycoords='figure pixels')
     format_figure(ax)
     savename = fig_output_dir + 'energy_plus_wca_plus_self_density_fit_modulus.png'
@@ -2203,7 +2203,7 @@ def composite_gpu_energy_calc(posns,cupy_elements,kappa,cupy_springs,particles,p
     total_energy = element_energy + spring_energy + dipole_energy + zeeman_energy + self_energy + wca_energy
     return total_energy, spring_energy, element_energy, dipole_energy, wca_energy, self_energy, zeeman_energy
 
-def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
+def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False,wireframe_flag=True,contour_flag=True,surface_flag=True):
     """Given the folder containing simulation output, generate figures of the outer surfaces and cuts through the center from each output file."""
     #   if a directory to save the visualizations doesn't exist, make it
     output_dir = sim_dir+'figures/'
@@ -2266,38 +2266,42 @@ def plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=False):
         particle_separations_matrix = None
 
     #how many cluster pairs formed?
-    for output_file_count in np.arange(num_output_files):
-        cluster_counter = 0
-        for i in np.arange(num_particles):
-            temp_separations = particle_separations_matrix[output_file_count,i,:]
-            cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
-            #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
-        cluster_counter /= 2
-        if cluster_counter != 0:
-            print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {sim_type} {boundary_condition_series[np.floor_divide(output_file_count,field_series.shape[0])]} the total number of clusters: {cluster_counter}')
+    if type(particle_separations_matrix) != type(None):
+        for output_file_count in np.arange(num_output_files):
+            cluster_counter = 0
+            for i in np.arange(num_particles):
+                temp_separations = particle_separations_matrix[output_file_count,i,:]
+                cluster_counter += np.count_nonzero(np.less_equal(temp_separations[temp_separations>0],clustering_distance))
+                #if we know some particle clustering has ocurred, how can we determine if a single particle is clustering with multiple particles, and cross reference to determine if a chain has formed, and how many particles make up that chain?
+            cluster_counter /= 2
+            if cluster_counter != 0:
+                print(f'for field {np.round(Hext_series[output_file_count]*mu0,decimals=5)} and {sim_type} {boundary_condition_series[np.floor_divide(output_file_count,field_series.shape[0])]} the total number of clusters: {cluster_counter}')
 
 #   in a loop, output files are read in and manipulated
     for i in range(num_output_files):#range(6,num_output_files):
         final_posns, _, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
-        mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
+        # mre.analyze.plot_particle_nodes(initial_node_posns,final_posns,l_e,particles,output_dir+'particle_behavior/',tag=f"{i}")
 #       node positions are scaled to SI units using l_e variable for visualization
 #       visualizations of the outer surface as contour plots in a tiled layout are generated and saved out
 #TODO Issue with using contours for abritrary simulations. if the surfaces don't have contours, that is, differences in the "depth" from point to point, then there are no contour levels that can be defined, and the thing fails. i can use a try/except clause, but that may be bad style/practice. I'm not sure of the right way to handle this. I suppose if it is shearing or torsion I should expect that this may not be a useful figure to generate anyway, so i could use the boundary_conditions variable first element
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
         # if ((boundary_conditions[0] == "tension" or boundary_conditions[0] == "compression" or boundary_conditions[0] == "free") and boundary_conditions[2] != 0) or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
-        try:
-            mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
-        except:
-            print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
-            plt.close()
-#       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
-        mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
-#       visualizations of cuts through the center of the volume are generated and saved out
-        mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
-        mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
+        if contour_flag:
+            try:
+                mre.analyze.plot_tiled_outer_surfaces_contours_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{boundary_conditions[2]}_field_{np.round(mu0*Hext,decimals=4)}")
+            except:
+                print('contour plotting of outer surfaces failed due to lack of variation (no contour levels could be generated)')
+                plt.close()
+        if surface_flag:
+    #       visualizations of the outer surface as a 3D plot using surfaces are generated and saved out
+            mre.analyze.plot_outer_surfaces_si(initial_node_posns,final_posns,l_e,output_dir+'outer_surfaces/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
+    #       visualizations of cuts through the center of the volume are generated and saved out
+            mre.analyze.plot_center_cuts_surf(initial_node_posns,final_posns,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
+        if wireframe_flag:
+            mre.analyze.plot_center_cuts_wireframe(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
         #If there is a situation in which some depth variation could be occurring (so that contour levels could be created), try to make a contour plot. potential situations include, applied tension or compression strains with non-zero values, and the presence of an external magnetic field and magnetic particles
-        if (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
+        if contour_flag and (boundary_conditions[2] != 0 and boundary_conditions[0] != "free" and boundary_conditions[0] != "shearing" and boundary_conditions[0] != "torsion") or (np.linalg.norm(Hext) != 0 and particles.shape[0] != 0):
             try:
                 mre.analyze.plot_center_cuts_contour(initial_node_posns,final_posns,particles,l_e,output_dir+'cuts/center/',tag=f"stress_{np.format_float_scientific(boundary_conditions[2],exp_digits=2)}_field_{np.round(mu0*Hext,decimals=4)}")
             except:
@@ -2609,7 +2613,30 @@ def get_particle_magnetizations_gpu(particle_posns,particles,Hext,Ms,chi,particl
     magnetization = cp.asnumpy(magnetization).reshape((num_particles,3))
     return magnetization, return_code
 
-def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
+def plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,node_posns,l_e,tag=""):
+    """Plot a cut through the simulated volume, showing the configuration of the nodes that sat at the specified layer of the initialized system.
+    
+    cut_type must be one of three: 'xy', 'xz', 'yz' describing the plane spanned by the cut.
+    
+    tag is an optional argument that can be used to provide additional detail in the title and save name of the figure."""
+    cut_type_dict = {'xy':2, 'xz':1, 'yz':0}
+    cut_type_index = cut_type_dict[cut_type]
+
+    Lx = eq_node_posns[:,0].max()
+    Ly = eq_node_posns[:,1].max()
+    Lz = eq_node_posns[:,2].max()
+
+    xvar,yvar,zvar = mre.analyze.get_posns_3D_plots(node_posns,Lx,Ly,Lz,layer,cut_type_index)
+
+    xvar *= l_e*1e6
+    yvar *= l_e*1e6
+    zvar *= l_e*1e6
+
+    rstride = 1
+    cstride = 1
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=rstride,cstride=cstride,zorder=0,alpha=0.65,linewidth=0.4)
+
+def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz',output_files=None):
     """Make 3D quiver plots showing the normalized magnetization vectors of the particles of the system in the positions of the center of those particles."""
     sim_variables_dict, _ = reinitialize_sim(sim_dir)
 
@@ -2633,7 +2660,9 @@ def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
     output_dir += 'particle_behavior/'
     if not (os.path.isdir(output_dir)):
         os.mkdir(output_dir)
-    for i in range(num_output_files):#range(num_unique_fields):#
+    if type(output_files) == type(None):
+        output_files = np.arange(0,num_output_files)
+    for i in output_files:#range(num_output_files):#range(num_unique_fields):#
         final_posns, normalized_magnetization, Hext, boundary_conditions, _ = mre.initialize.read_output_file(sim_dir+f'output_{i}.h5')
         # device_posns = cp.array(final_posns.astype(np.float32)).reshape((final_posns.shape[0]*final_posns.shape[1],1),order='C')
         boundary_conditions = format_boundary_conditions(boundary_conditions)
@@ -2663,10 +2692,10 @@ def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
             if view == 'default':
                 layer = int(np.floor_divide(eq_node_posns[:,2].max(),2))
                 cut_type = 'xy'
-                mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+                plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
                 layer = int(np.floor_divide(eq_node_posns[:,1].max(),2))
                 cut_type = 'xz'
-                mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+                plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
                 layer = int(np.floor_divide(eq_node_posns[:,0].max(),2))
                 cut_type = 'yz'
             elif view == 'xy':
@@ -2675,7 +2704,7 @@ def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
                 layer = int(np.floor_divide(eq_node_posns[:,1].max(),2))
             elif view == 'yz':
                 layer = int(np.floor_divide(eq_node_posns[:,0].max(),2))
-            mre.analyze.plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
+            plot_wireframe_cut(ax,cut_type,layer,eq_node_posns,final_posns,l_e)
 
         phi, theta = np.mgrid[0:np.pi*2:100j,0:np.pi:50j]
         x = particle_radius*np.sin(theta)*np.cos(phi)
@@ -2689,13 +2718,17 @@ def plot_particle_magnetization_vectors(sim_dir,wireframe_flag=False,view='xz'):
             particle_y = y + particle_posn[1]
             particle_z = z + particle_posn[2]
             ax.plot_surface(particle_x,particle_y,particle_z,rstride=1,cstride=1,color=colors[int(np.mod(color_count,len(colors)))],alpha=0.2,linewidth=0)
-        ax.set_title(f'Bext {np.round(mu0*Hext,decimals=3)}, strain {boundary_conditions[2]}')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
+        ax.set_title(r'$B_{ext}$: '+f'{np.round(1e3*mu0*Hext,decimals=3)} mT, '+f'$\gamma$: ' +f'{np.format_float_scientific(np.round(boundary_conditions[2],decimals=3),exp_digits=2)}')
+        xlabel = r'X ($\mu$m)'
+        ylabel = r'Y ($\mu$m)'
+        zlabel = r'Z ($\mu$m)'
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_zlabel(zlabel)
         ax.axis('equal')
+        format_figure_3D(ax)
 
-        plt.savefig(output_dir+f'magnetization_quiver_{i}_Bext_{np.round(mu0*Hext,decimals=3)}_strain_{np.format_float_scientific(np.round(boundary_conditions[2],decimals=3),exp_digits=2)}.png')
+        plt.savefig(output_dir+f'magnetization_quiver_{i}_Bext_{np.round(mu0*Hext,decimals=3)}_strain_{np.format_float_scientific(np.round(boundary_conditions[2],decimals=3),exp_digits=2)}.png',bbox_inches='tight')
         # plt.show()
         plt.close()
 
@@ -3324,10 +3357,11 @@ if __name__ == "__main__":
 
     #2024-12-03 4 particle chain, perpendicular field direction
     sim_dir = results_directory + "2024-11-15_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_stepsize_5.e-3/"
-    # plot_particle_magnetization_vectors(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir,wireframe_flag=True)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True,wireframe_flag=True,contour_flag=False,surface_flag=False)
 
     sim_dir = results_directory + "2024-11-26_2_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_regular_vol_frac_6.e-2_stepsize_5.e-3/"
-    plot_energy_figures(sim_dir,subplot_labels=False)
+    # plot_energy_figures(sim_dir,subplot_labels=False)
 
     #2024-11-26 8 particle helical arrangement, variation of horizontal separation/radius of helix, zero field and 140 mT field
     sim_dir = results_directory + "2024-11-22_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_18-57_stepsize_4.e-3/"
@@ -3349,6 +3383,7 @@ if __name__ == "__main__":
     sim_dir = results_directory + "2024-11-26_8_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.81e-3_starttime_01-04_stepsize_4.e-3/"
     # plot_energy_figures(sim_dir)
     # plot_particle_magnetization_vectors(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir,wireframe_flag=True)
     # plot_particles_scatter_sim(sim_dir)
 
     #2024-12-04 running hysteresis simulation analysis, vol fraction variation, field parallel to particles (2 particles)
@@ -3392,6 +3427,7 @@ if __name__ == "__main__":
     sim_dir = results_directory + "2024-12-06_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_15-56_stepsize_5.e-3/"
     # temp_hysteresis_analysis(sim_dir,extra_plots=False)
     sim_dir = results_directory + "2024-12-06_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_5.16e-3_starttime_20-18_stepsize_5.e-3/"
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True,wireframe_flag=True,contour_flag=False,surface_flag=False)
     # temp_hysteresis_analysis(sim_dir,extra_plots=True)
     # plot_strain_tensor_field(sim_dir)
     # plot_particles_scatter_sim(sim_dir)
@@ -3401,6 +3437,14 @@ if __name__ == "__main__":
     # plot_particles_scatter_sim(sim_dir)
 
     sim_dir = results_directory + "2024-12-10_2_particle_hysteresis_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_regular_vol_frac_5.e-2_stepsize_5.e-3/"
-    temp_hysteresis_analysis(sim_dir,extra_plots=True)
+    # temp_hysteresis_analysis(sim_dir,extra_plots=True)
+
+    sim_dir = results_directory + "2025-01-13_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_0.0_0.0_by_hand_vol_frac_1.033e-2_starttime_17-09_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    plot_particle_magnetization_vectors(sim_dir,wireframe_flag=True)
+    sim_dir = results_directory + "2025-01-14_4_particle_field_dependent_modulus_strain_simple_shearing_direction('z', 'x')_order_5_E_9.e+03_nu_0.47_Bext_angles_90.0_0.0_by_hand_vol_frac_1.033e-2_starttime_02-38_stepsize_5.e-3/"
+    # plot_energy_figures(sim_dir)
+    # plot_particle_magnetization_vectors(sim_dir,wireframe_flag=True)
+    # plot_outer_surfaces_and_center_cuts(sim_dir,gpu_flag=True,wireframe_flag=True,contour_flag=False,surface_flag=False)
 
     print('Exiting')
