@@ -1921,6 +1921,10 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
             fixed_nodes = cp.asarray(np.concatenate((boundaries['left'],boundaries['right'],boundaries['front'],boundaries['back'],boundaries['top'],boundaries['bot'])),dtype=cp.int32,order='C')
             moving_boundary_nodes = cp.array([],dtype=np.int32)
             host_moving_boundary_nodes = np.array([],dtype=np.int64)
+        elif 'magnetostriction' in boundary_conditions[0]:
+            fixed_nodes = cp.asarray(boundaries['bot'],dtype=cp.int32,order='C')
+            moving_boundary_nodes = cp.array([],dtype=np.int32)
+            host_moving_boundary_nodes = np.array([],dtype=np.int64)
         elif boundary_conditions[2] == 0:
             if boundary_conditions[1][0] == 'x':
                 fixed_nodes = cp.asarray(boundaries['left'],dtype=cp.int32,order='C')
@@ -2027,7 +2031,7 @@ def simulate_scaled_gpu_leapfrog_v3(posns,elements,host_particles,particles,boun
                 snapshot_vel_norm_std[snapshot_count] = np.std(host_vel_norms)
                 snapshot_vel_components_avg[snapshot_count] = np.mean(host_velocities,axis=0)
 
-                if num_particles != 0 and num_particles < particle_snapshot_cutoff:
+                if num_particles > 1 and num_particles < particle_snapshot_cutoff:
                     for particle_count, particle in enumerate(host_particles):
                         particle_center[particle_count,:] = get_particle_center(particle,host_posns)
                         snapshot_particle_posn[particle_count,snapshot_count,:] = particle_center[particle_count,:]*l_e
