@@ -5,21 +5,14 @@ Created on Fri Aug 26 09:19:19 2022
 @author: bagaw
 """
 
-#2023-02-14: I am trying to create versions of the Golec method which utilize cythonized functions to compare performance to a pure python, cython plus GPU via cuPy, and GPU Version via cuPy implementations
-# along with cythonizing functions (which will happen instages, since profiling is separate from benchmarking... i'll need to do both)
-# I will be altering the original implementation logic in places (such as the enforcement of boundary conditions, their instantiation, and the types of boundary conditions that can be handled)
-
-#I would like to implement the 3d hybrid mass spring system from Golec et al 2020 paper, in the simplest case, a single cubic unit cell
-
-#pseudo code:
-    #determine the vertices of the unit cell(s) based on the volume/dimensions of the system of interest and the level ofdiscretization desired
-    #calculate a connectivity matrix that represents the presence of a spring (whether linear or non-linear) connecting particle i and particle j with a non-zero value (the stiffness constant) in row i column j if particle i and j are connected by a spring. this is a symmetric matrix, size N x N where N is the number of vertices, with many zero entries
-    #calculate the magnitude of the separation vector among particles connected by springs, and create a matrix of the same shape as the connectivity matrix, where the entries are non-zero if the particles are connected by a spring, and the value stored is the magnitude of separation between the particles
-    #at this point we have defined the basic set up for the system and can move on to the simulation
-    #to run a simulation of any use, we need to define boundary conditions on the system, which means choosing values of displacement (as a vector), or traction (force as a vector), applied to each node on a boundary of the system (technically a displacement gradient could be assigned to the nodes as well, which would be related to the strain, and then to a stress which leads to a traction when the unit normal outward is specified and matrix multiplied to the stress at the boundary point)
-    #we then need to choose the method we will utilize for the system, energy minimization, or some form of numerical integration (Verlet method, or whatever else). numerical integration requires assigning mass values to each node, and a damping factor, where we have found the "solution", being the final configuration of nodes/displacements of the nodes for a given boundary condition, arrangement/connectivity, and stiffness values. energy minimization can be done by a conjugate gradient method
-    #in either case we need to calculate both energy and force(negative of the gradient of the energy). For the linear spring case the energy is quadratic in the displacement, and the gradient is linear with respect to the displacement. additional energy terms related to the volume preserving forces will also need to be calculated
-    #when the method of choice is chosen, we need functions describing the energy, gradient, and the optimization method, and we need to save out the state at each time step if numerically integrating (if we are interested in the dynamics), or the final state of minimization
+#2025-05-01: This script/file is the interface for the simulation backend. analysis_workflows.py should be used for post-simulation analysis and visualization. animation_practice and quiver_surface_animation.ipynb should be used for generating animation based visualizations (and still images that are individual frames of those animations). 
+# simple simulation examples can be found as functions, hysteresis_example() and shear_strain_example(), to show required parameters, and different methods for handling particle placement
+#batch_job_runner() is one example of a structure that could be used for running multiple simulations. Implementing an interface that allows passing a text file with simulation parameters as a command line argument should be relatively straightforward, but was not a priority during development due to the author being the sole user. Implementing this would allow the use of additional functions for generating simulation input files, and a wrapper for running batch jobs of simulations. UI/UX is something I have had little to no experience with, and did not have the time or resources to work on.
+#jumpstart_sim() can be used to restart interrupted simulations. it should be straightforward to use after looking at the source code.
+#vestigial code still exists in the modules initialize.py, analyze.py, sphere_rasterization.py, simulate.py, and springs.pyx. Refactoring and removing code is unlikely to happen post-graduation, though I may try to better organize the repository structure.
+#vestigial files still exist from implementations that were CPU bound, including magnetism.pyx, get_volume_correction_force_nogil.pyx
+#files like scaled_mre_script_v3.py contain code used to run the simulations used for the dissertation "Modeling of Magnetorheological Elastomers" (2025), David B. Marchfield
+#requirements.txt was created automatically through the use of venv and pip. the user should ensure a new virtual environment is generated if they use this repository, and pip is used with the requirements.txt file to install the necessary dependencies
 
 import numpy as np
 import numpy.random as rand
@@ -32,13 +25,10 @@ from datetime import date
 import os
 import lib_programname
 import tables as tb#pytables, for HDF5 interface
-# import get_volume_correction_force_cy_nogil
-# import get_spring_force_cy
 import mre.initialize
 import mre.analyze
 import mre.sphere_rasterization
 import springs
-# import magnetism
 import simulate
 import random
 
@@ -390,7 +380,6 @@ def batch_job_runner():
                                         parameters['anisotropy_factor'] = np.array([1.0,1.0,1.0])#np.array([1.0,1.0,0.9])#
                                         parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
                                         parameters['volume_fraction'] = volume_fraction
-                                        parameters['particle_separation'] = 9e-6
                                         tmp_field_var = np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])#np.array([0.0,1.4e-1])#np.array([0.0,4e-2,12e-2])#np.array([0.0,1e-2,2e-2])#np.array([0.0,4e-2,8e-2,1.2e-1,1.6e-1,2e-1,2.4e-1,3e-1,3.5e-1,4e-1])#np.array([0.0])#np.array([1e-4,1e-2,5e-2,1e-1,1.5e-1])#np.array([1e-4,1e-2,1e-1,2e-1])#np.array([1e-4,1e-2,2e-2,3e-2,5e-2,8e-2,1e-1,1.2e-1,1.4e-1,1.5e-1])
                                         tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
                                         if np.isclose(Hext_angle[0],np.pi/2):
@@ -614,7 +603,6 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
 
     num_particles = parameters['num_particles']
     particle_placement = parameters['particle_placement']
-    particle_separation = parameters['particle_separation']
     num_particles_along_axes = parameters['num_particles_along_axes']
     if 'regular' in particle_placement:
         num_particles_check = num_particles_along_axes[0]*num_particles_along_axes[1]*num_particles_along_axes[2]
@@ -625,9 +613,7 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
     else:
         anisotropy_factor = None
     max_magnetic_field_strength = parameters['max_field']/mu0
-    field_angle_theta = parameters['field_angle_theta']
-    field_angle_phi = parameters['field_angle_phi']
-    num_field_steps = parameters['num_field_steps']
+
     max_boundary_condition_value = parameters['boundary_condition_max_value']
     num_boundary_condition_steps = parameters['num_boundary_condition_steps']
     bc_type = parameters['boundary_condition_type']
@@ -834,7 +820,6 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
     field_angle_theta = parameters['field_angle_theta']
     field_angle_phi = parameters['field_angle_phi']
     num_field_steps = parameters['num_field_steps']
-    near_zero_field = 1e-4
 
     if 'Hext_series' in parameters:
         Hext_series = parameters['Hext_series']
@@ -850,7 +835,8 @@ def initialize_simulation_variables(parameters: dict[str,Any],sim_type: str) -> 
         else:
             Hext_series_magnitude = np.arange(0.0,max_magnetic_field_strength + 1,H_step)
         if 'hysteresis' in sim_type:
-            Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+            # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+            Hext_series_magnitude = np.concatenate((Hext_series_magnitude,Hext_series_magnitude[-2::-1],Hext_series_magnitude[1::]*-1,Hext_series_magnitude[-2::-1]*-1,Hext_series_magnitude[1::]))
         Hext_series = convert_field_magnitude_to_vector_series(Hext_series_magnitude,field_angle_theta,field_angle_phi)
 
     Bext_angle = np.zeros((2,))
@@ -1644,6 +1630,157 @@ def format_boundary_conditions(boundary_conditions):
     boundary_conditions = (boundary_conditions[0][1:-1],(boundary_conditions[1][0][1:-1],boundary_conditions[1][1][1:-1]),boundary_conditions[2])
     return boundary_conditions
 
+def hysteresis_example():
+    """An example running a two particle hysteresis simulation. Shows off placing particles automatically based on volume fraction and particle_arrangement variables."""
+    youngs_modulus = 9e3
+    E = youngs_modulus
+    discretization_order = 5
+    poisson_ratio = 0.47
+    volume_fraction = 5e-2
+    bc_direction = ('z','z')
+    Hext_angle = (0,0)
+    sim_type = 'hysteresis'
+    bc_type = sim_type
+
+    step_size = np.float32(5e-3)
+    integration_steps = 5000
+    num_particles = 2
+    particle_arrangement = [1,1,2]
+    particle_posns = []
+
+    parameters = dict({})
+    parameters['max_integrations'] = 40
+    parameters['max_integration_steps'] = integration_steps
+    parameters['step_size'] = step_size
+    parameters['gpu_flag'] = True 
+    parameters['particle_rotation_flag'] = True
+    parameters['persistent_checkpointing_flag'] = True
+    parameters['plotting_flag'] = False
+    parameters['criteria_flag'] = False
+    parameters['particle_radius'] = 1.5e-6
+    parameters['youngs_modulus'] = E
+    parameters['poisson_ratio'] = poisson_ratio
+    parameters['drag'] = 1
+    parameters['discretization_order'] = discretization_order
+    parameters['particle_placement'] = 'regular'#'regular_anisotropic'#'regular_anisotropic_noisy'#'regular_noisy'#'by_hand'
+    parameters['num_particles_along_axes'] = particle_arrangement
+    parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
+
+    parameters['anisotropy_factor'] = np.array([1.0,1.0,1.0])
+    parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
+    parameters['volume_fraction'] = volume_fraction
+    # tmp_field_var = np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])
+    # tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
+    # if np.isclose(Hext_angle[0],np.pi/2):
+    #     tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
+    # else:
+    #     tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
+    # parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
+    if 'hysteresis' in sim_type:
+        first_leg = np.linspace(0,5e-1,51,dtype=np.float32)
+        hysteresis_loop_series = np.concatenate((first_leg,first_leg[-2::-1],first_leg[1::]*-1,first_leg[-2::-1]*-1,first_leg[1::]))
+        field_angle_theta = Hext_angle[0]
+        field_angle_phi = Hext_angle[1]
+        #if this entry exists in the parameters dict, it will be used over the set of parameters 'max_field','field_angle_*', and 'num_field_steps' that would otherwise construct the applied magnetic field series
+        parameters['Hext_series'] = convert_field_magnitude_to_vector_series((1/mu0)*hysteresis_loop_series,field_angle_theta,field_angle_phi)
+    parameters['max_field'] = 0.06
+    parameters['field_angle_theta'] = Hext_angle[0]
+    parameters['field_angle_phi'] = Hext_angle[1]
+    parameters['num_field_steps'] = 15
+    if 'stress' in sim_type:
+        parameters['boundary_condition_value_series'] = np.linspace(0,100,3)#np.array([0,2.5,5.0,7.5,10.0,12.5,15.0])
+    elif 'strain' in sim_type:
+        parameters['boundary_condition_value_series'] = np.array([0.0])#np.linspace(0,1e-1,11)#np.linspace(0,5e-2,21)#np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2])#np.array([0.0,1e-3,2e-3,5e-3,1e-2,2e-2,3e-2,4e-2])#np.concatenate((np.linspace(0,2e-4,5),np.
+    parameters['boundary_condition_max_value'] = 0.0010
+    parameters['num_boundary_condition_steps'] = 5
+    parameters['boundary_condition_type'] = bc_type
+    parameters['boundary_condition_direction'] = bc_direction
+    print(f'sim type = {sim_type}\nbc_direction = {bc_direction}\n')
+    print(f"Young's modulus = {E} Pa\nPoisson Ratio = {poisson_ratio}\ndiscretization order = {discretization_order}\n")
+    print(f"N particles = {parameters['num_particles']}\nField angle theta = {Hext_angle[0]}\nField angle phi = {Hext_angle[1]}\n")
+    print(f"gpu based calculation {parameters['gpu_flag']}")
+    run_sim(parameters,sim_type)
+
+def shear_strain_example():
+    """An example running a shear strain simulation. Shows off placing particles by hand."""
+    youngs_modulus = 9e3
+    E = youngs_modulus
+    discretization_order = 5
+    poisson_ratio = 0.47
+    volume_fraction = 5e-2
+    bc_direction = ('z','x')
+    Hext_angle = (0,0)
+    sim_type = 'strain_simple_shearing'
+    bc_type = sim_type
+
+    step_size = np.float32(5e-3)
+    integration_steps = 5000
+    num_particles = 2
+    particle_arrangement = [1,1,8]
+    num_particles = 8
+    particle_posns = np.zeros((num_particles,3))
+
+    horizontal_spacing = 3.5e-6
+    #helical chain
+    Lx, Ly, Lz = (18e-6,18e-6,62e-6)#
+    vertical_spacing = 5e-6
+    particle_posns[:,0] = 9e-6#
+    particle_posns[:,1] = 9e-6
+    angle_increment = 2*np.pi/num_particles
+    for i in range(num_particles):
+        particle_posns[i,2] = 13.5e-6 + i*vertical_spacing
+        particle_posns[i,0] += horizontal_spacing*np.cos(i*angle_increment)
+        particle_posns[i,1] += horizontal_spacing*np.sin(i*angle_increment)
+
+    parameters = dict({})
+    parameters['max_integrations'] = 40
+    parameters['max_integration_steps'] = integration_steps
+    parameters['step_size'] = step_size
+    parameters['gpu_flag'] = True 
+    parameters['particle_rotation_flag'] = True
+    parameters['persistent_checkpointing_flag'] = True
+    parameters['plotting_flag'] = False
+    parameters['criteria_flag'] = False
+    parameters['particle_radius'] = 1.5e-6
+    parameters['youngs_modulus'] = E
+    parameters['poisson_ratio'] = poisson_ratio
+    parameters['drag'] = 1
+    parameters['discretization_order'] = discretization_order
+    parameters['particle_placement'] = 'by_hand'
+    parameters['num_particles_along_axes'] = particle_arrangement
+    parameters['num_particles'] = parameters['num_particles_along_axes'][0]*parameters['num_particles_along_axes'][1]*parameters['num_particles_along_axes'][2]
+    if parameters['num_particles'] == 0 or 'hand' in parameters['particle_placement']:
+        #dimensions in normalized units, the number of elements in each direction                                            
+        particle_diameter = 2*parameters['particle_radius']
+        l_e = (particle_diameter/2) / (discretization_order + 1/2)                                            
+        parameters['dimensions'] = np.array([np.floor_divide(Lx,l_e),np.floor_divide(Ly,l_e),np.floor_divide(Lz,l_e)])                    
+        parameters['particle_posns'] = particle_posns
+    parameters['anisotropy_factor'] = np.array([1.0,1.0,1.0])
+    parameters['anisotropy_factor'][:2] = 1/np.sqrt(parameters['anisotropy_factor'][2])
+    parameters['volume_fraction'] = volume_fraction
+    tmp_field_var = np.array([0.0,1e-2,2e-2,3e-2,4e-2,5e-2,6e-2,7e-2,8e-2,1e-1,1.2e-1,1.4e-1])
+    tmp_field_vectors = np.zeros((tmp_field_var.shape[0],3),dtype=np.float32)
+    if np.isclose(Hext_angle[0],np.pi/2):
+        tmp_field_vectors[:,0] = (1/mu0)*tmp_field_var
+    else:
+        tmp_field_vectors[:,2] = (1/mu0)*tmp_field_var
+    #if this entry exists in the parameters dict, it will be used over the set of parameters 'max_field','field_angle_*', and 'num_field_steps' that would otherwise construct the applied magnetic field series
+    parameters['Hext_series_magnitude'] = (1/mu0)*tmp_field_var
+    parameters['max_field'] = np.max(tmp_field_var)
+    parameters['field_angle_theta'] = Hext_angle[0]
+    parameters['field_angle_phi'] = Hext_angle[1]
+    parameters['num_field_steps'] = 15
+    parameters['boundary_condition_value_series'] = np.linspace(0,1e-1,11)
+    parameters['boundary_condition_max_value'] = 0.01
+    parameters['num_boundary_condition_steps'] = 11
+    parameters['boundary_condition_type'] = bc_type
+    parameters['boundary_condition_direction'] = bc_direction
+    print(f'sim type = {sim_type}\nbc_direction = {bc_direction}\n')
+    print(f"Young's modulus = {E} Pa\nPoisson Ratio = {poisson_ratio}\ndiscretization order = {discretization_order}\n")
+    print(f"N particles = {parameters['num_particles']}\nField angle theta = {Hext_angle[0]}\nField angle phi = {Hext_angle[1]}\n")
+    print(f"gpu based calculation {parameters['gpu_flag']}")
+    run_sim(parameters,sim_type)
+
 if __name__ == "__main__":
 
     jumpstart_type = 'restart'#'rerun'#'extend'#
@@ -1652,4 +1789,7 @@ if __name__ == "__main__":
     # jumpstart_sim(sim_dir,jumpstart_type)
 
     # extend_sim(sim_dir,sim_checkpoint_dir)
-    batch_job_runner()
+    # batch_job_runner()
+
+    # hysteresis_example()
+    shear_strain_example()
