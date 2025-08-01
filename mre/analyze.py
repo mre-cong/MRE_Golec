@@ -334,7 +334,7 @@ def plot_surf_cut(cut_type,layer,eq_node_posns,node_posns,l_e,output_dir,tag="",
     else:
         rstride = 1
         cstride = 1
-    surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+    surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray',linewidth=0.1)
     # surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
     # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
@@ -443,15 +443,17 @@ def plot_wireframe_cut(cut_type,layer,eq_node_posns,node_posns,particles,l_e,out
     #     xlim = (-0.1,Lx*1.1)
     #     ylim = (-0.1,Ly*1.1)
     #     zlim = (-0.1,Lz*1.1)
-    threshold_size = 50
-    if maximum_dimension_size > threshold_size:
-        rstride = 2
-        cstride = 2
-    else:
-        rstride = 1
-        cstride = 1
+    # threshold_size = 50
+    # if maximum_dimension_size > threshold_size:
+    #     rstride = 2
+    #     cstride = 2
+    # else:
+    #     rstride = 1
+    #     cstride = 1
+    rstride = 1
+    cstride = 1
     # ax.plot_wireframe(xvar,yvar,zvar,zorder=0)
-    ax.plot_wireframe(xvar,yvar,zvar,rstride=rstride,cstride=cstride,zorder=0,alpha=0.65)
+    ax.plot_wireframe(xvar,yvar,zvar,rstride=rstride,cstride=cstride,zorder=0,alpha=0.65,linewidth=0.2)
     # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1,zorder=0)
     #now identify which of those nodes belong to the particle and the cut. set intersection?
     cut_nodes_set = set(cut_nodes)
@@ -846,7 +848,7 @@ def plot_center_cut_surf_si(cut_type,eq_node_posns,node_posns,l_e,particles,outp
         my_cmap = cm.ScalarMappable(norm=norm)
         my_cmap.set_array([])
         fcolors = my_cmap.to_rgba(color_dimension)
-        surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray')
+        surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,facecolors=fcolors,vmin=color_min,vmax=color_max,shade=False,edgecolor='gray',linewidth=0.1)
         # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
         xlabel = 'X (um)'
         ylabel = 'Y (um)'
@@ -1199,7 +1201,7 @@ def plot_outer_surfaces(eq_node_posns,node_posns,boundary_conditions,output_dir,
         for i in range(2):
             idx = int(layers[2*cut_type_index+i])
             xvar, yvar, zvar = get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D)
-            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
+            surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray',linewidth=0.1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_zlabel(zlabel)
@@ -1231,6 +1233,7 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
         default_width,default_height = fig.get_size_inches()
         fig.set_size_inches(2*default_width,2*default_height)
         fig.set_dpi(200)
+        figax_return_flag = True
     xposn_3D, yposn_3D, zposn_3D = get_component_3D_arrays(node_posns,(int(Lx+1),int(Ly+1),int(Lz+1)))
     xposn_3D *= l_e*1e6
     yposn_3D *= l_e*1e6
@@ -1243,18 +1246,20 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
     ylim = (-0.1,Ly*1.1)
     zlim = (-0.1,Lz*1.1)
     threshold_size = 50
-    if maximum_dimension_size > threshold_size:
-        rstride = 2
-        cstride = 2
-    else:
-        rstride = 1
-        cstride = 1
+    # if maximum_dimension_size > threshold_size:
+    #     rstride = 2
+    #     cstride = 2
+    # else:
+    #     rstride = 1
+    #     cstride = 1
+    rstride = 1
+    cstride = 1
     for cut_type_index in range(3):
         for i in range(2):
             idx = int(layers[2*cut_type_index+i])
             xvar, yvar, zvar = get_cut_type_posn_variables(cut_type_index,idx,xposn_3D,yposn_3D,zposn_3D)
             # surf = ax.plot_surface(xvar,yvar,zvar,edgecolor='gray')
-            surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,edgecolor='gray')
+            surf = ax.plot_surface(xvar,yvar,zvar,rstride=rstride,cstride=cstride,edgecolor='gray',linewidth=0.1)
             #surf = ax.plot_surface(xvar,yvar,zvar,rstride=1,cstride=1,edgecolor='gray')
             # ax.plot_wireframe(xvar,yvar,zvar,rstride=1,cstride=1)
     ax.set_xlabel(xlabel)
@@ -1271,10 +1276,10 @@ def plot_outer_surfaces_si(eq_node_posns,node_posns,l_e,output_dir,tag="",animat
         savename = output_dir + f'outer_surfaces_3D_' + tag +'.png'
         plt.savefig(savename)
         plt.close()
-    if type(ax) == type(None):
+    if figax_return_flag:
         return fig, ax
     else:
-        return ax
+        return ax, surf
 
 def transform_to_3D_array(array,dimensions):
     """Given a 1D vector of node positions, or similarly structured per node values, and convert to a 3D array mapped to the grid of initial node positions for plotting and analysis. Dimensions is tuple or array of number of nodes along each direction (x,y,z)."""
