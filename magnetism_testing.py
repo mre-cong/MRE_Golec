@@ -2,6 +2,7 @@ import numpy as np
 import cupy as cp
 import cupyx
 import magnetism
+from mre.analyze import format_figure
 import matplotlib.pyplot as plt
 import os
 import scipy.special as sci
@@ -730,7 +731,11 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
     # normalized_magnetization_kernel((grid_size,),(block_size,),(Ms,chi,Hext_vector,magnetic_moment,size_particles))
     # magnetization_kernel used the particle volume to return the magnetic moment. the normalized approach normalizes by the saturation magnetization. the issue with using the particle volume to convert from magnetization to magnetic moment was that the result for low field values evaluated to zero.
     #the issue may have actually been that i didn't use 32 bit floats for chi, Ms, and l_e
-    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+    #2025-03-26 trying to add a bit dealing with the self-demagnetization term. assuming a small field, 
+    Hin = Hext / (1 + chi/3)
+    Hin_vector = cp.tile(Hin,particles.shape[0])
+    # magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hext_vector,magnetic_moment,size_particles))
+    magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Hin_vector,magnetic_moment,size_particles))
 
     cupy_stream.synchronize()
     separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
@@ -741,7 +746,9 @@ def get_magnetization_iterative(Hext,particles,particle_posns,Ms,chi,particle_vo
     inv_l_e = np.float32(1/l_e)
     max_iters = 5
     for i in range(max_iters):
-        Htot = cp.tile(Hext,particles.shape[0])
+        self_demagnetization_field = -(1/3)*magnetic_moment/particle_volume
+        Htot = cp.tile(Hext,particles.shape[0]) + cp.ravel(self_demagnetization_field)
+        # Htot = cp.tile(Hext,particles.shape[0])
         dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
         cupy_stream.synchronize()
         magnetization_kernel((grid_size,),(block_size,),(Ms,chi,particle_volume,Htot,magnetic_moment,size_particles))
@@ -1498,6 +1505,104 @@ def gpu_testing():
             os.mkdir(save_dir)
         savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
         plt.savefig(savename)
+
+def fk_law_response_plotting():
+    #choose the maximum field, number of field steps, and field angle
+    mu0 = 4*np.pi*1e-7
+    H_mag = 0.1/mu0
+    n_field_steps = 200
+    if n_field_steps != 1:
+        H_step = H_mag/(n_field_steps-1)
+    else:
+        H_step = H_mag/(n_field_steps)
+    #polar angle, aka angle wrt the z axis, range 0 to pi
+    Hext_theta_angle = np.pi/2
+    Bext_theta_angle = Hext_theta_angle*360/(2*np.pi)
+    Hext_phi_angle = 0#(2*np.pi/360)*15#30
+    Bext_phi_angle = Hext_phi_angle*360/(2*np.pi)
+    # Hext_series_magnitude = np.arange(H_step,H_mag + 1,H_step)
+    first_leg = np.concatenate((np.linspace(0,1e-1,51,dtype=np.float32),np.linspace(1.1e-1,5e-1,40,dtype=np.float32)))
+    hysteresis_loop_series = np.concatenate((first_leg,first_leg[-2::-1],first_leg[1::]*-1,first_leg[-2::-1]*-1,first_leg[1::]))
+    Hext_series_magnitude = (1/mu0)*hysteresis_loop_series
+    #create a list of applied field magnitudes, going up from 0 to some maximum and back down in fixed intervals
+    # Hext_series_magnitude = np.append(Hext_series_magnitude,Hext_series_magnitude[-2::-1])
+    Bext_series_magnitude = Hext_series_magnitude*mu0
+    Hext_series = np.zeros((len(Hext_series_magnitude),3))
+    Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
+    Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
+    # chi = 70#131#70
+    # Ms = 1.6e6#1.9e6
+    chi = np.float32(70)#np.float32(131)
+    Ms = np.float32(1.6e6)
+    particle_radius = 1.5e-6
+    l_e = np.float32(1e-6)
+    num_nodes_per_particle = 8
+    beta = 6.734260376702891e-09
+    particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
+    particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
+    particles_per_axis = np.array([1,1,1])
+    num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
+    particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
+    particle_posns = np.zeros((num_particles,3))
+    separation = 7.8
+    particle_counter = 0
+    for i in range(particles_per_axis[0]):
+        for j in range(particles_per_axis[1]):
+            for k in range(particles_per_axis[2]):
+                particle_posns[particle_counter,0] = i * separation
+                particle_posns[particle_counter,1] = j * separation
+                particle_posns[particle_counter,2] = k * separation
+                particle_counter += 1
+    device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
+    num_particles = particle_posns.shape[0]
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    M32bit = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
+    magnetic_moments = np.zeros((Hext_series.shape[0],num_particles,3),dtype=np.float32)
+    for i, Hext in enumerate(Hext_series):
+        # M32bit[i] = magnetism.get_magnetization_iterative_normalized_32bit(np.float32(Hext),np.float32(particle_posns),np.float32(particle_radius),np.float32(chi),np.float32(Ms),np.float32(l_e))
+        magnetic_moments[i] = get_magnetization_iterative(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e)
+
+
+    field_idx = int(n_field_steps/2)
+    Hext = Hext_series[int(n_field_steps/2)]
+
+    magnetic_moments = magnetic_moments.reshape((Hext_series.shape[0],num_particles,3))
+    magnetization = magnetic_moments/particle_volume
+
+
+    M32bit /= Ms
+    magnetization /= Ms
+
+    gpu_system_magnetization = np.sum(magnetization,axis=1)/num_particles
+    gpu_system_magnetization = np.squeeze(gpu_system_magnetization)
+    Bext_series = mu0*Hext_series
+    Bext_series_norm = np.linalg.norm(Bext_series,axis=1)
+    gpu_system_magnetization[Bext_series_norm==0,:] = 0
+    nonzero_field_value_indices = np.where(np.linalg.norm(Bext_series,axis=1)>0)[0]
+    unit_Bext_series = Bext_series[nonzero_field_value_indices[0]]/Bext_series_norm[nonzero_field_value_indices[0]]
+    gpu_parallel_magnetization = np.dot(gpu_system_magnetization,unit_Bext_series)
+    Bext_series_norm[Bext_series[:,0]<0] *= -1
+    # Bext_series_norm *= 1e3
+
+    fig, ax = plt.subplots(layout='constrained')
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2*default_width,2*default_height)
+    fig.set_dpi(200)
+    ax.plot(Bext_series_norm,gpu_parallel_magnetization)# ax.plot(Bext_series_norm,gpu_parallel_magnetization,'.')
+    ax.axhline(0,0,1,color='gray',alpha=0.5)
+    ax.axvline(0,0,1,color='gray',alpha=0.5)
+    ax.set_xlabel('B (mT)')
+    ax.set_ylabel(r'$M/M_s$')
+    # ax.set_title(f'Magnetization versus Applied Field\n{num_particles} Particles, Separation {separation}\nTheta {Bext_theta_angle} Phi {Bext_phi_angle}')
+    format_figure(ax)
+    fig.legend()
+    fig.show()
+    save_dir = '/mnt/c/Users/bagaw/Desktop/MRE/magnetization_testing_self_demag/'
+    if not (os.path.isdir(save_dir)):
+        os.mkdir(save_dir)
+    savename = save_dir + f'{num_particles}_particles_magnetization_chi_{chi}_separation_{separation}_Bext_angle_theta_{Bext_theta_angle}_phi_{Bext_phi_angle}.png'
+    plt.savefig(savename)
 
 def calc_A(rij,inv_rij_mag,num_particles,l_e,chi,particle_volume):
     """Return matrix A containing information about relative dipole positions for calculating dipolar fields, used to solve the system Ax=b for the magnetic moments of the dipoles."""
@@ -2289,8 +2394,8 @@ def nonlinear_magnetization_fsolve():
     """Plot the magnetization vector components from using scipy.optimize.fsolve() or scipy.optimize.broyden1(). Test how it behaves with and without symmetry, with more particles. Wishlist for PBC on magnetization, so that you have "image" volumes around the real simulated volume that are copies of the real simulated volume (and include a demagnetization field due to an infinite surrounding medium with a continuous magnetization equal to the magnetic moment vector sum of the real volume divided by the system volume, with a shape factor for a sphere (or a cube, but it is infinite in extent in both cases)). See how symmetry, particle number, and separation/presence or absence of noise causes the method to work or fail"""
     #choose the maximum field, number of field steps, and field angle
     mu0 = 4*np.pi*1e-7
-    H_mag = 1.0/mu0
-    n_field_steps = 1000
+    H_mag = 0.1/mu0
+    n_field_steps = 100
     H_step = H_mag/(n_field_steps)
     #polar angle, aka angle wrt the z axis, range 0 to pi
     Hext_theta_angle = np.pi/2
@@ -2305,7 +2410,8 @@ def nonlinear_magnetization_fsolve():
     Hext_series[:,0] = Hext_series_magnitude*np.cos(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
-    Hext_series = Hext_series[::-1,:]
+    # Hext_series = Hext_series[::-1,:]
+    # Bext_series_magnitude = Bext_series_magnitude[::-1]
     chi = np.float32(70)
     Ms = np.float32(1.6e6)
     particle_radius = np.float32(1.5e-6)
@@ -2315,7 +2421,7 @@ def nonlinear_magnetization_fsolve():
     num_nodes_per_particle = 8
     particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    particles_per_axis = np.array([3,1,1])
+    particles_per_axis = np.array([3,3,1])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
@@ -2327,9 +2433,9 @@ def nonlinear_magnetization_fsolve():
     for i in range(particles_per_axis[0]):
         for j in range(particles_per_axis[1]):
             for k in range(particles_per_axis[2]):
-                particle_posns[particle_counter,0] = i * separation[0] + rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,1] = j * separation[1] + rng.integers(low=-1,high=2,size=1)*l_e
-                particle_posns[particle_counter,2] = k * separation[2] + rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,0] = i * separation[0] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,1] = j * separation[1] #+ rng.integers(low=-1,high=2,size=1)*l_e
+                particle_posns[particle_counter,2] = k * separation[2] #+ rng.integers(low=-1,high=2,size=1)*l_e
                 particle_counter += 1
     particle_posns /= l_e
     device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
@@ -2360,6 +2466,8 @@ def nonlinear_magnetization_fsolve():
     magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
     seeded_magnetic_moments = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
 
+    normalized_magnetization = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+
     # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
     # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
 
@@ -2367,21 +2475,23 @@ def nonlinear_magnetization_fsolve():
         magnetic_moments[i] = get_magnetization_iterative_iteration_testing(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
         seeded_magnetic_moments[i] = get_magnetization_iterative_iteration_testing_w_seeded_values(np.float32(seeded_gpu_fixedpoint_initial_soln),cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
         seeded_gpu_fixedpoint_initial_soln = np.reshape(seeded_magnetic_moments[i,-1],(3*num_particles,))
+        hext = cp.asarray(Hext/Ms,dtype=cp.float32)
+        normalized_magnetization[i], return_code = get_normalized_magnetization_fixed_point_iteration(hext,particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
 
         # magnetic_moments_w_drag[i] = get_magnetization_iterative_iteration_testing_w_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
         # magnetic_moments_new_drag[i] = get_magnetization_iterative_new_drag(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters_w_drag)
-        try:
-            fixed_point_magnetization[i] = scipy.optimize.fixed_point(frohlich_kennelly_fixed_point,x0=np.float32(fixed_point_initial_soln),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,np.float32(Hext),l_e))
-            fixed_point_initial_soln = fixed_point_magnetization[i].copy()
-        except:
-            fixed_point_magnetization[i] = np.zeros((3*num_particles,))
+        # try:
+        #     fixed_point_magnetization[i] = scipy.optimize.fixed_point(frohlich_kennelly_fixed_point,x0=np.float32(fixed_point_initial_soln),args=(particle_posns.astype(np.float32),chi,particle_radius,Ms,np.float32(Hext),l_e))
+        #     fixed_point_initial_soln = fixed_point_magnetization[i].copy()
+        # except:
+        #     fixed_point_magnetization[i] = np.zeros((3*num_particles,))
 
-        fsolve_magnetization[i] = scipy.optimize.fsolve(frohlich_kennelly_root_finding,x0=np.float64(fsolve_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)))
-        fsolve_initial_soln = fsolve_magnetization[i].copy()
+        # fsolve_magnetization[i] = scipy.optimize.fsolve(frohlich_kennelly_root_finding,x0=np.float64(fsolve_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)))
+        # fsolve_initial_soln = fsolve_magnetization[i].copy()
 
-        broyden_magnetization_struct = scipy.optimize.root(frohlich_kennelly_root_finding,x0=np.float64(broyden_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)),method='broyden1')
-        broyden_magnetization[i] = np.reshape(broyden_magnetization_struct.x,(num_particles*3))
-        broyden_initial_soln = broyden_magnetization[i].copy()
+        # broyden_magnetization_struct = scipy.optimize.root(frohlich_kennelly_root_finding,x0=np.float64(broyden_initial_soln),args=(particle_posns,np.float64(chi),np.float64(particle_radius),np.float64(Ms),np.float64(Hext),np.float64(l_e)),method='broyden1')
+        # broyden_magnetization[i] = np.reshape(broyden_magnetization_struct.x,(num_particles*3))
+        # broyden_initial_soln = broyden_magnetization[i].copy()
 
 
     magnetization = magnetic_moments/particle_volume
@@ -2405,7 +2515,7 @@ def nonlinear_magnetization_fsolve():
     broyden_magnetization = np.reshape(broyden_magnetization,(Hext_series.shape[0],num_particles,3))
     
     iter_number = np.arange(max_iters)
-    field_index = Hext_series.shape[0]-1
+    field_index = 0#Hext_series.shape[0]-1
 
     fig, axs = plt.subplots(3,3)
     for count in range(particles.shape[0]):
@@ -2415,9 +2525,12 @@ def nonlinear_magnetization_fsolve():
         axs[1,0].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,0])
         axs[1,1].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,1])
         axs[1,2].plot(iter_number,np.ones(max_iters,)*fsolve_magnetization[field_index,count,2])
-        axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,0])
-        axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,1])
-        axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,2])
+        axs[2,0].plot(iter_number,normalized_magnetization[field_index,:,count,0])
+        axs[2,1].plot(iter_number,normalized_magnetization[field_index,:,count,1])
+        axs[2,2].plot(iter_number,normalized_magnetization[field_index,:,count,2])
+        # axs[2,0].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,0])
+        # axs[2,1].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,1])
+        # axs[2,2].plot(iter_number,np.ones(max_iters,)*fixed_point_magnetization[field_index,count,2])
 
     axs[2,0].set_xlabel('iteration number')
     axs[2,1].set_xlabel('iteration number')
@@ -2455,15 +2568,15 @@ def nonlinear_magnetization_fsolve():
 
     fig, axs = plt.subplots(3,3)
     for count in range(particles.shape[0]):
-        axs[0,0].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,0])
-        axs[0,1].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,1])
-        axs[0,2].plot(Bext_series_magnitude[::-1],magnetization[:,-1,count,2])
-        axs[1,0].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,0])
-        axs[1,1].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,1])
-        axs[1,2].plot(Bext_series_magnitude[::-1],fsolve_magnetization[:,count,2])
-        axs[2,0].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,0])
-        axs[2,1].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,1])
-        axs[2,2].plot(Bext_series_magnitude[::-1],fixed_point_magnetization[:,count,2])
+        axs[0,0].plot(Bext_series_magnitude,magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude,magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude,magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude,fsolve_magnetization[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude,fsolve_magnetization[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude,fsolve_magnetization[:,count,2])
+        axs[2,0].plot(Bext_series_magnitude,fixed_point_magnetization[:,count,0])
+        axs[2,1].plot(Bext_series_magnitude,fixed_point_magnetization[:,count,1])
+        axs[2,2].plot(Bext_series_magnitude,fixed_point_magnetization[:,count,2])
 
     axs[2,0].set_xlabel('Applied Field (T)')
     axs[2,1].set_xlabel('Applied Field (T)')
@@ -2480,12 +2593,12 @@ def nonlinear_magnetization_fsolve():
 
     fig, axs = plt.subplots(2,3)
     for count in range(particles.shape[0]):
-        axs[0,0].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,0])
-        axs[0,1].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,1])
-        axs[0,2].plot(Bext_series_magnitude[::-1],seeded_magnetization[:,-1,count,2])
-        axs[1,0].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,0])
-        axs[1,1].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,1])
-        axs[1,2].plot(Bext_series_magnitude[::-1],broyden_magnetization[:,count,2])
+        axs[0,0].plot(Bext_series_magnitude,seeded_magnetization[:,-1,count,0])
+        axs[0,1].plot(Bext_series_magnitude,seeded_magnetization[:,-1,count,1])
+        axs[0,2].plot(Bext_series_magnitude,seeded_magnetization[:,-1,count,2])
+        axs[1,0].plot(Bext_series_magnitude,broyden_magnetization[:,count,0])
+        axs[1,1].plot(Bext_series_magnitude,broyden_magnetization[:,count,1])
+        axs[1,2].plot(Bext_series_magnitude,broyden_magnetization[:,count,2])
 
     axs[1,0].set_xlabel('Applied Field (T)')
     axs[1,1].set_xlabel('Applied Field (T)')
@@ -3138,15 +3251,15 @@ def get_normalized_dipole_field_kernel_torch(rij,inv_rij_mag,num_particles,l_e,p
     """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
     kernel = torch.zeros((num_particles*3,num_particles*3)).cuda()
 
-    nij_x = torch.asarray(rij[0::3]*inv_rij_mag)
-    nij_y = torch.asarray(rij[1::3]*inv_rij_mag)
-    nij_z = torch.asarray(rij[2::3]*inv_rij_mag)
+    nij_x = torch.asarray(rij[0::3]*inv_rij_mag).cuda()
+    nij_y = torch.asarray(rij[1::3]*inv_rij_mag).cuda()
+    nij_z = torch.asarray(rij[2::3]*inv_rij_mag).cuda()
 
     nij_x = torch.reshape(nij_x,(num_particles,num_particles))
     nij_y = torch.reshape(nij_y,(num_particles,num_particles))
     nij_z = torch.reshape(nij_z,(num_particles,num_particles))
 
-    inv_rij_mag = torch.reshape(torch.asarray(inv_rij_mag),(num_particles,num_particles))
+    inv_rij_mag = torch.reshape(torch.asarray(inv_rij_mag).cuda(),(num_particles,num_particles))
     
     denom = particle_volume/(4*np.float32(np.pi))*torch.pow(inv_rij_mag/l_e,3)#
 
@@ -3164,18 +3277,18 @@ def get_normalized_dipole_field_kernel_torch(rij,inv_rij_mag,num_particles,l_e,p
 
 def get_normalized_dipole_field_kernel_torch_pbc(rij,inv_rij_mag,num_particles,rij_image,inv_rij_mag_image,num_images,l_e,particle_volume):
     """Return matrix containing information about relative dipole positions for calculating dipolar fields."""
-    raise NotImplementedError
+    # raise NotImplementedError
     kernel = torch.zeros((num_particles*3,num_particles*3)).cuda()
 
-    nij_x = torch.asarray(rij[0::3]*inv_rij_mag)
-    nij_y = torch.asarray(rij[1::3]*inv_rij_mag)
-    nij_z = torch.asarray(rij[2::3]*inv_rij_mag)
+    nij_x = torch.asarray(rij[0::3]*inv_rij_mag).cuda()
+    nij_y = torch.asarray(rij[1::3]*inv_rij_mag).cuda()
+    nij_z = torch.asarray(rij[2::3]*inv_rij_mag).cuda()
 
     nij_x = torch.reshape(nij_x,(num_particles,num_particles))
     nij_y = torch.reshape(nij_y,(num_particles,num_particles))
     nij_z = torch.reshape(nij_z,(num_particles,num_particles))
 
-    inv_rij_mag = torch.reshape(torch.asarray(inv_rij_mag),(num_particles,num_particles))
+    inv_rij_mag = torch.reshape(torch.asarray(inv_rij_mag).cuda(),(num_particles,num_particles))
     
     denom = particle_volume/(4*np.float32(np.pi))*torch.pow(inv_rij_mag/l_e,3)#
 
@@ -3186,13 +3299,31 @@ def get_normalized_dipole_field_kernel_torch_pbc(rij,inv_rij_mag,num_particles,r
     kernel[0::3,2::3] = (3*nij_z)*nij_x*denom
     kernel[1::3,2::3] = (3*nij_z)*nij_y*denom
 
-    nij_x_image = torch.asarray(rij_image[0::3]*inv_rij_mag_image)
-    nij_y_image = torch.asarray(rij_image[1::3]*inv_rij_mag_image)
-    nij_z_image = torch.asarray(rij_image[2::3]*inv_rij_mag_image)
+    nij_x_image = torch.asarray(rij_image[0::3]*inv_rij_mag_image).cuda()
+    nij_y_image = torch.asarray(rij_image[1::3]*inv_rij_mag_image).cuda()
+    nij_z_image = torch.asarray(rij_image[2::3]*inv_rij_mag_image).cuda()
 
-    nij_x_image = torch.reshape(nij_x_image,(num_particles*num_images,num_particles*num_images))
-    nij_y_image = torch.reshape(nij_y_image,(num_particles*num_images,num_particles*num_images))
-    nij_z_image = torch.reshape(nij_z_image,(num_particles*num_images,num_particles*num_images))
+    num_image_particles = num_images*num_particles
+    # nij_x_image = torch.reshape(nij_x_image,(num_image_particles,num_particles))
+    # nij_y_image = torch.reshape(nij_y_image,(num_image_particles,num_particles))
+    # nij_z_image = torch.reshape(nij_z_image,(num_image_particles,num_particles))
+    #shape = (num_particles,num_particles,num_images)
+    #elementwise operations until finally doing a sum along the last axis (the number of image particles)
+    #the first num_images rows in each column correspond to the same particle in different image volumes
+    #so... since reshaping iterates over the last axis first when reshaping
+    nij_x_image = torch.reshape(nij_x_image,(num_particles,num_particles,num_images))
+    nij_y_image = torch.reshape(nij_y_image,(num_particles,num_particles,num_images))
+    nij_z_image = torch.reshape(nij_z_image,(num_particles,num_particles,num_images))
+    inv_rij_mag_image = torch.reshape(torch.asarray(inv_rij_mag_image).cuda(),(num_particles,num_particles,num_images))
+
+    denom = particle_volume/(4*np.float32(np.pi))*torch.pow(inv_rij_mag_image/l_e,3)#
+
+    kernel[0::3,0::3] += torch.sum((3*nij_x_image*nij_x_image-1)*denom,dim=2)
+    kernel[1::3,1::3] += torch.sum((3*nij_y_image*nij_y_image-1)*denom,dim=2)
+    kernel[2::3,2::3] += torch.sum((3*nij_z_image*nij_z_image-1)*denom,dim=2)
+    kernel[0::3,1::3] += torch.sum((3*nij_y_image)*nij_x_image*denom,dim=2)
+    kernel[0::3,2::3] += torch.sum((3*nij_z_image)*nij_x_image*denom,dim=2)
+    kernel[1::3,2::3] += torch.sum((3*nij_z_image)*nij_y_image*denom,dim=2)
 
     kernel[2::3,1::3] = kernel[1::3,2::3]
     kernel[1::3,0::3] = kernel[0::3,1::3]
@@ -3530,13 +3661,13 @@ def get_magnetization_fixed_point_iteration(Hext,particles,particle_posns,Ms,chi
 
     return host_magnetic_moments
 
-def get_normalized_magnetization_fixed_point_iteration(hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=20,atol=None,rtol=1e-4,initial_soln=None):
+def get_normalized_magnetization_fixed_point_iteration(hext,particles,particle_posns,Ms,chi,particle_volume,l_e,max_iters=20,atol=1e-3,rtol=5e-3,initial_soln=None):
     """Combining gpu kernels with forced synchronization between calls to speed up magnetization finding calculations and reuse intermediate results (separation vectors)."""
-    if atol == None:
-        atol = 1e-2#5e-3
     cupy_stream = cp.cuda.get_current_stream()
     num_streaming_multiprocessors = 14
     magnetization = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    last_magnetization = cp.zeros((particles.shape[0]*3,1),dtype=cp.float32)
+    difference_history = cp.zeros((max_iters,particles.shape[0]*3,1),dtype=cp.float32)
     host_magnetizations = np.zeros((max_iters,particles.shape[0],3),dtype=np.float32)
     hext_vector = cp.tile(hext,particles.shape[0])
     size_particles = particles.shape[0]
@@ -3544,42 +3675,52 @@ def get_normalized_magnetization_fixed_point_iteration(hext,particles,particle_p
     grid_size = (int (np.ceil((int (np.ceil(size_particles/block_size)))/num_streaming_multiprocessors)*num_streaming_multiprocessors))
     if type(initial_soln) == type(None):
         normalized_magnetization_kernel((grid_size,),(block_size,),(chi,hext_vector,magnetization,size_particles))
-        guess_flag = False
+        cupy_stream.synchronize()
     else:
-        guess_flag = True
         magnetization = initial_soln.copy()
-        # magnetization_history = initial_soln.copy()
-        # max_allowed_change = 5e-2
 
-    cupy_stream.synchronize()
+    last_magnetization = magnetization.copy()
+
     separation_vectors = cp.zeros((particles.shape[0]*particles.shape[0]*3,1),dtype=cp.float32)
     separation_vectors_inv_magnitude = cp.zeros((particles.shape[0]*particles.shape[0],1),dtype=cp.float32)
     separation_vectors_kernel((grid_size,),(block_size,),(particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
     cupy_stream.synchronize()
 
     dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,size_particles,l_e,particle_volume)
+
+    # #for failure checks
+    # sign_match_one = cp.array([+1,-1,+1])
+    # sign_match_two = cp.array([-1,+1,-1])
     for i in range(max_iters):
         htot = cp.tile(hext,particles.shape[0])
         dipolar_fields = cp.squeeze(cp.matmul(dipole_field_kernel,magnetization))
         htot += dipolar_fields
-        # dipole_field_kernel((grid_size,),(block_size,),(separation_vectors,separation_vectors_inv_magnitude,magnetic_moment,inv_l_e,Htot,size_particles))
-        # cupy_stream.synchronize()
         normalized_magnetization_kernel((grid_size,),(block_size,),(chi,htot,magnetization,size_particles))
         cupy_stream.synchronize()
-        # if guess_flag:
-        #     difference = magnetization - magnetization_history
-        #     sign_of_delta = cp.sign(difference)
-        #     mask = cp.nonzero(cp.abs(difference) > max_allowed_change)[0]
-        #     difference[mask] = max_allowed_change*sign_of_delta[mask]
-        #     magnetization = magnetization_history + difference
+        difference_history[i] = magnetization - last_magnetization
         host_magnetizations[i] = cp.asnumpy(magnetization).reshape((particles.shape[0],3))
+        # if i > 1:
+        #     signs = cp.sign(difference_history[i-2:i+1])
+        #     oscillation_match = cp.logical_or(cp.logical_and(cp.equal(signs[0],+1),cp.equal(signs[1],-1),cp.equal(signs[2],+1)),cp.logical_and(cp.equal(signs[0],-1),cp.equal(signs[1],+1),cp.equal(signs[2],-1)))
+        #     if cp.any(cp.logical_and(cp.abs(difference_history[i,oscillation_match]) > atol, cp.abs(difference_history[i-1,oscillation_match] > atol))):
+        #         host_magnetizations[i+1:] = -1
+        #         return host_magnetizations
+                #return -1
+                #raise FixedPointMethodFailure
+            # if (not np.all(np.sign(host_magnetizations[i]) == np.sign(host_magnetizations[i-1]))) and np.all(np.abs(np.ravel(difference)) > 1e-3):
+            #     host_magnetizations[i+1:] = -1
+            #     return host_magnetizations
+                # return -1
         if i > 0:
             difference = host_magnetizations[i] - host_magnetizations[i-1]
             if np.all(np.abs(np.ravel(difference)) < atol + np.abs(np.ravel(host_magnetizations[i-1]))*rtol):
                 host_magnetizations[i:] = host_magnetizations[i]
-                break
-
-    return host_magnetizations
+                return (host_magnetizations,0)
+                # break
+            # if cp.all(cp.abs(cp.ravel(difference_history[i])) < atol + cp.abs(cp.ravel(last_magnetization))*rtol):
+            #     return magnetization
+        last_magnetization = magnetization.copy()
+    return (host_magnetizations,-1)#host_magnetizations
 
 def solve_magnetization_augmented_lagrangian_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='BFGS'):
     """Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
@@ -3934,7 +4075,7 @@ def test_optimizer_bootstrapped_fixedpoint_solver():
         hext = Hext/Ms
         magnetic_moments[i] = get_magnetization_fixed_point_iteration(cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
 
-        normalized_magnetization[i] = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+        normalized_magnetization[i], _ = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
 
         
         res = solve_magnetization_augmented_lagrangian_optimization(initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='L-BFGS-B')
@@ -3945,7 +4086,7 @@ def test_optimizer_bootstrapped_fixedpoint_solver():
             # device_initial_soln = cp.array(lbfgs_auglang_magnetization[i],dtype=cp.float32)
         device_initial_soln = cp.array(lbfgs_auglang_magnetization[i],dtype=cp.float32)
 
-        seeded_magnetization[i] = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
+        seeded_magnetization[i], _ = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
         device_initial_soln = cp.array(seeded_magnetization[i,-1].reshape((3*num_particles,)),dtype=cp.float32)
 
     particle_counter = 0
@@ -3970,7 +4111,7 @@ def test_optimizer_bootstrapped_fixedpoint_solver():
         hext = Hext/Ms
         # device_initial_soln = cp.array(seeded_magnetization[i,-1].reshape((3*num_particles,)),dtype=cp.float32)
         device_initial_soln = cp.array(lbfgs_auglang_magnetization[i].reshape((3*num_particles,)),dtype=cp.float32)
-        movement_seeded_magnetization[i] = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,nextdevice_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
+        movement_seeded_magnetization[i], _ = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,nextdevice_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
 
         res = solve_magnetization_augmented_lagrangian_optimization(initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='L-BFGS-B')
         movement_lbfgs_auglang_magnetization[i] = res.x
@@ -4135,7 +4276,7 @@ def test_optimizer_bootstrapped_fixedpoint_solver():
         # device_initial_soln = cp.array(seeded_magnetization[i,-1].reshape((3*num_particles,)),dtype=cp.float32)
         if i == 0:
             device_initial_soln = cp.array(lbfgs_auglang_magnetization[i].reshape((3*num_particles,)),dtype=cp.float32)
-        movement_seeded_magnetization[i] = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,nextdevice_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
+        movement_seeded_magnetization[i], _ = get_normalized_magnetization_fixed_point_iteration(cp.asarray(hext,dtype=cp.float32),particles,nextdevice_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=device_initial_soln)
         device_initial_soln = cp.array(movement_seeded_magnetization[i,-1].reshape((3*num_particles,)),dtype=cp.float32)
 
         res = solve_magnetization_augmented_lagrangian_optimization(initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,method='L-BFGS-B')
@@ -4167,16 +4308,82 @@ def test_optimizer_bootstrapped_fixedpoint_solver():
 
     print('end of function')
 
-def pytorch_magnetization_augmented_lagrangian_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3):
+def pytorch_magnetization_augmented_lagrangian_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=5e-3):
     """Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
     dipole_field_kernel = get_normalized_dipole_field_kernel_torch(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
     max_iterations = 5
-    max_steps = 100
+    max_steps = 200
+    # objective_values = torch.zeros((max_iterations*max_steps,)).cuda()
 
     def get_normalized_objective_function_auglag_gpu(normalized_magnetizations):
         dipole_fields = torch.matmul(dipole_field_kernel,normalized_magnetizations)
         energy = get_normalized_total_magnetic_energy_torch(normalized_magnetizations,hext,dipole_fields,chi,num_particles)
         tiled_hext = torch.tile(hext,(num_particles,))
+        h_tot = (dipole_fields + tiled_hext)
+        htot_norm = torch.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
+        htot_norm_repeat = torch.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+        constraint_violations = normalized_magnetizations*(1 + chi*htot_norm_repeat) - chi*h_tot
+        result = energy + (0.5*penalty_constant) * torch.sum(constraint_violations*constraint_violations) + torch.sum(lagrange_multipliers*constraint_violations)
+        return result
+    
+    def closure():
+        if torch.is_grad_enabled():
+            lbfgs.zero_grad(set_to_none=True)
+        objective = get_normalized_objective_function_auglag_gpu(x_lbfgs)
+        # objective_values[iteration_counter] = objective
+        if objective.requires_grad:
+            objective.backward(retain_graph=True)
+        return objective
+
+    x_lbfgs = torch.asarray(initial_guess,requires_grad=True,device='cuda',dtype=torch.float32)#torch.autograd.Variable(torch.Tensor(initial_guess).cuda(), requires_grad=True)
+    last_xlbfgs = torch.zeros((3*num_particles,)).cuda()
+    last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
+    lbfgs = opt.LBFGS([x_lbfgs],
+                    history_size=20,
+                    max_iter=20,
+                    line_search_fn="strong_wolfe")
+    iteration_counter = 0
+    for aug_lang_counter in range(max_iterations):
+        for _ in range(max_steps):
+            lbfgs.step(closure)
+            # iteration_counter += 1
+            delta = torch.abs(x_lbfgs-last_xlbfgs)
+            if torch.all(torch.less(delta,atol+rtol*torch.abs(last_xlbfgs))):
+                last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
+                # print('met optimization parameter change criteria')
+                break
+            last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
+        end_constraint_violations = get_normalized_constraint_violation_auglag_torch(x_lbfgs,dipole_field_kernel,chi,hext,num_particles)
+        if torch.all(torch.less(torch.abs(end_constraint_violations),atol+rtol*torch.abs(x_lbfgs))):
+            # print('met constraint violation criteria')
+            break
+        with torch.no_grad():
+            lagrange_multipliers = lagrange_multipliers + penalty_constant * end_constraint_violations
+        penalty_constant *= 2
+    # objective_values = torch.Tensor.cpu(objective_values)
+    # objective_values = objective_values.detach().numpy()
+    # fig, ax = plt.subplots()
+    # ax.set_xlabel('iteration number')
+    # ax.set_ylabel('objective')
+    # ax.plot(np.arange(iteration_counter),objective_values[:iteration_counter])
+    # plt.show(block=False)
+    # plt.close()
+    return x_lbfgs, end_constraint_violations
+
+
+def pytorch_magnetization_augmented_lagrangian_optimization_pbc(initial_guess,separation_vectors,separation_vectors_inv_magnitude,image_sep_vectors,image_inv_sep_magnitude,num_images,system_volume,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=5e-3):
+    """For periodic boundary conditions. Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
+    dipole_field_kernel = get_normalized_dipole_field_kernel_torch_pbc(separation_vectors,separation_vectors_inv_magnitude,num_particles,image_sep_vectors,image_inv_sep_magnitude,num_images,l_e,particle_volume)
+    # dipole_field_kernel = get_normalized_dipole_field_kernel_torch(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
+    max_iterations = 5
+    max_steps = 100
+
+    def get_normalized_objective_function_auglag_gpu(normalized_magnetizations):
+        dipole_fields = torch.matmul(dipole_field_kernel,normalized_magnetizations)
+        energy = get_normalized_total_magnetic_energy_torch_pbc(normalized_magnetizations,hext,dipole_fields,chi,num_particles,system_volume,particle_volume)
+        volume_ratio = particle_volume/system_volume
+        demag_field = -(1/3)*torch.sum(torch.reshape(normalized_magnetizations,(num_particles,3)),dim=0)*volume_ratio
+        tiled_hext = torch.tile(hext+demag_field,(num_particles,))
         h_tot = (dipole_fields + tiled_hext)
         htot_norm = torch.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
         htot_norm_repeat = torch.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
@@ -4197,18 +4404,21 @@ def pytorch_magnetization_augmented_lagrangian_optimization(initial_guess,separa
     last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
     lbfgs = opt.LBFGS([x_lbfgs],
                     history_size=10,
-                    max_iter=4,
+                    max_iter=8,
                     line_search_fn="strong_wolfe")
     for _ in range(max_iterations):
-        for counter in range(max_steps):
+        for _ in range(max_steps):
             lbfgs.step(closure)
             delta = torch.abs(x_lbfgs-last_xlbfgs)
-            if torch.all(torch.less(delta,atol)):
-                break
-            else:
+            if torch.all(torch.less(delta,atol+rtol*torch.abs(last_xlbfgs))):
                 last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
-        end_constraint_violations = get_normalized_constraint_violation_auglag_torch(x_lbfgs,dipole_field_kernel,chi,hext,num_particles)
-        if torch.all(torch.less(torch.abs(end_constraint_violations),1e-3)):
+                # print('met optimization parameter change criteria')
+                break
+            last_xlbfgs = last_xlbfgs.copy_(x_lbfgs)
+        end_constraint_violations = get_normalized_constraint_violation_auglag_torch_pbc(x_lbfgs,dipole_field_kernel,chi,hext,num_particles,system_volume,particle_volume)
+        # end_constraint_violations = get_normalized_constraint_violation_auglag_torch(x_lbfgs,dipole_field_kernel,chi,hext,num_particles)
+        if torch.all(torch.less(torch.abs(end_constraint_violations),atol+rtol*torch.abs(x_lbfgs))):
+            # print('met constraint violation criteria')
             break
         with torch.no_grad():
             lagrange_multipliers = lagrange_multipliers + penalty_constant * end_constraint_violations
@@ -4218,7 +4428,7 @@ def pytorch_magnetization_augmented_lagrangian_optimization(initial_guess,separa
 def pytorch_magnetization_augmented_lagrangian_stochastic_optimization(initial_guess,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='SGD',learning_rate=0.1):
     """Function wrapper to run the optimization with constraint as an unconstrained optimization using an augmented Lagrangian method."""
     dipole_field_kernel = get_normalized_dipole_field_kernel_torch(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
-    max_iterations = 5
+    max_iterations = 1
     max_steps = 100
 
     def get_normalized_objective_function_auglag_gpu(normalized_magnetizations):
@@ -4297,12 +4507,33 @@ def get_normalized_self_energy_torch(normalized_magnetic_moments,chi):
     # total_energy = cp.sum(individual_energy)
     return total_energy
 
+def get_normalized_total_magnetic_energy_torch_pbc(normalized_magnetic_moments,hext,dipole_fields,chi,num_particles,system_volume,particle_volume):
+    volume_ratio = particle_volume/system_volume
+    demag_field = -(1/3)*torch.sum(torch.reshape(normalized_magnetic_moments,(num_particles,3)),dim=0)*volume_ratio
+    hext_tiled = torch.tile(hext+demag_field,(num_particles,))
+    zeeman_energy = get_normalized_zeeman_energy_torch(normalized_magnetic_moments,hext_tiled)
+    dipole_energy = get_normalized_dipolar_energy_torch(normalized_magnetic_moments,dipole_fields)
+    self_energy = get_normalized_self_energy_torch(normalized_magnetic_moments,chi)
+    total_energy = (zeeman_energy + dipole_energy + self_energy)#/scaling_factor
+    return total_energy
+
+def get_normalized_constraint_violation_auglag_torch_pbc(normalized_magnetizations,dipole_field_kernel,chi,hext,num_particles,system_volume,particle_volume):
+    volume_ratio = particle_volume/system_volume
+    demag_field = -(1/3)*torch.sum(torch.reshape(normalized_magnetizations,(num_particles,3)),dim=0)*volume_ratio
+    dipole_fields = torch.matmul(dipole_field_kernel,normalized_magnetizations)
+    tiled_hext = torch.tile(hext+demag_field,(num_particles,))
+    h_tot = (dipole_fields + tiled_hext)
+    htot_norm = torch.linalg.norm(h_tot.reshape(num_particles,3),axis=1)
+    htot_norm_repeat = torch.stack((htot_norm,htot_norm,htot_norm),axis=-1).reshape(3*num_particles,)
+    constraint_violations = normalized_magnetizations*(1 + chi*htot_norm_repeat) - chi*h_tot
+    return constraint_violations
+
 def pytorch_optimization():
     """Try using pytorch lbfgs optimization method for the magnetization solver"""
     #choose the maximum field, number of field steps, and field angle
     mu0 = 4*np.pi*1e-7
-    H_mag = .010/mu0
-    n_field_steps = 5
+    H_mag = .10/mu0
+    n_field_steps = 100
     H_step = H_mag/(n_field_steps)
     #polar angle, aka angle wrt the z axis, range 0 to pi
     Hext_theta_angle = np.pi/2
@@ -4318,6 +4549,7 @@ def pytorch_optimization():
     Hext_series[:,1] = Hext_series_magnitude*np.sin(Hext_phi_angle)*np.sin(Hext_theta_angle)
     Hext_series[:,2] = Hext_series_magnitude*np.cos(Hext_theta_angle)
     # Hext_series = Hext_series[::-1,:]
+    # Bext_series_magnitude = Bext_series_magnitude[::-1]
     chi = np.float32(70)
     Ms = np.float32(1.6e6)
     particle_radius = np.float32(1.5e-6)
@@ -4326,11 +4558,17 @@ def pytorch_optimization():
     num_nodes_per_particle = 8
     particle_mass_density = 7.86e3 #kg/m^3, americanelements.com/carbonyl-iron-powder-7439-89-6, young's modulus 211 GPa
     particle_mass = particle_mass_density*((4/3)*np.pi*(particle_radius**3))
-    particles_per_axis = np.array([5,5,5])
+    particles_per_axis = np.array([3,3,1])
     num_particles = particles_per_axis[0]*particles_per_axis[1]*particles_per_axis[2]
     particles = np.zeros((num_particles,num_nodes_per_particle),dtype=np.int64)
     particle_posns = np.zeros((num_particles,3))
-    separation = [3.3e-6,3.3e-6,3.3e-6]#[7.8e-6,7.8e-6,7.8e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
+    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
+    volume_fraction = 0.05
+    fictional_total_volume = num_particles*particle_volume/volume_fraction
+    fictional_side_length = np.power(fictional_total_volume,(1/3))
+    particle_density = num_particles/fictional_total_volume
+    particle_separation_metric = 1/np.power(particle_density,(1/3))
+    separation = [particle_separation_metric,particle_separation_metric,particle_separation_metric]#[5.5e-6,5.5e-6,5.5e-6]#[7.8e-6,7.8e-6,7.8e-6]#[3.3e-6,7e-6,7e-6]#3.2e-6#5.1e-6#
     ss = rand.SeedSequence()
     seed = ss.entropy
     rng = rand.default_rng(seed)
@@ -4346,13 +4584,15 @@ def pytorch_optimization():
     particle_posns = np.float32(particle_posns)
     device_particle_posns = cp.array(particle_posns.astype(np.float32)).reshape((particle_posns.shape[0]*particle_posns.shape[1],1),order='C')
     num_particles = particle_posns.shape[0]
-    particle_volume = np.float32((4/3)*np.pi*np.power(particle_radius,3))
     max_iters = 40
 
     Hext = np.float32(Hext_series[0])
 
     lbfgs_auglang_magnetization = torch.zeros((Hext_series.shape[0],num_particles*3),device="cuda")
     lbfgs_auglang_constraint_violation = torch.zeros((Hext_series.shape[0],num_particles*3)).cuda()
+
+    pbc_lbfgs_auglang_magnetization = torch.zeros((Hext_series.shape[0],num_particles*3),device="cuda")
+    pbc_lbfgs_auglang_constraint_violation = torch.zeros((Hext_series.shape[0],num_particles*3)).cuda()
 
     sgd_auglang_magnetization = torch.zeros((Hext_series.shape[0],num_particles*3),device="cuda")
     sgd_auglang_constraint_violation = torch.zeros((Hext_series.shape[0],num_particles*3)).cuda()
@@ -4387,6 +4627,19 @@ def pytorch_optimization():
     separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
     separation_vectors_kernel((grid_size,),(block_size,),(device_particle_posns,separation_vectors,separation_vectors_inv_magnitude,size_particles))
     cupy_stream.synchronize()
+
+    # num_images = np.array([4,4,4],dtype=np.int32)
+    # num_image_volumes = (2*num_images[0] + 1) * (2*num_images[1] + 1) * (2*num_images[2] + 1) - 1 
+    # num_images = cp.asarray(num_images,dtype=cp.int32)
+    # system_dimensions = np.array(separation)*(particles_per_axis+1)
+    # system_volume = system_dimensions[0]*system_dimensions[1]*system_dimensions[2]
+    # system_dimensions = cp.asarray(system_dimensions/l_e,dtype=cp.float32)
+    # pbc_separation_vectors = cp.zeros((num_particles*num_particles*3,1),dtype=cp.float32)
+    # pbc_separation_vectors_inv_magnitude = cp.zeros((num_particles*num_particles,1),dtype=cp.float32)
+    # image_separation_vectors = cp.zeros((num_image_volumes*num_particles*num_particles*3,1),dtype=cp.float32)
+    # image_separation_vectors_inv_magnitude = cp.zeros((num_image_volumes*num_particles*num_particles,1),dtype=cp.float32)
+    # separation_vectors_pbc_kernel((grid_size,),(block_size,),(device_particle_posns,pbc_separation_vectors,pbc_separation_vectors_inv_magnitude,size_particles,num_images,system_dimensions,image_separation_vectors,image_separation_vectors_inv_magnitude))
+    # cupy_stream.synchronize()
     
     # dipole_field_kernel = get_normalized_dipole_field_kernel(separation_vectors,separation_vectors_inv_magnitude,num_particles,l_e,particle_volume)
     # dipole_field_kernel = np.float64(cp.asnumpy(dipole_field_kernel))
@@ -4396,29 +4649,29 @@ def pytorch_optimization():
     pytorch_adam_time = np.zeros((Hext_series.shape[0],))
     pytorch_adamw_time = np.zeros((Hext_series.shape[0],))
     nrepeats = 1
-    for i, Hext in enumerate(Hext_series):
-        hext = torch.asarray(Hext/Ms).cuda()
-        print('pytorch lbfgs')
-        pytorch_lbfgs_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_optimization,nrepeats,initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers)
-        # lagrange_multipliers = torch.zeros((3*num_particles,)).cuda()
-        initial_guess_lbfgs = return_val[0]
+    # for i, Hext in enumerate(Hext_series):
+    #     hext = torch.asarray(Hext/Ms).cuda()
+    #     print('pytorch lbfgs')
+    #     pytorch_lbfgs_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_optimization,nrepeats,initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers)
+    #     # lagrange_multipliers = torch.zeros((3*num_particles,)).cuda()
+    #     initial_guess_lbfgs = return_val[0]
 
-        # print('pytorch SGD')
-        # pytorch_sgd_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_sgd,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='SGD')
-        # initial_guess_sgd = return_val[0]
-        # print('pytorch Adam')
-        # pytorch_adam_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_adam,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='Adam')
-        # initial_guess_adam = return_val[0]
-        # print('pytorch AdamW')
-        # pytorch_adamw_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_adamw,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='AdamW')
-        # initial_guess_adamw = return_val[0]
+    #     # print('pytorch SGD')
+    #     # pytorch_sgd_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_sgd,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='SGD')
+    #     # initial_guess_sgd = return_val[0]
+    #     # print('pytorch Adam')
+    #     # pytorch_adam_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_adam,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='Adam')
+    #     # initial_guess_adam = return_val[0]
+    #     # print('pytorch AdamW')
+    #     # pytorch_adamw_time[i], return_val = get_function_runtime(pytorch_magnetization_augmented_lagrangian_stochastic_optimization,nrepeats,initial_guess_adamw,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='AdamW')
+    #     # initial_guess_adamw = return_val[0]
 
-    for i, Hext in enumerate(Hext_series):
-        Hext = np.float32(Hext)
-        hext = Hext/Ms
-        print('fixed point iteration method')
-        fixedpoint_runtime, _ = get_function_runtime(get_normalized_magnetization_fixed_point_iteration,nrepeats,cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
-        # fixedpoint_runtime, _ = get_function_runtime(get_magnetization_fixed_point_iteration,nrepeats,cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+    # for i, Hext in enumerate(Hext_series):
+    #     Hext = np.float32(Hext)
+    #     hext = Hext/Ms
+    #     print('fixed point iteration method')
+    #     fixedpoint_runtime, _ = get_function_runtime(get_normalized_magnetization_fixed_point_iteration,nrepeats,cp.asarray(hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
+    #     # fixedpoint_runtime, _ = get_function_runtime(get_magnetization_fixed_point_iteration,nrepeats,cp.asarray(Hext,dtype=cp.float32),particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters)
 
     # for i, Hext in enumerate(Hext_series):
     #     hext = Hext/Ms
@@ -4453,12 +4706,37 @@ def pytorch_optimization():
     initial_guess_sgd = initial_guess_lbfgs.copy()
     initial_guess_adam = initial_guess_lbfgs.copy()
     initial_guess_adamw = initial_guess_lbfgs.copy()
+    initial_guess_lbfgs_pbc = initial_guess_cpu.copy()
+    normalized_magnetization = np.zeros((Hext_series.shape[0],max_iters,num_particles,3),dtype=np.float32)
+
+    # magnetic_moments_w_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+    # magnetic_moments_new_drag = np.zeros((Hext_series.shape[0],max_iters_w_drag,num_particles,3),dtype=np.float32)
+    # hext = torch.asarray(Hext_series[-1]/Ms).cuda()
+    # initial_guess_lbfgs_high_field, _ = pytorch_magnetization_augmented_lagrangian_optimization(initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers)
+
+    fixed_point_initial_soln = None
     for i, Hext in enumerate(Hext_series):
         Hext = np.float32(Hext)
+
+        hext = cp.asarray(Hext/Ms,dtype=cp.float32)
+        normalized_magnetization[i], _ = get_normalized_magnetization_fixed_point_iteration(hext,particles,device_particle_posns,Ms,chi,particle_volume,l_e,max_iters,initial_soln=fixed_point_initial_soln)
+        # if not np.allclose(normalized_magnetization[i,-1],-1):
+        #     fixed_point_initial_soln = cp.asarray(normalized_magnetization[i,-1].reshape((3*num_particles,1)))
+        # else:
+        #     fixed_point_initial_soln = None
+        #     initial_guess_lbfgs = np.reshape(normalized_magnetization[i,-1].copy(),(num_particles*3,))
+
         hext = torch.asarray(Hext/Ms).cuda()
         initial_guess_lbfgs, lbfgs_auglang_constraint_violation[i] = pytorch_magnetization_augmented_lagrangian_optimization(initial_guess_lbfgs,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers)
         lbfgs_auglang_magnetization[i] = initial_guess_lbfgs[:]
+        lagrange_multipliers = torch.zeros((3*num_particles,)).cuda()
 
+        
+        # initial_guess_lbfgs_pbc, pbc_lbfgs_auglang_constraint_violation[i] = pytorch_magnetization_augmented_lagrangian_optimization_pbc(initial_guess_lbfgs_pbc,pbc_separation_vectors,pbc_separation_vectors_inv_magnitude,image_separation_vectors,image_separation_vectors_inv_magnitude,num_image_volumes,system_volume,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=5e-3)
+        # pbc_lbfgs_auglang_magnetization[i] = initial_guess_lbfgs_pbc[:]
+
+
+        lagrange_multipliers = torch.zeros((3*num_particles,)).cuda()
         # initial_guess_sgd, sgd_auglang_constraint_violation[i] = pytorch_magnetization_augmented_lagrangian_stochastic_optimization(initial_guess_sgd,separation_vectors,separation_vectors_inv_magnitude,hext,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers,atol=1e-3,rtol=1e-3,method='SGD')
         # sgd_auglang_magnetization[i] = initial_guess_sgd[:]
 
@@ -4469,11 +4747,11 @@ def pytorch_optimization():
         # adamw_auglang_magnetization[i] = initial_guess_adamw[:]
 
         # lagrange_multipliers = torch.zeros((3*num_particles,)).cuda()
-        hext_cpu = Hext/Ms
-        lagrange_multipliers_cpu = np.zeros((3*num_particles,))
-        res = solve_magnetization_augmented_lagrangian_optimization(initial_guess_cpu,separation_vectors,separation_vectors_inv_magnitude,hext_cpu,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers_cpu,method='L-BFGS-B')
-        scipy_lbfgs_magnetization[i] = res.x
-        initial_guess_cpu = scipy_lbfgs_magnetization[i].copy()
+        # hext_cpu = Hext/Ms
+        # lagrange_multipliers_cpu = np.zeros((3*num_particles,))
+        # res = solve_magnetization_augmented_lagrangian_optimization(initial_guess_cpu,separation_vectors,separation_vectors_inv_magnitude,hext_cpu,chi,particle_volume,l_e,num_particles,penalty_constant,lagrange_multipliers_cpu,method='L-BFGS-B')
+        # scipy_lbfgs_magnetization[i] = res.x
+        # initial_guess_cpu = scipy_lbfgs_magnetization[i].copy()
 
 
     lbfgs_auglang_magnetization = lbfgs_auglang_magnetization.reshape((Hext_series.shape[0],num_particles,3))
@@ -4483,6 +4761,14 @@ def pytorch_optimization():
     lbfgs_auglang_constraint_violation = lbfgs_auglang_constraint_violation.reshape((Hext_series.shape[0],num_particles,3))
     host_lbfgs_constraint_violation = torch.Tensor.cpu(lbfgs_auglang_constraint_violation)
     host_lbfgs_constraint_violation = host_lbfgs_constraint_violation.detach().numpy()
+
+    pbc_lbfgs_auglang_magnetization = pbc_lbfgs_auglang_magnetization.reshape((Hext_series.shape[0],num_particles,3))
+    host_pbc_lbfgs_magnetization = torch.Tensor.cpu(pbc_lbfgs_auglang_magnetization)
+    host_pbc_lbfgs_magnetization = host_pbc_lbfgs_magnetization.detach().numpy()
+
+    pbc_lbfgs_auglang_constraint_violation = pbc_lbfgs_auglang_constraint_violation.reshape((Hext_series.shape[0],num_particles,3))
+    host_pbc_lbfgs_constraint_violation = torch.Tensor.cpu(pbc_lbfgs_auglang_constraint_violation)
+    host_pbc_lbfgs_constraint_violation = host_pbc_lbfgs_constraint_violation.detach().numpy()
 
     # sgd_auglang_magnetization = sgd_auglang_magnetization.reshape((Hext_series.shape[0],num_particles,3))
     # host_sgd_magnetization = torch.Tensor.cpu(sgd_auglang_magnetization)
@@ -4512,6 +4798,7 @@ def pytorch_optimization():
 
     pytorch_lbfgs_energy = np.zeros((Hext_series.shape[0],))
     scipy_lbfgs_energy = np.zeros((Hext_series.shape[0],))
+    fixed_point_energy = np.zeros((Hext_series.shape[0],))
     # pytorch_sgd_energy = np.zeros((Hext_series.shape[0],))
     # pytorch_adam_energy = np.zeros((Hext_series.shape[0],))
     # pytorch_adamw_energy = np.zeros((Hext_series.shape[0],))
@@ -4526,10 +4813,12 @@ def pytorch_optimization():
         # pytorch_adam_energy[i] = get_normalized_total_magnetic_energy_w_kernel(host_adam_magnetization[i].reshape((3*num_particles,)),hext,dipole_field_kernel,chi,num_particles)
         # pytorch_adamw_energy[i] = get_normalized_total_magnetic_energy_w_kernel(host_adamw_magnetization[i].reshape((3*num_particles,)),hext,dipole_field_kernel,chi,num_particles)
         scipy_lbfgs_energy[i] = get_normalized_total_magnetic_energy_w_kernel(scipy_lbfgs_magnetization[i].reshape((3*num_particles,)),hext,dipole_field_kernel,chi,num_particles)
+        fixed_point_energy[i] = get_normalized_total_magnetic_energy_w_kernel(normalized_magnetization[i,-1].reshape((3*num_particles,)),hext,dipole_field_kernel,chi,num_particles)
 
     fig, ax = plt.subplots()
     ax.plot(Bext_series_magnitude,pytorch_lbfgs_energy,label='pytorch lbfgs')
-    ax.plot(Bext_series_magnitude,scipy_lbfgs_energy,label='scipy lbfgs')
+    # ax.plot(Bext_series_magnitude,scipy_lbfgs_energy,label='scipy lbfgs')
+    ax.plot(Bext_series_magnitude,fixed_point_energy,label='fixed point')
     # ax.plot(Bext_series_magnitude,pytorch_sgd_energy,label='pytorch sgd')
     # ax.plot(Bext_series_magnitude,pytorch_adam_energy,label='pytorch adam')
     # ax.plot(Bext_series_magnitude,pytorch_adamw_energy,label='pytorch adamw')
@@ -4558,6 +4847,48 @@ def pytorch_optimization():
 
     plt.show(block=False)
 
+    # fig, axs = plt.subplots(2,3)
+    # for count in range(particles.shape[0]):
+    #     axs[0,0].plot(Bext_series_magnitude,host_pbc_lbfgs_magnetization[:,count,0])
+    #     axs[0,1].plot(Bext_series_magnitude,host_pbc_lbfgs_magnetization[:,count,1])
+    #     axs[0,2].plot(Bext_series_magnitude,host_pbc_lbfgs_magnetization[:,count,2])
+    #     axs[1,0].plot(Bext_series_magnitude,host_pbc_lbfgs_constraint_violation[:,count,0])
+    #     axs[1,1].plot(Bext_series_magnitude,host_pbc_lbfgs_constraint_violation[:,count,1])
+    #     axs[1,2].plot(Bext_series_magnitude,host_pbc_lbfgs_constraint_violation[:,count,2])
+
+    # axs[1,0].set_xlabel('Applied Field (T)')
+    # axs[1,1].set_xlabel('Applied Field (T)')
+    # axs[1,2].set_xlabel('Applied Field (T)')
+    # axs[0,0].set_title('X')
+    # axs[0,1].set_title('Y')
+    # axs[0,2].set_title('Z')
+    # axs[0,0].set_ylabel('optimizer lbfgs mag w PBC')
+    # axs[1,0].set_ylabel('constraint violation')
+
+    # plt.show(block=False)
+
+    normalized_magnetization = normalized_magnetization[:,-1]
+
+    fig, axs = plt.subplots(2,3)
+    for count in range(particles.shape[0]):
+        axs[0,0].plot(Bext_series_magnitude,normalized_magnetization[:,count,0])
+        axs[0,1].plot(Bext_series_magnitude,normalized_magnetization[:,count,1])
+        axs[0,2].plot(Bext_series_magnitude,normalized_magnetization[:,count,2])
+        # axs[1,0].plot(Bext_series_magnitude,scipy_lbfgs_magnetization[:,count,0])
+        # axs[1,1].plot(Bext_series_magnitude,scipy_lbfgs_magnetization[:,count,1])
+        # axs[1,2].plot(Bext_series_magnitude,scipy_lbfgs_magnetization[:,count,2])
+
+    axs[1,0].set_xlabel('Applied Field (T)')
+    axs[1,1].set_xlabel('Applied Field (T)')
+    axs[1,2].set_xlabel('Applied Field (T)')
+    axs[0,0].set_title('X')
+    axs[0,1].set_title('Y')
+    axs[0,2].set_title('Z')
+    axs[0,0].set_ylabel('fixed point mag')
+    axs[1,0].set_ylabel('scipy lfbgs')
+
+    plt.show(block=False)
+
     # xdata = Bext_series_magnitude#[::-1]
     # plot_soln_and_constraint_violation(host_sgd_magnetization,host_sgd_constraint_violation,xdata,'sgd')
     # plot_soln_and_constraint_violation(host_adam_magnetization,host_adam_constraint_violation,xdata,'Adam')
@@ -4565,18 +4896,69 @@ def pytorch_optimization():
 
 
     field_index = 0
-
+    
     fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
     default_width,default_height = fig.get_size_inches()
-    fig.set_size_inches(3*default_width,3*default_height)
+    fig.set_size_inches(1.5*default_width,1.5*default_height)
     fig.set_dpi(200)
-    ax.set_title('Normalized Magnetic Moment vectors (iterative)')
+    ax.set_title('Normalized Magnetic Moment vectors (pytorch)')
     ax.set_xlabel('X (l_e)')
     ax.set_ylabel('Y (l_e)')
     ax.set_zlabel('Z (l_e)')
+    if particles_per_axis[0] == 1:
+        ax.set_xlim([-(6e-6)/l_e,(6e-6/l_e)])
+    if particles_per_axis[1] == 1:
+        ax.set_ylim([-(6e-6)/l_e,(6e-6/l_e)])
+    if particles_per_axis[2] == 1:
+        ax.set_zlim([-(6e-6)/l_e,(6e-6/l_e)])
     ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],host_lbfgs_magnetization[field_index,:,0],host_lbfgs_magnetization[field_index,:,1],host_lbfgs_magnetization[field_index,:,2],pivot='middle',length=10.0)
-    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],seeded_iterative_magnetization[field_index,-1,:,0],seeded_iterative_magnetization[field_index,-1,:,1],seeded_iterative_magnetization[field_index,-1,:,2],pivot='middle',units='width')
     plt.show(block=False)
+
+    system_magnetization = np.sum(host_lbfgs_magnetization,axis=1)/num_particles
+    fig, ax = plt.subplots()
+    ax.set_title('LBFGS')
+    ax.set_ylabel('Normalized Magnetization Overall')
+    ax.set_xlabel('Applied Field (T)')
+    ax.plot(Bext_series_magnitude,system_magnetization)
+    plt.show(block=False)
+
+    system_magnetization = np.sum(normalized_magnetization,axis=1)/num_particles
+    fig, ax = plt.subplots()
+    ax.set_title('fixed point')
+    ax.set_ylabel('Normalized Magnetization Overall')
+    ax.set_xlabel('Applied Field (T)')
+    ax.plot(Bext_series_magnitude,system_magnetization)
+    plt.show(block=False)
+
+    system_magnetization = np.sum(scipy_lbfgs_magnetization,axis=1)/num_particles
+    fig, ax = plt.subplots()
+    ax.set_title('scipy lbfgs')
+    ax.set_ylabel('Normalized Magnetization Overall')
+    ax.set_xlabel('Applied Field (T)')
+    ax.plot(Bext_series_magnitude,system_magnetization)
+    plt.show(block=False)
+
+    
+    # system_magnetization = np.sum(host_pbc_lbfgs_magnetization,axis=1)/num_particles
+    # fig, ax = plt.subplots()
+    # ax.set_title('PBC lbfgs')
+    # ax.set_ylabel('Normalized Magnetization Overall')
+    # ax.set_xlabel('Applied Field (T)')
+    # ax.plot(Bext_series_magnitude,system_magnetization)
+    # plt.show(block=False)
+
+    # field_index = -1
+    
+    # fig, ax = plt.subplots(subplot_kw={'projection':'3d'})
+    # default_width,default_height = fig.get_size_inches()
+    # fig.set_size_inches(3*default_width,3*default_height)
+    # fig.set_dpi(200)
+    # ax.set_title(f'Normalized Magnetic Moment vectors (PBC)\n{Bext_series_magnitude[field_index]*1000} mT')
+    # ax.set_xlabel('X (l_e)')
+    # ax.set_ylabel('Y (l_e)')
+    # ax.set_zlabel('Z (l_e)')
+    # ax.quiver(particle_posns[:,0],particle_posns[:,1],particle_posns[:,2],host_pbc_lbfgs_magnetization[field_index,:,0],host_pbc_lbfgs_magnetization[field_index,:,1],host_pbc_lbfgs_magnetization[field_index,:,2],pivot='middle',length=10.0)
+    # plt.show(block=False)
     print('end of function')
 
 if __name__ == "__main__":
@@ -4597,4 +4979,5 @@ if __name__ == "__main__":
     # performance_testing_nonlinear_magnetization_energy_minimization_w_constraint()
 
     # test_optimizer_bootstrapped_fixedpoint_solver()
-    pytorch_optimization()
+    # pytorch_optimization()
+    fk_law_response_plotting()

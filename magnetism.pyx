@@ -954,3 +954,65 @@ cpdef np.ndarray[np.float32_t, ndim=1] get_normalized_magnetic_moment_frohlich_k
         M[i,:] = get_normalized_magnetization_32bit(H_tot,chi,Ms)
     new_normalized_mag_moments = np.reshape(M,(normalized_magnetic_moments.shape[0],))
     return new_normalized_mag_moments
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float32_t, ndim=1] get_dipole_fields_normalized_posns_32bit(float[:] normalized_magnetic_moments, float[:] Hext, float[:,::1] particle_posns, float particle_radius, float chi, float Ms, float l_e):
+    """Get the magnetic moment of the particles based on the total effective field at the center of each particle. Particle_radius is the radius in meters"""
+    cdef int i
+    cdef int j
+    cdef int count
+    cdef np.ndarray[np.float32_t, ndim=2] M = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    cdef np.ndarray[np.float32_t, ndim=2] H_dip = np.zeros((particle_posns.shape[0],3),dtype=np.float32)
+    #TODO do things better, so you don't recalculate rij vectors unnecessarily. requires making adjustments to the function that calculates dipole fields to take rij vector as an argument
+    cdef float[3] r_i = np.empty((3,),dtype=np.float32)
+    cdef float[3] r_j = np.empty((3,),dtype=np.float32)
+    cdef float[3] m_j = np.empty((3,),dtype=np.float32)
+    cdef float particle_V = (4/3)*np.pi*pow(particle_radius,3)
+    cdef float MsV = Ms*particle_V
+    cdef float[3] H_tot = np.empty((3,),dtype=np.float32)
+    for i in range(particle_posns.shape[0]):
+        #get particle i position and particle j position, don't calculate field for itself
+        r_i[0] = particle_posns[i,0]
+        r_i[1] = particle_posns[i,1]
+        r_i[2] = particle_posns[i,2]
+        for j in range(particle_posns.shape[0]):
+            if i == j:
+                pass
+            else:
+                r_j[0] = particle_posns[j,0]
+                r_j[1] = particle_posns[j,1]
+                r_j[2] = particle_posns[j,2]
+                m_j[0] = normalized_magnetic_moments[3*j]*MsV
+                m_j[1] = normalized_magnetic_moments[3*j+1]*MsV
+                m_j[2] = normalized_magnetic_moments[3*j+2]*MsV
+                H_dip[i,:] += get_Hdipole_field_normalized_32bit(r_i,r_j,m_j,l_e)
+    return H_dip
+
+# grad_constraints = np.zeros((3*num_particles,3*num_particles))
+# for i in range(3*num_particles):
+#     for j in range(3*num_particles):
+#         if i == j:
+#             #assuming i am correct that the partial derivative component is the row index
+#             grad_constraints[j,i] = 1 + chi*htot_norm[j]
+#         else:
+#             x_field_idx = 3*np.floor_divide(j,3)
+#             grad_constraints[j,i] = chi*(normalized_magnetizations[j]*(1/htot_norm[j])*(htot[x_field_idx]*dipole_field_kernel[x_field_idx,i] + htot[x_field_idx+1]*dipole_field_kernel[x_field_idx+1,i] + htot[x_field_idx+2]*dipole_field_kernel[x_field_idx+2,i]) - dipole_field_kernel[j,i])
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cpdef np.ndarray[np.float64_t, ndim=2] get_grad_constraints(double[:] normalized_magnetizations, double[:] htot, double[:] htot_norm, double[:,::1] dipole_field_kernel, double chi, int num_particles):
+    cdef int i
+    cdef int j
+    cdef np.ndarray[np.float64_t, ndim=2] grad_constraints = np.zeros((3*num_particles,3*num_particles),dtype=np.float64)
+    cdef np.ndarray[np.float64_t, ndim=1] inv_htot_norm = np.divide(1,htot_norm)
+    cdef int x_field_idx
+    for i in range(3*num_particles):
+        for j in range(3*num_particles):
+            if i == j:
+                #assuming i am correct that the partial derivative component is the row index
+                grad_constraints[j,i] = 1 + chi*htot_norm[j]
+            else:
+                x_field_idx = 3*np.floor_divide(j,3,dtype=np.int32)
+                grad_constraints[j,i] = chi*(normalized_magnetizations[j]*inv_htot_norm[j]*(htot[x_field_idx]*dipole_field_kernel[x_field_idx,i] + htot[x_field_idx+1]*dipole_field_kernel[x_field_idx+1,i] + htot[x_field_idx+2]*dipole_field_kernel[x_field_idx+2,i]) - dipole_field_kernel[j,i])
+    return grad_constraints
