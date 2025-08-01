@@ -5,6 +5,7 @@ from mpl_toolkits import mplot3d
 from numba.experimental import jitclass
 from numba import types, njit, prange
 import mre.initialize
+# import initialize
 #this code was taken from https://stackoverflow.com/questions/41656006/how-to-rasterize-a-sphere
 #originally written by Mitchell Walls on july 16 2021, adapted from a method written by Matt Timmerman in the same thread
 #i will/have made changes to comment out how the code works and changes to adapt for my purposes in simulating MREs, since i need to rasterize spherical particles that will be treated as rigid objects
@@ -305,10 +306,15 @@ def plotter(node_posns,springs,radius):
 def plot_sphere_voxels(grid_points,radius,output_dir):
     fig, ax = plt.subplots(subplot_kw={"projection":"3d"})
     ax.voxels(grid_points,edgecolor='k')
-    ax.set_xlim((0,2*radius+1))
-    ax.set_ylim((0,2*radius+1))
-    ax.set_zlim((0,2*radius+1))
+    ax.set_xlim((0,2*radius+0.1))
+    ax.set_ylim((0,2*radius+0.1))
+    ax.set_zlim((0,2*radius+0.1))
+    ax.set_title(f'$n_d$={int(np.round(radius-0.5))}')
     save_name = f'voxel_sphere_R_{radius}.png'
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_zticklabels([])
+    format_figure_3D(ax)
     plt.savefig(output_dir+save_name)
 
 def place_sphere(radius,l_e,center,dim):
@@ -352,6 +358,102 @@ def place_spheres(radius,l_e,centers,dim):
             row_indices = np.concatenate((row_indices,current_row_indices))
     return row_indices
 
+def get_labeled_legend_handles(ax):
+    """Used to get the handles to pass to ax.legend() that are labeled, to avoid UserWarnings from invoking legend with no labeled Artists"""
+    h, l = ax.get_legend_handles_labels()
+    legend_handles = []
+    for handle in range(len(h)):
+        if l[handle][0] != '_':
+            legend_handles.append(h[handle])
+    return legend_handles
+
+def format_subfigures(axs,label_size=30,tick_size=22,offset_font_size=22,marker_size=14,shared_x_axis=True,legend_loc="upper left",legend_fontsize=18,subplot_label_flag=True):
+    """Given a list of axes making up a figure with subfigures, make appropriate adjustments to the figure depending on the shape of the subfigure and user passed keyword arguments, e.g. 'ylim_sharing'"""
+    figure_shape = axs.shape
+    subplot_labels = ['a)','b)','c)','d)','e)','f)']
+    subplot_label_counter = 0
+    if len(figure_shape) == 2:
+        for i in range(figure_shape[0]):
+            for j in range(figure_shape[1]):            
+                axs[i,j].yaxis.get_offset_text().set_fontsize(offset_font_size)
+                if subplot_label_flag:
+                    axs[i,j].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                                    xytext=(-1.5,0.65),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+                    subplot_label_counter += 1
+                axs[i,j].tick_params(labelsize=tick_size)
+                axs[i,j].set_xlabel(axs[i,j].get_xlabel(),fontsize=label_size)
+                axs[i,j].set_ylabel(axs[i,j].get_ylabel(),fontsize=label_size)
+                for child_line in axs[i,j].get_lines():
+                    child_line.set_markersize(marker_size)
+                legend_handles = get_labeled_legend_handles(axs[i,j])
+                if len(legend_handles) != 0:
+                    axs[i,j].legend(handles=legend_handles,loc=legend_loc,fontsize=legend_fontsize)# axs[i,j].legend(loc=legend_loc,fontsize=legend_fontsize)
+                if shared_x_axis and i != (figure_shape[0]-1):
+                    axs[i,j].set_xticks([])
+    elif len(figure_shape) == 1:
+        for i in range(figure_shape[0]):      
+            axs[i].yaxis.get_offset_text().set_fontsize(offset_font_size)
+            if subplot_label_flag:
+                axs[i].annotate(subplot_labels[subplot_label_counter],xy=(0,1),xycoords='axes fraction',
+                                xytext=(-1.5,0.75),textcoords='offset fontsize',fontsize=label_size,verticalalignment='top')
+                subplot_label_counter += 1
+            axs[i].tick_params(labelsize=tick_size)
+            axs[i].set_xlabel(axs[i].get_xlabel(),fontsize=label_size)
+            axs[i].set_ylabel(axs[i].get_ylabel(),fontsize=label_size)
+            for child_line in axs[i].get_lines():
+                child_line.set_markersize(marker_size)
+            legend_handles = get_labeled_legend_handles(axs[i])
+            if len(legend_handles) != 0:
+                axs[i].legend(handles=legend_handles,loc=legend_loc,fontsize=legend_fontsize)
+            if shared_x_axis and i != (figure_shape[0]-1):
+                axs[i].set_xticks([])
+
+def format_figure(ax,title_size=30,label_size=30,tick_size=22,marker_size=14,legend_loc="upper right",legend_fontsize=18):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    ax.tick_params(labelsize=tick_size)
+    ax.set_xlabel(ax.get_xlabel(),fontsize=label_size)
+    ax.set_ylabel(ax.get_ylabel(),fontsize=label_size)
+    # ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size)
+    # ax.xaxis.set_label_coords(0.5,-0.1)
+    # ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size)
+    # ax.yaxis.set_label_coords(-0.1,0.5)
+    for child_line in ax.get_lines():
+        child_line.set_markersize(marker_size)
+    legend_handles = get_labeled_legend_handles(ax)
+    if len(legend_handles) != 0:
+        ax.legend(handles=legend_handles,loc=legend_loc,fontsize=legend_fontsize)
+    ax.set_title(ax.get_title(),fontsize=title_size)
+
+def format_figure_3D(ax,title_size=30,label_size=30,tick_size=22,view_angles=None,fig=None):
+    """Given the axis handle, adjust the font sizes of the title, axis labels, and tick labels."""
+    ax.tick_params(labelsize=tick_size)
+    ax.set_xlabel("\n"+ax.get_xlabel(),fontsize=label_size,linespacing=2.5)
+    ax.xaxis.pane.set_edgecolor('black')
+    ax.yaxis.pane.set_edgecolor('black')
+    if type(view_angles) == type(tuple()):
+        if view_angles[0] == 90:
+        # xy (90,-90,0)
+            #remove the y label and use an annotation to set text to act as the ylabel. on the effectiv y axis (have to rotate the annotation)
+            ax.annotate(ax.get_ylabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            # ax.annotate(ax.get_ylabel(),xy=(np.floor_divide(pixel_width,8),np.floor_divide(pixel_height,4)-),xycoords='figure pixels',fontsize=label_size,rotation=90)
+            ax.set_ylabel('')
+        elif view_angles[0] == 0 and view_angles[1] == -90:
+        # xz (0,-90,0)
+            #remove the z label and use an annotation to set text to act as the zlabel. on the effective y axis
+            ax.annotate(ax.get_zlabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            ax.set_zlabel('')
+        elif view_angles[0] == 0 and view_angles[1] == 0:
+        # yz (0,0,0)
+            #remove y and z labels and use annotations instead. y label on the effective x-axis, z label on the effective y-axis
+            ax.annotate(ax.get_ylabel(),xy=(0.467,0.217),xycoords='figure fraction',fontsize=label_size)
+            ax.set_ylabel('')
+            ax.annotate(ax.get_zlabel(),xy=(0.27,0.46),xycoords='figure fraction',fontsize=label_size,rotation=90)
+            ax.set_zlabel('')
+    else:
+        ax.set_ylabel("\n"+ax.get_ylabel(),fontsize=label_size,linespacing=2.5)
+        ax.set_title(ax.get_title(),fontsize=title_size)
+        ax.set_zlabel("\n"+ax.get_zlabel(),fontsize=label_size,linespacing=2.5)
+
 def main():
     output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
     radius = 3.5
@@ -367,7 +469,7 @@ def main():
     # Lx,Ly,Lz = dim
     # row_indices = get_row_indices(node_posns,l_e,dim)
     # k = [1,0,0]
-    # springs = mre.initialize.create_springs(node_posns,k,l_e,dim)
+    # springs = initialize.create_springs(node_posns,k,l_e,dim)
     # plotter(node_posns,springs,radius)
     # fig = plt.figure
     # ax = plt.axes(projection='3d')
@@ -376,8 +478,34 @@ def main():
     # plt.savefig(save_string)
 
 def thesis_plot_voxel_spheres():
-    output_dir = f'/mnt/c/Users/bagaw/Desktop/MRE/two_particle/'
-    for i in range(11):
+    output_dir = f'/mnt/c/Users/bagaw/Desktop/dissertation_figures/sphere_voxelization/'
+
+    fig, axs = plt.subplots(2,3,gridspec_kw={'wspace':-0.05,'hspace':0.0},subplot_kw={"projection":"3d"})
+    # fig, axs = plt.subplots(2,3,subplot_kw={"projection":"3d"})
+    default_width,default_height = fig.get_size_inches()
+    fig.set_size_inches(2.2*default_width,2.2*default_height)
+    fig.set_dpi(200)
+    title_size = 24
+    stride = axs.shape[1]
+    radii = np.array([1,3,5,7,9,11],dtype=np.int64)
+    for row in range(axs.shape[0]):
+        for col in range(axs.shape[1]):
+            ax = axs[row,col]
+            radius = radii[row*stride+col] + 0.5
+            grid_points_3D = get_sphere_on_grid_for_voxel_plotting(radius)
+            ax.voxels(grid_points_3D,edgecolor='k')
+            ax.set_xlim((0,2*radius+0.1))
+            ax.set_ylim((0,2*radius+0.1))
+            ax.set_zlim((0,2*radius+0.1))
+            ax.set_title(f'$n_d$={int(np.round(radius-0.5))}',fontsize=title_size)
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_zticklabels([])
+    format_subfigures(axs)
+    save_name = f'voxel_sphere_tiled.png'
+    plt.savefig(output_dir+save_name,bbox_inches='tight')
+
+    for i in range(6):
         radius = i + 0.5
         grid_points_3D = get_sphere_on_grid_for_voxel_plotting(radius)
         plot_sphere_voxels(grid_points_3D,radius,output_dir)
@@ -385,4 +513,5 @@ def thesis_plot_voxel_spheres():
 if __name__ == '__main__':
     # test_get_row_indices_new()
     # test_get_row_index_node()
-    main()
+    # main()
+    thesis_plot_voxel_spheres()
