@@ -1,0 +1,24 @@
+This project was completed as part of the research I performed at Colorado State University while pursuing a PhD in Physics. The purpose of the project was to create a model of magnetorheological elastomers. This was my first major programming project, and I learned a great deal along the way. However, there are many things I could have done better, and I still have much to learn about software engineering, project management, and good practice (as well as numerics and computer science). My intentions in making this code base public are mainly 1) transparency in what I have done, and how, to allow for critique of my work, and an attempt to hew closer towards open science standards (though I think this falls short), and 2) to provide a public example of the kind of work I have done.
+
+Magnetorehological elastomers have complex magnetic and viscoelastic behavior. This project neglects the viscous and time dependent properties of these materials. We study the system at a micro-level, so that the micron sized particles are resolved. We are particularly interested in the ultrasoft regime, where the polymer matrix is soft enough that the magnetic particles can cluster together in the presence of an applied magnetic field.
+
+The elastic portion of the problem was treated in a manner taken from Golec et al. (2020).
+
+The approach was conceived, implemented, tested, and used by myself. A small portion of the codebase related to the process of voxelizing the spherical particles was taken from stackoverflow, and is referenced in the comments in sphere_rasterization.py.
+
+Use of this software requires running one python file which uses Cython to create compiled version of functions related to the initialization process for the springs and volume elements.
+To run this file, use the following command:
+
+python3 springs_setup.py build_ext --inplace
+
+this will create the necessary files in the current working directory, which should be the directory containing the sim_runner.py file
+
+The sim_runner.py file contains helper functions necessary to run the simulations. The code related to actually running the simulations is in the mre/initialize.py and mre/simulate.py files.
+
+The batchjob_runner() and jumpstart_sim() functions are used for running multiple simulations with variations in system parameters, and for restarting an interrupted simulation, respectively.
+
+hysteresis_example() and shear_strain_example() functions demonstrate running hysteresis and strain type simulations, as well as differences in handling the arrangement of particles (programmatically, or "placement by hand").
+
+In order to run a simulation, system parameters need to be define	d, and packed into a dictionary, named "parameters", which is passed to the run_sim() function, along with a string providing the simulation type.
+
+
